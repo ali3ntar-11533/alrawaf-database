@@ -8,6 +8,7 @@ import {
   ListContractorsQueryParams,
   ListContractorsResponse,
   GetContractorResponse,
+  UpdateContractorParams,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -153,6 +154,23 @@ router.get("/contractors/:id", async (req, res): Promise<void> => {
   const [row] = await db.select().from(contractorsTable).where(
     eq(contractorsTable.id, params.data.id)
   );
+  if (!row) { res.status(404).json({ error: "Not found" }); return; }
+  res.json(GetContractorResponse.parse({ ...row, createdAt: row.createdAt.toISOString() }));
+});
+
+router.put("/contractors/:id", async (req, res): Promise<void> => {
+  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const params = UpdateContractorParams.safeParse({ id: parseInt(raw, 10) });
+  if (!params.success) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const parsed = CreateContractorBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const [row] = await db
+    .update(contractorsTable)
+    .set(parsed.data)
+    .where(eq(contractorsTable.id, params.data.id))
+    .returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
   res.json(GetContractorResponse.parse({ ...row, createdAt: row.createdAt.toISOString() }));
 });

@@ -1,4 +1,4 @@
-import { Building2, Mail, Phone, FileText, Briefcase, MapPin, DollarSign, Clock, ChevronLeft, Users } from "lucide-react";
+import { Building2, Mail, Phone, FileText, Briefcase, MapPin, DollarSign, Clock, Users } from "lucide-react";
 import type { Contractor } from "@workspace/api-client-react";
 
 interface Props {
@@ -6,12 +6,13 @@ interface Props {
   allContractors: Contractor[];
   filteredContractors: Contractor[];
   isLoading: boolean;
+  onSelectId: (id: number) => void;
 }
 
-const BAR_COLORS = ["#c5a059", "#3b8fcc", "#2baa74", "#e8851c", "#9b59b6", "#e74c3c"];
+const BAR_COLORS = ["#2baa74", "#c5a059", "#3b8fcc", "#e8851c", "#9b59b6", "#e74c3c"];
 
 function formatPrice(p: number) {
-  if (p >= 1_000_000) return `${(p / 1_000_000).toFixed(1)}M`;
+  if (p >= 1_000_000) return `${(p / 1_000_000).toFixed(2)}M`;
   if (p >= 1_000)     return `${(p / 1_000).toFixed(0)}K`;
   return String(p);
 }
@@ -20,13 +21,7 @@ function avg(arr: number[]) {
   return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
 }
 
-const DEFAULT_DESCRIPTION =
-  "يشتمل هذا البند على تنفيذ وصب القواعد الخرسانية والأعمدة والجوائز والأسقف وفقاً للمواصفات الفنية وبما يتوافق مع الكود السعودي للإنشاءات والمخططات المعتمدة من الجهة المالكة.";
-
-const DEFAULT_SCOPE =
-  "يتضمن النطاق توريد كافة المواد والعمالة والمعدات اللازمة لتنفيذ الأعمال وفق المخططات المعتمدة، ومتطلبات المشروع، وإجراء الاختبارات والفحوصات المطلوبة حتى القبول النهائي.";
-
-export default function MainContent({ contractor, allContractors, filteredContractors, isLoading }: Props) {
+export default function MainContent({ contractor, allContractors, filteredContractors, isLoading, onSelectId }: Props) {
   if (isLoading) {
     return (
       <main className="content-area">
@@ -37,26 +32,24 @@ export default function MainContent({ contractor, allContractors, filteredContra
     );
   }
 
-  // Stats from ALL contractors (global)
-  const allPrices   = allContractors.map((c) => c.price);
-  const maxPrice    = allPrices.length > 0 ? Math.max(...allPrices) : 1;
-  const minPrice    = allPrices.length > 0 ? Math.min(...allPrices) : 0;
-  const avgPrice    = avg(allPrices);
-  const totalValue  = allPrices.reduce((a, b) => a + b, 0);
+  const allPrices = allContractors.map((c) => c.price);
+  const maxPrice  = allPrices.length > 0 ? Math.max(...allPrices) : 1;
+  const minPrice  = allPrices.length > 0 ? Math.min(...allPrices) : 0;
+  const avgPrice  = avg(allPrices);
 
-  // Chart: top 5 from filtered (or all if no filter)
+  const contractorWithMin = allContractors.find((c) => c.price === minPrice);
+  const contractorWithMax = allContractors.find((c) => c.price === maxPrice);
+  const avgContractor     = [...allContractors].sort((a, b) => Math.abs(a.price - avgPrice) - Math.abs(b.price - avgPrice))[0];
+
+  // Chart: best 5 = lowest prices (sorted ascending)
   const chartSet = filteredContractors.length > 0 ? filteredContractors : allContractors;
-  const top5     = [...chartSet].sort((a, b) => b.price - a.price).slice(0, 5);
-  const chartMax = top5.length > 0 ? Math.max(...top5.map((c) => c.price)) : 1;
+  const best5    = [...chartSet].sort((a, b) => a.price - b.price).slice(0, 5);
+  const chartMax = best5.length > 0 ? Math.max(...best5.map((c) => c.price)) : 1;
 
-  // Work history: other contractors (different from selected)
-  const relatedWork = allContractors
-    .filter((c) => contractor && c.id !== contractor.id && c.portfolio === contractor.portfolio)
-    .slice(0, 3);
-  const extra = allContractors.filter(
-    (c) => contractor && c.id !== contractor.id && !relatedWork.some((r) => r.id === c.id)
-  );
-  const workHistory = [...relatedWork, ...extra].slice(0, 3);
+  // Work history: same project, different contractor
+  const workHistory = allContractors
+    .filter((c) => contractor && c.id !== contractor.id && c.project === contractor.project)
+    .slice(0, 4);
 
   if (!contractor) {
     return (
@@ -72,9 +65,8 @@ export default function MainContent({ contractor, allContractors, filteredContra
   return (
     <main className="content-area">
 
-      {/* ── 1. بطاقة بيانات المقاول الرئيسية ── */}
+      {/* ── 1. بطاقة بيانات المقاول ── */}
       <div className="card animate-fade-up" style={{ marginBottom: "16px", padding: 0, overflow: "hidden" }}>
-        {/* Dark header band */}
         <div style={{ background: "linear-gradient(135deg, var(--charcoal) 0%, #2d2420 100%)", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: "0.58rem", color: "rgba(197,160,89,0.65)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "3px" }}>
@@ -101,7 +93,6 @@ export default function MainContent({ contractor, allContractors, filteredContra
           </div>
         </div>
 
-        {/* Middle grid: 3 cells */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #f0ebe0" }}>
           {[
             { icon: <MapPin size={12} />,    label: "المحفظة",    value: contractor.portfolio },
@@ -123,11 +114,10 @@ export default function MainContent({ contractor, allContractors, filteredContra
           ))}
         </div>
 
-        {/* Bottom strip: phone + email */}
         <div style={{ display: "flex", background: "#faf8f4" }}>
           {[
-            { icon: <Phone size={11} />, label: "رقم التواصل",         value: contractor.phone },
-            { icon: <Mail size={11} />,  label: "البريد الإلكتروني",   value: contractor.email },
+            { icon: <Phone size={11} />, label: "رقم التواصل",       value: contractor.phone },
+            { icon: <Mail size={11} />,  label: "البريد الإلكتروني", value: contractor.email },
           ].map((item, i) => (
             <div key={i} style={{ flex: 1, padding: "10px 16px", display: "flex", alignItems: "center", gap: "7px", borderLeft: i === 0 ? "1px solid #f0ebe0" : "none" }}>
               <span style={{ color: "var(--gold)", flexShrink: 0 }}>{item.icon}</span>
@@ -152,27 +142,23 @@ export default function MainContent({ contractor, allContractors, filteredContra
           </div>
         </div>
 
+        {/* عنوان البند — driven by workType */}
         <div style={{ background: "linear-gradient(135deg, rgba(197,160,89,0.07), rgba(197,160,89,0.02))", border: "1px solid rgba(197,160,89,0.18)", borderRadius: "9px", padding: "11px 14px", marginBottom: "10px" }}>
           <div style={{ fontSize: "0.58rem", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>عنوان البند</div>
           <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--charcoal)" }}>{contractor.technicalScope}</div>
         </div>
 
-        <div style={{ marginBottom: "9px" }}>
-          <div style={{ fontSize: "0.58rem", color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>الوصف الفني</div>
-          <p style={{ fontSize: "0.78rem", color: "#555", lineHeight: 1.75, margin: 0 }}>
-            {(contractor as any).workDescription || DEFAULT_DESCRIPTION}
-          </p>
-        </div>
-
-        <div style={{ background: "#f9f7f3", borderRadius: "9px", padding: "11px 14px", borderRight: "3px solid var(--gold)" }}>
-          <div style={{ fontSize: "0.58rem", color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "3px" }}>نطاق الأعمال</div>
-          <p style={{ fontSize: "0.76rem", color: "#666", lineHeight: 1.7, margin: 0 }}>
-            {(contractor as any).workScopeText || DEFAULT_SCOPE}
+        {/* الوصف الفني — from workScopeText column */}
+        <div>
+          <div style={{ fontSize: "0.58rem", color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "6px" }}>الوصف الفني للبند</div>
+          <p style={{ fontSize: "0.78rem", color: "#555", lineHeight: 1.8, margin: 0, background: "#f9f7f3", borderRadius: "9px", padding: "12px 14px", borderRight: "3px solid var(--gold)" }}>
+            {(contractor as any).workScopeText || (contractor as any).workDescription ||
+              "يشتمل هذا البند على تنفيذ الأعمال الفنية وفقاً للمواصفات والمخططات المعتمدة ومتطلبات الجهة المالكة."}
           </p>
         </div>
       </div>
 
-      {/* ── 3. سجل الأعمال المنفذة ── */}
+      {/* ── 3. سجل الأعمال المنفذة — same project ── */}
       {workHistory.length > 0 && (
         <div className="card animate-fade-up" style={{ marginBottom: "16px", animationDelay: "0.1s" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
@@ -180,13 +166,16 @@ export default function MainContent({ contractor, allContractors, filteredContra
               <Clock size={14} style={{ color: "var(--gold)" }} />
               <h3 style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--charcoal)" }}>سجل الأعمال المنفذة</h3>
             </div>
-            <span style={{ fontSize: "0.6rem", color: "#bbb", background: "#f5f0e8", borderRadius: "4px", padding: "2px 7px" }}>مشاريع ذات صلة</span>
+            <span style={{ fontSize: "0.6rem", color: "#bbb", background: "#f5f0e8", borderRadius: "4px", padding: "2px 7px" }}>
+              مشاريع مشتركة: {contractor.project}
+            </span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {workHistory.map((w, i) => (
               <div
                 key={w.id}
-                style={{ display: "flex", alignItems: "center", gap: "12px", padding: "11px 14px", borderRadius: "9px", background: i % 2 === 0 ? "#faf8f4" : "#fff", border: "1px solid #f0ebe0", transition: "transform 0.18s ease, box-shadow 0.18s ease" }}
+                onClick={() => onSelectId(w.id)}
+                style={{ display: "flex", alignItems: "center", gap: "12px", padding: "11px 14px", borderRadius: "9px", background: i % 2 === 0 ? "#faf8f4" : "#fff", border: "1px solid #f0ebe0", cursor: "pointer", transition: "transform 0.18s ease, box-shadow 0.18s ease" }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 6px 20px rgba(0,0,0,0.06)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = ""; (e.currentTarget as HTMLDivElement).style.boxShadow = ""; }}
               >
@@ -195,21 +184,17 @@ export default function MainContent({ contractor, allContractors, filteredContra
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--charcoal)", marginBottom: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {w.project} — {w.technicalScope}
+                    {w.contractor}
                   </div>
                   <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                    <span style={{ fontSize: "0.62rem", color: "#aaa" }}>{w.portfolio}</span>
+                    <span style={{ fontSize: "0.62rem", color: "#aaa" }}>{w.technicalScope}</span>
                     <span style={{ fontSize: "0.62rem", color: "#ddd" }}>•</span>
-                    <span style={{ fontSize: "0.62rem", color: "#aaa" }}>{w.contractor}</span>
+                    <span style={{ fontSize: "0.62rem", color: "#aaa" }}>{w.workType}</span>
                   </div>
                 </div>
                 <div style={{ textAlign: "left", flexShrink: 0 }}>
                   <div style={{ fontSize: "0.7rem", fontWeight: 800, color: BAR_COLORS[i % BAR_COLORS.length] }}>
                     {formatPrice(w.price)} ر.س
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "3px", justifyContent: "flex-end" }}>
-                    <span style={{ fontSize: "0.58rem", color: "#ccc" }}>{w.workType}</span>
-                    <ChevronLeft size={9} style={{ color: "#ddd" }} />
                   </div>
                 </div>
               </div>
@@ -218,8 +203,8 @@ export default function MainContent({ contractor, allContractors, filteredContra
         </div>
       )}
 
-      {/* ── 4. مقارنة أسعار العطاءات ── */}
-      {top5.length > 0 && (
+      {/* ── 4. أفضل 5 أسعار (sorted ascending = lowest = best) ── */}
+      {best5.length > 0 && (
         <div className="card animate-fade-up" style={{ marginBottom: "16px", animationDelay: "0.15s" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
             <h3 style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--charcoal)", display: "flex", alignItems: "center", gap: "7px" }}>
@@ -227,14 +212,19 @@ export default function MainContent({ contractor, allContractors, filteredContra
               مقارنة أسعار العطاءات
             </h3>
             <span style={{ fontSize: "0.62rem", color: "#bbb", background: "#f5f0e8", borderRadius: "4px", padding: "2px 7px" }}>
-              أعلى {top5.length} مقاولين
+              أفضل {best5.length} أسعار
             </span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>
-            {top5.map((c, i) => {
+            {best5.map((c, i) => {
               const isCurrent = contractor && c.id === contractor.id;
               return (
-                <div key={c.id} style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+                <div
+                  key={c.id}
+                  onClick={() => onSelectId(c.id)}
+                  style={{ display: "flex", alignItems: "center", gap: "9px", cursor: "pointer" }}
+                  title={`اضغط لعرض بيانات ${c.contractor}`}
+                >
                   <div style={{ width: "120px", fontSize: "0.7rem", color: isCurrent ? "var(--gold)" : "var(--charcoal)", textAlign: "right", fontWeight: isCurrent ? 800 : 600, flexShrink: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {c.contractor}
                   </div>
@@ -242,10 +232,12 @@ export default function MainContent({ contractor, allContractors, filteredContra
                     <div
                       style={{
                         width: `${(c.price / chartMax) * 100}%`, height: "100%",
-                        background: isCurrent ? "linear-gradient(90deg, var(--gold), #e8c870)" : BAR_COLORS[i % BAR_COLORS.length],
+                        background: isCurrent
+                          ? "linear-gradient(90deg, var(--gold), #e8c870)"
+                          : i === 0 ? "linear-gradient(90deg, #2baa74, #36c786)" : BAR_COLORS[i % BAR_COLORS.length],
                         borderRadius: "5px", transition: "width 0.8s ease",
                         display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: "6px",
-                        boxShadow: isCurrent ? "0 0 8px rgba(197,160,89,0.35)" : "none",
+                        boxShadow: isCurrent ? "0 0 8px rgba(197,160,89,0.35)" : i === 0 ? "0 0 8px rgba(43,170,116,0.3)" : "none",
                       }}
                     >
                       <span style={{ fontSize: "0.58rem", color: "#fff", fontWeight: 700 }}>{formatPrice(c.price)}</span>
@@ -255,10 +247,13 @@ export default function MainContent({ contractor, allContractors, filteredContra
               );
             })}
           </div>
+          <div style={{ marginTop: "10px", fontSize: "0.6rem", color: "#bbb", textAlign: "center" }}>
+            مرتبة تصاعدياً • الأفضل سعراً يظهر أولاً • اضغط على أي مقاول لعرض بياناته
+          </div>
         </div>
       )}
 
-      {/* ── 5. UNIFIED FOOTER ROW: إجمالي + Price stats ── */}
+      {/* ── 5. Footer Stats: current → min → avg → max ── */}
       {allPrices.length > 0 && (
         <div
           className="animate-fade-up"
@@ -270,56 +265,73 @@ export default function MainContent({ contractor, allContractors, filteredContra
             display: "flex",
           }}
         >
-          {/* إجمالي المقاولين */}
-          <div
-            style={{
-              padding: "18px 20px",
-              borderLeft: "1px solid rgba(255,255,255,0.07)",
-              display: "flex", flexDirection: "column", justifyContent: "center",
-              minWidth: "130px", flexShrink: 0,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
-              <Users size={12} style={{ color: "rgba(197,160,89,0.7)" }} />
-              <span style={{ fontSize: "0.58rem", color: "rgba(197,160,89,0.7)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                إجمالي
-              </span>
+          {/* count cell */}
+          <div style={{ padding: "16px 18px", borderLeft: "1px solid rgba(255,255,255,0.07)", display: "flex", flexDirection: "column", justifyContent: "center", minWidth: "100px", flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "4px" }}>
+              <Users size={11} style={{ color: "rgba(197,160,89,0.7)" }} />
+              <span style={{ fontSize: "0.55rem", color: "rgba(197,160,89,0.7)", textTransform: "uppercase", letterSpacing: "0.08em" }}>الجهات</span>
             </div>
-            <div style={{ fontSize: "1.9rem", fontWeight: 900, color: "#fff", lineHeight: 1 }}>
+            <div style={{ fontSize: "1.7rem", fontWeight: 900, color: "#fff", lineHeight: 1 }}>
               {allContractors.length}
             </div>
-            <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.35)", marginTop: "3px" }}>
-              جهة مسجّلة •{" "}
-              <span style={{ color: "var(--gold)", fontWeight: 700 }}>
-                {(totalValue / 1_000_000).toFixed(1)}M
-              </span>
-            </div>
+            <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.3)", marginTop: "2px" }}>مسجّلة</div>
           </div>
 
-          {/* 4 price stats */}
+          {/* 4 clickable price stats: current → min → avg → max */}
           <div style={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
             {[
-              { label: "السعر الأعلى",        value: formatPrice(maxPrice),               color: "#e74c3c", sub: "أعلى عطاء" },
-              { label: "السعر المتوسط",        value: formatPrice(Math.round(avgPrice)),    color: "#3b8fcc", sub: "المتوسط الحسابي" },
-              { label: "سعر المقاول الحالي",  value: formatPrice(contractor.price),        color: "var(--gold)", sub: contractor.contractor, highlight: true },
-              { label: "السعر الأدنى",         value: formatPrice(minPrice),               color: "#2baa74", sub: "أدنى عطاء" },
+              {
+                label: "سعر المقاول الحالي",
+                value: formatPrice(contractor.price),
+                color: "var(--gold)",
+                sub: contractor.contractor,
+                highlight: true,
+                id: contractor.id,
+              },
+              {
+                label: "السعر الأدنى",
+                value: formatPrice(minPrice),
+                color: "#2baa74",
+                sub: contractorWithMin?.contractor ?? "—",
+                id: contractorWithMin?.id,
+              },
+              {
+                label: "السعر المتوسط",
+                value: formatPrice(Math.round(avgPrice)),
+                color: "#3b8fcc",
+                sub: avgContractor?.contractor ?? "—",
+                id: avgContractor?.id,
+              },
+              {
+                label: "السعر الأعلى",
+                value: formatPrice(maxPrice),
+                color: "#e74c3c",
+                sub: contractorWithMax?.contractor ?? "—",
+                id: contractorWithMax?.id,
+              },
             ].map((stat, i) => (
               <div
                 key={i}
+                onClick={() => stat.id != null && onSelectId(stat.id)}
                 style={{
-                  padding: "18px 14px", textAlign: "center",
+                  padding: "16px 12px", textAlign: "center",
                   borderLeft: "1px solid rgba(255,255,255,0.06)",
                   position: "relative",
                   background: stat.highlight ? "rgba(197,160,89,0.06)" : "transparent",
+                  cursor: stat.id != null ? "pointer" : "default",
+                  transition: "background 0.18s",
                 }}
+                onMouseEnter={(e) => stat.id != null && ((e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)")}
+                onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.background = stat.highlight ? "rgba(197,160,89,0.06)" : "transparent"}
+                title={stat.id != null ? `اضغط لعرض بيانات ${stat.sub}` : undefined}
               >
-                <div style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.38)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "5px" }}>
+                <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "4px" }}>
                   {stat.label}
                 </div>
-                <div style={{ fontSize: "1.05rem", fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: "4px", direction: "ltr" }}>
+                <div style={{ fontSize: "1rem", fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: "4px", direction: "ltr" }}>
                   {stat.value}
                 </div>
-                <div style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.28)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.28)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", padding: "0 4px" }}>
                   {stat.sub}
                 </div>
               </div>

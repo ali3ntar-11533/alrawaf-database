@@ -90,3 +90,10 @@ export const GetContractorResponse = zod.object({
 export const DeleteContractorParams = zod.object({
   id: zod.coerce.number(),
 });
+
+/**
+ * @summary Update a contractor
+ */
+export const UpdateContractorParams = zod.object({
+  id: zod.coerce.number(),
+});

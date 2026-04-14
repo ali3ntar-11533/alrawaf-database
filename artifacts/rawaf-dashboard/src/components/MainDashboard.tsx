@@ -45,6 +45,7 @@ export default function MainDashboard({ filters, selectedId, onSelectId }: Props
         allContractors={allContractors}
         filteredContractors={filtered}
         isLoading={isLoading}
+        onSelectId={onSelectId}
       />
     </div>
   );

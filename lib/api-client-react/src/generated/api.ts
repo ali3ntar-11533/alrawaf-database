@@ -458,3 +458,87 @@ export const useDeleteContractor = <
 > => {
   return useMutation(getDeleteContractorMutationOptions(options));
 };
+
+/**
+ * @summary Update a contractor
+ */
+export const getUpdateContractorUrl = (id: number) => {
+  return `/api/contractors/${id}`;
+};
+
+export const updateContractor = async (
+  id: number,
+  createContractorBody: CreateContractorBody,
+  options?: RequestInit,
+): Promise<Contractor> => {
+  return customFetch<Contractor>(getUpdateContractorUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createContractorBody),
+  });
+};
+
+export const getUpdateContractorMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateContractor>>,
+    TError,
+    { id: number; data: BodyType<CreateContractorBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateContractor>>,
+  TError,
+  { id: number; data: BodyType<CreateContractorBody> },
+  TContext
+> => {
+  const mutationKey = ["updateContractor"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateContractor>>,
+    { id: number; data: BodyType<CreateContractorBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+    return updateContractor(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateContractorMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateContractor>>
+>;
+
+export type UpdateContractorMutationBody = BodyType<CreateContractorBody>;
+export type UpdateContractorMutationError = ErrorType<void>;
+
+export const useUpdateContractor = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateContractor>>,
+    TError,
+    { id: number; data: BodyType<CreateContractorBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateContractor>>,
+  TError,
+  { id: number; data: BodyType<CreateContractorBody> },
+  TContext
+> => {
+  return useMutation(getUpdateContractorMutationOptions(options));
+};

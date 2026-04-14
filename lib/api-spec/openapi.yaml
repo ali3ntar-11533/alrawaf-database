@@ -102,6 +102,33 @@ paths:
         "404":
           description: Not found
 
+    put:
+      operationId: updateContractor
+      tags: [contractors]
+      summary: Update a contractor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContractorBody"
+      responses:
+        "200":
+          description: Updated contractor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contractor"
+        "400":
+          description: Validation error
+        "404":
+          description: Not found
+
     delete:
       operationId: deleteContractor
       tags: [contractors]
