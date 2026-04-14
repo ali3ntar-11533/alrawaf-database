@@ -20,6 +20,8 @@ interface FormData {
   portfolio: string;
   technicalScope: string;
   workType: string;
+  workCategory: string;
+  unit: string;
   price: string;
   phone: string;
   email: string;
@@ -29,7 +31,8 @@ interface FormData {
 
 const EMPTY_FORM: FormData = {
   contractNo: "", contractor: "", project: "", portfolio: "",
-  technicalScope: "", workType: "", price: "", phone: "", email: "",
+  technicalScope: "", workType: "", workCategory: "", unit: "",
+  price: "", phone: "", email: "",
   workDescription: "", workScopeText: "",
 };
 
@@ -40,6 +43,8 @@ const FORM_FIELDS: { key: keyof FormData; label: string; type?: string; wide?: b
   { key: "portfolio",       label: "المحفظة" },
   { key: "technicalScope",  label: "نطاق التوصيف الفني للبند" },
   { key: "workType",        label: "نوع الأعمال" },
+  { key: "workCategory",    label: "تصنيف العمل (اختياري)" },
+  { key: "unit",            label: "الوحدة (اختياري)" },
   { key: "price",           label: "السعر (ريال)", type: "number" },
   { key: "phone",           label: "رقم التواصل" },
   { key: "email",           label: "البريد الإلكتروني" },
@@ -55,6 +60,8 @@ function contractorToForm(c: Contractor): FormData {
     portfolio: c.portfolio,
     technicalScope: c.technicalScope,
     workType: c.workType,
+    workCategory: (c as any).workCategory ?? "",
+    unit: (c as any).unit ?? "",
     price: String(c.price),
     phone: c.phone,
     email: c.email,
@@ -169,6 +176,8 @@ export default function DatabasePage({ onSelectContractor }: Props) {
         price: parseInt(f.price, 10),
         workDescription: f.workDescription.trim() || null,
         workScopeText: f.workScopeText.trim() || null,
+        workCategory: f.workCategory.trim() || null,
+        unit: f.unit.trim() || null,
       },
     });
     queryClient.invalidateQueries({ queryKey: getListContractorsQueryKey() });
@@ -188,6 +197,8 @@ export default function DatabasePage({ onSelectContractor }: Props) {
         price: parseInt(f.price, 10),
         workDescription: f.workDescription.trim() || null,
         workScopeText: f.workScopeText.trim() || null,
+        workCategory: f.workCategory.trim() || null,
+        unit: f.unit.trim() || null,
       },
     });
     queryClient.invalidateQueries({ queryKey: getListContractorsQueryKey() });

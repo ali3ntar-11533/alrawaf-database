@@ -24,6 +24,10 @@ export interface Contractor {
   workDescription?: string | null;
   /** @nullable */
   workScopeText?: string | null;
+  /** @nullable */
+  workCategory?: string | null;
+  /** @nullable */
+  unit?: string | null;
   createdAt: string;
 }
 
@@ -41,6 +45,10 @@ export interface CreateContractorBody {
   workDescription?: string | null;
   /** @nullable */
   workScopeText?: string | null;
+  /** @nullable */
+  workCategory?: string | null;
+  /** @nullable */
+  unit?: string | null;
 }
 
 export type ListContractorsParams = {

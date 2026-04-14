@@ -1,4 +1,4 @@
-import { Building2, Mail, Phone, FileText, Briefcase, MapPin, DollarSign, Clock, Users } from "lucide-react";
+import { Building2, Mail, Phone, FileText, Briefcase, MapPin, DollarSign, Clock } from "lucide-react";
 import type { Contractor } from "@workspace/api-client-react";
 
 interface Props {
@@ -132,7 +132,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
 
       {/* ── 2. نطاق التوصيف الفني للبند ── */}
       <div className="card animate-fade-up" style={{ marginBottom: "16px", animationDelay: "0.05s" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px", paddingBottom: "10px", borderBottom: "2px solid rgba(197,160,89,0.12)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px", paddingBottom: "10px", borderBottom: "2px solid rgba(197,160,89,0.12)" }}>
           <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "linear-gradient(135deg, var(--gold), #a88540)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <FileText size={14} color="#fff" />
           </div>
@@ -142,15 +142,25 @@ export default function MainContent({ contractor, allContractors, filteredContra
           </div>
         </div>
 
-        {/* عنوان البند — driven by workType */}
-        <div style={{ background: "linear-gradient(135deg, rgba(197,160,89,0.07), rgba(197,160,89,0.02))", border: "1px solid rgba(197,160,89,0.18)", borderRadius: "9px", padding: "11px 14px", marginBottom: "10px" }}>
-          <div style={{ fontSize: "0.58rem", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>عنوان البند</div>
-          <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--charcoal)" }}>{contractor.technicalScope}</div>
+        {/* نوع العمل + الوحدة side by side */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
+          <div style={{ background: "linear-gradient(135deg, rgba(197,160,89,0.07), rgba(197,160,89,0.02))", border: "1px solid rgba(197,160,89,0.2)", borderRadius: "9px", padding: "12px 14px" }}>
+            <div style={{ fontSize: "0.55rem", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>نوع العمل</div>
+            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>
+              {(contractor as any).workCategory || contractor.workType}
+            </div>
+          </div>
+          <div style={{ background: "linear-gradient(135deg, rgba(58,54,50,0.04), rgba(58,54,50,0.01))", border: "1px solid rgba(58,54,50,0.1)", borderRadius: "9px", padding: "12px 14px" }}>
+            <div style={{ fontSize: "0.55rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>الوحدة</div>
+            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>
+              {(contractor as any).unit || "—"}
+            </div>
+          </div>
         </div>
 
-        {/* الوصف الفني — from workScopeText column */}
+        {/* الوصف الفني للبند */}
         <div>
-          <div style={{ fontSize: "0.58rem", color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "6px" }}>الوصف الفني للبند</div>
+          <div style={{ fontSize: "0.55rem", color: "#bbb", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "7px", fontWeight: 700 }}>الوصف الفني للبند</div>
           <p style={{ fontSize: "0.78rem", color: "#555", lineHeight: 1.8, margin: 0, background: "#f9f7f3", borderRadius: "9px", padding: "12px 14px", borderRight: "3px solid var(--gold)" }}>
             {(contractor as any).workScopeText || (contractor as any).workDescription ||
               "يشتمل هذا البند على تنفيذ الأعمال الفنية وفقاً للمواصفات والمخططات المعتمدة ومتطلبات الجهة المالكة."}
@@ -158,13 +168,13 @@ export default function MainContent({ contractor, allContractors, filteredContra
         </div>
       </div>
 
-      {/* ── 3. سجل الأعمال المنفذة — same project ── */}
+      {/* ── 3. سجل الأعمال المنفذة سابقاً — same project ── */}
       {workHistory.length > 0 && (
         <div className="card animate-fade-up" style={{ marginBottom: "16px", animationDelay: "0.1s" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
               <Clock size={14} style={{ color: "var(--gold)" }} />
-              <h3 style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--charcoal)" }}>سجل الأعمال المنفذة</h3>
+              <h3 style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--charcoal)" }}>سجل الأعمال المنفذة سابقاً</h3>
             </div>
             <span style={{ fontSize: "0.6rem", color: "#bbb", background: "#f5f0e8", borderRadius: "4px", padding: "2px 7px" }}>
               مشاريع مشتركة: {contractor.project}
@@ -262,23 +272,11 @@ export default function MainContent({ contractor, allContractors, filteredContra
             background: "linear-gradient(135deg, var(--charcoal) 0%, #2d2420 100%)",
             overflow: "hidden",
             boxShadow: "0 8px 32px rgba(30,25,20,0.18)",
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
           }}
         >
-          {/* count cell */}
-          <div style={{ padding: "16px 18px", borderLeft: "1px solid rgba(255,255,255,0.07)", display: "flex", flexDirection: "column", justifyContent: "center", minWidth: "100px", flexShrink: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "4px" }}>
-              <Users size={11} style={{ color: "rgba(197,160,89,0.7)" }} />
-              <span style={{ fontSize: "0.55rem", color: "rgba(197,160,89,0.7)", textTransform: "uppercase", letterSpacing: "0.08em" }}>الجهات</span>
-            </div>
-            <div style={{ fontSize: "1.7rem", fontWeight: 900, color: "#fff", lineHeight: 1 }}>
-              {allContractors.length}
-            </div>
-            <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.3)", marginTop: "2px" }}>مسجّلة</div>
-          </div>
-
           {/* 4 clickable price stats: current → min → avg → max */}
-          <div style={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
             {[
               {
                 label: "سعر المقاول الحالي",
@@ -336,7 +334,6 @@ export default function MainContent({ contractor, allContractors, filteredContra
                 </div>
               </div>
             ))}
-          </div>
         </div>
       )}
     </main>

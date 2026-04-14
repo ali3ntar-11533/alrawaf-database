@@ -15,6 +15,8 @@ export const contractorsTable = pgTable("contractors", {
   email: text("email").notNull(),
   workDescription: text("work_description"),
   workScopeText: text("work_scope_text"),
+  workCategory: text("work_category"),
+  unit: text("unit"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

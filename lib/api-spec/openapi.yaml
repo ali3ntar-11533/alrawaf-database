@@ -181,6 +181,10 @@ components:
           type: ["string", "null"]
         workScopeText:
           type: ["string", "null"]
+        workCategory:
+          type: ["string", "null"]
+        unit:
+          type: ["string", "null"]
         createdAt:
           type: string
       required:
@@ -220,6 +224,10 @@ components:
         workDescription:
           type: ["string", "null"]
         workScopeText:
+          type: ["string", "null"]
+        workCategory:
+          type: ["string", "null"]
+        unit:
           type: ["string", "null"]
       required:
         - contractNo

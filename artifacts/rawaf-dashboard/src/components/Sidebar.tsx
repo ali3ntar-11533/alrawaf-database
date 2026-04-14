@@ -6,7 +6,8 @@ interface Props {
   selectedId: number | null;
   onSelect: (id: number) => void;
   isLoading: boolean;
-  technicalScopeFilter: string;
+  hasFilter: boolean;
+  workTypeFilter: string;
 }
 
 const WORK_TYPE_COLOR: Record<string, string> = {
@@ -31,75 +32,61 @@ export default function Sidebar({
   selectedId,
   onSelect,
   isLoading,
-  technicalScopeFilter,
+  hasFilter,
+  workTypeFilter,
 }: Props) {
   if (isLoading) {
     return (
       <aside className="sidebar animate-fade">
         {[1, 2, 3, 4].map((n) => (
-          <div
-            key={n}
-            style={{ background: "#f5f0e8", borderRadius: "10px", height: "66px", marginBottom: "8px" }}
-          />
+          <div key={n} style={{ background: "#f5f0e8", borderRadius: "10px", height: "66px", marginBottom: "8px" }} />
         ))}
       </aside>
     );
   }
-
-  const displayed = filtered.length > 0 ? filtered : allContractors;
-  const scopeLabel = technicalScopeFilter.trim();
 
   return (
     <aside
       className="sidebar animate-slide-in"
       style={{ display: "flex", flexDirection: "column", padding: 0, overflow: "hidden" }}
     >
-      {/* ── Separator + Section Header ── */}
-      <div
-        style={{
-          padding: "16px 16px 0",
-          borderBottom: "2px solid rgba(197,160,89,0.25)",
-          paddingBottom: "12px",
-          flexShrink: 0,
-        }}
-      >
+      {/* Section Header */}
+      <div style={{ padding: "16px 16px 12px", borderBottom: "2px solid rgba(197,160,89,0.25)", flexShrink: 0 }}>
         <div style={{ fontSize: "0.62rem", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 700, marginBottom: "3px" }}>
           المتخصصون بالأعمال المطلوبة
         </div>
-        {scopeLabel ? (
-          <div
-            style={{
-              fontSize: "0.7rem", color: "var(--charcoal)", fontWeight: 600,
-              background: "rgba(197,160,89,0.1)", borderRadius: "6px", padding: "4px 8px",
-              border: "1px solid rgba(197,160,89,0.25)", display: "inline-block", marginTop: "2px",
-            }}
-          >
-            {scopeLabel}
+        {workTypeFilter ? (
+          <div style={{ fontSize: "0.7rem", color: "var(--charcoal)", fontWeight: 600, background: "rgba(197,160,89,0.1)", borderRadius: "6px", padding: "4px 8px", border: "1px solid rgba(197,160,89,0.25)", display: "inline-block", marginTop: "2px" }}>
+            {workTypeFilter}
+          </div>
+        ) : hasFilter ? (
+          <div style={{ fontSize: "0.68rem", color: "#bbb" }}>
+            {filtered.length} جهة مطابقة
           </div>
         ) : (
-          <div style={{ fontSize: "0.68rem", color: "#bbb" }}>
-            {displayed.length} جهة مسجّلة
+          <div style={{ fontSize: "0.68rem", color: "#aaa" }}>
+            الرجاء اختيار نوع العمل
           </div>
         )}
       </div>
 
-      {/* ── Scrollable list ── */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: "10px 12px",
-          scrollbarWidth: "thin",
-          scrollbarColor: "rgba(197,160,89,0.3) transparent",
-        }}
-      >
-        {displayed.length === 0 ? (
+      {/* Scrollable list */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "10px 12px", scrollbarWidth: "thin", scrollbarColor: "rgba(197,160,89,0.3) transparent" }}>
+        {!hasFilter ? (
+          /* Empty state — no filter applied yet */
+          <div style={{ textAlign: "center", padding: "32px 16px" }}>
+            <div style={{ fontSize: "2.5rem", marginBottom: "12px", opacity: 0.35 }}>🔍</div>
+            <p style={{ fontSize: "0.75rem", color: "#ccc", lineHeight: 1.7, margin: 0 }}>
+              استخدم فلتر "نوع الأعمال" أو أي بحث آخر لعرض المتخصصين المرتبطين بالعمل المطلوب
+            </p>
+          </div>
+        ) : filtered.length === 0 ? (
           <div style={{ textAlign: "center", color: "#ccc", padding: "28px 0", fontSize: "0.8rem" }}>
             لا توجد نتائج مطابقة
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
-            {displayed.map((c, i) => {
+            {filtered.map((c, i) => {
               const isSelected = c.id === selectedId;
               const color = WORK_TYPE_COLOR[c.workType] ?? "#c5a059";
               const icon = TYPE_ICON[c.workType] ?? "🏢";
@@ -110,14 +97,9 @@ export default function Sidebar({
                   style={{
                     display: "flex", alignItems: "center", gap: "10px",
                     padding: "9px 12px", borderRadius: "10px",
-                    background: isSelected
-                      ? `linear-gradient(135deg, ${color}18, ${color}08)`
-                      : i % 2 === 0 ? "#fff" : "#faf8f4",
-                    border: isSelected
-                      ? `1.5px solid ${color}40`
-                      : "1px solid #f0ebe0",
-                    cursor: "pointer",
-                    transition: "all 0.18s ease",
+                    background: isSelected ? `linear-gradient(135deg, ${color}18, ${color}08)` : i % 2 === 0 ? "#fff" : "#faf8f4",
+                    border: isSelected ? `1.5px solid ${color}40` : "1px solid #f0ebe0",
+                    cursor: "pointer", transition: "all 0.18s ease",
                     boxShadow: isSelected ? `0 2px 12px ${color}20` : "none",
                   }}
                   onMouseEnter={(e) => {
@@ -133,46 +115,20 @@ export default function Sidebar({
                     }
                   }}
                 >
-                  {/* rank bubble */}
-                  <div
-                    style={{
-                      width: "30px", height: "30px", borderRadius: "8px",
-                      background: isSelected ? color : `${color}18`,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: "0.75rem", fontWeight: 800,
-                      color: isSelected ? "#fff" : color,
-                      flexShrink: 0, transition: "all 0.18s",
-                    }}
-                  >
+                  <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: isSelected ? color : `${color}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem", fontWeight: 800, color: isSelected ? "#fff" : color, flexShrink: 0, transition: "all 0.18s" }}>
                     {i + 1}
                   </div>
-
-                  {/* info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontWeight: 700, fontSize: "0.76rem", color: "var(--charcoal)",
-                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                        marginBottom: "3px",
-                      }}
-                    >
+                    <div style={{ fontWeight: 700, fontSize: "0.76rem", color: "var(--charcoal)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: "3px" }}>
                       {c.contractor}
                     </div>
                     <div style={{ display: "flex", gap: "5px", alignItems: "center", flexWrap: "wrap" }}>
-                      <span
-                        style={{
-                          fontSize: "0.6rem", color: "#888",
-                          background: "#f0ebe0", borderRadius: "4px",
-                          padding: "1px 5px", whiteSpace: "nowrap",
-                        }}
-                      >
+                      <span style={{ fontSize: "0.6rem", color: "#888", background: "#f0ebe0", borderRadius: "4px", padding: "1px 5px", whiteSpace: "nowrap" }}>
                         {icon} {c.workType}
                       </span>
                       <span style={{ fontSize: "0.6rem", color: "#bbb" }}>{c.portfolio}</span>
                     </div>
                   </div>
-
-                  {/* price */}
                   <div style={{ textAlign: "left", flexShrink: 0 }}>
                     <div style={{ fontSize: "0.7rem", fontWeight: 800, color, direction: "ltr" }}>
                       {(c.price / 1_000_000).toFixed(1)}M
@@ -185,23 +141,15 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* ── Fixed bottom pin: total count ── */}
-      <div
-        style={{
-          padding: "10px 14px",
-          borderTop: "1px solid rgba(197,160,89,0.15)",
-          background: "#faf8f4",
-          flexShrink: 0,
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-        }}
-      >
-        <span style={{ fontSize: "0.62rem", color: "#aaa" }}>
-          {scopeLabel ? `${displayed.length} متطابق` : `${allContractors.length} جهة`}
-        </span>
-        <span style={{ fontSize: "0.62rem", color: "var(--gold)", fontWeight: 700 }}>
-          {(displayed.reduce((s, c) => s + c.price, 0) / 1_000_000).toFixed(1)}M
-        </span>
-      </div>
+      {/* Bottom summary — only when there are results */}
+      {hasFilter && filtered.length > 0 && (
+        <div style={{ padding: "10px 14px", borderTop: "1px solid rgba(197,160,89,0.15)", background: "#faf8f4", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: "0.62rem", color: "#aaa" }}>{filtered.length} متخصص</span>
+          <span style={{ fontSize: "0.62rem", color: "var(--gold)", fontWeight: 700 }}>
+            {(filtered.reduce((s, c) => s + c.price, 0) / 1_000_000).toFixed(1)}M
+          </span>
+        </div>
+      )}
     </aside>
   );
 }
