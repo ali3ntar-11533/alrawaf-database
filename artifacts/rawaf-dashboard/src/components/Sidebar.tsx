@@ -1,152 +1,109 @@
-const contractors = [
-  { rank: 1, name: "شركة الرواف", fullName: "شركة الرواف للمقاولات", price: "4.5M", active: true, compliance: "99%", color: "var(--accent-green)" },
-  { rank: 2, name: "مؤسسة نجد",  fullName: "مؤسسة نجد الحديثة",    price: "6.2M", active: false, compliance: "94%", color: "var(--text-secondary)" },
-  { rank: 3, name: "المسار السريع", fullName: "شركة المسار السريع", price: "5.8M", active: false, compliance: "91%", color: "var(--text-secondary)" },
-];
+import type { Contractor } from "@workspace/api-client-react";
 
-const registeredContractors = [
-  { rank: 1, name: "شركة الرواف للمقاولات", price: "4.5M", active: true },
-  { rank: 2, name: "مؤسسة نجد الحديثة",    price: "6.2M", active: false },
-  { rank: 3, name: "شركة المسار السريع",   price: "5.8M", active: false },
-];
+interface Props {
+  contractors: Contractor[];
+  selectedId: number | null;
+  onSelect: (id: number) => void;
+  isLoading: boolean;
+}
 
-export default function Sidebar() {
+const WORK_TYPE_COLOR: Record<string, string> = {
+  "إنشائي": "#c5a059",
+  "تشطيبات": "#3b8fcc",
+  "كهربائي": "#e8851c",
+  "ميكانيكي": "#2baa74",
+  "صيانة": "#9b59b6",
+};
+
+export default function Sidebar({ contractors, selectedId, onSelect, isLoading }: Props) {
+  const top = [...contractors].sort((a, b) => b.price - a.price).slice(0, 6);
+
+  if (isLoading) {
+    return (
+      <aside className="sidebar animate-fade">
+        {[1, 2, 3].map((n) => (
+          <div key={n} style={{ background: "#f5f0e8", borderRadius: "10px", height: "70px", marginBottom: "10px" }} />
+        ))}
+      </aside>
+    );
+  }
+
   return (
-    <aside className="sidebar-stack animate-slide-in">
+    <aside className="sidebar animate-slide-in">
+      <h3
+        style={{
+          fontSize: "0.75rem", fontWeight: 700, color: "var(--gold)",
+          textTransform: "uppercase", letterSpacing: "0.12em",
+          borderBottom: "1px solid rgba(197,160,89,0.2)",
+          paddingBottom: "8px", marginBottom: "12px",
+        }}
+      >
+        أعلى المقاولين
+      </h3>
 
-      {/* Technical Scope */}
-      <div className="glass-card animate-fade-up" style={{ minHeight: "260px" }}>
-        <span className="label-gold">نطاق التوصيف الفني للبند</span>
-        <h3
-          style={{
-            fontWeight: 700,
-            fontSize: "0.95rem",
-            color: "var(--charcoal)",
-            marginBottom: "12px",
-            lineHeight: 1.5,
-          }}
-        >
-          بند أعمال الخرسانة والتشييد المسلح
-        </h3>
-        <div
-          className="custom-scroll"
-          style={{
-            fontSize: "0.78rem",
-            color: "var(--text-secondary)",
-            lineHeight: 1.9,
-            overflowY: "auto",
-            paddingLeft: "4px",
-            flex: 1,
-          }}
-        >
-          <p style={{ marginBottom: "10px" }}>
-            يشتمل هذا البند على تنفيذ وصب القواعد الخرسانية المسلحة والمياد والرقاب للمشروع وفقاً للمخططات المعتمدة وكود البناء السعودي.
-          </p>
-          <p style={{ marginBottom: "10px" }}>
-            يتضمن النطاق توريد كافة المواد والعمالة المتخصصة والمعدات مع الالتزام التام باختبارات المختبر المعتمد.
-          </p>
-          <p style={{ fontStyle: "italic", color: "var(--gold-dark)", opacity: 0.7, fontSize: "0.72rem" }}>
-            "سيتم إضافة المزيد من الشروط الفنية والملاحظات التفصيلية هنا..."
-          </p>
-        </div>
-      </div>
-
-      {/* Registered Contractors */}
-      <div className="glass-card animate-fade-up stagger">
-        <span className="label-gold">المقاولون المسجلون لهذا البند</span>
-        <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>
-          {registeredContractors.map((c) => (
-            <div key={c.rank} className={`contractor-row ${c.active ? "active" : ""}`}>
-              <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
-                <span
-                  style={{
-                    width: "22px",
-                    height: "22px",
-                    borderRadius: "50%",
-                    background: c.active ? "var(--gold)" : "var(--card-border)",
-                    color: c.active ? "#fff" : "var(--text-secondary)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "0.65rem",
-                    fontWeight: 800,
-                    flexShrink: 0,
-                  }}
-                >
-                  {c.rank}
-                </span>
-                <span
-                  style={{
-                    fontSize: "0.75rem",
-                    fontWeight: c.active ? 700 : 500,
-                    color: c.active ? "var(--charcoal)" : "var(--text-secondary)",
-                  }}
-                >
-                  {c.name}
-                </span>
-              </div>
-              <span
-                style={{
-                  fontSize: "0.7rem",
-                  fontWeight: 700,
-                  color: "var(--gold-dark)",
-                  background: "rgba(197,160,89,0.1)",
-                  padding: "2px 8px",
-                  borderRadius: "5px",
-                }}
-              >
-                {c.price}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Best Contractors Ranking */}
-      <div className="glass-card animate-fade-up" style={{ flex: 1 }}>
-        <span className="label-gold">أفضل المقاولين</span>
-        <div>
-          {contractors.map((c) => (
-            <div key={c.rank} className={`rank-item ${c.active ? "active" : ""}`}>
-              <div className="rank-number">{c.rank}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p
-                  style={{
-                    fontSize: "0.78rem",
-                    fontWeight: 700,
-                    margin: "0 0 2px",
-                    color: c.active ? "var(--charcoal)" : "var(--text-secondary)",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {c.name}
-                </p>
-                <p
-                  style={{
-                    fontSize: "0.65rem",
-                    margin: 0,
-                    color: c.active ? "var(--gold-dark)" : "var(--text-muted)",
-                  }}
-                >
-                  نسبة الالتزام الفني: {c.compliance}
-                </p>
-              </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        {top.map((c, i) => {
+          const isSelected = c.id === selectedId;
+          const color = WORK_TYPE_COLOR[c.workType] ?? "#c5a059";
+          return (
+            <div
+              key={c.id}
+              className={`rank-item${isSelected ? " active" : ""}`}
+              onClick={() => onSelect(c.id)}
+              style={{ cursor: "pointer", borderRight: `3px solid ${isSelected ? color : "transparent"}`, transition: "all 0.2s ease" }}
+            >
               <div
                 style={{
-                  fontSize: "0.82rem",
-                  fontWeight: 800,
-                  color: c.active ? "var(--accent-green)" : "var(--charcoal-mid)",
-                  flexShrink: 0,
+                  width: "28px", height: "28px", borderRadius: "50%",
+                  background: isSelected ? color : "#f2ede6",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontWeight: 800, fontSize: "0.72rem",
+                  color: isSelected ? "#fff" : color,
+                  flexShrink: 0, transition: "all 0.2s",
                 }}
               >
-                {c.price}
+                {i + 1}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: "0.78rem", color: "var(--charcoal)", marginBottom: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {c.contractor}
+                </div>
+                <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                  <span style={{ fontSize: "0.65rem", color: "#888", background: "#f5f0e8", borderRadius: "4px", padding: "1px 5px" }}>
+                    {c.workType}
+                  </span>
+                  <span style={{ fontSize: "0.65rem", color, fontWeight: 700 }}>
+                    {(c.price / 1_000_000).toFixed(1)}M
+                  </span>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
+
+      {contractors.length === 0 && (
+        <div style={{ textAlign: "center", color: "#aaa", padding: "24px 0", fontSize: "0.82rem" }}>
+          لا توجد بيانات بعد
+        </div>
+      )}
+
+      {contractors.length > 0 && (
+        <div style={{ marginTop: "20px", borderRadius: "10px", background: "linear-gradient(135deg, var(--charcoal) 0%, #2d2420 100%)", padding: "14px", color: "#fff" }}>
+          <div style={{ fontSize: "0.65rem", color: "rgba(197,160,89,0.8)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" }}>
+            إجمالي المقاولين
+          </div>
+          <div style={{ fontSize: "1.8rem", fontWeight: 900, color: "#fff", lineHeight: 1 }}>
+            {contractors.length}
+          </div>
+          <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.5)", marginTop: "4px" }}>
+            إجمالي العقود:{" "}
+            <span style={{ color: "var(--gold)", fontWeight: 700 }}>
+              {(contractors.reduce((s, c) => s + c.price, 0) / 1_000_000).toFixed(1)}M
+            </span>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

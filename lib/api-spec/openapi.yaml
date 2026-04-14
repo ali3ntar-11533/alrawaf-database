@@ -3,13 +3,16 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API specification for Rawaf Contractors Database
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: contractors
+    description: Contractor and supplier records
+
 paths:
   /healthz:
     get:
@@ -24,6 +27,96 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /contractors:
+    get:
+      operationId: listContractors
+      tags: [contractors]
+      summary: List all contractors
+      parameters:
+        - name: contractNo
+          in: query
+          schema: { type: string }
+        - name: contractor
+          in: query
+          schema: { type: string }
+        - name: technicalScope
+          in: query
+          schema: { type: string }
+        - name: workType
+          in: query
+          schema: { type: string }
+        - name: project
+          in: query
+          schema: { type: string }
+        - name: portfolio
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of contractors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contractor"
+
+    post:
+      operationId: createContractor
+      tags: [contractors]
+      summary: Create a new contractor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContractorBody"
+      responses:
+        "201":
+          description: Created contractor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contractor"
+        "400":
+          description: Validation error
+
+  /contractors/{id}:
+    get:
+      operationId: getContractor
+      tags: [contractors]
+      summary: Get a contractor by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Contractor details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contractor"
+        "404":
+          description: Not found
+
+    delete:
+      operationId: deleteContractor
+      tags: [contractors]
+      summary: Delete a contractor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted successfully
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +127,72 @@ components:
       required:
         - status
 
+    Contractor:
+      type: object
+      properties:
+        id:
+          type: integer
+        contractNo:
+          type: string
+        contractor:
+          type: string
+        project:
+          type: string
+        portfolio:
+          type: string
+        technicalScope:
+          type: string
+        workType:
+          type: string
+        price:
+          type: integer
+        phone:
+          type: string
+        email:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - contractNo
+        - contractor
+        - project
+        - portfolio
+        - technicalScope
+        - workType
+        - price
+        - phone
+        - email
+        - createdAt
+
+    CreateContractorBody:
+      type: object
+      properties:
+        contractNo:
+          type: string
+        contractor:
+          type: string
+        project:
+          type: string
+        portfolio:
+          type: string
+        technicalScope:
+          type: string
+        workType:
+          type: string
+        price:
+          type: integer
+        phone:
+          type: string
+        email:
+          type: string
+      required:
+        - contractNo
+        - contractor
+        - project
+        - portfolio
+        - technicalScope
+        - workType
+        - price
+        - phone
+        - email
