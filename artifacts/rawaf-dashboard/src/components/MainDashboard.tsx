@@ -15,12 +15,12 @@ export default function MainDashboard({ filters, selectedId, onSelectId }: Props
 
   // Apply client-side filtering from header search inputs
   const filtered = allContractors.filter((c: Contractor) => {
-    if (filters.contractNo && !c.contractNo.toLowerCase().includes(filters.contractNo.toLowerCase())) return false;
-    if (filters.contractor && !c.contractor.toLowerCase().includes(filters.contractor.toLowerCase())) return false;
+    if (filters.contractNo    && !c.contractNo.toLowerCase().includes(filters.contractNo.toLowerCase()))       return false;
+    if (filters.contractor    && !c.contractor.toLowerCase().includes(filters.contractor.toLowerCase()))       return false;
     if (filters.technicalScope && !c.technicalScope.toLowerCase().includes(filters.technicalScope.toLowerCase())) return false;
-    if (filters.workType && !c.workType.toLowerCase().includes(filters.workType.toLowerCase())) return false;
-    if (filters.project && !c.project.toLowerCase().includes(filters.project.toLowerCase())) return false;
-    if (filters.portfolio && !c.portfolio.toLowerCase().includes(filters.portfolio.toLowerCase())) return false;
+    if (filters.workType      && !c.workType.toLowerCase().includes(filters.workType.toLowerCase()))           return false;
+    if (filters.project       && !c.project.toLowerCase().includes(filters.project.toLowerCase()))             return false;
+    if (filters.portfolio     && !c.portfolio.toLowerCase().includes(filters.portfolio.toLowerCase()))         return false;
     return true;
   });
 
@@ -33,14 +33,17 @@ export default function MainDashboard({ filters, selectedId, onSelectId }: Props
   return (
     <div className="main-grid">
       <Sidebar
-        contractors={allContractors}
+        filtered={filtered}
+        allContractors={allContractors}
         selectedId={selected?.id ?? null}
         onSelect={onSelectId}
         isLoading={isLoading}
+        technicalScopeFilter={filters.technicalScope}
       />
       <MainContent
         contractor={selected}
-        allContractors={filtered}
+        allContractors={allContractors}
+        filteredContractors={filtered}
         isLoading={isLoading}
       />
     </div>

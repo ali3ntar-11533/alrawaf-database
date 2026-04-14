@@ -1,109 +1,207 @@
 import type { Contractor } from "@workspace/api-client-react";
 
 interface Props {
-  contractors: Contractor[];
+  filtered: Contractor[];
+  allContractors: Contractor[];
   selectedId: number | null;
   onSelect: (id: number) => void;
   isLoading: boolean;
+  technicalScopeFilter: string;
 }
 
 const WORK_TYPE_COLOR: Record<string, string> = {
-  "إنشائي": "#c5a059",
-  "تشطيبات": "#3b8fcc",
-  "كهربائي": "#e8851c",
+  "إنشائي":   "#c5a059",
+  "تشطيبات":  "#3b8fcc",
+  "كهربائي":  "#e8851c",
   "ميكانيكي": "#2baa74",
-  "صيانة": "#9b59b6",
+  "صيانة":    "#9b59b6",
 };
 
-export default function Sidebar({ contractors, selectedId, onSelect, isLoading }: Props) {
-  const top = [...contractors].sort((a, b) => b.price - a.price).slice(0, 6);
+const TYPE_ICON: Record<string, string> = {
+  "إنشائي":   "🏗",
+  "تشطيبات":  "🎨",
+  "كهربائي":  "⚡",
+  "ميكانيكي": "⚙️",
+  "صيانة":    "🔧",
+};
 
+export default function Sidebar({
+  filtered,
+  allContractors,
+  selectedId,
+  onSelect,
+  isLoading,
+  technicalScopeFilter,
+}: Props) {
   if (isLoading) {
     return (
       <aside className="sidebar animate-fade">
-        {[1, 2, 3].map((n) => (
-          <div key={n} style={{ background: "#f5f0e8", borderRadius: "10px", height: "70px", marginBottom: "10px" }} />
+        {[1, 2, 3, 4].map((n) => (
+          <div
+            key={n}
+            style={{ background: "#f5f0e8", borderRadius: "10px", height: "66px", marginBottom: "8px" }}
+          />
         ))}
       </aside>
     );
   }
 
+  const displayed = filtered.length > 0 ? filtered : allContractors;
+  const scopeLabel = technicalScopeFilter.trim();
+
   return (
-    <aside className="sidebar animate-slide-in">
-      <h3
+    <aside
+      className="sidebar animate-slide-in"
+      style={{ display: "flex", flexDirection: "column", padding: 0, overflow: "hidden" }}
+    >
+      {/* ── Separator + Section Header ── */}
+      <div
         style={{
-          fontSize: "0.75rem", fontWeight: 700, color: "var(--gold)",
-          textTransform: "uppercase", letterSpacing: "0.12em",
-          borderBottom: "1px solid rgba(197,160,89,0.2)",
-          paddingBottom: "8px", marginBottom: "12px",
+          padding: "16px 16px 0",
+          borderBottom: "2px solid rgba(197,160,89,0.25)",
+          paddingBottom: "12px",
+          flexShrink: 0,
         }}
       >
-        أعلى المقاولين
-      </h3>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        {top.map((c, i) => {
-          const isSelected = c.id === selectedId;
-          const color = WORK_TYPE_COLOR[c.workType] ?? "#c5a059";
-          return (
-            <div
-              key={c.id}
-              className={`rank-item${isSelected ? " active" : ""}`}
-              onClick={() => onSelect(c.id)}
-              style={{ cursor: "pointer", borderRight: `3px solid ${isSelected ? color : "transparent"}`, transition: "all 0.2s ease" }}
-            >
-              <div
-                style={{
-                  width: "28px", height: "28px", borderRadius: "50%",
-                  background: isSelected ? color : "#f2ede6",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontWeight: 800, fontSize: "0.72rem",
-                  color: isSelected ? "#fff" : color,
-                  flexShrink: 0, transition: "all 0.2s",
-                }}
-              >
-                {i + 1}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: "0.78rem", color: "var(--charcoal)", marginBottom: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {c.contractor}
-                </div>
-                <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                  <span style={{ fontSize: "0.65rem", color: "#888", background: "#f5f0e8", borderRadius: "4px", padding: "1px 5px" }}>
-                    {c.workType}
-                  </span>
-                  <span style={{ fontSize: "0.65rem", color, fontWeight: 700 }}>
-                    {(c.price / 1_000_000).toFixed(1)}M
-                  </span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        <div style={{ fontSize: "0.62rem", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 700, marginBottom: "3px" }}>
+          المتخصصون بالأعمال المطلوبة
+        </div>
+        {scopeLabel ? (
+          <div
+            style={{
+              fontSize: "0.7rem", color: "var(--charcoal)", fontWeight: 600,
+              background: "rgba(197,160,89,0.1)", borderRadius: "6px", padding: "4px 8px",
+              border: "1px solid rgba(197,160,89,0.25)", display: "inline-block", marginTop: "2px",
+            }}
+          >
+            {scopeLabel}
+          </div>
+        ) : (
+          <div style={{ fontSize: "0.68rem", color: "#bbb" }}>
+            {displayed.length} جهة مسجّلة
+          </div>
+        )}
       </div>
 
-      {contractors.length === 0 && (
-        <div style={{ textAlign: "center", color: "#aaa", padding: "24px 0", fontSize: "0.82rem" }}>
-          لا توجد بيانات بعد
-        </div>
-      )}
+      {/* ── Scrollable list ── */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "10px 12px",
+          scrollbarWidth: "thin",
+          scrollbarColor: "rgba(197,160,89,0.3) transparent",
+        }}
+      >
+        {displayed.length === 0 ? (
+          <div style={{ textAlign: "center", color: "#ccc", padding: "28px 0", fontSize: "0.8rem" }}>
+            لا توجد نتائج مطابقة
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
+            {displayed.map((c, i) => {
+              const isSelected = c.id === selectedId;
+              const color = WORK_TYPE_COLOR[c.workType] ?? "#c5a059";
+              const icon = TYPE_ICON[c.workType] ?? "🏢";
+              return (
+                <div
+                  key={c.id}
+                  onClick={() => onSelect(c.id)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "10px",
+                    padding: "9px 12px", borderRadius: "10px",
+                    background: isSelected
+                      ? `linear-gradient(135deg, ${color}18, ${color}08)`
+                      : i % 2 === 0 ? "#fff" : "#faf8f4",
+                    border: isSelected
+                      ? `1.5px solid ${color}40`
+                      : "1px solid #f0ebe0",
+                    cursor: "pointer",
+                    transition: "all 0.18s ease",
+                    boxShadow: isSelected ? `0 2px 12px ${color}20` : "none",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) {
+                      (e.currentTarget as HTMLDivElement).style.background = `${color}0a`;
+                      (e.currentTarget as HTMLDivElement).style.transform = "translateX(-2px)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) {
+                      (e.currentTarget as HTMLDivElement).style.background = i % 2 === 0 ? "#fff" : "#faf8f4";
+                      (e.currentTarget as HTMLDivElement).style.transform = "";
+                    }
+                  }}
+                >
+                  {/* rank bubble */}
+                  <div
+                    style={{
+                      width: "30px", height: "30px", borderRadius: "8px",
+                      background: isSelected ? color : `${color}18`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: "0.75rem", fontWeight: 800,
+                      color: isSelected ? "#fff" : color,
+                      flexShrink: 0, transition: "all 0.18s",
+                    }}
+                  >
+                    {i + 1}
+                  </div>
 
-      {contractors.length > 0 && (
-        <div style={{ marginTop: "20px", borderRadius: "10px", background: "linear-gradient(135deg, var(--charcoal) 0%, #2d2420 100%)", padding: "14px", color: "#fff" }}>
-          <div style={{ fontSize: "0.65rem", color: "rgba(197,160,89,0.8)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" }}>
-            إجمالي المقاولين
+                  {/* info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontWeight: 700, fontSize: "0.76rem", color: "var(--charcoal)",
+                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                        marginBottom: "3px",
+                      }}
+                    >
+                      {c.contractor}
+                    </div>
+                    <div style={{ display: "flex", gap: "5px", alignItems: "center", flexWrap: "wrap" }}>
+                      <span
+                        style={{
+                          fontSize: "0.6rem", color: "#888",
+                          background: "#f0ebe0", borderRadius: "4px",
+                          padding: "1px 5px", whiteSpace: "nowrap",
+                        }}
+                      >
+                        {icon} {c.workType}
+                      </span>
+                      <span style={{ fontSize: "0.6rem", color: "#bbb" }}>{c.portfolio}</span>
+                    </div>
+                  </div>
+
+                  {/* price */}
+                  <div style={{ textAlign: "left", flexShrink: 0 }}>
+                    <div style={{ fontSize: "0.7rem", fontWeight: 800, color, direction: "ltr" }}>
+                      {(c.price / 1_000_000).toFixed(1)}M
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <div style={{ fontSize: "1.8rem", fontWeight: 900, color: "#fff", lineHeight: 1 }}>
-            {contractors.length}
-          </div>
-          <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.5)", marginTop: "4px" }}>
-            إجمالي العقود:{" "}
-            <span style={{ color: "var(--gold)", fontWeight: 700 }}>
-              {(contractors.reduce((s, c) => s + c.price, 0) / 1_000_000).toFixed(1)}M
-            </span>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
+
+      {/* ── Fixed bottom pin: total count ── */}
+      <div
+        style={{
+          padding: "10px 14px",
+          borderTop: "1px solid rgba(197,160,89,0.15)",
+          background: "#faf8f4",
+          flexShrink: 0,
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+        }}
+      >
+        <span style={{ fontSize: "0.62rem", color: "#aaa" }}>
+          {scopeLabel ? `${displayed.length} متطابق` : `${allContractors.length} جهة`}
+        </span>
+        <span style={{ fontSize: "0.62rem", color: "var(--gold)", fontWeight: 700 }}>
+          {(displayed.reduce((s, c) => s + c.price, 0) / 1_000_000).toFixed(1)}M
+        </span>
+      </div>
     </aside>
   );
 }
