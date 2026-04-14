@@ -20,6 +20,10 @@ export interface Contractor {
   price: number;
   phone: string;
   email: string;
+  /** @nullable */
+  workDescription?: string | null;
+  /** @nullable */
+  workScopeText?: string | null;
   createdAt: string;
 }
 
@@ -33,6 +37,10 @@ export interface CreateContractorBody {
   price: number;
   phone: string;
   email: string;
+  /** @nullable */
+  workDescription?: string | null;
+  /** @nullable */
+  workScopeText?: string | null;
 }
 
 export type ListContractorsParams = {

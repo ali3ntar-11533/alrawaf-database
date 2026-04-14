@@ -13,6 +13,8 @@ export const contractorsTable = pgTable("contractors", {
   price: integer("price").notNull(),
   phone: text("phone").notNull(),
   email: text("email").notNull(),
+  workDescription: text("work_description"),
+  workScopeText: text("work_scope_text"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

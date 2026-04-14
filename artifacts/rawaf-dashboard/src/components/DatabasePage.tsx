@@ -22,23 +22,28 @@ interface AddForm {
   price: string;
   phone: string;
   email: string;
+  workDescription: string;
+  workScopeText: string;
 }
 
 const EMPTY_FORM: AddForm = {
   contractNo: "", contractor: "", project: "", portfolio: "",
   technicalScope: "", workType: "", price: "", phone: "", email: "",
+  workDescription: "", workScopeText: "",
 };
 
-const FORM_FIELDS: { key: keyof AddForm; label: string; type?: string }[] = [
-  { key: "contractNo",    label: "رقم العقد" },
-  { key: "contractor",    label: "اسم المقاول" },
-  { key: "project",       label: "المشروع" },
-  { key: "portfolio",     label: "المحفظة" },
+const FORM_FIELDS: { key: keyof AddForm; label: string; type?: string; wide?: boolean }[] = [
+  { key: "contractNo",     label: "رقم العقد" },
+  { key: "contractor",     label: "اسم المقاول" },
+  { key: "project",        label: "المشروع" },
+  { key: "portfolio",      label: "المحفظة" },
   { key: "technicalScope", label: "نطاق التوصيف الفني للبند" },
-  { key: "workType",      label: "نوع الأعمال" },
-  { key: "price",         label: "السعر (ريال)", type: "number" },
-  { key: "phone",         label: "رقم التواصل" },
-  { key: "email",         label: "البريد الإلكتروني" },
+  { key: "workType",       label: "نوع الأعمال" },
+  { key: "price",          label: "السعر (ريال)", type: "number" },
+  { key: "phone",          label: "رقم التواصل" },
+  { key: "email",          label: "البريد الإلكتروني" },
+  { key: "workDescription", label: "الوصف الفني للبند (اختياري)", wide: true },
+  { key: "workScopeText",  label: "نطاق الأعمال التفصيلي (اختياري)", wide: true },
 ];
 
 interface Props {
@@ -93,7 +98,12 @@ export default function DatabasePage({ onSelectContractor }: Props) {
     }
     setFormError("");
     await createMutation.mutateAsync({
-      data: { ...form, price: parseInt(form.price, 10) },
+      data: {
+        ...form,
+        price: parseInt(form.price, 10),
+        workDescription: form.workDescription.trim() || null,
+        workScopeText: form.workScopeText.trim() || null,
+      },
     });
     queryClient.invalidateQueries({ queryKey: getListContractorsQueryKey() });
     setForm(EMPTY_FORM);
@@ -397,22 +407,38 @@ export default function DatabasePage({ onSelectContractor }: Props) {
             <form onSubmit={handleAddSubmit}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
                 {FORM_FIELDS.map((f) => (
-                  <div key={f.key} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <div key={f.key} style={{ display: "flex", flexDirection: "column", gap: "4px", gridColumn: f.wide ? "1 / -1" : undefined }}>
                     <label style={{ fontSize: "0.65rem", color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                       {f.label}
                     </label>
-                    <input
-                      type={f.type ?? "text"}
-                      value={form[f.key]}
-                      onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                      style={{
-                        padding: "9px 12px", border: "1.5px solid #e8e0d0", borderRadius: "8px",
-                        fontSize: "0.82rem", fontFamily: "Tajawal, sans-serif", direction: "rtl",
-                        outline: "none", background: "#faf8f4", boxSizing: "border-box", width: "100%",
-                      }}
-                      onFocus={(e) => (e.target.style.borderColor = "var(--gold)")}
-                      onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")}
-                    />
+                    {f.wide ? (
+                      <textarea
+                        rows={2}
+                        value={form[f.key]}
+                        onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                        style={{
+                          padding: "9px 12px", border: "1.5px solid #e8e0d0", borderRadius: "8px",
+                          fontSize: "0.82rem", fontFamily: "Tajawal, sans-serif", direction: "rtl",
+                          outline: "none", background: "#faf8f4", boxSizing: "border-box", width: "100%",
+                          resize: "vertical", lineHeight: 1.6,
+                        }}
+                        onFocus={(e) => (e.target.style.borderColor = "var(--gold)")}
+                        onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")}
+                      />
+                    ) : (
+                      <input
+                        type={f.type ?? "text"}
+                        value={form[f.key]}
+                        onChange={(e) => setForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                        style={{
+                          padding: "9px 12px", border: "1.5px solid #e8e0d0", borderRadius: "8px",
+                          fontSize: "0.82rem", fontFamily: "Tajawal, sans-serif", direction: "rtl",
+                          outline: "none", background: "#faf8f4", boxSizing: "border-box", width: "100%",
+                        }}
+                        onFocus={(e) => (e.target.style.borderColor = "var(--gold)")}
+                        onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")}
+                      />
+                    )}
                   </div>
                 ))}
               </div>

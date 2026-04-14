@@ -38,6 +38,8 @@ export const ListContractorsResponseItem = zod.object({
   price: zod.number(),
   phone: zod.string(),
   email: zod.string(),
+  workDescription: zod.string().nullish(),
+  workScopeText: zod.string().nullish(),
   createdAt: zod.string(),
 });
 export const ListContractorsResponse = zod.array(ListContractorsResponseItem);
@@ -55,6 +57,8 @@ export const CreateContractorBody = zod.object({
   price: zod.number(),
   phone: zod.string(),
   email: zod.string(),
+  workDescription: zod.string().nullish(),
+  workScopeText: zod.string().nullish(),
 });
 
 /**
@@ -75,6 +79,8 @@ export const GetContractorResponse = zod.object({
   price: zod.number(),
   phone: zod.string(),
   email: zod.string(),
+  workDescription: zod.string().nullish(),
+  workScopeText: zod.string().nullish(),
   createdAt: zod.string(),
 });
 

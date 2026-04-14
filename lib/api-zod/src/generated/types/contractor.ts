@@ -17,5 +17,9 @@ export interface Contractor {
   price: number;
   phone: string;
   email: string;
+  /** @nullable */
+  workDescription?: string | null;
+  /** @nullable */
+  workScopeText?: string | null;
   createdAt: string;
 }

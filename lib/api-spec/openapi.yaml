@@ -150,6 +150,10 @@ components:
           type: string
         email:
           type: string
+        workDescription:
+          type: ["string", "null"]
+        workScopeText:
+          type: ["string", "null"]
         createdAt:
           type: string
       required:
@@ -186,6 +190,10 @@ components:
           type: string
         email:
           type: string
+        workDescription:
+          type: ["string", "null"]
+        workScopeText:
+          type: ["string", "null"]
       required:
         - contractNo
         - contractor
