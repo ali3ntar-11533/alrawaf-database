@@ -1,0 +1,196 @@
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap');
+
+:root {
+  --rawaf-bg: #0f172a;
+  --rawaf-card: #1e293b;
+  --rawaf-gold: #c5a059;
+  --rawaf-border: #334155;
+  --rawaf-text-dim: #94a3b8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Tajawal', sans-serif;
+  background-color: var(--rawaf-bg);
+  color: #f1f5f9;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  direction: rtl;
+}
+
+.hero-banner {
+  background: linear-gradient(to bottom, rgba(15, 23, 42, 0.75), var(--rawaf-bg)),
+              url('https://alrawaf.sa/assets/images/slider/1.jpg');
+  background-size: cover;
+  background-position: center;
+  min-height: 280px;
+  padding: 40px 60px 100px;
+  border-bottom: 3px solid var(--rawaf-gold);
+  position: relative;
+}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 20px;
+  max-width: 1550px;
+  margin: -80px auto 40px;
+  padding: 0 20px;
+  align-items: start;
+}
+
+.glass-card {
+  background: var(--rawaf-card);
+  border: 1px solid var(--rawaf-border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.label-gold {
+  color: var(--rawaf-gold);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+  display: block;
+  opacity: 0.9;
+  text-transform: uppercase;
+  border-right: 2px solid var(--rawaf-gold);
+  padding-right: 8px;
+}
+
+.filter-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.filter-box {
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid var(--rawaf-border);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #f1f5f9;
+}
+
+.filter-box:hover {
+  border-color: var(--rawaf-gold);
+}
+
+.rank-item {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid var(--rawaf-border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rank-item.active {
+  border-color: var(--rawaf-gold);
+  background: rgba(197, 160, 89, 0.1);
+}
+
+.rank-number {
+  width: 28px;
+  height: 28px;
+  background: #334155;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.rank-item.active .rank-number {
+  background: var(--rawaf-gold);
+  color: black;
+}
+
+.sidebar-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+.custom-scroll::-webkit-scrollbar-thumb { background: var(--rawaf-gold); border-radius: 10px; }
+.custom-scroll::-webkit-scrollbar-track { background: transparent; }
+
+.database-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+
+.database-table th {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 12px;
+  font-size: 11px;
+  color: var(--rawaf-gold);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.database-table td {
+  background: rgba(30, 41, 59, 0.5);
+  padding: 12px;
+  font-size: 11px;
+  border-top: 1px solid var(--rawaf-border);
+  border-bottom: 1px solid var(--rawaf-border);
+  white-space: nowrap;
+}
+
+.database-table tr:hover td {
+  background: rgba(197, 160, 89, 0.05);
+}
+
+.text-gold {
+  color: var(--rawaf-gold);
+}
+
+.border-gold {
+  border-color: var(--rawaf-gold);
+}
+
+.bg-gold {
+  background-color: var(--rawaf-gold);
+}
+
+@media (max-width: 1024px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+  .filter-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .hero-banner {
+    padding: 24px 20px 80px;
+  }
+}
+
+@media (max-width: 640px) {
+  .filter-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

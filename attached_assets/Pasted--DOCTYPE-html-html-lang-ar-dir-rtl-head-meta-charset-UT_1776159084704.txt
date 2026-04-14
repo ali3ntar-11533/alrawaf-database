@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قاعدة بيانات الموردين والمقاولين - شركة الرواف</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap');
+        
+        :root {
+            --rawaf-bg: #0f172a;
+            --rawaf-card: #1e293b;
+            --rawaf-gold: #c5a059;
+            --rawaf-border: #334155;
+            --rawaf-text-dim: #94a3b8;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: var(--rawaf-bg);
+            color: #f1f5f9;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .hero-banner {
+            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.75), var(--rawaf-bg)), 
+                        url('https://alrawaf.sa/assets/images/slider/1.jpg');
+            background-size: cover;
+            background-position: center;
+            height: 280px;
+            padding: 40px 60px;
+            border-bottom: 3px solid var(--rawaf-gold);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 20px;
+            max-width: 1550px;
+            margin: -80px auto 40px;
+            padding: 0 20px;
+            align-items: stretch;
+        }
+
+        .glass-card {
+            background: var(--rawaf-card);
+            border: 1px solid var(--rawaf-border);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .label-gold {
+            color: var(--rawaf-gold);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+            display: block;
+            opacity: 0.9;
+            text-transform: uppercase;
+            border-right: 2px solid var(--rawaf-gold);
+            padding-right: 8px;
+        }
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .filter-box {
+            background: rgba(30, 41, 59, 0.85);
+            border: 1px solid var(--rawaf-border);
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .filter-box:hover {
+            border-color: var(--rawaf-gold);
+        }
+
+        .rank-item {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--rawaf-border);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .rank-item.active {
+            border-color: var(--rawaf-gold);
+            background: rgba(197, 160, 89, 0.1);
+        }
+
+        .rank-number {
+            width: 28px;
+            height: 28px;
+            background: #334155;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .rank-item.active .rank-number {
+            background: var(--rawaf-gold);
+            color: black;
+        }
+
+        .sidebar-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: var(--rawaf-gold); border-radius: 10px; }
+
+        /* لنمط الصفحة الثانية */
+        .database-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+        }
+        .database-table th {
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            font-size: 11px;
+            color: var(--rawaf-gold);
+            text-align: right;
+        }
+        .database-table td {
+            background: rgba(30, 41, 59, 0.5);
+            padding: 12px;
+            font-size: 11px;
+            border-top: 1px solid var(--rawaf-border);
+            border-bottom: 1px solid var(--rawaf-border);
+        }
+    </style>
+</head>
+<body>
+
+    <script>
+        function switchTab(tab) {
+            if(tab === 'main') {
+                document.getElementById('mainContent').style.display = 'grid';
+                document.getElementById('databasePage').style.display = 'none';
+                document.getElementById('mainTabBtn').classList.add('text-gold', 'border-b-2', 'border-gold');
+                document.getElementById('dbTabBtn').classList.remove('text-gold', 'border-b-2', 'border-gold');
+            } else {
+                document.getElementById('mainContent').style.display = 'none';
+                document.getElementById('databasePage').style.display = 'block';
+                document.getElementById('dbTabBtn').classList.add('text-gold', 'border-b-2', 'border-gold');
+                document.getElementById('mainTabBtn').classList.remove('text-gold', 'border-b-2', 'border-gold');
+            }
+        }
+    </script>
+
+    <header class="hero-banner">
+        <div class="flex justify-between items-start">
+            <div class="flex items-center gap-6">
+                <div class="bg-white p-2 rounded shadow-2xl">
+                    <img src="https://alrawaf.sa/assets/images/logo.png" alt="الرواف" class="h-12">
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold text-white tracking-tight">قاعدة بيانات الموردين والمقاولين ومقدمي الخدمات</h1>
+                    <p class="text-sm text-gold mt-1 font-medium">إدارة المشتريات والعقود - شركة الرواف للمقاولات</p>
+                </div>
+            </div>
+            <nav class="flex gap-8 text-sm font-semibold">
+                <span id="mainTabBtn" onclick="switchTab('main')" class="text-gold border-b-2 border-gold pb-1 cursor-pointer">لوحة التنسيق الفني</span>
+                <span id="dbTabBtn" onclick="switchTab('database')" class="text-white/70 cursor-pointer hover:text-gold transition-colors">قاعدة البيانات</span>
+            </nav>
+        </div>
+
+        <!-- فلاتر البحث المعدلة بالترتيب الجديد -->
+        <div class="filter-row">
+            <div class="filter-box"><span>رقم العقد</span><i class="fas fa-search text-[10px] opacity-40"></i></div>
+            <div class="filter-box"><span>المقاول</span><i class="fas fa-search text-[10px] opacity-40"></i></div>
+            <div class="filter-box"><span>تصنيف الأعمال</span><i class="fas fa-search text-[10px] opacity-40"></i></div>
+            <div class="filter-box"><span>نوع الأعمال</span><i class="fas fa-search text-[10px] opacity-40"></i></div>
+            <div class="filter-box"><span>المشروع</span><i class="fas fa-search text-[10px] opacity-40"></i></div>
+            <div class="filter-box"><span>المحفظة</span><i class="fas fa-search text-[10px] opacity-40"></i></div>
+        </div>
+    </header>
+
+    <!-- الصفحة الرئيسية -->
+    <div id="mainContent" class="main-grid">
+        
+        <aside class="sidebar-stack">
+            <div class="glass-card" style="min-height: 280px;">
+                <span class="label-gold">نطاق التوصيف الفني للبند</span>
+                <h3 class="font-bold text-lg mb-3 text-white">بند أعمال الخرسانة والتشييد المسلح</h3>
+                <div class="text-[12px] text-gray-400 leading-relaxed overflow-y-auto custom-scroll pr-1">
+                    <p class="mb-3">يشتمل هذا البند على تنفيذ وصب القواعد الخرسانية المسلحة والمياد والرقاب للمشروع وفقاً للمخططات المعتمدة وكود البناء السعودي.</p>
+                    <p class="mb-3">يتضمن النطاق توريد كافة المواد والعمالة المتخصصة والمعدات مع الالتزام التام باختبارات المختبر المعتمد.</p>
+                    <p class="italic text-gold/60">"سيتم إضافة المزيد من الشروط الفنية والملاحظات التفصيلية هنا..."</p>
+                </div>
+            </div>
+
+            <!-- المقاولون الذين قاموا بالعمل -->
+            <div class="glass-card">
+                <span class="label-gold">المقاولون المسجلون لهذا البند</span>
+                <div class="space-y-3 mt-2">
+                    <div class="flex justify-between items-center p-3 bg-black/20 rounded-lg border-r-4 border-gold">
+                        <span class="text-xs font-bold">1. شركة الرواف للمقاولات</span>
+                        <span class="text-gold text-xs">سعر البند: 4.5M</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-black/10 rounded-lg">
+                        <span class="text-xs font-bold text-gray-300">2. مؤسسة نجد الحديثة</span>
+                        <span class="text-gold text-xs">سعر البند: 6.2M</span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-black/10 rounded-lg">
+                        <span class="text-xs font-bold text-gray-300">3. شركة المسار السريع</span>
+                        <span class="text-gold text-xs">سعر البند: 5.8M</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card flex-1">
+                <span class="label-gold">أفضل المقاولين</span>
+                <div class="space-y-3 mt-4">
+                    <div class="rank-item active">
+                        <div class="rank-number">1</div>
+                        <div class="flex-1">
+                            <p class="text-xs font-bold">شركة الرواف</p>
+                            <p class="text-[10px] text-gold">نسبة الالتزام الفني: 99%</p>
+                        </div>
+                        <div class="text-sm font-bold text-green-400">4.5M</div>
+                    </div>
+                    <div class="rank-item">
+                        <div class="rank-number">2</div>
+                        <div class="flex-1">
+                            <p class="text-xs font-bold text-gray-300">مؤسسة نجد</p>
+                            <p class="text-[10px] text-gray-500">نسبة الالتزام الفني: 94%</p>
+                        </div>
+                        <div class="text-sm font-bold">6.2M</div>
+                    </div>
+                    <div class="rank-item">
+                        <div class="rank-number">3</div>
+                        <div class="flex-1">
+                            <p class="text-xs font-bold text-gray-300">المسار السريع</p>
+                            <p class="text-[10px] text-gray-500">نسبة الالتزام الفني: 91%</p>
+                        </div>
+                        <div class="text-sm font-bold">5.8M</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="space-y-5 flex flex-col">
+            <!-- بيانات المنشأة المعدلة -->
+            <div class="glass-card" style="min-height: 250px;">
+                <div class="flex justify-between items-start mb-6">
+                    <div class="flex gap-5 items-center">
+                        <div class="w-14 h-14 bg-gold/15 rounded-xl flex items-center justify-center border border-gold/30 shadow-inner">
+                            <i class="fas fa-building text-gold text-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-white">مؤسسة نجد الحديثة للمقاولات</h2>
+                            <div class="flex gap-3 mt-1 items-center">
+                                <span class="text-[10px] bg-white/5 px-2 py-0.5 rounded text-gold border border-gold/20">عقد رقم: CN-2024-089</span>
+                                <span class="text-[10px] bg-white/5 px-2 py-0.5 rounded text-gray-400 border border-white/10">سعر البند الحالي: 6,200,000 ر.س</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="bg-black/25 p-3 rounded-xl border border-white/5">
+                        <span class="text-[9px] text-gray-500 block mb-1">نوع الأعمال</span>
+                        <span class="text-xs font-bold text-gray-200">إنشائي - خرسانات</span>
+                    </div>
+                    <div class="bg-black/25 p-3 rounded-xl border border-white/5">
+                        <span class="text-[9px] text-gray-500 block mb-1">التصنيف</span>
+                        <span class="text-xs font-bold text-gray-200">درجة أولى</span>
+                    </div>
+                    <div class="bg-black/25 p-3 rounded-xl border border-white/5">
+                        <span class="text-[9px] text-gray-500 block mb-1">المشروع</span>
+                        <span class="text-xs font-bold text-gray-200">نقل المياه الحلقي</span>
+                    </div>
+                    <div class="bg-black/25 p-3 rounded-xl border border-white/5">
+                        <span class="text-[9px] text-gray-500 block mb-1">المحفظة</span>
+                        <span class="text-xs font-bold text-gray-200">محفظة الرياض</span>
+                    </div>
+                    <div class="bg-black/25 p-3 rounded-xl border border-white/5 col-span-2">
+                        <span class="text-[9px] text-gray-500 block mb-1">البريد الإلكتروني</span>
+                        <span class="text-xs font-bold text-gray-200">info@najd-con.sa</span>
+                    </div>
+                    <div class="bg-black/25 p-3 rounded-xl border border-white/5 col-span-2">
+                        <span class="text-[9px] text-gray-500 block mb-1">رقم التواصل</span>
+                        <span class="text-xs font-bold text-gray-200">055 123 4567</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- سجل الأعمال -->
+            <div class="glass-card" style="min-height: 180px;">
+                <span class="label-gold">سجل الأعمال المنفذة (تاريخية)</span>
+                <div class="custom-scroll flex gap-4 overflow-x-auto pb-4 mt-2">
+                    <div class="min-w-[280px] bg-black/40 p-5 rounded-2xl border border-gray-700/50">
+                        <p class="text-[10px] text-gold font-bold mb-1">مشروع مياه الرياض</p>
+                        <p class="text-xs font-bold mb-3 text-white">تمديدات الأنابيب الكبرى</p>
+                        <div class="flex justify-between items-center border-t border-white/5 pt-2 text-[10px]">
+                            <span class="text-gray-500">سعر البند:</span>
+                            <span class="text-white font-bold">2.1M ر.س</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- تحليل التنافسية ومقارنة الأسعار -->
+            <div class="glass-card flex-1">
+                <span class="label-gold">تحليل التنافسية ومقارنة الأسعار</span>
+                <div class="grid grid-cols-2 gap-10 items-center mt-2">
+                    <div class="space-y-2">
+                        <div class="flex justify-between p-2.5 bg-red-500/5 rounded border-r-2 border-red-500/40">
+                            <span class="text-[11px]">السعر الأعلى</span><span class="text-xs font-bold">7.3M</span>
+                        </div>
+                        <div class="flex justify-between p-2.5 bg-blue-500/5 rounded border-r-2 border-blue-500/40">
+                            <span class="text-[11px]">السعر المتوسط</span><span class="text-xs font-bold">6.1M</span>
+                        </div>
+                        <div class="flex justify-between p-2.5 bg-gold/15 rounded border-r-2 border-gold shadow-lg">
+                            <span class="text-[11px] font-bold text-gold">سعر المقاول الحالي</span><span class="text-xs font-bold text-gold">6.2M</span>
+                        </div>
+                        <div class="flex justify-between p-2.5 bg-green-500/5 rounded border-r-2 border-green-500/40">
+                            <span class="text-[11px] text-green-400">السعر الأدنى</span><span class="text-xs font-bold text-green-400">4.9M</span>
+                        </div>
+                    </div>
+                    <div class="h-40">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- صفحة قاعدة البيانات (تثبيت الفلاتر + الأعمدة المطلوبة) -->
+    <div id="databasePage" class="max-w-[1550px] mx-auto px-5 py-5" style="display: none;">
+        <div class="glass-card mb-5">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gold">سجل البيانات الشامل (إكسل)</h2>
+                <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-xs font-bold transition-all">
+                    <i class="fas fa-file-excel ml-2"></i> تصدير البيانات
+                </button>
+            </div>
+            <div class="overflow-x-auto custom-scroll">
+                <table class="database-table">
+                    <thead>
+                        <tr>
+                            <th>رقم العقد</th>
+                            <th>اسم المقاول</th>
+                            <th>اسم المشروع</th>
+                            <th>المحفظة</th>
+                            <th>تصنيف الأعمال</th>
+                            <th>نوع الأعمال</th>
+                            <th>سعر البند</th>
+                            <th>رقم التواصل</th>
+                            <th>البريد الإلكتروني</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>CN-2024-001</td>
+                            <td>شركة الرواف للمقاولات</td>
+                            <td>نقل المياه الحلقي</td>
+                            <td>الرياض</td>
+                            <td>درجة أولى</td>
+                            <td>إنشائي</td>
+                            <td>4,500,000</td>
+                            <td>0500000000</td>
+                            <td>info@alrawaf.sa</td>
+                        </tr>
+                        <tr>
+                            <td>CN-2024-089</td>
+                            <td>مؤسسة نجد الحديثة</td>
+                            <td>نقل المياه الحلقي</td>
+                            <td>الرياض</td>
+                            <td>درجة أولى</td>
+                            <td>إنشائي</td>
+                            <td>6,200,000</td>
+                            <td>0551234567</td>
+                            <td>info@najd-con.sa</td>
+                        </tr>
+                        <!-- المزيد من الصفوف بناءً على البيانات الخارجية -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['الأعلى', 'المتوسط', 'الحالي', 'الأدنى'],
+                    datasets: [{
+                        data: [7.3, 6.1, 6.2, 4.9],
+                        backgroundColor: (c) => c.dataIndex === 2 ? '#c5a059' : '#334155',
+                        borderRadius: 6,
+                        barThickness: 30
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10, weight: 'bold' } } },
+                        y: { display: false }
+                    }
+                }
+            });
+        };
+    </script>
+</body>
+</html>
+
