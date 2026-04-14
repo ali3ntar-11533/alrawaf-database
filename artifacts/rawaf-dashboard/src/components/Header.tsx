@@ -1,24 +1,15 @@
-import { TabType, FilterState } from "../App";
+import { TabType } from "../App";
 import { Search } from "lucide-react";
 import logoImg from "@assets/1658133304061_1776159635121.jpg";
 
 interface HeaderProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
-  filters: FilterState;
-  onFilterChange: (key: keyof FilterState, value: string) => void;
+  search: string;
+  onSearchChange: (value: string) => void;
 }
 
-const FILTERS: { key: keyof FilterState; label: string }[] = [
-  { key: "contractNo",    label: "رقم العقد" },
-  { key: "contractor",    label: "المقاول" },
-  { key: "technicalScope", label: "نطاق التوصيف الفني" },
-  { key: "workType",      label: "نوع الأعمال" },
-  { key: "project",       label: "المشروع" },
-  { key: "portfolio",     label: "المحفظة" },
-];
-
-export default function Header({ activeTab, onTabChange, filters, onFilterChange }: HeaderProps) {
+export default function Header({ activeTab, onTabChange, search, onSearchChange }: HeaderProps) {
   return (
     <header className="hero-banner animate-fade">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
@@ -84,24 +75,81 @@ export default function Header({ activeTab, onTabChange, filters, onFilterChange
         </nav>
       </div>
 
-      {/* Filter row — each box is a live text input */}
-      <div className="filter-row stagger">
-        {FILTERS.map((f) => (
-          <label key={f.key} className="filter-box animate-fade-up" style={{ cursor: "text" }}>
-            <input
-              type="text"
-              placeholder={f.label}
-              value={filters[f.key]}
-              onChange={(e) => onFilterChange(f.key, e.target.value)}
+      {/* ── Unified Search Bar ── */}
+      <div style={{ marginTop: "22px" }}>
+        <div
+          style={{
+            position: "relative",
+            maxWidth: "720px",
+            margin: "0 auto",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute", top: "50%", right: "18px",
+              transform: "translateY(-50%)",
+              color: "rgba(197,160,89,0.7)",
+              pointerEvents: "none",
+            }}
+          >
+            <Search size={17} />
+          </div>
+          <input
+            type="text"
+            placeholder="ابحث بأي معلومة: اسم المقاول، المشروع، نوع الأعمال، المحفظة، رقم العقد..."
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "14px 50px 14px 20px",
+              background: "rgba(255,255,255,0.10)",
+              border: "1.5px solid rgba(197,160,89,0.35)",
+              borderRadius: "14px",
+              fontSize: "0.9rem",
+              fontFamily: "Tajawal, sans-serif",
+              direction: "rtl",
+              outline: "none",
+              color: "#fff",
+              backdropFilter: "blur(8px)",
+              boxSizing: "border-box",
+              transition: "border-color 0.2s, background 0.2s, box-shadow 0.2s",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = "rgba(197,160,89,0.9)";
+              e.target.style.background = "rgba(255,255,255,0.15)";
+              e.target.style.boxShadow = "0 0 0 4px rgba(197,160,89,0.12)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = "rgba(197,160,89,0.35)";
+              e.target.style.background = "rgba(255,255,255,0.10)";
+              e.target.style.boxShadow = "none";
+            }}
+          />
+          {search && (
+            <button
+              onClick={() => onSearchChange("")}
               style={{
-                background: "transparent", border: "none", outline: "none",
-                color: "rgba(255,255,255,0.9)", fontFamily: "Tajawal, sans-serif",
-                fontSize: "0.78rem", width: "100%", direction: "rtl",
+                position: "absolute", top: "50%", left: "14px",
+                transform: "translateY(-50%)",
+                background: "rgba(255,255,255,0.15)", border: "none",
+                borderRadius: "50%", width: "24px", height: "24px",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", color: "rgba(255,255,255,0.7)", fontSize: "14px",
+                lineHeight: 1, transition: "background 0.15s",
               }}
-            />
-            <Search size={11} style={{ opacity: 0.45, flexShrink: 0 }} />
-          </label>
-        ))}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.25)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
+              title="مسح البحث"
+            >
+              ×
+            </button>
+          )}
+        </div>
+        <div style={{ textAlign: "center", marginTop: "8px" }}>
+          <span style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.3)", letterSpacing: "0.04em" }}>
+            البحث الشامل يعمل في وقت حقيقي عبر جميع حقول قاعدة البيانات
+          </span>
+        </div>
       </div>
     </header>
   );

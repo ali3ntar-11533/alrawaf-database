@@ -6,31 +6,13 @@ import DatabasePage from "./components/DatabasePage";
 
 export type TabType = "main" | "database";
 
-export interface FilterState {
-  contractNo: string;
-  contractor: string;
-  technicalScope: string;
-  workType: string;
-  project: string;
-  portfolio: string;
-}
-
-const EMPTY_FILTERS: FilterState = {
-  contractNo: "",
-  contractor: "",
-  technicalScope: "",
-  workType: "",
-  project: "",
-  portfolio: "",
-};
-
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>("main");
-  const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
+  const [search, setSearch]       = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  function updateFilter(key: keyof FilterState, value: string) {
-    setFilters((f) => ({ ...f, [key]: value }));
+  function handleSearchChange(value: string) {
+    setSearch(value);
     setSelectedId(null);
   }
 
@@ -39,13 +21,13 @@ function App() {
       <Header
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        filters={filters}
-        onFilterChange={updateFilter}
+        search={search}
+        onSearchChange={handleSearchChange}
       />
       <div key={activeTab}>
         {activeTab === "main" ? (
           <MainDashboard
-            filters={filters}
+            search={search}
             selectedId={selectedId}
             onSelectId={setSelectedId}
           />

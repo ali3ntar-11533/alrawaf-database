@@ -17,6 +17,8 @@ export const contractorsTable = pgTable("contractors", {
   workScopeText: text("work_scope_text"),
   workCategory: text("work_category"),
   unit: text("unit"),
+  rating: integer("rating"),
+  localContent: text("local_content"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

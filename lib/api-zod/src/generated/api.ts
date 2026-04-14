@@ -61,6 +61,8 @@ export const CreateContractorBody = zod.object({
   workScopeText: zod.string().nullish(),
   workCategory: zod.string().nullish(),
   unit: zod.string().nullish(),
+  rating: zod.number().int().min(0).max(5).nullish(),
+  localContent: zod.string().nullish(),
 });
 
 /**
@@ -85,6 +87,8 @@ export const GetContractorResponse = zod.object({
   workScopeText: zod.string().nullish(),
   workCategory: zod.string().nullish(),
   unit: zod.string().nullish(),
+  rating: zod.number().int().min(0).max(5).nullish(),
+  localContent: zod.string().nullish(),
   createdAt: zod.string(),
 });
 

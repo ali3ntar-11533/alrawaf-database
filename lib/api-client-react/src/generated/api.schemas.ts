@@ -28,6 +28,10 @@ export interface Contractor {
   workCategory?: string | null;
   /** @nullable */
   unit?: string | null;
+  /** @nullable */
+  rating?: number | null;
+  /** @nullable */
+  localContent?: string | null;
   createdAt: string;
 }
 
@@ -49,6 +53,10 @@ export interface CreateContractorBody {
   workCategory?: string | null;
   /** @nullable */
   unit?: string | null;
+  /** @nullable */
+  rating?: number | null;
+  /** @nullable */
+  localContent?: string | null;
 }
 
 export type ListContractorsParams = {

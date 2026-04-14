@@ -91,7 +91,7 @@ export default function WelcomeHero() {
       >
         <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--gold)", animation: "pulse-gold 2s ease-in-out infinite", flexShrink: 0 }} />
         <span style={{ fontSize: "0.88rem", color: "var(--gold-dark)", fontWeight: 700 }}>
-          ابدأ بالبحث باستخدام الفلاتر أعلاه لعرض المتخصصين
+          ابدأ بالبحث الشامل في الحقل أعلاه لعرض المتخصصين
         </span>
       </div>
 

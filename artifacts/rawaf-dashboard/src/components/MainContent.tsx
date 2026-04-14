@@ -7,19 +7,16 @@ interface Props {
   filteredContractors: Contractor[];
   isLoading: boolean;
   onSelectId: (id: number) => void;
-  workTypeFilter: string;
 }
 
 const BAR_COLORS = ["#2baa74", "#c5a059", "#3b8fcc", "#e8851c", "#9b59b6", "#e74c3c"];
 
-/** Compact label inside chart bars */
 function formatCompact(p: number) {
   if (p >= 1_000_000) return `${(p / 1_000_000).toFixed(2)}M`;
   if (p >= 1_000)     return `${(p / 1_000).toFixed(0)}K`;
   return p.toLocaleString("en");
 }
 
-/** Exact price with thousands separators — no rounding */
 function formatExact(p: number) {
   return p.toLocaleString("en");
 }
@@ -28,14 +25,35 @@ function avg(arr: number[]) {
   return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
 }
 
-export default function MainContent({
-  contractor,
-  allContractors,
-  filteredContractors,
-  isLoading,
-  onSelectId,
-  workTypeFilter,
-}: Props) {
+/** Read-only 5-star display */
+function StarDisplay({ rating }: { rating?: number | null }) {
+  const r = Math.max(0, Math.min(5, Math.round(rating ?? 0)));
+  return (
+    <div style={{ display: "flex", gap: "2px", alignItems: "center" }}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <span
+          key={i}
+          style={{
+            fontSize: "0.85rem",
+            color: i <= r ? "#f5c518" : "rgba(255,255,255,0.2)",
+            lineHeight: 1,
+            filter: i <= r ? "drop-shadow(0 0 3px rgba(245,197,24,0.5))" : "none",
+            transition: "color 0.15s",
+          }}
+        >
+          ★
+        </span>
+      ))}
+      {r > 0 && (
+        <span style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.45)", marginRight: "3px" }}>
+          ({r}/5)
+        </span>
+      )}
+    </div>
+  );
+}
+
+export default function MainContent({ contractor, allContractors, filteredContractors, isLoading, onSelectId }: Props) {
   if (isLoading) {
     return (
       <main className="content-area">
@@ -46,12 +64,11 @@ export default function MainContent({
     );
   }
 
-  // ── Price stats: scope to filteredContractors when a filter is active ──
   const pricePool = filteredContractors.length > 0 ? filteredContractors : allContractors;
   const allPrices  = pricePool.map((c) => c.price);
   const maxPrice   = allPrices.length > 0 ? Math.max(...allPrices) : 1;
   const minPrice   = allPrices.length > 0 ? Math.min(...allPrices) : 0;
-  const avgPrice   = avg(allPrices); // exact average — no rounding
+  const avgPrice   = avg(allPrices);
 
   const contractorWithMin = pricePool.find((c) => c.price === minPrice);
   const contractorWithMax = pricePool.find((c) => c.price === maxPrice);
@@ -59,22 +76,13 @@ export default function MainContent({
     (a, b) => Math.abs(a.price - avgPrice) - Math.abs(b.price - avgPrice)
   )[0];
 
-  // ── Chart: best 5 = lowest prices in filtered set ──
   const chartSet = filteredContractors.length > 0 ? filteredContractors : allContractors;
   const best5    = [...chartSet].sort((a, b) => a.price - b.price).slice(0, 5);
   const chartMax = best5.length > 0 ? Math.max(...best5.map((c) => c.price)) : 1;
 
-  // ── Work history: same workType as current contractor OR the active filter ──
-  // Shows other contractors in DB who share the same نوع الأعمال
-  const historyWorkType = workTypeFilter || contractor?.workType || "";
   const workHistory = contractor
     ? allContractors
-        .filter((c) =>
-          c.id !== contractor.id &&
-          (historyWorkType
-            ? c.workType.includes(historyWorkType) || historyWorkType.includes(c.workType)
-            : c.workType === contractor.workType)
-        )
+        .filter((c) => c.id !== contractor.id && c.workType === contractor.workType)
         .slice(0, 4)
     : [];
 
@@ -83,11 +91,14 @@ export default function MainContent({
       <main className="content-area">
         <div className="card animate-fade-up" style={{ textAlign: "center", padding: "50px 24px" }}>
           <Building2 size={52} style={{ color: "#ddd", margin: "0 auto 14px" }} />
-          <p style={{ color: "#bbb", fontSize: "0.9rem" }}>اختر مقاولاً من القائمة الجانبية أو استخدم الفلاتر للبحث</p>
+          <p style={{ color: "#bbb", fontSize: "0.9rem" }}>اختر مقاولاً من القائمة الجانبية أو استخدم البحث الشامل</p>
         </div>
       </main>
     );
   }
+
+  const rating = (contractor as any).rating as number | null | undefined;
+  const localContent = (contractor as any).localContent as string | null | undefined;
 
   return (
     <main className="content-area">
@@ -99,10 +110,12 @@ export default function MainContent({
             <div style={{ fontSize: "0.58rem", color: "rgba(197,160,89,0.65)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "3px" }}>
               بيانات المقاول الرئيسية
             </div>
-            <h2 style={{ fontSize: "0.98rem", fontWeight: 800, color: "#ffffff", lineHeight: 1.3, marginBottom: "5px" }}>
+            <h2 style={{ fontSize: "0.98rem", fontWeight: 800, color: "#ffffff", lineHeight: 1.3, marginBottom: "6px" }}>
               {contractor.contractor}
             </h2>
-            <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+            {/* Star rating */}
+            <StarDisplay rating={rating} />
+            <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", marginTop: "6px" }}>
               <span style={{ fontSize: "0.65rem", background: "rgba(197,160,89,0.18)", color: "var(--gold)", borderRadius: "20px", padding: "2px 10px", fontWeight: 700, border: "1px solid rgba(197,160,89,0.28)" }}>
                 {contractor.workType}
               </span>
@@ -113,7 +126,7 @@ export default function MainContent({
           </div>
           <div style={{ textAlign: "left", flexShrink: 0 }}>
             <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.38)", textTransform: "uppercase", letterSpacing: "0.08em" }}>سعر البند</div>
-            <div style={{ fontSize: "1.3rem", fontWeight: 900, color: "var(--gold)", lineHeight: 1, direction: "ltr" }}>
+            <div style={{ fontSize: "1.2rem", fontWeight: 900, color: "var(--gold)", lineHeight: 1, direction: "ltr" }}>
               {formatExact(contractor.price)}
             </div>
             <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.35)" }}>ريال سعودي</div>
@@ -141,16 +154,22 @@ export default function MainContent({
           ))}
         </div>
 
-        <div style={{ display: "flex", background: "#faf8f4" }}>
+        {/* Contact + Local Content row */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", background: "#faf8f4" }}>
           {[
             { icon: <Phone size={11} />, label: "رقم التواصل",       value: contractor.phone },
             { icon: <Mail size={11} />,  label: "البريد الإلكتروني", value: contractor.email },
+            {
+              icon: <span style={{ fontSize: "11px", fontWeight: 800, color: "var(--gold)" }}>🏭</span>,
+              label: "المحتوى المحلي",
+              value: localContent || "—",
+            },
           ].map((item, i) => (
-            <div key={i} style={{ flex: 1, padding: "10px 16px", display: "flex", alignItems: "center", gap: "7px", borderLeft: i === 0 ? "1px solid #f0ebe0" : "none" }}>
+            <div key={i} style={{ padding: "10px 16px", display: "flex", alignItems: "center", gap: "7px", borderLeft: i < 2 ? "1px solid #f0ebe0" : "none" }}>
               <span style={{ color: "var(--gold)", flexShrink: 0 }}>{item.icon}</span>
-              <div>
+              <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: "0.55rem", color: "#ccc", textTransform: "uppercase", letterSpacing: "0.05em" }}>{item.label}</div>
-                <div style={{ fontSize: "0.76rem", fontWeight: 600, color: "var(--charcoal)" }}>{item.value}</div>
+                <div style={{ fontSize: "0.76rem", fontWeight: 600, color: "var(--charcoal)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.value}</div>
               </div>
             </div>
           ))}
@@ -169,7 +188,6 @@ export default function MainContent({
           </div>
         </div>
 
-        {/* نوع العمل + الوحدة side by side */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
           <div style={{ background: "linear-gradient(135deg, rgba(197,160,89,0.07), rgba(197,160,89,0.02))", border: "1px solid rgba(197,160,89,0.2)", borderRadius: "9px", padding: "12px 14px" }}>
             <div style={{ fontSize: "0.55rem", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>نوع العمل</div>
@@ -185,7 +203,6 @@ export default function MainContent({
           </div>
         </div>
 
-        {/* الوصف الفني للبند */}
         <div>
           <div style={{ fontSize: "0.55rem", color: "#bbb", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "7px", fontWeight: 700 }}>الوصف الفني للبند</div>
           <p style={{ fontSize: "0.78rem", color: "#555", lineHeight: 1.8, margin: 0, background: "#f9f7f3", borderRadius: "9px", padding: "12px 14px", borderRight: "3px solid var(--gold)" }}>
@@ -195,15 +212,12 @@ export default function MainContent({
         </div>
       </div>
 
-      {/* ── 3. سجل الأعمال المنفذة سابقاً — same workType ── */}
+      {/* ── 3. سجل الأعمال المنفذة سابقاً ── */}
       {workHistory.length > 0 && (
         <div className="card animate-fade-up" style={{ marginBottom: "16px", animationDelay: "0.1s" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
-              <Clock size={14} style={{ color: "var(--gold)" }} />
-              <h3 style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--charcoal)" }}>سجل الأعمال المنفذة سابقاً</h3>
-            </div>
-            {/* badge removed per request */}
+          <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "12px" }}>
+            <Clock size={14} style={{ color: "var(--gold)" }} />
+            <h3 style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--charcoal)" }}>سجل الأعمال المنفذة سابقاً</h3>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {workHistory.map((w, i) => (
@@ -238,7 +252,7 @@ export default function MainContent({
         </div>
       )}
 
-      {/* ── 4. أفضل 5 أسعار (sorted ascending = lowest = best) ── */}
+      {/* ── 4. أفضل 5 أسعار ── */}
       {best5.length > 0 && (
         <div className="card animate-fade-up" style={{ marginBottom: "16px", animationDelay: "0.15s" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
@@ -288,7 +302,7 @@ export default function MainContent({
         </div>
       )}
 
-      {/* ── 5. Footer Stats: current → min → avg → max (exact prices, no rounding) ── */}
+      {/* ── 5. Footer Stats ── */}
       {allPrices.length > 0 && (
         <div
           className="animate-fade-up"
@@ -302,35 +316,10 @@ export default function MainContent({
           }}
         >
           {[
-            {
-              label: "سعر المقاول الحالي",
-              value: formatExact(contractor.price),
-              color: "var(--gold)",
-              sub: contractor.contractor,
-              highlight: true,
-              id: contractor.id,
-            },
-            {
-              label: "السعر الأدنى",
-              value: formatExact(minPrice),
-              color: "#2baa74",
-              sub: contractorWithMin?.contractor ?? "—",
-              id: contractorWithMin?.id,
-            },
-            {
-              label: "السعر المتوسط",
-              value: formatExact(Math.floor(avgPrice)),
-              color: "#3b8fcc",
-              sub: avgContractor?.contractor ?? "—",
-              id: avgContractor?.id,
-            },
-            {
-              label: "السعر الأعلى",
-              value: formatExact(maxPrice),
-              color: "#e74c3c",
-              sub: contractorWithMax?.contractor ?? "—",
-              id: contractorWithMax?.id,
-            },
+            { label: "سعر المقاول الحالي", value: formatExact(contractor.price), color: "var(--gold)", sub: contractor.contractor, highlight: true, id: contractor.id },
+            { label: "السعر الأدنى",        value: formatExact(minPrice), color: "#2baa74", sub: contractorWithMin?.contractor ?? "—", id: contractorWithMin?.id },
+            { label: "السعر المتوسط",       value: formatExact(Math.floor(avgPrice)), color: "#3b8fcc", sub: avgContractor?.contractor ?? "—", id: avgContractor?.id },
+            { label: "السعر الأعلى",        value: formatExact(maxPrice), color: "#e74c3c", sub: contractorWithMax?.contractor ?? "—", id: contractorWithMax?.id },
           ].map((stat, i) => (
             <div
               key={i}
@@ -338,7 +327,6 @@ export default function MainContent({
               style={{
                 padding: "16px 10px", textAlign: "center",
                 borderLeft: "1px solid rgba(255,255,255,0.06)",
-                position: "relative",
                 background: stat.highlight ? "rgba(197,160,89,0.06)" : "transparent",
                 cursor: stat.id != null ? "pointer" : "default",
                 transition: "background 0.18s",
@@ -347,16 +335,10 @@ export default function MainContent({
               onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.background = stat.highlight ? "rgba(197,160,89,0.06)" : "transparent"}
               title={stat.id != null ? `اضغط لعرض بيانات ${stat.sub}` : undefined}
             >
-              <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "5px" }}>
-                {stat.label}
-              </div>
-              <div style={{ fontSize: "0.82rem", fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: "4px", direction: "ltr", fontVariantNumeric: "tabular-nums" }}>
-                {stat.value}
-              </div>
+              <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "5px" }}>{stat.label}</div>
+              <div style={{ fontSize: "0.82rem", fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: "4px", direction: "ltr", fontVariantNumeric: "tabular-nums" }}>{stat.value}</div>
               <div style={{ fontSize: "0.5rem", color: "rgba(255,255,255,0.22)", marginBottom: "2px" }}>ريال</div>
-              <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.28)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", padding: "0 4px" }}>
-                {stat.sub}
-              </div>
+              <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.28)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", padding: "0 4px" }}>{stat.sub}</div>
             </div>
           ))}
         </div>
