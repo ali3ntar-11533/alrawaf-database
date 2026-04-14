@@ -1,5 +1,6 @@
 import { TabType } from "../App";
 import { Search } from "lucide-react";
+import logoImg from "@assets/1658133304061_1776159635121.jpg";
 
 interface HeaderProps {
   activeTab: TabType;
@@ -17,83 +18,101 @@ const filterItems = [
 
 export default function Header({ activeTab, onTabChange }: HeaderProps) {
   return (
-    <header className="hero-banner">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+    <header className="hero-banner animate-fade">
+      {/* Top bar: Logo + Title + Nav */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
+
+        {/* Logo + Title */}
+        <div className="animate-slide-in" style={{ display: "flex", alignItems: "center", gap: "20px" }}>
           <div
             style={{
-              backgroundColor: "white",
-              padding: "8px",
-              borderRadius: "8px",
-              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
+              width: "68px",
+              height: "68px",
+              background: "#fff",
+              borderRadius: "12px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(197,160,89,0.3)",
               flexShrink: 0,
+              overflow: "hidden",
+              padding: "6px",
             }}
           >
             <img
-              src="https://alrawaf.sa/assets/images/logo.png"
-              alt="الرواف"
-              style={{ height: "48px", display: "block" }}
-              onError={(e) => {
-                const target = e.currentTarget as HTMLImageElement;
-                target.style.display = "none";
-                const parent = target.parentElement;
-                if (parent) {
-                  parent.innerHTML = '<span style="font-size:1.4rem;font-weight:900;color:#c5a059;padding:0 4px">R</span>';
-                }
-              }}
+              src={logoImg}
+              alt="شركة الرواف للمقاولات"
+              style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "7px" }}
             />
           </div>
+
           <div>
             <h1
               style={{
-                fontSize: "1.6rem",
-                fontWeight: 700,
-                color: "white",
-                margin: 0,
-                lineHeight: 1.3,
+                fontSize: "clamp(1.1rem, 2.5vw, 1.65rem)",
+                fontWeight: 800,
+                color: "#ffffff",
+                lineHeight: 1.25,
+                letterSpacing: "-0.01em",
+                textShadow: "0 2px 12px rgba(0,0,0,0.4)",
               }}
             >
               قاعدة بيانات الموردين والمقاولين ومقدمي الخدمات
             </h1>
-            <p style={{ fontSize: "0.8rem", color: "var(--rawaf-gold)", marginTop: "4px", fontWeight: 500 }}>
-              إدارة المشتريات والعقود - شركة الرواف للمقاولات
-            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "6px" }}>
+              <div
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: "var(--gold)",
+                  flexShrink: 0,
+                  boxShadow: "0 0 6px var(--gold)",
+                }}
+              />
+              <p style={{ fontSize: "0.82rem", color: "rgba(232,213,163,0.9)", fontWeight: 500, margin: 0 }}>
+                إدارة المشتريات والعقود — شركة الرواف للمقاولات
+              </p>
+            </div>
           </div>
         </div>
 
-        <nav style={{ display: "flex", gap: "32px", fontSize: "0.875rem", fontWeight: 600, flexShrink: 0 }}>
-          <span
-            onClick={() => onTabChange("main")}
-            style={{
-              cursor: "pointer",
-              color: activeTab === "main" ? "var(--rawaf-gold)" : "rgba(255,255,255,0.7)",
-              borderBottom: activeTab === "main" ? "2px solid var(--rawaf-gold)" : "2px solid transparent",
-              paddingBottom: "4px",
-              transition: "color 0.2s",
-            }}
-          >
-            لوحة التنسيق الفني
-          </span>
-          <span
-            onClick={() => onTabChange("database")}
-            style={{
-              cursor: "pointer",
-              color: activeTab === "database" ? "var(--rawaf-gold)" : "rgba(255,255,255,0.7)",
-              borderBottom: activeTab === "database" ? "2px solid var(--rawaf-gold)" : "2px solid transparent",
-              paddingBottom: "4px",
-              transition: "color 0.2s",
-            }}
-          >
-            قاعدة البيانات
-          </span>
+        {/* Navigation Tabs */}
+        <nav
+          className="animate-fade"
+          style={{
+            display: "flex",
+            gap: "28px",
+            alignSelf: "flex-start",
+            paddingTop: "6px",
+            background: "rgba(255,255,255,0.06)",
+            borderRadius: "10px",
+            padding: "8px 20px",
+            border: "1px solid rgba(255,255,255,0.1)",
+            backdropFilter: "blur(10px)",
+          }}
+        >
+          {[
+            { key: "main" as TabType, label: "لوحة التنسيق الفني" },
+            { key: "database" as TabType, label: "قاعدة البيانات" },
+          ].map((tab) => (
+            <span
+              key={tab.key}
+              className={`nav-tab ${activeTab === tab.key ? "active" : "inactive"}`}
+              onClick={() => onTabChange(tab.key)}
+            >
+              {tab.label}
+            </span>
+          ))}
         </nav>
       </div>
 
-      <div className="filter-row">
+      {/* Filter Row */}
+      <div className="filter-row stagger">
         {filterItems.map((label) => (
-          <div key={label} className="filter-box">
+          <div key={label} className="filter-box animate-fade-up">
             <span>{label}</span>
-            <Search size={10} style={{ opacity: 0.4 }} />
+            <Search size={11} style={{ opacity: 0.5, flexShrink: 0 }} />
           </div>
         ))}
       </div>

@@ -1,33 +1,38 @@
 import { useEffect, useRef } from "react";
-import { Building2 } from "lucide-react";
+import { Building2, Mail, Phone } from "lucide-react";
 
 const infoFields = [
-  { label: "نوع الأعمال", value: "إنشائي - خرسانات" },
-  { label: "التصنيف", value: "درجة أولى" },
-  { label: "المشروع", value: "نقل المياه الحلقي" },
-  { label: "المحفظة", value: "محفظة الرياض" },
+  { label: "نوع الأعمال",  value: "إنشائي - خرسانات" },
+  { label: "التصنيف",     value: "درجة أولى" },
+  { label: "المشروع",     value: "نقل المياه الحلقي" },
+  { label: "المحفظة",     value: "محفظة الرياض" },
 ];
 
 const priceData = [
-  { label: "السعر الأعلى", value: 7.3, color: "rgba(239,68,68,0.4)", borderColor: "rgba(239,68,68,0.4)", textColor: "white" },
-  { label: "السعر المتوسط", value: 6.1, color: "rgba(59,130,246,0.15)", borderColor: "rgba(59,130,246,0.4)", textColor: "white" },
-  { label: "سعر المقاول الحالي", value: 6.2, color: "rgba(197,160,89,0.15)", borderColor: "var(--rawaf-gold)", textColor: "var(--rawaf-gold)", active: true },
-  { label: "السعر الأدنى", value: 4.9, color: "rgba(34,197,94,0.05)", borderColor: "rgba(34,197,94,0.4)", textColor: "#4ade80" },
+  { label: "السعر الأعلى",       value: 7.3, bg: "rgba(192,57,43,0.07)",  border: "rgba(192,57,43,0.5)",  text: "#c0392b", bold: false },
+  { label: "السعر المتوسط",       value: 6.1, bg: "rgba(41,128,185,0.07)", border: "rgba(41,128,185,0.5)", text: "#2980b9", bold: false },
+  { label: "سعر المقاول الحالي", value: 6.2, bg: "rgba(197,160,89,0.12)", border: "var(--gold)",           text: "var(--gold-dark)", bold: true, active: true },
+  { label: "السعر الأدنى",        value: 4.9, bg: "rgba(39,174,96,0.07)",  border: "rgba(39,174,96,0.5)",  text: "#219a52",  bold: false },
+];
+
+const workHistory = [
+  { project: "مشروع مياه الرياض",    work: "تمديدات الأنابيب الكبرى",   price: "2.1M ر.س", year: "2022" },
+  { project: "مشروع توسعة الطرق",   work: "أعمال الخرسانة المسلحة",    price: "3.4M ر.س", year: "2023" },
+  { project: "مجمع سكني النرجس",    work: "أعمال البنية التحتية",      price: "1.8M ر.س", year: "2021" },
+  { project: "مشروع الطرق السريعة", work: "خرسانات مسلحة للجسور",     price: "4.2M ر.س", year: "2020" },
 ];
 
 export default function MainContent() {
   const chartRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    let chartInstance: unknown = null;
+    let chartInstance: { destroy: () => void } | null = null;
 
     async function initChart() {
       if (!chartRef.current) return;
-
       try {
         const { Chart, registerables } = await import("chart.js");
         Chart.register(...registerables);
-
         const ctx = chartRef.current.getContext("2d");
         if (!ctx) return;
 
@@ -35,15 +40,12 @@ export default function MainContent() {
           type: "bar",
           data: {
             labels: ["الأعلى", "المتوسط", "الحالي", "الأدنى"],
-            datasets: [
-              {
-                data: [7.3, 6.1, 6.2, 4.9],
-                backgroundColor: (c: { dataIndex: number }) =>
-                  c.dataIndex === 2 ? "#c5a059" : "#334155",
-                borderRadius: 6,
-                barThickness: 30,
-              },
-            ],
+            datasets: [{
+              data: [7.3, 6.1, 6.2, 4.9],
+              backgroundColor: ["rgba(192,57,43,0.75)", "rgba(41,128,185,0.75)", "#c5a059", "rgba(39,174,96,0.75)"],
+              borderRadius: 8,
+              barThickness: 28,
+            }],
           },
           options: {
             responsive: true,
@@ -52,74 +54,81 @@ export default function MainContent() {
             scales: {
               x: {
                 grid: { display: false },
-                ticks: {
-                  color: "#94a3b8",
-                  font: { size: 10, weight: "bold" as const },
-                },
+                ticks: { color: "#9e9590", font: { size: 10, weight: "bold" as const, family: "Tajawal" } },
+                border: { display: false },
               },
               y: { display: false },
             },
+            animation: { duration: 900, easing: "easeOutQuart" },
           },
         } as Parameters<typeof Chart>[1]);
-      } catch {
-      }
+      } catch { /* ignore */ }
     }
 
     initChart();
-
-    return () => {
-      if (chartInstance && typeof (chartInstance as { destroy?: () => void }).destroy === "function") {
-        (chartInstance as { destroy: () => void }).destroy();
-      }
-    };
+    return () => { chartInstance?.destroy(); };
   }, []);
 
   return (
     <main style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      {/* Contractor info card */}
-      <div className="glass-card" style={{ minHeight: "250px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
-          <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+
+      {/* ── Contractor Info Card ── */}
+      <div className="glass-card animate-fade-up">
+        {/* Header row */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: "20px",
+            flexWrap: "wrap",
+            gap: "12px",
+          }}
+        >
+          <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
             <div
               style={{
-                width: "56px",
-                height: "56px",
-                background: "rgba(197,160,89,0.15)",
+                width: "54px",
+                height: "54px",
+                background: "linear-gradient(135deg, rgba(197,160,89,0.15), rgba(197,160,89,0.05))",
                 borderRadius: "12px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                border: "1px solid rgba(197,160,89,0.3)",
+                border: "1.5px solid rgba(197,160,89,0.3)",
                 flexShrink: 0,
+                boxShadow: "0 4px 12px rgba(197,160,89,0.1)",
               }}
             >
-              <Building2 size={22} color="var(--rawaf-gold)" />
+              <Building2 size={22} color="var(--gold-dark)" />
             </div>
+
             <div>
-              <h2 style={{ fontSize: "1.4rem", fontWeight: 700, color: "white", margin: 0 }}>
+              <h2 style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--charcoal)", margin: "0 0 6px" }}>
                 مؤسسة نجد الحديثة للمقاولات
               </h2>
-              <div style={{ display: "flex", gap: "12px", marginTop: "6px", alignItems: "center", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                 <span
                   style={{
-                    fontSize: "0.625rem",
-                    background: "rgba(255,255,255,0.05)",
-                    padding: "2px 8px",
-                    borderRadius: "4px",
-                    color: "var(--rawaf-gold)",
-                    border: "1px solid rgba(197,160,89,0.2)",
+                    fontSize: "0.65rem",
+                    background: "rgba(197,160,89,0.1)",
+                    padding: "3px 10px",
+                    borderRadius: "20px",
+                    color: "var(--gold-dark)",
+                    border: "1px solid rgba(197,160,89,0.3)",
+                    fontWeight: 700,
                   }}
                 >
                   عقد رقم: CN-2024-089
                 </span>
                 <span
                   style={{
-                    fontSize: "0.625rem",
-                    background: "rgba(255,255,255,0.05)",
-                    padding: "2px 8px",
-                    borderRadius: "4px",
-                    color: "#94a3b8",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    fontSize: "0.65rem",
+                    background: "var(--section-bg)",
+                    padding: "3px 10px",
+                    borderRadius: "20px",
+                    color: "var(--text-secondary)",
+                    border: "1px solid var(--card-border)",
                   }}
                 >
                   سعر البند الحالي: 6,200,000 ر.س
@@ -127,111 +136,129 @@ export default function MainContent() {
               </div>
             </div>
           </div>
+
+          {/* Status badge */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              background: "rgba(39,174,96,0.08)",
+              border: "1px solid rgba(39,174,96,0.25)",
+              borderRadius: "8px",
+              padding: "6px 14px",
+            }}
+          >
+            <div
+              style={{
+                width: "7px",
+                height: "7px",
+                borderRadius: "50%",
+                background: "#27ae60",
+                boxShadow: "0 0 6px rgba(39,174,96,0.6)",
+              }}
+            />
+            <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#219a52" }}>عقد نشط</span>
+          </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }}>
-          {infoFields.map((field) => (
-            <div
-              key={field.label}
-              style={{
-                background: "rgba(0,0,0,0.25)",
-                padding: "12px",
-                borderRadius: "12px",
-                border: "1px solid rgba(255,255,255,0.05)",
-              }}
-            >
-              <span style={{ fontSize: "0.5625rem", color: "#6b7280", display: "block", marginBottom: "4px" }}>
-                {field.label}
+        {/* Fields grid */}
+        <div
+          className="stagger"
+          style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}
+        >
+          {infoFields.map((f) => (
+            <div key={f.label} className="info-field animate-fade-up">
+              <span style={{ fontSize: "0.6rem", color: "var(--text-muted)", display: "block", marginBottom: "4px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                {f.label}
               </span>
-              <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#e5e7eb" }}>{field.value}</span>
+              <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--charcoal)" }}>{f.value}</span>
             </div>
           ))}
 
-          <div
-            style={{
-              background: "rgba(0,0,0,0.25)",
-              padding: "12px",
-              borderRadius: "12px",
-              border: "1px solid rgba(255,255,255,0.05)",
-              gridColumn: "span 2",
-            }}
-          >
-            <span style={{ fontSize: "0.5625rem", color: "#6b7280", display: "block", marginBottom: "4px" }}>
+          <div className="info-field animate-fade-up" style={{ gridColumn: "span 2" }}>
+            <span style={{ fontSize: "0.6rem", color: "var(--text-muted)", display: "block", marginBottom: "4px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
               البريد الإلكتروني
             </span>
-            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#e5e7eb" }}>info@najd-con.sa</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+              <Mail size={13} color="var(--gold-dark)" />
+              <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--charcoal)" }}>info@najd-con.sa</span>
+            </div>
           </div>
-          <div
-            style={{
-              background: "rgba(0,0,0,0.25)",
-              padding: "12px",
-              borderRadius: "12px",
-              border: "1px solid rgba(255,255,255,0.05)",
-              gridColumn: "span 2",
-            }}
-          >
-            <span style={{ fontSize: "0.5625rem", color: "#6b7280", display: "block", marginBottom: "4px" }}>
+
+          <div className="info-field animate-fade-up" style={{ gridColumn: "span 2" }}>
+            <span style={{ fontSize: "0.6rem", color: "var(--text-muted)", display: "block", marginBottom: "4px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
               رقم التواصل
             </span>
-            <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#e5e7eb" }}>055 123 4567</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+              <Phone size={13} color="var(--gold-dark)" />
+              <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--charcoal)", direction: "ltr" }}>055 123 4567</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Work history */}
-      <div className="glass-card" style={{ minHeight: "180px" }}>
+      {/* ── Work History ── */}
+      <div className="glass-card animate-fade-up">
         <span className="label-gold">سجل الأعمال المنفذة (تاريخية)</span>
         <div
           className="custom-scroll"
-          style={{ display: "flex", gap: "16px", overflowX: "auto", paddingBottom: "16px", marginTop: "8px" }}
+          style={{ display: "flex", gap: "14px", overflowX: "auto", paddingBottom: "8px", marginTop: "4px" }}
         >
-          {[
-            { project: "مشروع مياه الرياض", work: "تمديدات الأنابيب الكبرى", price: "2.1M ر.س" },
-            { project: "مشروع توسعة الطرق", work: "أعمال الخرسانة المسلحة", price: "3.4M ر.س" },
-            { project: "مجمع سكني النرجس", work: "أعمال البنية التحتية", price: "1.8M ر.س" },
-          ].map((item) => (
-            <div
-              key={item.project}
-              style={{
-                minWidth: "280px",
-                background: "rgba(0,0,0,0.4)",
-                padding: "20px",
-                borderRadius: "16px",
-                border: "1px solid rgba(100,116,139,0.5)",
-              }}
-            >
-              <p style={{ fontSize: "0.625rem", color: "var(--rawaf-gold)", fontWeight: 700, margin: "0 0 4px" }}>
-                {item.project}
-              </p>
-              <p style={{ fontSize: "0.75rem", fontWeight: 700, marginBottom: "12px", color: "white", margin: "4px 0 12px" }}>
+          {workHistory.map((item) => (
+            <div key={item.project} className="history-card">
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "8px",
+                }}
+              >
+                <p style={{ fontSize: "0.65rem", color: "var(--gold-dark)", fontWeight: 700, margin: 0 }}>
+                  {item.project}
+                </p>
+                <span
+                  style={{
+                    fontSize: "0.6rem",
+                    background: "rgba(197,160,89,0.1)",
+                    color: "var(--gold-dark)",
+                    padding: "1px 7px",
+                    borderRadius: "10px",
+                    fontWeight: 700,
+                  }}
+                >
+                  {item.year}
+                </span>
+              </div>
+              <p style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--charcoal)", margin: "0 0 12px" }}>
                 {item.work}
               </p>
               <div
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  alignItems: "center",
-                  borderTop: "1px solid rgba(255,255,255,0.05)",
-                  paddingTop: "8px",
-                  fontSize: "0.625rem",
+                  borderTop: "1px solid var(--card-border)",
+                  paddingTop: "10px",
+                  fontSize: "0.68rem",
                 }}
               >
-                <span style={{ color: "#6b7280" }}>سعر البند:</span>
-                <span style={{ color: "white", fontWeight: 700 }}>{item.price}</span>
+                <span style={{ color: "var(--text-muted)" }}>سعر البند</span>
+                <span style={{ color: "var(--charcoal)", fontWeight: 800 }}>{item.price}</span>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Competitiveness analysis */}
-      <div className="glass-card" style={{ flex: 1 }}>
+      {/* ── Competitiveness Analysis ── */}
+      <div className="glass-card animate-fade-up" style={{ flex: 1 }}>
         <span className="label-gold">تحليل التنافسية ومقارنة الأسعار</span>
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
-            gap: "40px",
+            gap: "32px",
             alignItems: "center",
             marginTop: "8px",
           }}
@@ -240,26 +267,24 @@ export default function MainContent() {
             {priceData.map((item) => (
               <div
                 key={item.label}
+                className="price-row"
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  padding: "10px",
-                  background: item.color,
-                  borderRadius: "6px",
-                  borderRight: `2px solid ${item.borderColor}`,
-                  boxShadow: item.active ? "0 4px 12px rgba(197,160,89,0.15)" : "none",
+                  background: item.bg,
+                  borderRightColor: item.border,
+                  boxShadow: item.active ? "0 2px 10px rgba(197,160,89,0.15)" : "none",
                 }}
               >
-                <span style={{ fontSize: "0.6875rem", color: item.textColor, fontWeight: item.active ? 700 : 400 }}>
+                <span style={{ fontSize: "0.72rem", color: item.text, fontWeight: item.bold ? 700 : 400 }}>
                   {item.label}
                 </span>
-                <span style={{ fontSize: "0.75rem", fontWeight: 700, color: item.textColor }}>
+                <span style={{ fontSize: "0.82rem", fontWeight: 800, color: item.text }}>
                   {item.value}M
                 </span>
               </div>
             ))}
           </div>
-          <div style={{ height: "160px" }}>
+
+          <div style={{ height: "165px" }}>
             <canvas ref={chartRef} />
           </div>
         </div>

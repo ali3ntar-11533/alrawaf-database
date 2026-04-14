@@ -10,9 +10,11 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabType>("main");
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "var(--rawaf-bg)" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: "var(--body-bg)" }}>
       <Header activeTab={activeTab} onTabChange={setActiveTab} />
-      {activeTab === "main" ? <MainDashboard /> : <DatabasePage />}
+      <div key={activeTab}>
+        {activeTab === "main" ? <MainDashboard /> : <DatabasePage />}
+      </div>
     </div>
   );
 }
