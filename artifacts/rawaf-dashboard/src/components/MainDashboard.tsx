@@ -60,6 +60,7 @@ export default function MainDashboard({ filters, selectedId, onSelectId }: Props
         filteredContractors={filtered}
         isLoading={isLoading}
         onSelectId={onSelectId}
+        workTypeFilter={filters.workType}
       />
     </div>
   );

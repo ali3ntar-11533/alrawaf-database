@@ -7,21 +7,35 @@ interface Props {
   filteredContractors: Contractor[];
   isLoading: boolean;
   onSelectId: (id: number) => void;
+  workTypeFilter: string;
 }
 
 const BAR_COLORS = ["#2baa74", "#c5a059", "#3b8fcc", "#e8851c", "#9b59b6", "#e74c3c"];
 
-function formatPrice(p: number) {
+/** Compact label inside chart bars */
+function formatCompact(p: number) {
   if (p >= 1_000_000) return `${(p / 1_000_000).toFixed(2)}M`;
   if (p >= 1_000)     return `${(p / 1_000).toFixed(0)}K`;
-  return String(p);
+  return p.toLocaleString("en");
+}
+
+/** Exact price with thousands separators — no rounding */
+function formatExact(p: number) {
+  return p.toLocaleString("en");
 }
 
 function avg(arr: number[]) {
   return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
 }
 
-export default function MainContent({ contractor, allContractors, filteredContractors, isLoading, onSelectId }: Props) {
+export default function MainContent({
+  contractor,
+  allContractors,
+  filteredContractors,
+  isLoading,
+  onSelectId,
+  workTypeFilter,
+}: Props) {
   if (isLoading) {
     return (
       <main className="content-area">
@@ -32,24 +46,37 @@ export default function MainContent({ contractor, allContractors, filteredContra
     );
   }
 
-  const allPrices = allContractors.map((c) => c.price);
-  const maxPrice  = allPrices.length > 0 ? Math.max(...allPrices) : 1;
-  const minPrice  = allPrices.length > 0 ? Math.min(...allPrices) : 0;
-  const avgPrice  = avg(allPrices);
+  // ── Price stats: scope to filteredContractors when a filter is active ──
+  const pricePool = filteredContractors.length > 0 ? filteredContractors : allContractors;
+  const allPrices  = pricePool.map((c) => c.price);
+  const maxPrice   = allPrices.length > 0 ? Math.max(...allPrices) : 1;
+  const minPrice   = allPrices.length > 0 ? Math.min(...allPrices) : 0;
+  const avgPrice   = avg(allPrices); // exact average — no rounding
 
-  const contractorWithMin = allContractors.find((c) => c.price === minPrice);
-  const contractorWithMax = allContractors.find((c) => c.price === maxPrice);
-  const avgContractor     = [...allContractors].sort((a, b) => Math.abs(a.price - avgPrice) - Math.abs(b.price - avgPrice))[0];
+  const contractorWithMin = pricePool.find((c) => c.price === minPrice);
+  const contractorWithMax = pricePool.find((c) => c.price === maxPrice);
+  const avgContractor     = [...pricePool].sort(
+    (a, b) => Math.abs(a.price - avgPrice) - Math.abs(b.price - avgPrice)
+  )[0];
 
-  // Chart: best 5 = lowest prices (sorted ascending)
+  // ── Chart: best 5 = lowest prices in filtered set ──
   const chartSet = filteredContractors.length > 0 ? filteredContractors : allContractors;
   const best5    = [...chartSet].sort((a, b) => a.price - b.price).slice(0, 5);
   const chartMax = best5.length > 0 ? Math.max(...best5.map((c) => c.price)) : 1;
 
-  // Work history: same project, different contractor
-  const workHistory = allContractors
-    .filter((c) => contractor && c.id !== contractor.id && c.project === contractor.project)
-    .slice(0, 4);
+  // ── Work history: same workType as current contractor OR the active filter ──
+  // Shows other contractors in DB who share the same نوع الأعمال
+  const historyWorkType = workTypeFilter || contractor?.workType || "";
+  const workHistory = contractor
+    ? allContractors
+        .filter((c) =>
+          c.id !== contractor.id &&
+          (historyWorkType
+            ? c.workType.includes(historyWorkType) || historyWorkType.includes(c.workType)
+            : c.workType === contractor.workType)
+        )
+        .slice(0, 4)
+    : [];
 
   if (!contractor) {
     return (
@@ -86,8 +113,8 @@ export default function MainContent({ contractor, allContractors, filteredContra
           </div>
           <div style={{ textAlign: "left", flexShrink: 0 }}>
             <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.38)", textTransform: "uppercase", letterSpacing: "0.08em" }}>سعر البند</div>
-            <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--gold)", lineHeight: 1, direction: "ltr" }}>
-              {(contractor.price / 1_000_000).toFixed(2)}M
+            <div style={{ fontSize: "1.3rem", fontWeight: 900, color: "var(--gold)", lineHeight: 1, direction: "ltr" }}>
+              {formatExact(contractor.price)}
             </div>
             <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.35)" }}>ريال سعودي</div>
           </div>
@@ -168,7 +195,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
         </div>
       </div>
 
-      {/* ── 3. سجل الأعمال المنفذة سابقاً — same project ── */}
+      {/* ── 3. سجل الأعمال المنفذة سابقاً — same workType ── */}
       {workHistory.length > 0 && (
         <div className="card animate-fade-up" style={{ marginBottom: "16px", animationDelay: "0.1s" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
@@ -176,9 +203,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
               <Clock size={14} style={{ color: "var(--gold)" }} />
               <h3 style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--charcoal)" }}>سجل الأعمال المنفذة سابقاً</h3>
             </div>
-            <span style={{ fontSize: "0.6rem", color: "#bbb", background: "#f5f0e8", borderRadius: "4px", padding: "2px 7px" }}>
-              مشاريع مشتركة: {contractor.project}
-            </span>
+            {/* badge removed per request */}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {workHistory.map((w, i) => (
@@ -203,8 +228,8 @@ export default function MainContent({ contractor, allContractors, filteredContra
                   </div>
                 </div>
                 <div style={{ textAlign: "left", flexShrink: 0 }}>
-                  <div style={{ fontSize: "0.7rem", fontWeight: 800, color: BAR_COLORS[i % BAR_COLORS.length] }}>
-                    {formatPrice(w.price)} ر.س
+                  <div style={{ fontSize: "0.7rem", fontWeight: 800, color: BAR_COLORS[i % BAR_COLORS.length], direction: "ltr" }}>
+                    {formatExact(w.price)} ر.س
                   </div>
                 </div>
               </div>
@@ -250,7 +275,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
                         boxShadow: isCurrent ? "0 0 8px rgba(197,160,89,0.35)" : i === 0 ? "0 0 8px rgba(43,170,116,0.3)" : "none",
                       }}
                     >
-                      <span style={{ fontSize: "0.58rem", color: "#fff", fontWeight: 700 }}>{formatPrice(c.price)}</span>
+                      <span style={{ fontSize: "0.58rem", color: "#fff", fontWeight: 700 }}>{formatCompact(c.price)}</span>
                     </div>
                   </div>
                 </div>
@@ -263,7 +288,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
         </div>
       )}
 
-      {/* ── 5. Footer Stats: current → min → avg → max ── */}
+      {/* ── 5. Footer Stats: current → min → avg → max (exact prices, no rounding) ── */}
       {allPrices.length > 0 && (
         <div
           className="animate-fade-up"
@@ -276,64 +301,64 @@ export default function MainContent({ contractor, allContractors, filteredContra
             gridTemplateColumns: "repeat(4, 1fr)",
           }}
         >
-          {/* 4 clickable price stats: current → min → avg → max */}
-            {[
-              {
-                label: "سعر المقاول الحالي",
-                value: formatPrice(contractor.price),
-                color: "var(--gold)",
-                sub: contractor.contractor,
-                highlight: true,
-                id: contractor.id,
-              },
-              {
-                label: "السعر الأدنى",
-                value: formatPrice(minPrice),
-                color: "#2baa74",
-                sub: contractorWithMin?.contractor ?? "—",
-                id: contractorWithMin?.id,
-              },
-              {
-                label: "السعر المتوسط",
-                value: formatPrice(Math.round(avgPrice)),
-                color: "#3b8fcc",
-                sub: avgContractor?.contractor ?? "—",
-                id: avgContractor?.id,
-              },
-              {
-                label: "السعر الأعلى",
-                value: formatPrice(maxPrice),
-                color: "#e74c3c",
-                sub: contractorWithMax?.contractor ?? "—",
-                id: contractorWithMax?.id,
-              },
-            ].map((stat, i) => (
-              <div
-                key={i}
-                onClick={() => stat.id != null && onSelectId(stat.id)}
-                style={{
-                  padding: "16px 12px", textAlign: "center",
-                  borderLeft: "1px solid rgba(255,255,255,0.06)",
-                  position: "relative",
-                  background: stat.highlight ? "rgba(197,160,89,0.06)" : "transparent",
-                  cursor: stat.id != null ? "pointer" : "default",
-                  transition: "background 0.18s",
-                }}
-                onMouseEnter={(e) => stat.id != null && ((e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)")}
-                onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.background = stat.highlight ? "rgba(197,160,89,0.06)" : "transparent"}
-                title={stat.id != null ? `اضغط لعرض بيانات ${stat.sub}` : undefined}
-              >
-                <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "4px" }}>
-                  {stat.label}
-                </div>
-                <div style={{ fontSize: "1rem", fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: "4px", direction: "ltr" }}>
-                  {stat.value}
-                </div>
-                <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.28)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", padding: "0 4px" }}>
-                  {stat.sub}
-                </div>
+          {[
+            {
+              label: "سعر المقاول الحالي",
+              value: formatExact(contractor.price),
+              color: "var(--gold)",
+              sub: contractor.contractor,
+              highlight: true,
+              id: contractor.id,
+            },
+            {
+              label: "السعر الأدنى",
+              value: formatExact(minPrice),
+              color: "#2baa74",
+              sub: contractorWithMin?.contractor ?? "—",
+              id: contractorWithMin?.id,
+            },
+            {
+              label: "السعر المتوسط",
+              value: formatExact(Math.floor(avgPrice)),
+              color: "#3b8fcc",
+              sub: avgContractor?.contractor ?? "—",
+              id: avgContractor?.id,
+            },
+            {
+              label: "السعر الأعلى",
+              value: formatExact(maxPrice),
+              color: "#e74c3c",
+              sub: contractorWithMax?.contractor ?? "—",
+              id: contractorWithMax?.id,
+            },
+          ].map((stat, i) => (
+            <div
+              key={i}
+              onClick={() => stat.id != null && onSelectId(stat.id)}
+              style={{
+                padding: "16px 10px", textAlign: "center",
+                borderLeft: "1px solid rgba(255,255,255,0.06)",
+                position: "relative",
+                background: stat.highlight ? "rgba(197,160,89,0.06)" : "transparent",
+                cursor: stat.id != null ? "pointer" : "default",
+                transition: "background 0.18s",
+              }}
+              onMouseEnter={(e) => stat.id != null && ((e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)")}
+              onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.background = stat.highlight ? "rgba(197,160,89,0.06)" : "transparent"}
+              title={stat.id != null ? `اضغط لعرض بيانات ${stat.sub}` : undefined}
+            >
+              <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "5px" }}>
+                {stat.label}
               </div>
-            ))}
+              <div style={{ fontSize: "0.82rem", fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: "4px", direction: "ltr", fontVariantNumeric: "tabular-nums" }}>
+                {stat.value}
+              </div>
+              <div style={{ fontSize: "0.5rem", color: "rgba(255,255,255,0.22)", marginBottom: "2px" }}>ريال</div>
+              <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.28)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", padding: "0 4px" }}>
+                {stat.sub}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </main>
