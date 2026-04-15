@@ -32,7 +32,11 @@ function App() {
             onSelectId={setSelectedId}
           />
         ) : (
-          <DatabasePage search={search} onSelectContractor={(id) => { setSelectedId(id); setActiveTab("main"); }} />
+          <DatabasePage
+          search={search}
+          onSelectContractor={(id) => { setSelectedId(id); setActiveTab("main"); }}
+          onSearchAndNavigate={(term) => { setSearch(term); setSelectedId(null); setActiveTab("main"); }}
+        />
         )}
       </div>
     </div>

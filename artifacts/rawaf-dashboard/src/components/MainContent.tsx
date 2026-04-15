@@ -135,9 +135,9 @@ export default function MainContent({ contractor, allContractors, filteredContra
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #f0ebe0" }}>
           {[
-            { icon: <MapPin size={12} />,    label: "المحفظة",    value: contractor.portfolio },
-            { icon: <Building2 size={12} />, label: "المشروع",    value: contractor.project },
-            { icon: <Briefcase size={12} />, label: "نوع الأعمال", value: contractor.workType },
+            { icon: <MapPin size={12} />,    label: "المحفظة",       value: contractor.portfolio },
+            { icon: <Building2 size={12} />, label: "المشروع",       value: contractor.project },
+            { icon: <Briefcase size={12} />, label: "النشاط الرئيسي", value: mainActivity || "—" },
           ].map((item, i) => (
             <div
               key={i}
@@ -176,46 +176,51 @@ export default function MainContent({ contractor, allContractors, filteredContra
         </div>
       </div>
 
-      {/* ── 2. نطاق التوصيف الفني للبند ── */}
+      {/* ── 2. الوصف الفني للبند ── */}
       <div className="card animate-fade-up" style={{ marginBottom: "16px", animationDelay: "0.05s" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px", paddingBottom: "10px", borderBottom: "2px solid rgba(197,160,89,0.12)" }}>
           <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "linear-gradient(135deg, var(--gold), #a88540)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <FileText size={14} color="#fff" />
           </div>
           <div>
-            <h3 style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "1px" }}>نطاق التوصيف الفني للبند</h3>
+            <h3 style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "1px" }}>الوصف الفني للبند</h3>
             <div style={{ fontSize: "0.58rem", color: "#bbb" }}>البيانات الفنية للمقاول المختار</div>
           </div>
         </div>
 
+        {/* 1. الوصف الفني (technicalScope) */}
+        <div style={{ marginBottom: "14px" }}>
+          <div style={{ fontSize: "0.55rem", color: "#bbb", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "7px", fontWeight: 700 }}>نطاق التوصيف الفني للبند</div>
+          <p style={{ fontSize: "0.78rem", color: "#555", lineHeight: 1.8, margin: 0, background: "#f9f7f3", borderRadius: "9px", padding: "12px 14px", borderRight: "3px solid var(--gold)" }}>
+            {contractor.technicalScope || "—"}
+          </p>
+        </div>
+
+        {/* 2. Grid: نوع الأعمال — نوع العمل — الوحدة */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "12px" }}>
           <div style={{ background: "linear-gradient(135deg, rgba(197,160,89,0.07), rgba(197,160,89,0.02))", border: "1px solid rgba(197,160,89,0.2)", borderRadius: "9px", padding: "12px 14px" }}>
-            <div style={{ fontSize: "0.55rem", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>نوع العمل</div>
-            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>
-              {(contractor as any).workCategory || contractor.workType}
-            </div>
+            <div style={{ fontSize: "0.55rem", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>نوع الأعمال</div>
+            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>{contractor.workType || "—"}</div>
+          </div>
+          <div style={{ background: "linear-gradient(135deg, rgba(58,54,50,0.04), rgba(58,54,50,0.01))", border: "1px solid rgba(58,54,50,0.1)", borderRadius: "9px", padding: "12px 14px" }}>
+            <div style={{ fontSize: "0.55rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>نوع العمل</div>
+            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>{(contractor as any).workCategory || "—"}</div>
           </div>
           <div style={{ background: "linear-gradient(135deg, rgba(58,54,50,0.04), rgba(58,54,50,0.01))", border: "1px solid rgba(58,54,50,0.1)", borderRadius: "9px", padding: "12px 14px" }}>
             <div style={{ fontSize: "0.55rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>الوحدة</div>
-            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>
-              {(contractor as any).unit || "—"}
-            </div>
-          </div>
-          <div style={{ background: "linear-gradient(135deg, rgba(59,143,204,0.06), rgba(59,143,204,0.01))", border: "1px solid rgba(59,143,204,0.15)", borderRadius: "9px", padding: "12px 14px" }}>
-            <div style={{ fontSize: "0.55rem", color: "#3b8fcc", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>النشاط الرئيسي</div>
-            <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--charcoal)" }}>
-              {mainActivity || "—"}
-            </div>
+            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>{(contractor as any).unit || "—"}</div>
           </div>
         </div>
 
-        <div>
-          <div style={{ fontSize: "0.55rem", color: "#bbb", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "7px", fontWeight: 700 }}>الوصف الفني للبند</div>
-          <p style={{ fontSize: "0.78rem", color: "#555", lineHeight: 1.8, margin: 0, background: "#f9f7f3", borderRadius: "9px", padding: "12px 14px", borderRight: "3px solid var(--gold)" }}>
-            {(contractor as any).workScopeText || (contractor as any).workDescription ||
-              "يشتمل هذا البند على تنفيذ الأعمال الفنية وفقاً للمواصفات والمخططات المعتمدة ومتطلبات الجهة المالكة."}
-          </p>
-        </div>
+        {/* 3. الوصف الفني الإضافي */}
+        {((contractor as any).workScopeText || (contractor as any).workDescription) && (
+          <div>
+            <div style={{ fontSize: "0.55rem", color: "#bbb", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "7px", fontWeight: 700 }}>ملاحظات فنية إضافية</div>
+            <p style={{ fontSize: "0.78rem", color: "#555", lineHeight: 1.8, margin: 0, background: "#f5f2ec", borderRadius: "9px", padding: "12px 14px", borderRight: "3px solid #bbb" }}>
+              {(contractor as any).workScopeText || (contractor as any).workDescription}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ── 3. سجل الأعمال المنفذة سابقاً ── */}
