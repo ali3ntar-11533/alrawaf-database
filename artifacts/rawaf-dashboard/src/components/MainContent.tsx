@@ -25,31 +25,27 @@ function avg(arr: number[]) {
   return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
 }
 
-/** Read-only 5-star display */
-function StarDisplay({ rating }: { rating?: number | null }) {
+/** Inline read-only stars — shown next to contractor name */
+function StarInline({ rating }: { rating?: number | null }) {
   const r = Math.max(0, Math.min(5, Math.round(rating ?? 0)));
+  if (r === 0) return null;
   return (
-    <div style={{ display: "flex", gap: "2px", alignItems: "center" }}>
+    <span style={{ display: "inline-flex", gap: "1px", alignItems: "center", verticalAlign: "middle" }}>
       {[1, 2, 3, 4, 5].map((i) => (
         <span
           key={i}
           style={{
-            fontSize: "0.85rem",
+            fontSize: "0.8rem",
             color: i <= r ? "#f5c518" : "rgba(255,255,255,0.2)",
             lineHeight: 1,
-            filter: i <= r ? "drop-shadow(0 0 3px rgba(245,197,24,0.5))" : "none",
-            transition: "color 0.15s",
+            filter: i <= r ? "drop-shadow(0 0 2px rgba(245,197,24,0.5))" : "none",
           }}
-        >
-          ★
-        </span>
+        >★</span>
       ))}
-      {r > 0 && (
-        <span style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.45)", marginRight: "3px" }}>
-          ({r}/5)
-        </span>
-      )}
-    </div>
+      <span style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.4)", marginRight: "3px" }}>
+        {r}/5
+      </span>
+    </span>
   );
 }
 
@@ -78,11 +74,16 @@ export default function MainContent({ contractor, allContractors, filteredContra
 
   const chartSet = filteredContractors.length > 0 ? filteredContractors : allContractors;
   const best5    = [...chartSet].sort((a, b) => a.price - b.price).slice(0, 5);
-  const chartMax = best5.length > 0 ? Math.max(...best5.map((c) => c.price)) : 1;
 
+  // Work history: other projects of the SAME contractor with matching workType
   const workHistory = contractor
     ? allContractors
-        .filter((c) => c.id !== contractor.id && c.workType === contractor.workType)
+        .filter(
+          (c) =>
+            c.id !== contractor.id &&
+            c.contractor === contractor.contractor &&
+            c.workType === contractor.workType
+        )
         .slice(0, 4)
     : [];
 
@@ -97,8 +98,9 @@ export default function MainContent({ contractor, allContractors, filteredContra
     );
   }
 
-  const rating = (contractor as any).rating as number | null | undefined;
+  const rating       = (contractor as any).rating as number | null | undefined;
   const localContent = (contractor as any).localContent as string | null | undefined;
+  const mainActivity = (contractor as any).mainActivity as string | null | undefined;
 
   return (
     <main className="content-area">
@@ -107,15 +109,17 @@ export default function MainContent({ contractor, allContractors, filteredContra
       <div className="card animate-fade-up" style={{ marginBottom: "16px", padding: 0, overflow: "hidden" }}>
         <div style={{ background: "linear-gradient(135deg, var(--charcoal) 0%, #2d2420 100%)", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: "0.58rem", color: "rgba(197,160,89,0.65)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "3px" }}>
+            <div style={{ fontSize: "0.58rem", color: "rgba(197,160,89,0.65)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "5px" }}>
               بيانات المقاول الرئيسية
             </div>
-            <h2 style={{ fontSize: "0.98rem", fontWeight: 800, color: "#ffffff", lineHeight: 1.3, marginBottom: "6px" }}>
-              {contractor.contractor}
-            </h2>
-            {/* Star rating */}
-            <StarDisplay rating={rating} />
-            <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", marginTop: "6px" }}>
+            {/* Contractor name + stars on the same line */}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", marginBottom: "6px" }}>
+              <h2 style={{ fontSize: "0.98rem", fontWeight: 800, color: "#ffffff", lineHeight: 1.3, margin: 0 }}>
+                {contractor.contractor}
+              </h2>
+              <StarInline rating={rating} />
+            </div>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
               <span style={{ fontSize: "0.65rem", background: "rgba(197,160,89,0.18)", color: "var(--gold)", borderRadius: "20px", padding: "2px 10px", fontWeight: 700, border: "1px solid rgba(197,160,89,0.28)" }}>
                 {contractor.workType}
               </span>
@@ -188,7 +192,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "12px" }}>
           <div style={{ background: "linear-gradient(135deg, rgba(197,160,89,0.07), rgba(197,160,89,0.02))", border: "1px solid rgba(197,160,89,0.2)", borderRadius: "9px", padding: "12px 14px" }}>
             <div style={{ fontSize: "0.55rem", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>نوع العمل</div>
             <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>
@@ -199,6 +203,12 @@ export default function MainContent({ contractor, allContractors, filteredContra
             <div style={{ fontSize: "0.55rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>الوحدة</div>
             <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>
               {(contractor as any).unit || "—"}
+            </div>
+          </div>
+          <div style={{ background: "linear-gradient(135deg, rgba(59,143,204,0.06), rgba(59,143,204,0.01))", border: "1px solid rgba(59,143,204,0.15)", borderRadius: "9px", padding: "12px 14px" }}>
+            <div style={{ fontSize: "0.55rem", color: "#3b8fcc", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>النشاط الرئيسي</div>
+            <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--charcoal)" }}>
+              {mainActivity || "—"}
             </div>
           </div>
         </div>
@@ -218,6 +228,9 @@ export default function MainContent({ contractor, allContractors, filteredContra
           <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "12px" }}>
             <Clock size={14} style={{ color: "var(--gold)" }} />
             <h3 style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--charcoal)" }}>سجل الأعمال المنفذة سابقاً</h3>
+            <span style={{ fontSize: "0.62rem", color: "#bbb", background: "#f5f0e8", borderRadius: "4px", padding: "2px 7px", marginRight: "auto" }}>
+              مشاريع أخرى لنفس المقاول
+            </span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {workHistory.map((w, i) => (
@@ -233,12 +246,12 @@ export default function MainContent({ contractor, allContractors, filteredContra
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--charcoal)", marginBottom: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {w.contractor}
+                    {w.project}
                   </div>
                   <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                     <span style={{ fontSize: "0.62rem", color: "#aaa" }}>{w.technicalScope}</span>
                     <span style={{ fontSize: "0.62rem", color: "#ddd" }}>•</span>
-                    <span style={{ fontSize: "0.62rem", color: "#aaa" }}>{w.workType}</span>
+                    <span style={{ fontSize: "0.62rem", color: "#aaa" }}>{w.contractNo}</span>
                   </div>
                 </div>
                 <div style={{ textAlign: "left", flexShrink: 0 }}>
@@ -272,7 +285,6 @@ export default function MainContent({ contractor, allContractors, filteredContra
                   key={c.id}
                   onClick={() => onSelectId(c.id)}
                   style={{ display: "flex", alignItems: "center", gap: "9px", cursor: "pointer" }}
-                  title={`اضغط لعرض بيانات ${c.contractor}`}
                 >
                   <div style={{ width: "120px", fontSize: "0.7rem", color: isCurrent ? "var(--gold)" : "var(--charcoal)", textAlign: "right", fontWeight: isCurrent ? 800 : 600, flexShrink: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {c.contractor}
@@ -280,7 +292,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
                   <div style={{ flex: 1, background: "#f5f0e8", borderRadius: "5px", overflow: "hidden", height: "19px" }}>
                     <div
                       style={{
-                        width: `${(c.price / chartMax) * 100}%`, height: "100%",
+                        width: `${(c.price / Math.max(...best5.map(x => x.price))) * 100}%`, height: "100%",
                         background: isCurrent
                           ? "linear-gradient(90deg, var(--gold), #e8c870)"
                           : i === 0 ? "linear-gradient(90deg, #2baa74, #36c786)" : BAR_COLORS[i % BAR_COLORS.length],
@@ -333,7 +345,6 @@ export default function MainContent({ contractor, allContractors, filteredContra
               }}
               onMouseEnter={(e) => stat.id != null && ((e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)")}
               onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.background = stat.highlight ? "rgba(197,160,89,0.06)" : "transparent"}
-              title={stat.id != null ? `اضغط لعرض بيانات ${stat.sub}` : undefined}
             >
               <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "5px" }}>{stat.label}</div>
               <div style={{ fontSize: "0.82rem", fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: "4px", direction: "ltr", fontVariantNumeric: "tabular-nums" }}>{stat.value}</div>

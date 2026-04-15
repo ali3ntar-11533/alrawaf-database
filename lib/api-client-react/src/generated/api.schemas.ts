@@ -29,6 +29,8 @@ export interface Contractor {
   /** @nullable */
   unit?: string | null;
   /** @nullable */
+  mainActivity?: string | null;
+  /** @nullable */
   rating?: number | null;
   /** @nullable */
   localContent?: string | null;
@@ -53,6 +55,8 @@ export interface CreateContractorBody {
   workCategory?: string | null;
   /** @nullable */
   unit?: string | null;
+  /** @nullable */
+  mainActivity?: string | null;
   /** @nullable */
   rating?: number | null;
   /** @nullable */
