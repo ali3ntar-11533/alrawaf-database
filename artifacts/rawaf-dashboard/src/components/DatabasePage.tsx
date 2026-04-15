@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { X, Plus, Trash2, Pencil, Lock, Download, Copy } from "lucide-react";
 import * as XLSX from "xlsx";
 import {
@@ -190,6 +190,7 @@ interface Props {
 /* ─── Main Component ───────────────────────────── */
 export default function DatabasePage({ search, onSelectContractor, onSearchAndNavigate }: Props) {
   const [authenticated, setAuthenticated] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1");
+  const [wasAutoLocked, setWasAutoLocked] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
@@ -208,6 +209,50 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
   const [cloneLocalContent, setCloneLocalContent] = useState("");
 
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+
+  /* ── Idle auto-lock (5 min inactivity) ── */
+  const IDLE_MS       = 5 * 60 * 1000; // 5 minutes
+  const idleTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function triggerAutoLock() {
+    sessionStorage.removeItem(SESSION_KEY);
+    setAuthenticated(false);
+    setWasAutoLocked(true);
+    setPasswordInput("");
+    setPasswordError("");
+    // Clear all open modals and sensitive form data
+    setEditRow(null);
+    setEditForm(EMPTY_FORM);
+    setEditRating(0);
+    setShowAddForm(false);
+    setAddForm(EMPTY_FORM);
+    setAddRating(0);
+    setCloneSource(null);
+    setCloneTechScope("");
+    setClonePrice("");
+    setCloneUnit("");
+    setCloneLocalContent("");
+    setDeleteConfirm(null);
+  }
+
+  useEffect(() => {
+    if (!authenticated) return; // only arm the timer when logged in
+
+    function resetIdleTimer() {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(triggerAutoLock, IDLE_MS);
+    }
+
+    const EVENTS = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"] as const;
+    EVENTS.forEach((e) => document.addEventListener(e, resetIdleTimer, { passive: true }));
+    resetIdleTimer(); // arm immediately on login
+
+    return () => {
+      EVENTS.forEach((e) => document.removeEventListener(e, resetIdleTimer));
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authenticated]);
 
   const queryClient    = useQueryClient();
   const { data: contractors = [], isLoading } = useListContractors();
@@ -246,6 +291,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
     if (passwordInput === DB_PASSWORD) {
       sessionStorage.setItem(SESSION_KEY, "1");
       setAuthenticated(true);
+      setWasAutoLocked(false);
     } else {
       setPasswordError("كلمة المرور غير صحيحة، يرجى المحاولة مجدداً");
     }
@@ -310,7 +356,14 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
           <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "linear-gradient(135deg, var(--gold), #a88540)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
             <Lock size={28} color="#fff" />
           </div>
-          <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "8px" }}>قاعدة البيانات محمية</h2>
+          <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "8px" }}>
+            {wasAutoLocked ? "تم القفل التلقائي" : "قاعدة البيانات محمية"}
+          </h2>
+          {wasAutoLocked && (
+            <div style={{ background: "rgba(197,160,89,0.08)", border: "1px solid rgba(197,160,89,0.25)", borderRadius: "8px", padding: "8px 14px", marginBottom: "12px", fontSize: "0.75rem", color: "#a88540" }}>
+              انتهت جلستك بسبب عدم النشاط لمدة 5 دقائق. أعد تسجيل الدخول للمتابعة.
+            </div>
+          )}
           <p style={{ fontSize: "0.82rem", color: "#888", marginBottom: "24px" }}>أدخل كلمة المرور للوصول إلى السجل الشامل</p>
           <form onSubmit={handlePasswordSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <input type="password" placeholder="كلمة المرور" value={passwordInput}
