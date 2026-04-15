@@ -201,6 +201,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
   const [cloneSource, setCloneSource]       = useState<Contractor | null>(null);
   const [cloneTechScope, setCloneTechScope] = useState("");
   const [clonePrice, setClonePrice]         = useState("");
+  const [cloneUnit, setCloneUnit]           = useState("");
 
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
@@ -248,6 +249,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
     setCloneSource(c);
     setCloneTechScope(c.technicalScope);
     setClonePrice(String(c.price));
+    setCloneUnit((c as any).unit ?? "");
   }
 
   async function handleEditSubmit(e: React.FormEvent) {
@@ -273,7 +275,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
     const baseForm = contractorToForm(cloneSource);
     await createMutation.mutateAsync({
       data: buildPutData(
-        { ...baseForm, technicalScope: cloneTechScope, price: clonePrice },
+        { ...baseForm, technicalScope: cloneTechScope, price: clonePrice, unit: cloneUnit },
         (cloneSource as any).rating ?? null,
       ),
     });
@@ -551,6 +553,13 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                   <input type="number" value={clonePrice} onChange={(e) => setClonePrice(e.target.value)} style={inputStyle}
                     onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")}
                     placeholder="0" min="0"
+                  />
+                </div>
+                <div>
+                  <label style={{ ...labelStyle, color: "#c5a059", display: "block", marginBottom: "5px" }}>الوحدة</label>
+                  <input type="text" value={cloneUnit} onChange={(e) => setCloneUnit(e.target.value)} style={inputStyle}
+                    onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")}
+                    placeholder="م2، م3، م.ط، نقطة..."
                   />
                 </div>
               </div>

@@ -42,18 +42,18 @@ function contractorMatchesSearch(c: Contractor, search: string): boolean {
 export default function MainDashboard({ search, selectedId, onSelectId }: Props) {
   const { data: allContractors = [], isLoading } = useListContractors();
 
-  const hasSearch         = search.trim().length > 0;
-  const hasDirectSelect   = selectedId != null;
+  const hasSearch       = search.trim().length > 0;
+  const hasDirectSelect = selectedId != null;
 
-  // When user navigates directly from DB (no search), show all contractors
-  // When searching, show only matching contractors
+  // Filtered list for the sidebar — strict: only search matches, or just the
+  // directly-selected contractor when coming from the DB tab without a search term
   const filtered: Contractor[] = hasSearch
     ? allContractors.filter((c: Contractor) => contractorMatchesSearch(c, search.trim()))
     : hasDirectSelect
-    ? allContractors
+    ? allContractors.filter((c: Contractor) => c.id === selectedId)
     : [];
 
-  // Determine selected contractor
+  // Determine selected contractor from the search pool or the full list
   const pool = hasSearch ? filtered : allContractors;
   const selected: Contractor | null =
     selectedId != null
