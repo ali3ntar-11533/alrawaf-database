@@ -39,12 +39,12 @@ const EMPTY_FORM: FormData = {
   localContent: "", workDescription: "", workScopeText: "",
 };
 
-const FORM_FIELDS: { key: keyof FormData; label: string; type?: string; wide?: boolean; required?: boolean }[] = [
+const FORM_FIELDS: { key: keyof FormData; label: string; type?: string; wide?: boolean; rows?: number; required?: boolean }[] = [
   { key: "contractNo",      label: "١. رقم العقد",                 required: true },
   { key: "contractor",      label: "٢. اسم المقاول / المورد",      required: true },
   { key: "project",         label: "٣. المشروع",                   required: true },
   { key: "portfolio",       label: "٤. المحفظة",                   required: true },
-  { key: "technicalScope",  label: "٥. نطاق التوصيف الفني للبند",  required: true },
+  { key: "technicalScope",  label: "٥. نطاق التوصيف الفني للبند",  required: true, wide: true, rows: 3 },
   { key: "mainActivity",    label: "٦. النشاط الرئيسي" },
   { key: "workType",        label: "٧. نوع الأعمال",               required: true },
   { key: "workCategory",    label: "٨. نوع العمل (تصنيف)" },
@@ -465,7 +465,7 @@ export default function DatabasePage({ search, onSelectContractor }: Props) {
                   <div key={f.key} style={{ display: "flex", flexDirection: "column", gap: "4px", gridColumn: f.wide ? "1 / -1" : undefined }}>
                     <label style={{ ...labelStyle, color: f.required ? "#c5a059" : "#aaa" }}>{f.label}{f.required ? " *" : ""}</label>
                     {f.wide ? (
-                      <textarea rows={2} value={editForm[f.key]} onChange={(e) => setEditForm((p) => ({ ...p, [f.key]: e.target.value }))} style={textareaStyle}
+                      <textarea rows={f.rows ?? 2} value={editForm[f.key]} onChange={(e) => setEditForm((p) => ({ ...p, [f.key]: e.target.value }))} style={textareaStyle}
                         onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")} />
                     ) : (
                       <input type={f.type ?? "text"} value={editForm[f.key]} onChange={(e) => setEditForm((p) => ({ ...p, [f.key]: e.target.value }))} style={inputStyle}
@@ -507,7 +507,7 @@ export default function DatabasePage({ search, onSelectContractor }: Props) {
                   <div key={f.key} style={{ display: "flex", flexDirection: "column", gap: "4px", gridColumn: f.wide ? "1 / -1" : undefined }}>
                     <label style={{ ...labelStyle, color: f.required ? "#c5a059" : "#aaa" }}>{f.label}{f.required ? " *" : ""}</label>
                     {f.wide ? (
-                      <textarea rows={2} value={addForm[f.key]} onChange={(e) => setAddForm((p) => ({ ...p, [f.key]: e.target.value }))} style={textareaStyle}
+                      <textarea rows={f.rows ?? 2} value={addForm[f.key]} onChange={(e) => setAddForm((p) => ({ ...p, [f.key]: e.target.value }))} style={textareaStyle}
                         onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")} />
                     ) : (
                       <input type={f.type ?? "text"} value={addForm[f.key]} onChange={(e) => setAddForm((p) => ({ ...p, [f.key]: e.target.value }))} style={inputStyle}

@@ -20,51 +20,48 @@ function normalize(s: string) {
     .trim();
 }
 
-function fuzzyMatch(haystack: string, needle: string) {
-  if (!needle) return true;
-  const h = normalize(haystack);
-  const n = normalize(needle);
-  if (h.includes(n)) return true;
-  if (n.length >= 3) {
-    for (let i = 0; i <= n.length - 3; i++) {
-      if (h.includes(n.slice(i, i + 3))) return true;
-    }
-  }
-  return false;
-}
-
 function contractorMatchesSearch(c: Contractor, search: string): boolean {
   if (!search) return false;
+  const n = normalize(search);
   return (
-    fuzzyMatch(c.contractNo, search) ||
-    fuzzyMatch(c.contractor, search) ||
-    fuzzyMatch(c.project, search) ||
-    fuzzyMatch(c.portfolio, search) ||
-    fuzzyMatch(c.technicalScope, search) ||
-    fuzzyMatch(c.workType, search) ||
-    fuzzyMatch((c as any).workCategory ?? "", search) ||
-    fuzzyMatch((c as any).unit ?? "", search) ||
-    fuzzyMatch(c.phone, search) ||
-    fuzzyMatch(c.email, search)
+    normalize(c.contractNo).includes(n)       ||
+    normalize(c.contractor).includes(n)       ||
+    normalize(c.project).includes(n)          ||
+    normalize(c.portfolio).includes(n)        ||
+    normalize(c.technicalScope).includes(n)   ||
+    normalize(c.workType).includes(n)         ||
+    normalize((c as any).workCategory ?? "").includes(n) ||
+    normalize((c as any).mainActivity ?? "").includes(n) ||
+    normalize((c as any).unit ?? "").includes(n) ||
+    normalize(c.phone).includes(n)            ||
+    normalize(c.email).includes(n)            ||
+    normalize((c as any).localContent ?? "").includes(n)
   );
 }
 
 export default function MainDashboard({ search, selectedId, onSelectId }: Props) {
   const { data: allContractors = [], isLoading } = useListContractors();
 
-  const hasSearch = search.trim().length > 0;
+  const hasSearch         = search.trim().length > 0;
+  const hasDirectSelect   = selectedId != null;
 
-  const filtered = hasSearch
+  // When user navigates directly from DB (no search), show all contractors
+  // When searching, show only matching contractors
+  const filtered: Contractor[] = hasSearch
     ? allContractors.filter((c: Contractor) => contractorMatchesSearch(c, search.trim()))
+    : hasDirectSelect
+    ? allContractors
     : [];
 
-  const selected: Contractor | null = !hasSearch
-    ? null
-    : (selectedId != null ? filtered.find((c: Contractor) => c.id === selectedId) : null) ??
-      filtered[0] ??
-      null;
+  // Determine selected contractor
+  const pool = hasSearch ? filtered : allContractors;
+  const selected: Contractor | null =
+    selectedId != null
+      ? pool.find((c: Contractor) => c.id === selectedId) ?? pool[0] ?? null
+      : filtered[0] ?? null;
 
-  if (!hasSearch && !isLoading) {
+  // Show welcome only when truly idle — no search, no direct selection
+  if (!hasSearch && !hasDirectSelect && !isLoading) {
     return <WelcomeHero />;
   }
 
@@ -76,13 +73,13 @@ export default function MainDashboard({ search, selectedId, onSelectId }: Props)
         selectedId={selected?.id ?? null}
         onSelect={onSelectId}
         isLoading={isLoading}
-        hasFilter={hasSearch}
+        hasFilter={hasSearch || hasDirectSelect}
         workTypeFilter=""
       />
       <MainContent
         contractor={selected}
         allContractors={allContractors}
-        filteredContractors={filtered}
+        filteredContractors={filtered.length > 0 ? filtered : allContractors}
         isLoading={isLoading}
         onSelectId={onSelectId}
       />

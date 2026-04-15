@@ -112,18 +112,14 @@ export default function MainContent({ contractor, allContractors, filteredContra
             <div style={{ fontSize: "0.58rem", color: "rgba(197,160,89,0.65)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "5px" }}>
               بيانات المقاول الرئيسية
             </div>
-            {/* Contractor name + stars on the same line */}
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", marginBottom: "6px" }}>
-              <h2 style={{ fontSize: "0.98rem", fontWeight: 800, color: "#ffffff", lineHeight: 1.3, margin: 0 }}>
-                {contractor.contractor}
-              </h2>
+            {/* Contractor name on its own line */}
+            <h2 style={{ fontSize: "0.98rem", fontWeight: 800, color: "#ffffff", lineHeight: 1.3, margin: "0 0 6px 0" }}>
+              {contractor.contractor}
+            </h2>
+            {/* Stars + contract number on same line */}
+            <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
               <StarInline rating={rating} />
-            </div>
-            <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-              <span style={{ fontSize: "0.65rem", background: "rgba(197,160,89,0.18)", color: "var(--gold)", borderRadius: "20px", padding: "2px 10px", fontWeight: 700, border: "1px solid rgba(197,160,89,0.28)" }}>
-                {contractor.workType}
-              </span>
-              <span style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.45)" }}>
+              <span style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.4)", borderRight: "1px solid rgba(255,255,255,0.15)", paddingRight: "12px" }}>
                 {contractor.contractNo}
               </span>
             </div>
