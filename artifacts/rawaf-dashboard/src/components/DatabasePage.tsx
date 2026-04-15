@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { X, Plus, Trash2, Pencil, Lock, Download, Copy } from "lucide-react";
+import logoImg from "@assets/logo_1776260992247.jpg";
 import * as XLSX from "xlsx";
 import {
   useListContractors,
@@ -353,11 +354,13 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "70vh", padding: "20px" }}>
         <div className="card animate-fade-up" style={{ maxWidth: "400px", width: "100%", padding: "40px 32px", textAlign: "center" }}>
-          <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "linear-gradient(135deg, var(--gold), #a88540)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
-            <Lock size={28} color="#fff" />
+          {/* Company logo */}
+          <div style={{ margin: "0 auto 6px", width: "96px", height: "96px", borderRadius: "20px", background: "#fff", boxShadow: "0 8px 28px rgba(0,0,0,0.12), 0 0 0 1px rgba(197,160,89,0.25)", display: "flex", alignItems: "center", justifyContent: "center", padding: "10px", overflow: "hidden" }}>
+            <img src={logoImg} alt="Alrawaf" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
           </div>
           {/* English brand name */}
-          <p style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--gold)", fontFamily: "'Inter', sans-serif", margin: "0 0 14px" }}>
+          <p style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--gold)", fontFamily: "'Inter', sans-serif", margin: "14px 0 14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+            <Lock size={11} />
             Database · Alrawaf Contracting Company
           </p>
           <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "8px" }}>
