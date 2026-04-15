@@ -353,9 +353,13 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "70vh", padding: "20px" }}>
         <div className="card animate-fade-up" style={{ maxWidth: "400px", width: "100%", padding: "40px 32px", textAlign: "center" }}>
-          <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "linear-gradient(135deg, var(--gold), #a88540)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+          <div style={{ width: "64px", height: "64px", borderRadius: "50%", background: "linear-gradient(135deg, var(--gold), #a88540)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
             <Lock size={28} color="#fff" />
           </div>
+          {/* English brand name */}
+          <p style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--gold)", fontFamily: "'Inter', sans-serif", margin: "0 0 14px" }}>
+            Database · Alrawaf Contracting Company
+          </p>
           <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "8px" }}>
             {wasAutoLocked ? "تم القفل التلقائي" : "قاعدة البيانات محمية"}
           </h2>

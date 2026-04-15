@@ -38,11 +38,26 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange 
                 fontWeight: 800, color: "#ffffff",
                 lineHeight: 1.25, letterSpacing: "-0.01em",
                 textShadow: "0 2px 12px rgba(0,0,0,0.4)",
+                margin: 0,
               }}
             >
               قاعدة بيانات المقاولين والموردين ومقدمي الخدمات
             </h1>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "6px" }}>
+            <p
+              style={{
+                fontSize: "clamp(0.72rem, 1.4vw, 0.88rem)",
+                fontWeight: 700,
+                color: "var(--gold)",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                margin: "4px 0 5px",
+                fontFamily: "'Inter', sans-serif",
+                textShadow: "0 1px 6px rgba(0,0,0,0.35)",
+              }}
+            >
+              Database · Alrawaf Contracting Company
+            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--gold)", flexShrink: 0, boxShadow: "0 0 6px var(--gold)" }} />
               <p style={{ fontSize: "0.82rem", color: "rgba(232,213,163,0.9)", fontWeight: 500, margin: 0 }}>
                 إدارة المشتريات والعقود — شركة الرواف للمقاولات
