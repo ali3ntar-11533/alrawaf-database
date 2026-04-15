@@ -81,11 +81,14 @@ export default function MainContent({ contractor, allContractors, filteredContra
       })
     : contractor ? [contractor] : [];
 
-  const pricePool  = globalPricePool.length > 0 ? globalPricePool : allContractors;
-  const allPrices  = pricePool.map((c) => c.price);
-  const maxPrice   = allPrices.length > 0 ? Math.max(...allPrices) : 1;
-  const minPrice   = allPrices.length > 0 ? Math.min(...allPrices) : 0;
-  const avgPrice   = avg(allPrices);
+  // pricePool is STRICTLY the global scope pool — never fall back to unrelated data.
+  // When no other contractors share this scope, the pool contains only the current contractor.
+  const pricePool     = globalPricePool.length > 0 ? globalPricePool : [contractor as Contractor];
+  const scopePoolSize = globalPricePool.length; // how many records match this scope
+  const allPrices     = pricePool.map((c) => c.price);
+  const maxPrice      = allPrices.length > 0 ? Math.max(...allPrices) : 1;
+  const minPrice      = allPrices.length > 0 ? Math.min(...allPrices) : 0;
+  const avgPrice      = avg(allPrices);
 
   const contractorWithMin = pricePool.find((c) => c.price === minPrice);
   const contractorWithMax = pricePool.find((c) => c.price === maxPrice);
@@ -93,7 +96,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
     (a, b) => Math.abs(a.price - avgPrice) - Math.abs(b.price - avgPrice)
   )[0];
 
-  // Best 5 cheapest from the global pool
+  // Best 5 cheapest from the global pool (scope-filtered)
   const best5 = [...pricePool].sort((a, b) => a.price - b.price).slice(0, 5);
 
   // ── Work history: same contractor name + same technicalScope ──
@@ -327,7 +330,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
         </div>
       )}
 
-      {/* ── 5. Footer Stats ── */}
+      {/* ── 5. Footer Stats — مقارنة أسعار البند في كامل قاعدة البيانات ── */}
       {allPrices.length > 0 && (
         <div
           className="animate-fade-up"
@@ -336,35 +339,102 @@ export default function MainContent({ contractor, allContractors, filteredContra
             background: "linear-gradient(135deg, var(--charcoal) 0%, #2d2420 100%)",
             overflow: "hidden",
             boxShadow: "0 8px 32px rgba(30,25,20,0.18)",
-            display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
           }}
         >
-          {[
-            { label: "سعر المقاول الحالي", value: formatExact(contractor.price), color: "var(--gold)", sub: contractor.contractor, highlight: true, id: contractor.id },
-            { label: "السعر الأدنى",        value: formatExact(minPrice), color: "#2baa74", sub: contractorWithMin?.contractor ?? "—", id: contractorWithMin?.id },
-            { label: "السعر المتوسط",       value: formatExact(Math.floor(avgPrice)), color: "#3b8fcc", sub: avgContractor?.contractor ?? "—", id: avgContractor?.id },
-            { label: "السعر الأعلى",        value: formatExact(maxPrice), color: "#e74c3c", sub: contractorWithMax?.contractor ?? "—", id: contractorWithMax?.id },
-          ].map((stat, i) => (
-            <div
-              key={i}
-              onClick={() => stat.id != null && onSelectId(stat.id)}
-              style={{
-                padding: "16px 10px", textAlign: "center",
-                borderLeft: "1px solid rgba(255,255,255,0.06)",
-                background: stat.highlight ? "rgba(197,160,89,0.06)" : "transparent",
-                cursor: stat.id != null ? "pointer" : "default",
-                transition: "background 0.18s",
-              }}
-              onMouseEnter={(e) => stat.id != null && ((e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)")}
-              onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.background = stat.highlight ? "rgba(197,160,89,0.06)" : "transparent"}
-            >
-              <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "5px" }}>{stat.label}</div>
-              <div style={{ fontSize: "0.82rem", fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: "4px", direction: "ltr", fontVariantNumeric: "tabular-nums" }}>{stat.value}</div>
-              <div style={{ fontSize: "0.5rem", color: "rgba(255,255,255,0.22)", marginBottom: "2px" }}>ريال</div>
-              <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.28)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", padding: "0 4px" }}>{stat.sub}</div>
+          {/* Context header */}
+          <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: "0.6rem", color: "rgba(197,160,89,0.75)", fontWeight: 700, letterSpacing: "0.06em" }}>
+              تحليل أسعار البند • بحث شامل في قاعدة البيانات
+            </span>
+            <span style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.28)", background: "rgba(255,255,255,0.06)", borderRadius: "5px", padding: "2px 9px" }}>
+              {scopePoolSize > 1 ? `${scopePoolSize} سجل مطابق للوصف الفني` : "سجل واحد — لا توجد مقارنة بعد"}
+            </span>
+          </div>
+
+          {/* 4 stat cells */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
+            {[
+              {
+                label: "سعر المقاول الحالي",
+                sub2: contractor.contractor,
+                value: formatExact(contractor.price),
+                color: "var(--gold)",
+                highlight: true,
+                id: contractor.id,
+              },
+              {
+                label: "أدنى سعر تاريخي لهذا البند",
+                sub2: contractorWithMin?.contractor ?? "—",
+                value: formatExact(minPrice),
+                color: "#2baa74",
+                highlight: false,
+                id: contractorWithMin?.id,
+                isBest: contractor.price === minPrice,
+              },
+              {
+                label: "متوسط الأسعار لهذا البند",
+                sub2: avgContractor?.contractor ?? "—",
+                value: formatExact(Math.floor(avgPrice)),
+                color: "#3b8fcc",
+                highlight: false,
+                id: avgContractor?.id,
+              },
+              {
+                label: "أعلى سعر تاريخي لهذا البند",
+                sub2: contractorWithMax?.contractor ?? "—",
+                value: formatExact(maxPrice),
+                color: "#e74c3c",
+                highlight: false,
+                id: contractorWithMax?.id,
+              },
+            ].map((stat, i) => (
+              <div
+                key={i}
+                onClick={() => stat.id != null && onSelectId(stat.id)}
+                style={{
+                  padding: "14px 10px", textAlign: "center",
+                  borderLeft: i < 3 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                  background: stat.highlight ? "rgba(197,160,89,0.06)" : "transparent",
+                  cursor: stat.id != null ? "pointer" : "default",
+                  transition: "background 0.18s",
+                  position: "relative",
+                }}
+                onMouseEnter={(e) => stat.id != null && ((e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)")}
+                onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.background = stat.highlight ? "rgba(197,160,89,0.06)" : "transparent"}
+              >
+                {(stat as any).isBest && (
+                  <div style={{ position: "absolute", top: "6px", right: "6px", fontSize: "0.48rem", color: "#2baa74", background: "rgba(43,170,116,0.15)", borderRadius: "4px", padding: "1px 5px", fontWeight: 700 }}>
+                    ✓ الأفضل
+                  </div>
+                )}
+                <div style={{ fontSize: "0.5rem", color: "rgba(255,255,255,0.32)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "6px", lineHeight: 1.4 }}>{stat.label}</div>
+                <div style={{ fontSize: "0.88rem", fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: "4px", direction: "ltr", fontVariantNumeric: "tabular-nums" }}>{stat.value}</div>
+                <div style={{ fontSize: "0.48rem", color: "rgba(255,255,255,0.2)", marginBottom: "3px" }}>ريال سعودي</div>
+                <div style={{ fontSize: "0.5rem", color: "rgba(255,255,255,0.25)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", padding: "0 4px" }}>{stat.sub2}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Saving indicator when current price equals min */}
+          {scopePoolSize > 1 && contractor.price === minPrice && (
+            <div style={{ padding: "8px 16px", borderTop: "1px solid rgba(43,170,116,0.2)", background: "rgba(43,170,116,0.07)", textAlign: "center" }}>
+              <span style={{ fontSize: "0.6rem", color: "#2baa74", fontWeight: 700 }}>
+                ✓ المقاول الحالي يقدم أفضل سعر مسجل في قاعدة البيانات لهذا البند
+              </span>
             </div>
-          ))}
+          )}
+          {scopePoolSize > 1 && contractor.price > minPrice && (
+            <div style={{ padding: "8px 16px", borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.08)", textAlign: "center" }}>
+              <span style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.3)" }}>
+                فارق السعر عن الأدنى التاريخي:{" "}
+                <span style={{ color: "#e8851c", fontWeight: 700 }}>
+                  {formatExact(contractor.price - minPrice)} ر.س
+                  {" "}({((contractor.price - minPrice) / (minPrice || 1) * 100).toFixed(1)}%)
+                </span>
+                {" "}— أدنى سعر: {contractorWithMin?.contractor ?? "—"}
+              </span>
+            </div>
+          )}
         </div>
       )}
     </main>
