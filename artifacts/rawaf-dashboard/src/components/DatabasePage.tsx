@@ -211,23 +211,31 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
   const updateMutation = useUpdateContractor();
   const deleteMutation = useDeleteContractor();
 
-  /* Exact-match filter */
-  const filtered = contractors.filter((c: Contractor) => {
-    if (!search) return true;
-    return (
-      exactMatch(c.contractNo, search)                     ||
-      exactMatch(c.contractor, search)                     ||
-      exactMatch(c.project, search)                        ||
-      exactMatch(c.portfolio, search)                      ||
-      exactMatch(c.technicalScope, search)                 ||
-      exactMatch(c.workType, search)                       ||
-      exactMatch((c as any).mainActivity ?? "", search)    ||
-      exactMatch((c as any).workCategory ?? "", search)    ||
-      exactMatch((c as any).unit ?? "", search)            ||
-      exactMatch(c.phone, search)                          ||
-      exactMatch(c.email, search)
-    );
-  });
+  /* Exact-match filter + sort by contractor name then ID */
+  const filtered = contractors
+    .filter((c: Contractor) => {
+      if (!search) return true;
+      return (
+        exactMatch(c.contractNo, search)                     ||
+        exactMatch(c.contractor, search)                     ||
+        exactMatch(c.project, search)                        ||
+        exactMatch(c.portfolio, search)                      ||
+        exactMatch(c.technicalScope, search)                 ||
+        exactMatch(c.workType, search)                       ||
+        exactMatch((c as any).mainActivity ?? "", search)    ||
+        exactMatch((c as any).workCategory ?? "", search)    ||
+        exactMatch((c as any).unit ?? "", search)            ||
+        exactMatch(c.phone, search)                          ||
+        exactMatch(c.email, search)
+      );
+    })
+    .sort((a: Contractor, b: Contractor) => {
+      const nameA = a.contractor.trim().toLowerCase();
+      const nameB = b.contractor.trim().toLowerCase();
+      if (nameA < nameB) return -1;
+      if (nameA > nameB) return 1;
+      return a.id - b.id; // stable: older records first within same contractor
+    });
 
   function handlePasswordSubmit(e: React.FormEvent) {
     e.preventDefault();

@@ -45,12 +45,22 @@ export default function MainDashboard({ search, selectedId, onSelectId }: Props)
   const hasSearch       = search.trim().length > 0;
   const hasDirectSelect = selectedId != null;
 
-  // Filtered list for the sidebar — strict: only search matches, or just the
-  // directly-selected contractor when coming from the DB tab without a search term
+  // Identify the directly selected contractor (for same-name sidebar grouping)
+  const directRecord = hasDirectSelect
+    ? allContractors.find((c: Contractor) => c.id === selectedId)
+    : undefined;
+
+  // Filtered list for the sidebar:
+  //  - Searching → only search matches
+  //  - Direct select (from DB) → all records sharing the same contractor name
+  //  - Idle → empty (WelcomeHero)
   const filtered: Contractor[] = hasSearch
     ? allContractors.filter((c: Contractor) => contractorMatchesSearch(c, search.trim()))
-    : hasDirectSelect
-    ? allContractors.filter((c: Contractor) => c.id === selectedId)
+    : hasDirectSelect && directRecord
+    ? allContractors.filter(
+        (c: Contractor) =>
+          c.contractor.trim().toLowerCase() === directRecord.contractor.trim().toLowerCase()
+      )
     : [];
 
   // Determine selected contractor from the search pool or the full list

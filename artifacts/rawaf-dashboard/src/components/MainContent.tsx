@@ -11,6 +11,16 @@ interface Props {
 
 const BAR_COLORS = ["#2baa74", "#c5a059", "#3b8fcc", "#e8851c", "#9b59b6", "#e74c3c"];
 
+function normalize(s: string) {
+  return (s ?? "")
+    .replace(/[\u064B-\u065F]/g, "")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
+    .toLowerCase()
+    .trim();
+}
+
 function formatCompact(p: number) {
   if (p >= 1_000_000) return `${(p / 1_000_000).toFixed(2)}M`;
   if (p >= 1_000)     return `${(p / 1_000).toFixed(0)}K`;
@@ -60,7 +70,18 @@ export default function MainContent({ contractor, allContractors, filteredContra
     );
   }
 
-  const pricePool = filteredContractors.length > 0 ? filteredContractors : allContractors;
+  // ── Global price pool: all records with matching technicalScope ──
+  const scopeKey = contractor ? normalize(contractor.technicalScope) : "";
+  const globalPricePool: Contractor[] = contractor && scopeKey.length >= 3
+    ? allContractors.filter((c) => {
+        if (c.id === contractor.id) return true; // always include current
+        const s = normalize(c.technicalScope);
+        if (!s || s.length < 3) return false;
+        return s === scopeKey || s.includes(scopeKey) || scopeKey.includes(s);
+      })
+    : contractor ? [contractor] : [];
+
+  const pricePool  = globalPricePool.length > 0 ? globalPricePool : allContractors;
   const allPrices  = pricePool.map((c) => c.price);
   const maxPrice   = allPrices.length > 0 ? Math.max(...allPrices) : 1;
   const minPrice   = allPrices.length > 0 ? Math.min(...allPrices) : 0;
@@ -72,19 +93,20 @@ export default function MainContent({ contractor, allContractors, filteredContra
     (a, b) => Math.abs(a.price - avgPrice) - Math.abs(b.price - avgPrice)
   )[0];
 
-  const chartSet = filteredContractors.length > 0 ? filteredContractors : allContractors;
-  const best5    = [...chartSet].sort((a, b) => a.price - b.price).slice(0, 5);
+  // Best 5 cheapest from the global pool
+  const best5 = [...pricePool].sort((a, b) => a.price - b.price).slice(0, 5);
 
-  // Work history: other projects of the SAME contractor with matching workType
-  const workHistory = contractor
+  // ── Work history: same contractor name + same technicalScope ──
+  const workHistory: Contractor[] = contractor && scopeKey.length >= 3
     ? allContractors
-        .filter(
-          (c) =>
-            c.id !== contractor.id &&
-            c.contractor === contractor.contractor &&
-            c.workType === contractor.workType
-        )
-        .slice(0, 4)
+        .filter((c) => {
+          if (c.id === contractor.id) return false;
+          if (normalize(c.contractor) !== normalize(contractor.contractor)) return false;
+          const s = normalize(c.technicalScope);
+          if (!s || s.length < 3) return false;
+          return s === scopeKey || s.includes(scopeKey) || scopeKey.includes(s);
+        })
+        .slice(0, 6)
     : [];
 
   if (!contractor) {
@@ -262,10 +284,10 @@ export default function MainContent({ contractor, allContractors, filteredContra
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
             <h3 style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--charcoal)", display: "flex", alignItems: "center", gap: "7px" }}>
               <DollarSign size={13} style={{ color: "var(--gold)" }} />
-              مقارنة أسعار العطاءات
+              مقارنة الأسعار
             </h3>
             <span style={{ fontSize: "0.62rem", color: "#bbb", background: "#f5f0e8", borderRadius: "4px", padding: "2px 7px" }}>
-              أفضل {best5.length} أسعار
+              أفضل {best5.length} أسعار • بحث شامل في قاعدة البيانات
             </span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>
