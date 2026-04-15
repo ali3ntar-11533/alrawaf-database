@@ -41,8 +41,10 @@ const EMPTY_FORM: FormData = {
   localContent: "", workDescription: "", workScopeText: "",
 };
 
+const LOCAL_CONTENT_OPTIONS = ["", "مسجل", "غير مسجل"];
+
 /* Column order matches the table exactly */
-const FORM_FIELDS: { key: keyof FormData; label: string; type?: string; wide?: boolean; rows?: number }[] = [
+const FORM_FIELDS: { key: keyof FormData; label: string; type?: string; wide?: boolean; rows?: number; options?: string[] }[] = [
   { key: "contractNo",     label: "١. رقم العقد" },
   { key: "contractor",     label: "٢. اسم المقاول / المورد" },
   { key: "project",        label: "٣. المشروع" },
@@ -53,8 +55,9 @@ const FORM_FIELDS: { key: keyof FormData; label: string; type?: string; wide?: b
   { key: "workCategory",   label: "٨. نوع العمل (تصنيف)" },
   { key: "unit",           label: "٩. الوحدة" },
   { key: "price",          label: "١٠. السعر (ريال)", type: "number" },
-  { key: "phone",          label: "١١. رقم التواصل" },
-  { key: "email",          label: "١٢. البريد الإلكتروني" },
+  { key: "localContent",   label: "١١. المحتوى المحلي", type: "dropdown", options: LOCAL_CONTENT_OPTIONS },
+  { key: "phone",          label: "١٢. رقم التواصل" },
+  { key: "email",          label: "١٣. البريد الإلكتروني" },
 ];
 
 /* ─── Helpers ───────────────────────────────── */
@@ -198,10 +201,11 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
   const [addForm, setAddForm]         = useState<FormData>(EMPTY_FORM);
   const [addRating, setAddRating]     = useState<number>(0);
 
-  const [cloneSource, setCloneSource]       = useState<Contractor | null>(null);
-  const [cloneTechScope, setCloneTechScope] = useState("");
-  const [clonePrice, setClonePrice]         = useState("");
-  const [cloneUnit, setCloneUnit]           = useState("");
+  const [cloneSource, setCloneSource]             = useState<Contractor | null>(null);
+  const [cloneTechScope, setCloneTechScope]       = useState("");
+  const [clonePrice, setClonePrice]               = useState("");
+  const [cloneUnit, setCloneUnit]                 = useState("");
+  const [cloneLocalContent, setCloneLocalContent] = useState("");
 
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
@@ -258,6 +262,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
     setCloneTechScope(c.technicalScope);
     setClonePrice(String(c.price));
     setCloneUnit((c as any).unit ?? "");
+    setCloneLocalContent((c as any).localContent ?? "");
   }
 
   async function handleEditSubmit(e: React.FormEvent) {
@@ -283,7 +288,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
     const baseForm = contractorToForm(cloneSource);
     await createMutation.mutateAsync({
       data: buildPutData(
-        { ...baseForm, technicalScope: cloneTechScope, price: clonePrice, unit: cloneUnit },
+        { ...baseForm, technicalScope: cloneTechScope, price: clonePrice, unit: cloneUnit, localContent: cloneLocalContent },
         (cloneSource as any).rating ?? null,
       ),
     });
@@ -360,7 +365,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                 {[
                   "رقم العقد", "المقاول / المورد", "المشروع", "المحفظة",
                   "النشاط الرئيسي", "نوع الأعمال", "الوصف الفني للبند",
-                  "نوع العمل", "الوحدة", "السعر", "التواصل", "التقييم", "إجراءات"
+                  "نوع العمل", "الوحدة", "السعر", "المحتوى المحلي", "التواصل", "التقييم", "إجراءات"
                 ].map((h, i) => (
                   <th key={i} style={{ padding: "12px 12px", textAlign: "right", fontSize: "0.63rem", fontWeight: 700, color: "rgba(197,160,89,0.9)", letterSpacing: "0.05em", textTransform: "uppercase", whiteSpace: "nowrap", borderBottom: "2px solid rgba(197,160,89,0.2)" }}>
                     {h}
@@ -370,9 +375,9 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={13} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>جاري التحميل...</td></tr>
+                <tr><td colSpan={14} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>جاري التحميل...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={13} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>لا توجد سجلات مطابقة</td></tr>
+                <tr><td colSpan={14} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>لا توجد سجلات مطابقة</td></tr>
               ) : filtered.map((c: Contractor, idx: number) => (
                 <tr key={c.id} style={{ background: idx % 2 === 0 ? "#fff" : "#faf8f4", borderBottom: "1px solid #f0ebe0" }}>
                   <td style={tdStyle}>{c.contractNo}</td>
@@ -400,6 +405,16 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                   <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }}>{(c as any).unit || "—"}</td>
                   <td style={{ ...tdStyle, fontWeight: 700, color: "var(--gold)", whiteSpace: "nowrap", fontSize: "0.75rem", direction: "ltr", textAlign: "right" }}>
                     {c.price.toLocaleString("en")}
+                  </td>
+                  <td style={{ ...tdStyle, whiteSpace: "nowrap" }}>
+                    {(c as any).localContent ? (
+                      <span style={{
+                        background: (c as any).localContent === "مسجل" ? "rgba(43,170,116,0.12)" : "rgba(200,200,200,0.18)",
+                        color: (c as any).localContent === "مسجل" ? "#1d8a5a" : "#888",
+                        border: `1px solid ${(c as any).localContent === "مسجل" ? "rgba(43,170,116,0.3)" : "rgba(180,180,180,0.3)"}`,
+                        borderRadius: "6px", padding: "2px 9px", fontSize: "0.7rem", fontWeight: 700
+                      }}>{(c as any).localContent}</span>
+                    ) : <span style={{ color: "#ccc", fontSize: "0.7rem" }}>—</span>}
                   </td>
                   <td style={tdStyle}>
                     <div style={{ fontSize: "0.7rem", color: "#888" }}>
@@ -457,6 +472,10 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                     {f.wide ? (
                       <textarea rows={f.rows ?? 2} value={editForm[f.key]} onChange={(e) => setEditForm((p) => ({ ...p, [f.key]: e.target.value }))} style={textareaStyle}
                         onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")} />
+                    ) : f.type === "dropdown" ? (
+                      <select value={editForm[f.key]} onChange={(e) => setEditForm((p) => ({ ...p, [f.key]: e.target.value }))} style={{ ...inputStyle, cursor: "pointer", appearance: "auto" }}>
+                        {(f.options ?? []).map((opt) => <option key={opt} value={opt}>{opt || "— اختر —"}</option>)}
+                      </select>
                     ) : (
                       <input type={f.type ?? "text"} value={editForm[f.key]} onChange={(e) => setEditForm((p) => ({ ...p, [f.key]: e.target.value }))} style={inputStyle}
                         onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")} />
@@ -464,7 +483,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                   </div>
                 ))}
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={{ ...labelStyle, color: "#c5a059" }}>١٣. التقييم</label>
+                  <label style={{ ...labelStyle, color: "#c5a059" }}>١٤. التقييم</label>
                   <div style={{ marginTop: "6px" }}><StarPicker value={editRating} onChange={setEditRating} /></div>
                 </div>
               </div>
@@ -494,6 +513,10 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                     {f.wide ? (
                       <textarea rows={f.rows ?? 2} value={addForm[f.key]} onChange={(e) => setAddForm((p) => ({ ...p, [f.key]: e.target.value }))} style={textareaStyle}
                         onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")} />
+                    ) : f.type === "dropdown" ? (
+                      <select value={addForm[f.key]} onChange={(e) => setAddForm((p) => ({ ...p, [f.key]: e.target.value }))} style={{ ...inputStyle, cursor: "pointer", appearance: "auto" }}>
+                        {(f.options ?? []).map((opt) => <option key={opt} value={opt}>{opt || "— اختر —"}</option>)}
+                      </select>
                     ) : (
                       <input type={f.type ?? "text"} value={addForm[f.key]} onChange={(e) => setAddForm((p) => ({ ...p, [f.key]: e.target.value }))} style={inputStyle}
                         onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")} />
@@ -501,7 +524,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                   </div>
                 ))}
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={{ ...labelStyle, color: "#c5a059" }}>١٣. التقييم</label>
+                  <label style={{ ...labelStyle, color: "#c5a059" }}>١٤. التقييم</label>
                   <div style={{ marginTop: "6px" }}><StarPicker value={addRating} onChange={setAddRating} /></div>
                 </div>
               </div>
@@ -569,6 +592,12 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                     onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")}
                     placeholder="م2، م3، م.ط، نقطة..."
                   />
+                </div>
+                <div>
+                  <label style={{ ...labelStyle, color: "#c5a059", display: "block", marginBottom: "5px" }}>المحتوى المحلي</label>
+                  <select value={cloneLocalContent} onChange={(e) => setCloneLocalContent(e.target.value)} style={{ ...inputStyle, cursor: "pointer", appearance: "auto" }}>
+                    {LOCAL_CONTENT_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt || "— اختر —"}</option>)}
+                  </select>
                 </div>
               </div>
               <div style={{ display: "flex", gap: "10px" }}>
