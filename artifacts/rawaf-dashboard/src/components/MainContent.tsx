@@ -90,6 +90,17 @@ export default function MainContent({ contractor, allContractors, filteredContra
   const contractorWithMin = pricePool.find((c) => c.price === minPrice);
   const contractorWithMax = pricePool.find((c) => c.price === maxPrice);
 
+  // Find contractor closest to the average price.
+  // Prefer one that is not the min or max contractor to avoid confusing overlaps.
+  // If pool has only 2 entries (both are min+max), fall back to the first sorted result.
+  const _sortedByAvgDiff = [...pricePool].sort(
+    (a, b) => Math.abs(a.price - avgPrice) - Math.abs(b.price - avgPrice)
+  );
+  const avgContractor =
+    _sortedByAvgDiff.find(
+      (c) => c.id !== contractorWithMin?.id && c.id !== contractorWithMax?.id
+    ) ?? _sortedByAvgDiff[0];
+
   // Best 5 cheapest from the global pool (scope-filtered)
   const best5 = [...pricePool].sort((a, b) => a.price - b.price).slice(0, 5);
 
@@ -369,11 +380,11 @@ export default function MainContent({ contractor, allContractors, filteredContra
               },
               {
                 label: "متوسط الأسعار لهذا البند",
-                sub2: scopePoolSize > 1 ? `${scopePoolSize} سجل` : "—",
+                sub2: avgContractor?.contractor ?? "—",
                 value: formatExact(Math.round(avgPrice)),
                 color: "#3b8fcc",
                 highlight: false,
-                id: null, // average is a computed stat — not tied to a specific contractor
+                id: avgContractor?.id ?? null,
               },
               {
                 label: "أعلى سعر تاريخي لهذا البند",
