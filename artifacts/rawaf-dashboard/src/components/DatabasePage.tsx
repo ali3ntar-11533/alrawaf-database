@@ -168,7 +168,7 @@ function exportToExcel(data: Contractor[]) {
 }
 
 /* ─── Styles ───────────────────────────────── */
-const tdStyle: React.CSSProperties = { padding: "9px 12px", fontSize: "0.76rem", color: "#555", verticalAlign: "middle", whiteSpace: "nowrap" };
+const tdStyle: React.CSSProperties = { padding: "10px 14px", fontSize: "0.76rem", color: "#555", verticalAlign: "middle", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
 const overlayStyle: React.CSSProperties = { position: "fixed", inset: 0, background: "rgba(30,25,20,0.55)", backdropFilter: "blur(4px)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" };
 const modalStyle: React.CSSProperties = { width: "100%", maxWidth: "680px", maxHeight: "88vh", overflowY: "auto", padding: "28px 28px", position: "relative" };
 const closeBtnStyle: React.CSSProperties = { position: "absolute", top: "16px", left: "16px", background: "none", border: "none", cursor: "pointer", color: "#aaa", padding: "4px" };
@@ -418,8 +418,26 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
 
       {/* Table */}
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ overflowX: "hidden" }}>
-          <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", direction: "rtl" }}>
+        {/* overflow-x: auto allows smooth horizontal scroll if needed; body never scrolls */}
+        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" as any }}>
+          <table style={{ width: "100%", minWidth: "1700px", tableLayout: "fixed", borderCollapse: "collapse", direction: "rtl" }}>
+            {/* colgroup defines all column widths in one place */}
+            <colgroup>
+              <col style={{ width: "110px" }} />  {/* رقم العقد */}
+              <col style={{ width: "180px" }} />  {/* المقاول */}
+              <col style={{ width: "180px" }} />  {/* المشروع */}
+              <col style={{ width: "120px" }} />  {/* المحفظة */}
+              <col style={{ width: "140px" }} />  {/* النشاط الرئيسي */}
+              <col style={{ width: "120px" }} />  {/* نوع الأعمال */}
+              <col style={{ width: "250px" }} />  {/* الوصف الفني */}
+              <col style={{ width: "120px" }} />  {/* نوع العمل */}
+              <col style={{ width: "100px" }} />  {/* الوحدة */}
+              <col style={{ width: "110px" }} />  {/* السعر */}
+              <col style={{ width: "130px" }} />  {/* المحتوى المحلي */}
+              <col style={{ width: "150px" }} />  {/* التواصل */}
+              <col style={{ width: "110px" }} />  {/* التقييم */}
+              <col style={{ width: "110px" }} />  {/* إجراءات */}
+            </colgroup>
             <thead>
               <tr style={{ background: "var(--charcoal)" }}>
                 {[
@@ -427,37 +445,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                   "النشاط الرئيسي", "نوع الأعمال", "الوصف الفني للبند",
                   "نوع العمل", "الوحدة", "السعر", "المحتوى المحلي", "التواصل", "التقييم", "إجراءات"
                 ].map((h, i) => (
-                  <th key={i} style={{ padding: "12px 10px", textAlign: "right", fontSize: "0.63rem", fontWeight: 700, color: "rgba(197,160,89,0.9)", letterSpacing: "0.05em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", borderBottom: "2px solid rgba(197,160,89,0.2)", width: [
-                    "90px",
-                    "150px",
-                    "150px",
-                    "110px",
-                    "120px",
-                    "110px",
-                    "200px",
-                    "110px",
-                    "90px",
-                    "90px",
-                    "120px",
-                    "130px",
-                    "90px",
-                    "110px",
-                  ][i], maxWidth: [
-                    "90px",
-                    "150px",
-                    "150px",
-                    "110px",
-                    "120px",
-                    "110px",
-                    "200px",
-                    "110px",
-                    "90px",
-                    "90px",
-                    "120px",
-                    "130px",
-                    "90px",
-                    "110px",
-                  ][i] }}>
+                  <th key={i} style={{ padding: "13px 14px", textAlign: "right", fontSize: "0.63rem", fontWeight: 700, color: "rgba(197,160,89,0.9)", letterSpacing: "0.05em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", borderBottom: "2px solid rgba(197,160,89,0.2)" }}>
                     {h}
                   </th>
                 ))}
@@ -470,34 +458,35 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                 <tr><td colSpan={14} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>لا توجد سجلات مطابقة</td></tr>
               ) : filtered.map((c: Contractor, idx: number) => (
                 <tr key={c.id} style={{ background: idx % 2 === 0 ? "#fff" : "#faf8f4", borderBottom: "1px solid #f0ebe0" }}>
-                  <td style={{ ...tdStyle, width: "90px", maxWidth: "90px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={c.contractNo}>{c.contractNo}</td>
+                  <td style={tdStyle} title={c.contractNo}>{c.contractNo}</td>
                   {/* Contractor name — clickable → navigate to main tab */}
                   <td
-                    style={{ ...tdStyle, width: "150px", maxWidth: "150px", fontWeight: 700, cursor: "pointer", color: "var(--charcoal)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                    style={{ ...tdStyle, fontWeight: 700, cursor: "pointer", color: "var(--charcoal)" }}
                     onClick={() => onSelectContractor && onSelectContractor(c.id)}
                     title={c.contractor}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--gold)"; (e.currentTarget as HTMLElement).style.textDecoration = "underline"; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--charcoal)"; (e.currentTarget as HTMLElement).style.textDecoration = ""; }}
                   >{c.contractor}</td>
-                  <td style={{ ...tdStyle, width: "150px", maxWidth: "150px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={c.project}>{c.project}</td>
-                  <td style={{ ...tdStyle, width: "110px", maxWidth: "110px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={c.portfolio}>{c.portfolio}</td>
-                  <td style={{ ...tdStyle, width: "120px", maxWidth: "120px", fontSize: "0.72rem", color: "#3b8fcc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={(c as any).mainActivity || "—"}>{(c as any).mainActivity || "—"}</td>
-                  <td style={{ ...tdStyle, width: "110px", maxWidth: "110px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <td style={tdStyle} title={c.project}>{c.project}</td>
+                  <td style={tdStyle} title={c.portfolio}>{c.portfolio}</td>
+                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#3b8fcc" }} title={(c as any).mainActivity || "—"}>{(c as any).mainActivity || "—"}</td>
+                  <td style={tdStyle}>
                     <span style={{ background: "rgba(197,160,89,0.1)", color: "var(--gold)", borderRadius: "6px", padding: "2px 8px", fontSize: "0.7rem", fontWeight: 700, whiteSpace: "nowrap" }}>{c.workType}</span>
                   </td>
                   {/* Technical scope — clickable → search in main tab */}
-                  <td style={{ ...tdStyle, width: "200px", maxWidth: "200px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", cursor: "pointer", color: "var(--charcoal)" }}
-                    title={`اضغط للبحث عن: ${c.technicalScope}`}
+                  <td
+                    style={{ ...tdStyle, cursor: "pointer", color: "var(--charcoal)" }}
+                    title={c.technicalScope}
                     onClick={() => onSearchAndNavigate && onSearchAndNavigate(c.technicalScope)}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#3b8fcc"; (e.currentTarget as HTMLElement).style.textDecoration = "underline"; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--charcoal)"; (e.currentTarget as HTMLElement).style.textDecoration = ""; }}
                   >{c.technicalScope}</td>
-                  <td style={{ ...tdStyle, width: "110px", maxWidth: "110px", fontSize: "0.72rem", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={(c as any).workCategory || "—"}>{(c as any).workCategory || "—"}</td>
-                  <td style={{ ...tdStyle, width: "90px", maxWidth: "90px", fontSize: "0.72rem", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={(c as any).unit || "—"}>{(c as any).unit || "—"}</td>
-                  <td style={{ ...tdStyle, width: "90px", maxWidth: "90px", fontWeight: 700, color: "var(--gold)", whiteSpace: "nowrap", fontSize: "0.75rem", direction: "ltr", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis" }} title={c.price.toLocaleString("en")}>
+                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={(c as any).workCategory || "—"}>{(c as any).workCategory || "—"}</td>
+                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={(c as any).unit || "—"}>{(c as any).unit || "—"}</td>
+                  <td style={{ ...tdStyle, fontWeight: 700, color: "var(--gold)", fontSize: "0.75rem", direction: "ltr", textAlign: "right" }} title={c.price.toLocaleString("en")}>
                     {c.price.toLocaleString("en")}
                   </td>
-                  <td style={{ ...tdStyle, width: "120px", maxWidth: "120px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={(c as any).localContent || "—"}>
+                  <td style={tdStyle} title={(c as any).localContent || "—"}>
                     {(c as any).localContent ? (
                       <span style={{
                         background: (c as any).localContent === "مسجل" ? "rgba(43,170,116,0.12)" : "rgba(200,200,200,0.18)",
@@ -507,16 +496,16 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                       }}>{(c as any).localContent}</span>
                     ) : <span style={{ color: "#ccc", fontSize: "0.7rem" }}>—</span>}
                   </td>
-                  <td style={{ ...tdStyle, width: "130px", maxWidth: "130px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={`${c.phone} ${c.email}`}>
-                    <div style={{ fontSize: "0.7rem", color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={c.phone}>{c.phone}</div>
-                      <div style={{ direction: "ltr", textAlign: "right", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={c.email}>{c.email}</div>
+                  <td style={tdStyle} title={`${c.phone} | ${c.email}`}>
+                    <div style={{ fontSize: "0.7rem", color: "#888" }}>
+                      <div style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{c.phone}</div>
+                      <div style={{ direction: "ltr", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis" }}>{c.email}</div>
                     </div>
                   </td>
-                  <td style={{ ...tdStyle, width: "90px", maxWidth: "90px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={String((c as any).rating ?? "0")}>
+                  <td style={tdStyle}>
                     <StarDisplay rating={(c as any).rating} />
                   </td>
-                  <td style={{ ...tdStyle, width: "110px", maxWidth: "110px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "hidden" }}>
+                  <td style={tdStyle}>
                     <div style={{ display: "flex", gap: "4px" }}>
                       <button onClick={(e) => { e.stopPropagation(); openEdit(c); }} style={iconBtnStyle("#c5a059")} title="تعديل البيانات"><Pencil size={12} /></button>
                       <button onClick={(e) => { e.stopPropagation(); openClone(c); }} style={iconBtnStyle("#2baa74")} title="إضافة بند جديد لنفس الشركة (تكرار)"><Copy size={12} /></button>
