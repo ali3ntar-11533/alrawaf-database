@@ -424,18 +424,18 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
             <colgroup>
               <col style={{ width: "6%" }} />   {/* رقم العقد */}
               <col style={{ width: "10%" }} />  {/* المقاول */}
-              <col style={{ width: "10%" }} />  {/* المشروع */}
+              <col style={{ width: "9%" }} />   {/* المشروع */}
               <col style={{ width: "6%" }} />   {/* المحفظة */}
               <col style={{ width: "7%" }} />   {/* النشاط الرئيسي */}
               <col style={{ width: "6%" }} />   {/* نوع الأعمال */}
-              <col style={{ width: "13%" }} />  {/* الوصف الفني */}
+              <col style={{ width: "11%" }} />  {/* الوصف الفني */}
               <col style={{ width: "7%" }} />   {/* نوع العمل */}
               <col style={{ width: "5%" }} />   {/* الوحدة */}
               <col style={{ width: "6%" }} />   {/* السعر */}
               <col style={{ width: "6%" }} />   {/* المحتوى المحلي */}
-              <col style={{ width: "8%" }} />   {/* التواصل */}
+              <col style={{ width: "7%" }} />   {/* التواصل */}
               <col style={{ width: "5%" }} />   {/* التقييم */}
-              <col style={{ width: "5%" }} />   {/* إجراءات */}
+              <col style={{ width: "9%" }} />   {/* إجراءات — needs room for 3 icon buttons */}
             </colgroup>
             <thead>
               <tr style={{ background: "var(--charcoal)" }}>
