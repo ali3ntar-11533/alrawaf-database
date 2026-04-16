@@ -265,13 +265,14 @@ export default function MainContent({ contractor, allContractors, filteredContra
                   </div>
                   <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                     <span style={{ fontSize: "0.62rem", color: "#aaa" }}>{w.technicalScope}</span>
-                    <span style={{ fontSize: "0.62rem", color: "#ddd" }}>•</span>
-                    <span style={{ fontSize: "0.62rem", color: "#aaa" }}>{w.contractNo}</span>
                   </div>
                 </div>
                 <div style={{ textAlign: "left", flexShrink: 0 }}>
                   <div style={{ fontSize: "0.7rem", fontWeight: 800, color: BAR_COLORS[i % BAR_COLORS.length], direction: "ltr" }}>
                     {formatExact(w.price)} ر.س
+                  </div>
+                  <div style={{ fontSize: "0.58rem", color: "#bbb", direction: "ltr", marginTop: "3px" }}>
+                    {w.contractNo}
                   </div>
                 </div>
               </div>
