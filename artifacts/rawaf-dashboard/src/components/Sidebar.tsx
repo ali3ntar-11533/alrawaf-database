@@ -26,6 +26,13 @@ const TYPE_ICON: Record<string, string> = {
   "صيانة":    "🔧",
 };
 
+function formatPrice(value: number): string {
+  if (!value || value === 0) return "—";
+  if (value >= 1_000_000) return (value / 1_000_000).toFixed(1) + "M";
+  if (value >= 1_000)     return (value / 1_000).toFixed(1) + "K";
+  return value.toLocaleString("en");
+}
+
 export default function Sidebar({
   filtered,
   allContractors,
@@ -131,7 +138,7 @@ export default function Sidebar({
                   </div>
                   <div style={{ textAlign: "left", flexShrink: 0 }}>
                     <div style={{ fontSize: "0.7rem", fontWeight: 800, color, direction: "ltr" }}>
-                      {(c.price / 1_000_000).toFixed(1)}M
+                      {formatPrice(c.price)}
                     </div>
                   </div>
                 </div>
@@ -146,7 +153,7 @@ export default function Sidebar({
         <div style={{ padding: "10px 14px", borderTop: "1px solid rgba(197,160,89,0.15)", background: "#faf8f4", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: "0.62rem", color: "#aaa" }}>{filtered.length} متخصص</span>
           <span style={{ fontSize: "0.62rem", color: "var(--gold)", fontWeight: 700 }}>
-            {(filtered.reduce((s, c) => s + c.price, 0) / 1_000_000).toFixed(1)}M
+            {formatPrice(filtered.reduce((s, c) => s + c.price, 0))}
           </span>
         </div>
       )}
