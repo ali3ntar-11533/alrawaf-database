@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Building2, Mail, Phone, FileText, Briefcase, MapPin, DollarSign, Clock } from "lucide-react";
 import type { Contractor } from "@workspace/api-client-react";
 
@@ -56,6 +57,10 @@ function StarInline({ rating }: { rating?: number | null }) {
 }
 
 export default function MainContent({ contractor, allContractors, filteredContractors, isLoading, onSelectId, emptyStateMessage }: Props) {
+  // Active stat tab index (0=current, 1=min, 2=avg, 3=max) — resets when contractor changes
+  const [activeStat, setActiveStat] = useState(0);
+  useEffect(() => { setActiveStat(0); }, [contractor?.id]);
+
   if (isLoading) {
     return (
       <main className="content-area">
@@ -358,24 +363,22 @@ export default function MainContent({ contractor, allContractors, filteredContra
             </span>
           </div>
 
-          {/* 4 stat cells */}
+          {/* 4 stat cells — tab-style: active cell gets a colored top border + brighter bg */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
             {[
               {
                 label: "سعر المقاول الحالي",
-                sub2: contractor.contractor,
+                sub2: contractor.contractor ?? "—",
                 value: formatExact(contractor.price),
                 color: "var(--gold)",
-                highlight: true,
                 id: contractor.id,
               },
               {
-                label: "أدنى سعر تاريخي لهذا البند",
+                label: "أدنى سعر لهذا البند",
                 sub2: contractorWithMin?.contractor ?? "—",
                 value: formatExact(minPrice),
                 color: "#2baa74",
-                highlight: false,
-                id: contractorWithMin?.id,
+                id: contractorWithMin?.id ?? null,
                 isBest: contractor.price === minPrice,
               },
               {
@@ -383,47 +386,53 @@ export default function MainContent({ contractor, allContractors, filteredContra
                 sub2: `بناءً على ${scopePoolSize} سجل`,
                 value: formatExact(Math.round(avgPrice)),
                 color: "#3b8fcc",
-                highlight: false,
                 id: avgContractor?.id ?? null,
               },
               {
-                label: "أعلى سعر تاريخي لهذا البند",
+                label: "أعلى سعر لهذا البند",
                 sub2: contractorWithMax?.contractor ?? "—",
                 value: formatExact(maxPrice),
                 color: "#e74c3c",
-                highlight: false,
-                id: contractorWithMax?.id,
+                id: contractorWithMax?.id ?? null,
               },
-            ].map((stat, i) => (
-              <div
-                key={i}
-                onClick={() => stat.id != null && onSelectId(stat.id)}
-                style={{
-                  padding: "14px 10px", textAlign: "center",
-                  borderLeft: i < 3 ? "1px solid rgba(255,255,255,0.06)" : "none",
-                  background: stat.highlight ? "rgba(197,160,89,0.06)" : "transparent",
-                  cursor: stat.id != null ? "pointer" : "default",
-                  transition: "background 0.18s",
-                  position: "relative",
-                }}
-                title={stat.label}
-                onMouseEnter={(e) => stat.id != null && ((e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)")}
-                onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.background = stat.highlight ? "rgba(197,160,89,0.06)" : "transparent"}
-              >
-                {(stat as any).isBest && (
-                  <div style={{ position: "absolute", top: "6px", right: "6px", fontSize: "0.48rem", color: "#2baa74", background: "rgba(43,170,116,0.15)", borderRadius: "4px", padding: "1px 5px", fontWeight: 700 }}>
-                    ✓ الأفضل
-                  </div>
-                )}
-                <div style={{ fontSize: "0.5rem", color: "rgba(255,255,255,0.32)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "6px", lineHeight: 1.4 }}>{stat.label}</div>
-                <div style={{ fontSize: "0.88rem", fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: "4px", direction: "ltr", fontVariantNumeric: "tabular-nums" }}>{stat.value}</div>
-                <div style={{ fontSize: "0.48rem", color: "rgba(255,255,255,0.2)", marginBottom: "3px" }}>ريال سعودي</div>
-                <div style={{ fontSize: "0.5rem", color: "rgba(255,255,255,0.25)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", padding: "0 4px" }}>{stat.sub2}</div>
-              </div>
-            ))}
+            ].map((stat, i) => {
+              const isActive = activeStat === i;
+              const baseBg   = isActive ? "rgba(255,255,255,0.09)" : "transparent";
+              return (
+                <div
+                  key={i}
+                  onClick={() => {
+                    setActiveStat(i);
+                    if (stat.id != null) onSelectId(stat.id);
+                  }}
+                  style={{
+                    padding: "14px 10px", textAlign: "center",
+                    borderLeft: i < 3 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                    borderTop: isActive ? `2px solid ${stat.color}` : "2px solid transparent",
+                    background: baseBg,
+                    cursor: "pointer",
+                    transition: "background 0.18s, border-top 0.18s",
+                    position: "relative",
+                  }}
+                  title={stat.label}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.13)")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.background = baseBg)}
+                >
+                  {(stat as any).isBest && (
+                    <div style={{ position: "absolute", top: "6px", right: "6px", fontSize: "0.48rem", color: "#2baa74", background: "rgba(43,170,116,0.15)", borderRadius: "4px", padding: "1px 5px", fontWeight: 700 }}>
+                      ✓ الأفضل
+                    </div>
+                  )}
+                  <div style={{ fontSize: "0.5rem", color: isActive ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.32)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "6px", lineHeight: 1.4 }}>{stat.label}</div>
+                  <div style={{ fontSize: "0.88rem", fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: "4px", direction: "ltr", fontVariantNumeric: "tabular-nums" }}>{stat.value}</div>
+                  <div style={{ fontSize: "0.48rem", color: "rgba(255,255,255,0.2)", marginBottom: "3px" }}>ريال سعودي</div>
+                  <div style={{ fontSize: "0.5rem", color: "rgba(255,255,255,0.3)", textAlign: "center", padding: "0 4px", lineHeight: 1.5 }}>{stat.sub2}</div>
+                </div>
+              );
+            })}
           </div>
 
-          {/* Saving indicator when current price equals min */}
+          {/* Saving indicator — only shown when current contractor IS the lowest in the pool */}
           {scopePoolSize > 1 && contractor.price === minPrice && (
             <div style={{ padding: "8px 16px", borderTop: "1px solid rgba(43,170,116,0.2)", background: "rgba(43,170,116,0.07)", textAlign: "center" }}>
               <span style={{ fontSize: "0.6rem", color: "#2baa74", fontWeight: 700 }}>
