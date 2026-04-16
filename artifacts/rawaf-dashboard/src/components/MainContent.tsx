@@ -140,6 +140,9 @@ export default function MainContent({ contractor, allContractors, filteredContra
             <h2 style={{ fontSize: "0.98rem", fontWeight: 800, color: "#ffffff", lineHeight: 1.3, margin: "0 0 6px 0" }}>
               {contractor.contractor}
             </h2>
+            <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.35)", marginBottom: "6px", direction: "ltr", letterSpacing: "0.04em", textAlign: "right" }}>
+              {contractor.contractNo}
+            </div>
             {/* Stars only */}
             <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
               <StarInline rating={rating} />
@@ -151,9 +154,6 @@ export default function MainContent({ contractor, allContractors, filteredContra
               {formatExact(contractor.price)}
             </div>
             <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.35)" }}>ريال سعودي</div>
-            <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.35)", marginTop: "5px", direction: "ltr", letterSpacing: "0.04em" }}>
-              {contractor.contractNo}
-            </div>
           </div>
         </div>
 
@@ -399,6 +399,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
                   transition: "background 0.18s",
                   position: "relative",
                 }}
+                title={stat.label}
                 onMouseEnter={(e) => stat.id != null && ((e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)")}
                 onMouseLeave={(e) => (e.currentTarget as HTMLDivElement).style.background = stat.highlight ? "rgba(197,160,89,0.06)" : "transparent"}
               >
