@@ -21,13 +21,8 @@ function normalize(s: string) {
     .trim();
 }
 
-function formatCompact(p: number) {
-  if (p >= 1_000_000) return `${(p / 1_000_000).toFixed(2)}M`;
-  if (p >= 1_000)     return `${(p / 1_000).toFixed(0)}K`;
-  return p.toLocaleString("en");
-}
-
 function formatExact(p: number) {
+  if (p == null) return "—";
   return p.toLocaleString("en");
 }
 
@@ -317,7 +312,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
                         boxShadow: isCurrent ? "0 0 8px rgba(197,160,89,0.35)" : i === 0 ? "0 0 8px rgba(43,170,116,0.3)" : "none",
                       }}
                     >
-                      <span style={{ fontSize: "0.58rem", color: "#fff", fontWeight: 700 }}>{formatCompact(c.price)}</span>
+                      <span style={{ fontSize: "0.58rem", color: "#fff", fontWeight: 700 }}>{formatExact(c.price)}</span>
                     </div>
                   </div>
                 </div>
@@ -374,7 +369,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
               {
                 label: "متوسط الأسعار لهذا البند",
                 sub2: avgContractor?.contractor ?? "—",
-                value: formatExact(Math.floor(avgPrice)),
+                value: formatExact(Math.round(avgPrice)),
                 color: "#3b8fcc",
                 highlight: false,
                 id: avgContractor?.id,

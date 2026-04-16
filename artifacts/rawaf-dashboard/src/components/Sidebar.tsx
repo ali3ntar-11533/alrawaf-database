@@ -27,9 +27,7 @@ const TYPE_ICON: Record<string, string> = {
 };
 
 function formatPrice(value: number): string {
-  if (!value || value === 0) return "—";
-  if (value >= 1_000_000) return (value / 1_000_000).toFixed(1) + "M";
-  if (value >= 1_000)     return (value / 1_000).toFixed(1) + "K";
+  if (value == null || value === 0) return "—";
   return value.toLocaleString("en");
 }
 
