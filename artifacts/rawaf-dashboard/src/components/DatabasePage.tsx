@@ -469,7 +469,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                   <td style={tdStyle} title={c.project}>{c.project}</td>
                   <td style={tdStyle} title={c.portfolio}>{c.portfolio}</td>
                   <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#3b8fcc" }} title={(c as any).mainActivity || "—"}>{(c as any).mainActivity || "—"}</td>
-                  <td style={tdStyle}>
+                  <td style={{ ...tdStyle, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={(c as any).workType || "—"}>
                     <span style={{ background: "rgba(197,160,89,0.1)", color: "var(--gold)", borderRadius: "6px", padding: "2px 8px", fontSize: "0.7rem", fontWeight: 700, whiteSpace: "nowrap" }}>{c.workType}</span>
                   </td>
                   {/* Technical scope — clickable → search in main tab */}
