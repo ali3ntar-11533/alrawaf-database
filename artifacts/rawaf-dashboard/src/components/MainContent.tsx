@@ -380,7 +380,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
               },
               {
                 label: "متوسط الأسعار لهذا البند",
-                sub2: avgContractor?.contractor ?? "—",
+                sub2: `بناءً على ${scopePoolSize} سجل`,
                 value: formatExact(Math.round(avgPrice)),
                 color: "#3b8fcc",
                 highlight: false,
