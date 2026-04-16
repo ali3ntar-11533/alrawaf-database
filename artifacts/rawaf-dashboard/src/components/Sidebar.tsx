@@ -7,7 +7,6 @@ interface Props {
   onSelect: (id: number) => void;
   isLoading: boolean;
   hasFilter: boolean;
-  workTypeFilter: string;
 }
 
 const WORK_TYPE_COLOR: Record<string, string> = {
@@ -38,7 +37,6 @@ export default function Sidebar({
   onSelect,
   isLoading,
   hasFilter,
-  workTypeFilter,
 }: Props) {
   if (isLoading) {
     return (
@@ -60,17 +58,13 @@ export default function Sidebar({
         <div style={{ fontSize: "0.62rem", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.12em", fontWeight: 700, marginBottom: "3px" }}>
           المتخصصون بالأعمال المطلوبة
         </div>
-        {workTypeFilter ? (
-          <div style={{ fontSize: "0.7rem", color: "var(--charcoal)", fontWeight: 600, background: "rgba(197,160,89,0.1)", borderRadius: "6px", padding: "4px 8px", border: "1px solid rgba(197,160,89,0.25)", display: "inline-block", marginTop: "2px" }}>
-            {workTypeFilter}
-          </div>
-        ) : hasFilter ? (
+        {hasFilter ? (
           <div style={{ fontSize: "0.68rem", color: "#bbb" }}>
             {filtered.length} جهة مطابقة
           </div>
         ) : (
           <div style={{ fontSize: "0.68rem", color: "#aaa" }}>
-            الرجاء اختيار نوع العمل
+            ابحث لعرض المتخصصين المرتبطين
           </div>
         )}
       </div>

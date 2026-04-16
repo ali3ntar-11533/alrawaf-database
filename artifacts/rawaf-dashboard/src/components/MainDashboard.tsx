@@ -63,11 +63,13 @@ export default function MainDashboard({ search, selectedId, onSelectId }: Props)
       )
     : [];
 
-  // Determine selected contractor from the search pool or the full list
-  const pool = hasSearch ? filtered : allContractors;
+  // Always resolve selectedId from the FULL dataset, never from the filtered subset.
+  // This ensures clicking min/avg/max stat tabs always navigates to the correct
+  // contractor even when a search filter is active and that contractor is not in
+  // the visible sidebar list.
   const selected: Contractor | null =
     selectedId != null
-      ? pool.find((c: Contractor) => c.id === selectedId) ?? pool[0] ?? null
+      ? (allContractors.find((c: Contractor) => c.id === selectedId) ?? null)
       : filtered[0] ?? null;
 
   const hasNoSearchResults = hasSearch && filtered.length === 0;
@@ -86,7 +88,6 @@ export default function MainDashboard({ search, selectedId, onSelectId }: Props)
         onSelect={onSelectId}
         isLoading={isLoading}
         hasFilter={hasSearch || hasDirectSelect}
-        workTypeFilter=""
       />
       <MainContent
         contractor={selected}
@@ -94,7 +95,7 @@ export default function MainDashboard({ search, selectedId, onSelectId }: Props)
         filteredContractors={filtered.length > 0 ? filtered : allContractors}
         isLoading={isLoading}
         onSelectId={onSelectId}
-        emptyStateMessage={hasNoSearchResults ? "No results found for this search" : undefined}
+        emptyStateMessage={hasNoSearchResults ? "لا توجد نتائج مطابقة لهذا البحث" : undefined}
       />
     </div>
   );
