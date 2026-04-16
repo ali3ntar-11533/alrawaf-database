@@ -89,9 +89,6 @@ export default function MainContent({ contractor, allContractors, filteredContra
 
   const contractorWithMin = pricePool.find((c) => c.price === minPrice);
   const contractorWithMax = pricePool.find((c) => c.price === maxPrice);
-  const avgContractor     = [...pricePool].sort(
-    (a, b) => Math.abs(a.price - avgPrice) - Math.abs(b.price - avgPrice)
-  )[0];
 
   // Best 5 cheapest from the global pool (scope-filtered)
   const best5 = [...pricePool].sort((a, b) => a.price - b.price).slice(0, 5);
@@ -136,24 +133,23 @@ export default function MainContent({ contractor, allContractors, filteredContra
             <div style={{ fontSize: "0.58rem", color: "rgba(197,160,89,0.65)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "5px" }}>
               بيانات المقاول الرئيسية
             </div>
-            {/* Contractor name on its own line */}
-            <h2 style={{ fontSize: "0.98rem", fontWeight: 800, color: "#ffffff", lineHeight: 1.3, margin: "0 0 6px 0" }}>
+            {/* Contractor name */}
+            <h2 style={{ fontSize: "0.98rem", fontWeight: 800, color: "#ffffff", lineHeight: 1.3, margin: "0 0 5px 0" }}>
               {contractor.contractor}
             </h2>
-            <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.35)", marginBottom: "6px", direction: "ltr", letterSpacing: "0.04em", textAlign: "right" }}>
+            {/* Contract number directly under name, right-aligned */}
+            <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.35)", letterSpacing: "0.04em" }}>
               {contractor.contractNo}
             </div>
-            {/* Stars only */}
-            <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
-              <StarInline rating={rating} />
-            </div>
           </div>
-          <div style={{ textAlign: "left", flexShrink: 0 }}>
+          <div style={{ textAlign: "left", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
             <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.38)", textTransform: "uppercase", letterSpacing: "0.08em" }}>سعر البند</div>
             <div style={{ fontSize: "1.2rem", fontWeight: 900, color: "var(--gold)", lineHeight: 1, direction: "ltr" }}>
               {formatExact(contractor.price)}
             </div>
-            <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.35)" }}>ريال سعودي</div>
+            <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.35)", marginBottom: "6px" }}>ريال سعودي</div>
+            {/* Stars under price, bottom-left of price column */}
+            <StarInline rating={rating} />
           </div>
         </div>
 
@@ -373,11 +369,11 @@ export default function MainContent({ contractor, allContractors, filteredContra
               },
               {
                 label: "متوسط الأسعار لهذا البند",
-                sub2: avgContractor?.contractor ?? "—",
+                sub2: scopePoolSize > 1 ? `${scopePoolSize} سجل` : "—",
                 value: formatExact(Math.round(avgPrice)),
                 color: "#3b8fcc",
                 highlight: false,
-                id: avgContractor?.id,
+                id: null, // average is a computed stat — not tied to a specific contractor
               },
               {
                 label: "أعلى سعر تاريخي لهذا البند",
