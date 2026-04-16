@@ -168,7 +168,7 @@ function exportToExcel(data: Contractor[]) {
 }
 
 /* ─── Styles ───────────────────────────────── */
-const tdStyle: React.CSSProperties = { padding: "10px 14px", fontSize: "0.76rem", color: "#555", verticalAlign: "middle", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+const tdStyle: React.CSSProperties = { padding: "8px 10px", fontSize: "0.72rem", color: "#555", verticalAlign: "middle", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
 const overlayStyle: React.CSSProperties = { position: "fixed", inset: 0, background: "rgba(30,25,20,0.55)", backdropFilter: "blur(4px)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" };
 const modalStyle: React.CSSProperties = { width: "100%", maxWidth: "680px", maxHeight: "88vh", overflowY: "auto", padding: "28px 28px", position: "relative" };
 const closeBtnStyle: React.CSSProperties = { position: "absolute", top: "16px", left: "16px", background: "none", border: "none", cursor: "pointer", color: "#aaa", padding: "4px" };
@@ -417,26 +417,25 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
       </div>
 
       {/* Table */}
-      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        {/* overflow-x: auto allows smooth horizontal scroll if needed; body never scrolls */}
-        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" as any }}>
-          <table style={{ width: "100%", minWidth: "1700px", tableLayout: "fixed", borderCollapse: "collapse", direction: "rtl" }}>
-            {/* colgroup defines all column widths in one place */}
+      <div className="card" style={{ padding: 0, overflow: "hidden", width: "100%" }}>
+        <div style={{ overflowX: "hidden", width: "100%" }}>
+          <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", direction: "rtl" }}>
+            {/* Percentage-based columns — sums to 100%, no pixel overflow possible */}
             <colgroup>
-              <col style={{ width: "110px" }} />  {/* رقم العقد */}
-              <col style={{ width: "180px" }} />  {/* المقاول */}
-              <col style={{ width: "180px" }} />  {/* المشروع */}
-              <col style={{ width: "120px" }} />  {/* المحفظة */}
-              <col style={{ width: "140px" }} />  {/* النشاط الرئيسي */}
-              <col style={{ width: "120px" }} />  {/* نوع الأعمال */}
-              <col style={{ width: "250px" }} />  {/* الوصف الفني */}
-              <col style={{ width: "120px" }} />  {/* نوع العمل */}
-              <col style={{ width: "100px" }} />  {/* الوحدة */}
-              <col style={{ width: "110px" }} />  {/* السعر */}
-              <col style={{ width: "130px" }} />  {/* المحتوى المحلي */}
-              <col style={{ width: "150px" }} />  {/* التواصل */}
-              <col style={{ width: "110px" }} />  {/* التقييم */}
-              <col style={{ width: "110px" }} />  {/* إجراءات */}
+              <col style={{ width: "6%" }} />   {/* رقم العقد */}
+              <col style={{ width: "10%" }} />  {/* المقاول */}
+              <col style={{ width: "10%" }} />  {/* المشروع */}
+              <col style={{ width: "6%" }} />   {/* المحفظة */}
+              <col style={{ width: "7%" }} />   {/* النشاط الرئيسي */}
+              <col style={{ width: "6%" }} />   {/* نوع الأعمال */}
+              <col style={{ width: "13%" }} />  {/* الوصف الفني */}
+              <col style={{ width: "7%" }} />   {/* نوع العمل */}
+              <col style={{ width: "5%" }} />   {/* الوحدة */}
+              <col style={{ width: "6%" }} />   {/* السعر */}
+              <col style={{ width: "6%" }} />   {/* المحتوى المحلي */}
+              <col style={{ width: "8%" }} />   {/* التواصل */}
+              <col style={{ width: "5%" }} />   {/* التقييم */}
+              <col style={{ width: "5%" }} />   {/* إجراءات */}
             </colgroup>
             <thead>
               <tr style={{ background: "var(--charcoal)" }}>
@@ -445,7 +444,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                   "النشاط الرئيسي", "نوع الأعمال", "الوصف الفني للبند",
                   "نوع العمل", "الوحدة", "السعر", "المحتوى المحلي", "التواصل", "التقييم", "إجراءات"
                 ].map((h, i) => (
-                  <th key={i} style={{ padding: "13px 14px", textAlign: "right", fontSize: "0.63rem", fontWeight: 700, color: "rgba(197,160,89,0.9)", letterSpacing: "0.05em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", borderBottom: "2px solid rgba(197,160,89,0.2)" }}>
+                  <th key={i} style={{ padding: "12px 10px", textAlign: "right", fontSize: "0.63rem", fontWeight: 700, color: "rgba(197,160,89,0.9)", letterSpacing: "0.05em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", borderBottom: "2px solid rgba(197,160,89,0.2)" }}>
                     {h}
                   </th>
                 ))}
