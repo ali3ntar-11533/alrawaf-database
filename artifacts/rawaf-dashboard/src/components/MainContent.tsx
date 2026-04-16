@@ -79,7 +79,8 @@ export default function MainContent({ contractor, allContractors, filteredContra
 
   // pricePool is STRICTLY the global scope pool — never fall back to unrelated data.
   // When no other contractors share this scope, the pool contains only the current contractor.
-  const pricePool     = globalPricePool.length > 0 ? globalPricePool : [contractor as Contractor];
+  // Guard: never put null into pricePool — if contractor is null, pricePool is empty.
+  const pricePool     = globalPricePool.length > 0 ? globalPricePool : contractor ? [contractor] : [];
   const scopePoolSize = globalPricePool.length; // how many records match this scope
   const allPrices     = pricePool.map((c) => c.price);
   const maxPrice      = allPrices.length > 0 ? Math.max(...allPrices) : 1;
