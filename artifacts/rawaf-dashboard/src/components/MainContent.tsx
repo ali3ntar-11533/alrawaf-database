@@ -7,6 +7,7 @@ interface Props {
   filteredContractors: Contractor[];
   isLoading: boolean;
   onSelectId: (id: number) => void;
+  emptyStateMessage?: string;
 }
 
 const BAR_COLORS = ["#2baa74", "#c5a059", "#3b8fcc", "#e8851c", "#9b59b6", "#e74c3c"];
@@ -54,7 +55,7 @@ function StarInline({ rating }: { rating?: number | null }) {
   );
 }
 
-export default function MainContent({ contractor, allContractors, filteredContractors, isLoading, onSelectId }: Props) {
+export default function MainContent({ contractor, allContractors, filteredContractors, isLoading, onSelectId, emptyStateMessage }: Props) {
   if (isLoading) {
     return (
       <main className="content-area">
@@ -112,7 +113,9 @@ export default function MainContent({ contractor, allContractors, filteredContra
       <main className="content-area">
         <div className="card animate-fade-up" style={{ textAlign: "center", padding: "50px 24px" }}>
           <Building2 size={52} style={{ color: "#ddd", margin: "0 auto 14px" }} />
-          <p style={{ color: "#bbb", fontSize: "0.9rem" }}>اختر مقاولاً من القائمة الجانبية أو استخدم البحث الشامل</p>
+          <p style={{ color: "#bbb", fontSize: "0.9rem" }}>
+            {emptyStateMessage ?? "اختر مقاولاً من القائمة الجانبية أو استخدم البحث الشامل"}
+          </p>
         </div>
       </main>
     );

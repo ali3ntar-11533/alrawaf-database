@@ -70,6 +70,8 @@ export default function MainDashboard({ search, selectedId, onSelectId }: Props)
       ? pool.find((c: Contractor) => c.id === selectedId) ?? pool[0] ?? null
       : filtered[0] ?? null;
 
+  const hasNoSearchResults = hasSearch && filtered.length === 0;
+
   // Show welcome only when truly idle — no search, no direct selection
   if (!hasSearch && !hasDirectSelect && !isLoading) {
     return <WelcomeHero />;
@@ -92,6 +94,7 @@ export default function MainDashboard({ search, selectedId, onSelectId }: Props)
         filteredContractors={filtered.length > 0 ? filtered : allContractors}
         isLoading={isLoading}
         onSelectId={onSelectId}
+        emptyStateMessage={hasNoSearchResults ? "No results found for this search" : undefined}
       />
     </div>
   );
