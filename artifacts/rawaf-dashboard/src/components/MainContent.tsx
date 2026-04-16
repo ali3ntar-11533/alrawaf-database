@@ -403,7 +403,15 @@ export default function MainContent({ contractor, allContractors, filteredContra
                   key={i}
                   onClick={() => {
                     setActiveStat(i);
-                    if (stat.id != null) onSelectId(stat.id);
+                    if (stat.id != null) {
+                      onSelectId(stat.id);
+                      // Scroll content area back to top so contractor panel is visible
+                      requestAnimationFrame(() => {
+                        const area = document.querySelector<HTMLElement>(".content-area");
+                        if (area) area.scrollTo({ top: 0, behavior: "smooth" });
+                        else window.scrollTo({ top: 0, behavior: "smooth" });
+                      });
+                    }
                   }}
                   style={{
                     padding: "14px 10px", textAlign: "center",
