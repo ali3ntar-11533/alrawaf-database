@@ -12,7 +12,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import type { Contractor } from "@workspace/api-client-react";
 
-const DB_PASSWORD = "rawaf@2024";
+const DB_PASSWORD = "maged@2026";
 const SESSION_KEY = "rawaf_db_auth";
 
 /* ─── Form Data ───────────────────────────────── */

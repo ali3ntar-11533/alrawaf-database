@@ -140,12 +140,9 @@ export default function MainContent({ contractor, allContractors, filteredContra
             <h2 style={{ fontSize: "0.98rem", fontWeight: 800, color: "#ffffff", lineHeight: 1.3, margin: "0 0 6px 0" }}>
               {contractor.contractor}
             </h2>
-            {/* Stars + contract number on same line */}
+            {/* Stars only */}
             <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
               <StarInline rating={rating} />
-              <span style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.4)", borderRight: "1px solid rgba(255,255,255,0.15)", paddingRight: "12px" }}>
-                {contractor.contractNo}
-              </span>
             </div>
           </div>
           <div style={{ textAlign: "left", flexShrink: 0 }}>
@@ -154,6 +151,9 @@ export default function MainContent({ contractor, allContractors, filteredContra
               {formatExact(contractor.price)}
             </div>
             <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.35)" }}>ريال سعودي</div>
+            <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.35)", marginTop: "5px", direction: "ltr", letterSpacing: "0.04em" }}>
+              {contractor.contractNo}
+            </div>
           </div>
         </div>
 
