@@ -446,60 +446,6 @@ export default function MainContent({ contractor, allContractors, filteredContra
             })}
           </div>
 
-          {/* ── Average pool expansion: visible only when average tab is active ── */}
-          {activeStat === 2 && pricePool.length > 0 && (
-            <div style={{ borderTop: "1px solid rgba(59,143,204,0.25)", background: "rgba(59,143,204,0.05)", padding: "10px 14px" }}>
-              <div style={{ fontSize: "0.52rem", color: "rgba(59,143,204,0.8)", fontWeight: 700, letterSpacing: "0.06em", marginBottom: "8px", textAlign: "center" }}>
-                السجلات المستخدمة في حساب المتوسط • اضغط لعرض التفاصيل
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                {[...pricePool]
-                  .sort((a, b) => a.price - b.price)
-                  .map((c, idx) => {
-                    const isCur = c.id === contractor.id;
-                    return (
-                      <div
-                        key={c.id}
-                        onClick={() => {
-                          onSelectId(c.id);
-                          requestAnimationFrame(() => {
-                            const area = document.querySelector<HTMLElement>(".content-area");
-                            if (area) area.scrollTo({ top: 0, behavior: "smooth" });
-                            else window.scrollTo({ top: 0, behavior: "smooth" });
-                          });
-                        }}
-                        style={{
-                          display: "flex", alignItems: "center", justifyContent: "space-between",
-                          padding: "6px 10px", borderRadius: "6px", cursor: "pointer",
-                          background: isCur ? "rgba(59,143,204,0.15)" : "rgba(255,255,255,0.04)",
-                          border: isCur ? "1px solid rgba(59,143,204,0.3)" : "1px solid transparent",
-                          transition: "background 0.15s",
-                        }}
-                        onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.1)")}
-                        onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.background = isCur ? "rgba(59,143,204,0.15)" : "rgba(255,255,255,0.04)")}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: "7px", minWidth: 0 }}>
-                          <span style={{ fontSize: "0.5rem", color: "rgba(255,255,255,0.3)", flexShrink: 0 }}>#{idx + 1}</span>
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: "0.62rem", fontWeight: 700, color: isCur ? "#3b8fcc" : "rgba(255,255,255,0.75)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "180px" }}>
-                              {c.contractor}
-                            </div>
-                            <div style={{ fontSize: "0.5rem", color: "rgba(255,255,255,0.3)", direction: "ltr" }}>{c.contractNo}</div>
-                          </div>
-                        </div>
-                        <div style={{ textAlign: "left", flexShrink: 0 }}>
-                          <div style={{ fontSize: "0.7rem", fontWeight: 800, color: idx === 0 ? "#2baa74" : "rgba(255,255,255,0.6)", direction: "ltr" }}>
-                            {formatExact(c.price)}
-                          </div>
-                          <div style={{ fontSize: "0.45rem", color: "rgba(255,255,255,0.25)", textAlign: "left" }}>ر.س</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-          )}
-
           {/* Saving indicator — only shown when current contractor IS the lowest in the pool */}
           {scopePoolSize > 1 && contractor.price === minPrice && (
             <div style={{ padding: "8px 16px", borderTop: "1px solid rgba(43,170,116,0.2)", background: "rgba(43,170,116,0.07)", textAlign: "center" }}>
