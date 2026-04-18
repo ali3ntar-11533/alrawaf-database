@@ -364,7 +364,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
           </div>
 
           {/* 4 stat cells — tab-style: active cell gets a colored top border + brighter bg */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", width: "100%" }}>
             {[
               {
                 label: "سعر المقاول الحالي",
@@ -424,9 +424,11 @@ export default function MainContent({ contractor, allContractors, filteredContra
                     borderLeft: i < 3 ? "1px solid rgba(255,255,255,0.06)" : "none",
                     borderTop: isActive ? `2px solid ${stat.color}` : "2px solid transparent",
                     background: baseBg,
+                    minWidth: 0,
                     cursor: "pointer",
                     transition: "background 0.18s, border-top 0.18s",
                     position: "relative",
+                    whiteSpace: "nowrap",
                   }}
                   title={stat.label}
                   onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.13)")}
@@ -437,10 +439,10 @@ export default function MainContent({ contractor, allContractors, filteredContra
                       ✓ الأفضل
                     </div>
                   )}
-                  <div style={{ fontSize: "0.5rem", color: isActive ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.32)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "6px", lineHeight: 1.4 }}>{stat.label}</div>
-                  <div style={{ fontSize: "0.88rem", fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: "4px", direction: "ltr", fontVariantNumeric: "tabular-nums" }}>{stat.value}</div>
-                  <div style={{ fontSize: "0.48rem", color: "rgba(255,255,255,0.2)", marginBottom: "3px" }}>ريال سعودي</div>
-                  <div style={{ fontSize: "0.5rem", color: "rgba(255,255,255,0.3)", textAlign: "center", padding: "0 4px", lineHeight: 1.5 }}>{stat.sub2}</div>
+                  <div style={{ fontSize: "0.5rem", color: isActive ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.32)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "6px", lineHeight: 1.4, whiteSpace: "nowrap" }}>{stat.label}</div>
+                  <div style={{ fontSize: "0.88rem", fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: "4px", direction: "ltr", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{stat.value}</div>
+                  <div style={{ fontSize: "0.48rem", color: "rgba(255,255,255,0.2)", marginBottom: "3px", whiteSpace: "nowrap" }}>ريال سعودي</div>
+                  <div style={{ fontSize: "0.5rem", color: "rgba(255,255,255,0.3)", textAlign: "center", padding: "0 4px", lineHeight: 1.5, whiteSpace: "nowrap" }}>{stat.sub2}</div>
                 </div>
               );
             })}
