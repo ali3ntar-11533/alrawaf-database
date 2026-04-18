@@ -188,29 +188,6 @@ const truncateCellStyle: React.CSSProperties = {
   textOverflow: "ellipsis",
 };
 
-function TruncatedText({
-  value,
-  title,
-  style,
-}: {
-  value: string;
-  title?: string;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <span
-      title={title ?? value}
-      style={{
-        display: "block",
-        ...truncateCellStyle,
-        ...style,
-      }}
-    >
-      {value}
-    </span>
-  );
-}
-
 /* ─── Props ───────────────────────────────── */
 interface Props {
   search: string;

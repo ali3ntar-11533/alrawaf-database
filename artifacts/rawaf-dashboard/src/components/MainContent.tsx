@@ -56,6 +56,29 @@ function StarInline({ rating }: { rating?: number | null }) {
   );
 }
 
+function TruncatedBadge({
+  value,
+  title,
+}: {
+  value: string;
+  title?: string;
+}) {
+  return (
+    <span
+      title={title ?? value}
+      style={{
+        display: "block",
+        minWidth: 0,
+        overflow: "hidden",
+        whiteSpace: "nowrap",
+        textOverflow: "ellipsis",
+      }}
+    >
+      {value}
+    </span>
+  );
+}
+
 export default function MainContent({ contractor, allContractors, filteredContractors, isLoading, onSelectId, emptyStateMessage }: Props) {
   // Active stat tab index (0=current, 1=min, 2=avg, 3=max) — resets when contractor changes
   const [activeStat, setActiveStat] = useState(0);
@@ -234,9 +257,11 @@ export default function MainContent({ contractor, allContractors, filteredContra
 
         {/* Grid: نوع الأعمال — نوع العمل — الوحدة */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
-          <div style={{ background: "linear-gradient(135deg, rgba(197,160,89,0.07), rgba(197,160,89,0.02))", border: "1px solid rgba(197,160,89,0.2)", borderRadius: "9px", padding: "12px 14px" }}>
+          <div style={{ background: "linear-gradient(135deg, rgba(197,160,89,0.07), rgba(197,160,89,0.02))", border: "1px solid rgba(197,160,89,0.2)", borderRadius: "9px", padding: "12px 14px", minWidth: 0, overflow: "hidden" }}>
             <div style={{ fontSize: "0.55rem", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>نوع الأعمال</div>
-            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>{contractor.workType || "—"}</div>
+            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)", minWidth: 0, overflow: "hidden" }}>
+              <TruncatedBadge value={contractor.workType || "—"} />
+            </div>
           </div>
           <div style={{ background: "linear-gradient(135deg, rgba(58,54,50,0.04), rgba(58,54,50,0.01))", border: "1px solid rgba(58,54,50,0.1)", borderRadius: "9px", padding: "12px 14px" }}>
             <div style={{ fontSize: "0.55rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>نوع العمل</div>
