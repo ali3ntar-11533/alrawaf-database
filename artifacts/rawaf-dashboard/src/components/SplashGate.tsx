@@ -242,59 +242,47 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
 
       {/* ═══ TOP RIGHT LABEL ═══ */}
       <div style={{ position: "absolute", top: 34, right: 32, zIndex: 20, animation: "sg-fadein 1s ease 0.3s both", textAlign: "left" }}>
-        <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.20)", letterSpacing: "0.12em" }}>شركة تابعة لـ</div>
-        <div style={{ fontSize: "0.62rem", color: "rgba(197,160,89,0.48)", fontWeight: 700, letterSpacing: "0.1em" }}>مجموعة ساكف القابضة</div>
+        <div style={{ fontSize: "0.66rem", color: "rgba(197,160,89,0.80)", fontWeight: 700, letterSpacing: "0.05em", textShadow: "0 1px 6px rgba(0,0,0,0.6)" }}>إحدى شركات مجموعة ساكف القابضة</div>
       </div>
 
       {/* ═══ MAIN CENTER CONTENT ═══ */}
       <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "0 24px", maxWidth: 560, animation: "sg-fadeup 0.9s ease 0.1s both" }}>
 
-        {/* Logo — circular dark medallion; inverted filter makes:
-             • white JPEG bg → near-black = matches container → "disappears"
-             • dark logo symbol → bright gold = floats on dark bg
-             No blend-mode tricks needed — pure container+filter match. */}
+        {/* Logo — original white card style restored */}
         <div style={{
-          width: 116, height: 116,
-          borderRadius: "50%",
-          /* Nearly pure black container matches the inverted white JPEG background */
-          background: "radial-gradient(circle, #0d0804 60%, #060401 100%)",
-          border: "1.5px solid rgba(197,160,89,0.55)",
-          boxShadow: "0 0 0 3px rgba(197,160,89,0.08), 0 0 32px rgba(197,160,89,0.65), 0 0 64px rgba(197,160,89,0.22), 0 12px 40px rgba(0,0,0,0.6)",
+          width: 112, height: 112,
+          background: "#fff",
+          borderRadius: 22,
+          border: "2px solid rgba(197,160,89,0.45)",
+          boxShadow: "0 0 0 4px rgba(197,160,89,0.10), 0 0 32px rgba(197,160,89,0.55), 0 0 72px rgba(197,160,89,0.18), 0 16px 48px rgba(0,0,0,0.55)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          padding: 16,
-          marginBottom: 26,
-          overflow: "hidden",
+          padding: 13,
+          marginBottom: 28,
           animation: "sg-logo-glow 4s ease-in-out infinite",
           flexShrink: 0,
         }}>
           <img
             src={logoImg}
             alt="الرواف"
-            style={{
-              width: "100%", height: "100%", objectFit: "contain",
-              /* grayscale first → removes unexpected hue shifts after invert
-                 invert: white-bg→black (matches dark container), grey symbol→bright
-                 sepia+saturate: uniform warm-gold tone across the entire symbol */
-              filter: "grayscale(1) invert(1) sepia(0.85) saturate(3.5) brightness(1.2)",
-            }}
+            style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: 10 }}
           />
         </div>
 
-        <div style={{ fontSize: "0.54rem", color: "rgba(197,160,89,0.92)", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 9, fontFamily: "'Inter', sans-serif" }}>
+        <div style={{ fontSize: "0.62rem", color: "rgba(197,160,89,0.95)", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 10, fontFamily: "'Inter', sans-serif", textShadow: "0 0 12px rgba(197,160,89,0.4)" }}>
           ALRAWAF CONTRACTING COMPANY
         </div>
 
-        <h1 style={{ fontSize: "1.9rem", fontWeight: 900, color: "#ffffff", lineHeight: 1.22, marginBottom: 10, textShadow: "0 4px 24px rgba(0,0,0,0.7)" }}>
+        <h1 style={{ fontSize: "2.3rem", fontWeight: 900, color: "#ffffff", lineHeight: 1.18, marginBottom: 12, textShadow: "0 4px 28px rgba(0,0,0,0.75)", letterSpacing: "-0.01em" }}>
           شركة الرواف للمقاولات
         </h1>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, justifyContent: "center" }}>
-          <div style={{ width: 44, height: 1, background: "linear-gradient(90deg, transparent, rgba(197,160,89,0.55))" }} />
-          <span style={{ fontSize: "0.74rem", color: "rgba(197,160,89,0.75)", fontWeight: 600, letterSpacing: "0.04em" }}>نظام إدارة الموردين والمقاولين</span>
-          <div style={{ width: 44, height: 1, background: "linear-gradient(90deg, rgba(197,160,89,0.55), transparent)" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10, justifyContent: "center" }}>
+          <div style={{ width: 48, height: 1.5, background: "linear-gradient(90deg, transparent, rgba(197,160,89,0.65))" }} />
+          <span style={{ fontSize: "0.88rem", color: "rgba(197,160,89,0.92)", fontWeight: 700, letterSpacing: "0.04em", textShadow: "0 1px 8px rgba(0,0,0,0.6)" }}>نظام إدارة الموردين والمقاولين</span>
+          <div style={{ width: 48, height: 1.5, background: "linear-gradient(90deg, rgba(197,160,89,0.65), transparent)" }} />
         </div>
 
-        <p style={{ fontSize: "0.74rem", color: "rgba(255,255,255,0.80)", lineHeight: 2, maxWidth: 380, marginBottom: 40, textShadow: "0 2px 10px rgba(0,0,0,0.75)" }}>
+        <p style={{ fontSize: "0.88rem", color: "rgba(255,255,255,0.90)", lineHeight: 1.9, maxWidth: 420, marginBottom: 42, textShadow: "0 2px 12px rgba(0,0,0,0.8)", fontWeight: 500 }}>
           منصة داخلية متكاملة لإدارة بيانات المقاولين والموردين<br />
           وتحليل الأسعار وتنسيق المشاريع الإنشائية
         </p>
@@ -307,8 +295,8 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
             { value: "ISO",  label: "شهادة الجودة" },
           ].map((s, i) => (
             <div key={i} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "1.15rem", fontWeight: 900, color: "#c5a059", lineHeight: 1, marginBottom: 5, direction: "ltr", textShadow: "0 0 20px rgba(197,160,89,0.3)" }}>{s.value}</div>
-              <div style={{ fontSize: "0.54rem", color: "rgba(255,255,255,0.72)", letterSpacing: "0.1em", textShadow: "0 1px 6px rgba(0,0,0,0.7)" }}>{s.label}</div>
+              <div style={{ fontSize: "1.45rem", fontWeight: 900, color: "#d4aa66", lineHeight: 1, marginBottom: 6, direction: "ltr", textShadow: "0 0 24px rgba(197,160,89,0.55), 0 2px 8px rgba(0,0,0,0.5)" }}>{s.value}</div>
+              <div style={{ fontSize: "0.66rem", color: "rgba(255,255,255,0.85)", letterSpacing: "0.09em", fontWeight: 600, textShadow: "0 1px 6px rgba(0,0,0,0.7)" }}>{s.label}</div>
             </div>
           ))}
         </div>
