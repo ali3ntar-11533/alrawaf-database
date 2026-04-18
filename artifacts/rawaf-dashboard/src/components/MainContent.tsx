@@ -105,34 +105,29 @@ export default function MainContent({ contractor, allContractors, filteredContra
     );
   }
 
-  // ── Global price pool: all records with matching technicalScope ──
-  const scopeKey = contractor ? normalize(contractor.technicalScope) : "";
-  const globalPricePool: Contractor[] = contractor && scopeKey.length >= 3
-    ? allContractors.filter((c) => {
-        if (c.id === contractor.id) return true; // always include current
-        const s = normalize(c.technicalScope);
-        if (!s || s.length < 3) return false;
-        return s === scopeKey || s.includes(scopeKey) || scopeKey.includes(s);
-      })
+  // ── Global price pool: ALL records sharing the same نوع الأعمال (workType) ──
+  // This ensures every registered price for the same category is included without exception.
+  const workTypeKey = contractor ? normalize(contractor.workType) : "";
+  const globalPricePool: Contractor[] = contractor && workTypeKey.length > 0
+    ? allContractors.filter((c) => normalize(c.workType) === workTypeKey)
     : contractor ? [contractor] : [];
 
-  // pricePool is STRICTLY the global scope pool — never fall back to unrelated data.
-  // When no other contractors share this scope, the pool contains only the current contractor.
-  // Guard: never put null into pricePool — if contractor is null, pricePool is empty.
+  // Fallback: if for some reason the pool is empty (workType blank), include at least the selected contractor.
   const pricePool     = globalPricePool.length > 0 ? globalPricePool : contractor ? [contractor] : [];
-  const scopePoolSize = globalPricePool.length; // how many records match this scope
-  const allPrices     = pricePool.map((c) => c.price);
-  const maxPrice      = allPrices.length > 0 ? Math.max(...allPrices) : 1;
-  const minPrice      = allPrices.length > 0 ? Math.min(...allPrices) : 0;
-  const avgPrice      = avg(allPrices);
+  const scopePoolSize = globalPricePool.length; // total records matching this workType
 
-  const contractorWithMin = pricePool.find((c) => c.price === minPrice);
-  const contractorWithMax = pricePool.find((c) => c.price === maxPrice);
+  // Only consider records with a valid price > 0 for min/max/avg calculations
+  const validPricePool = pricePool.filter((c) => c.price > 0);
+  const allPrices      = validPricePool.map((c) => c.price);
+  const maxPrice       = allPrices.length > 0 ? Math.max(...allPrices) : 1;
+  const minPrice       = allPrices.length > 0 ? Math.min(...allPrices) : 0;
+  const avgPrice       = avg(allPrices);
 
-  // Find contractor closest to the average price.
-  // Prefer one that is not the min or max contractor to avoid confusing overlaps.
-  // If pool has only 2 entries (both are min+max), fall back to the first sorted result.
-  const _sortedByAvgDiff = [...pricePool].sort(
+  const contractorWithMin = validPricePool.find((c) => c.price === minPrice);
+  const contractorWithMax = validPricePool.find((c) => c.price === maxPrice);
+
+  // Find contractor closest to the average price (excluding min/max to avoid duplicate labels)
+  const _sortedByAvgDiff = [...validPricePool].sort(
     (a, b) => Math.abs(a.price - avgPrice) - Math.abs(b.price - avgPrice)
   );
   const avgContractor =
@@ -140,18 +135,30 @@ export default function MainContent({ contractor, allContractors, filteredContra
       (c) => c.id !== contractorWithMin?.id && c.id !== contractorWithMax?.id
     ) ?? _sortedByAvgDiff[0];
 
-  // Best 5 cheapest from the global pool (scope-filtered)
-  const best5 = [...pricePool].sort((a, b) => a.price - b.price).slice(0, 5);
+  // ── Best 5: Best Value scoring = 60% price competitiveness + 40% rating ──
+  // A contractor with a high rating and a competitive price ranks above one that
+  // is cheapest but has a low rating (Best Value = Quality × Price together).
+  const _maxPoolPrice = maxPrice > 0 ? maxPrice : 1;
+  const best5 = validPricePool.length > 0
+    ? [...validPricePool]
+        .map((c) => {
+          const rating = Math.max(0, Math.min(5, Number((c as any).rating ?? 0)));
+          const normalizedRating       = rating / 5;
+          const normalizedPriceScore   = 1 - (c.price / _maxPoolPrice); // lower price → higher score
+          const bestValueScore         = normalizedRating * 0.4 + normalizedPriceScore * 0.6;
+          return { ...c, _bestValueScore: bestValueScore };
+        })
+        .sort((a, b) => b._bestValueScore - a._bestValueScore)
+        .slice(0, 5)
+    : [];
 
-  // ── Work history: same contractor name + same technicalScope ──
-  const workHistory: Contractor[] = contractor && scopeKey.length >= 3
+  // ── Work history: same contractor name, any project (other records for this contractor) ──
+  const contractorNameKey = contractor ? normalize(contractor.contractor) : "";
+  const workHistory: Contractor[] = contractor && contractorNameKey.length > 0
     ? allContractors
         .filter((c) => {
           if (c.id === contractor.id) return false;
-          if (normalize(c.contractor) !== normalize(contractor.contractor)) return false;
-          const s = normalize(c.technicalScope);
-          if (!s || s.length < 3) return false;
-          return s === scopeKey || s.includes(scopeKey) || scopeKey.includes(s);
+          return normalize(c.contractor) === contractorNameKey;
         })
         .slice(0, 6)
     : [];
@@ -342,42 +349,65 @@ export default function MainContent({ contractor, allContractors, filteredContra
               مقارنة الأسعار
             </h3>
             <span style={{ fontSize: "0.62rem", color: "#bbb", background: "#f5f0e8", borderRadius: "4px", padding: "2px 7px" }}>
-              أفضل {best5.length} أسعار • بحث شامل في قاعدة البيانات
+              أفضل {best5.length} قيمة • سعر + تقييم مدمجان
             </span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>
             {best5.map((c, i) => {
               const isCurrent = contractor && c.id === contractor.id;
+              const cRating   = Math.max(0, Math.min(5, Math.round(Number((c as any).rating ?? 0))));
+              const barColor  = isCurrent
+                ? "linear-gradient(90deg, var(--gold), #e8c870)"
+                : i === 0 ? "linear-gradient(90deg, #2baa74, #36c786)" : BAR_COLORS[i % BAR_COLORS.length];
+              const maxBest5Price = Math.max(...best5.map((x) => x.price), 1);
               return (
                 <div
                   key={c.id}
                   onClick={() => onSelectId(c.id)}
-                  style={{ display: "flex", alignItems: "center", gap: "9px", cursor: "pointer" }}
+                  style={{ display: "flex", flexDirection: "column", gap: "4px", cursor: "pointer" }}
                 >
-                  <div style={{ width: "120px", fontSize: "0.7rem", color: isCurrent ? "var(--gold)" : "var(--charcoal)", textAlign: "right", fontWeight: isCurrent ? 800 : 600, flexShrink: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {c.contractor}
+                  {/* Row: rank + name + stars + price label */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    {/* Rank badge */}
+                    <div style={{ width: "18px", height: "18px", borderRadius: "5px", background: i === 0 ? "#2baa74" : isCurrent ? "var(--gold)" : "#e0dbd0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <span style={{ fontSize: "0.55rem", fontWeight: 800, color: i === 0 || isCurrent ? "#fff" : "#aaa" }}>{i + 1}</span>
+                    </div>
+                    {/* Contractor name */}
+                    <div style={{ flex: 1, fontSize: "0.7rem", color: isCurrent ? "var(--gold)" : "var(--charcoal)", fontWeight: isCurrent ? 800 : 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {c.contractor}
+                    </div>
+                    {/* Star rating */}
+                    {cRating > 0 && (
+                      <span style={{ display: "inline-flex", gap: "1px", flexShrink: 0 }}>
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <span key={s} style={{ fontSize: "0.6rem", color: s <= cRating ? "#f5c518" : "#e0dbd0", lineHeight: 1 }}>★</span>
+                        ))}
+                      </span>
+                    )}
+                    {/* Price */}
+                    <span style={{ fontSize: "0.68rem", fontWeight: 800, color: i === 0 ? "#2baa74" : isCurrent ? "var(--gold)" : "#888", flexShrink: 0, direction: "ltr" }}>
+                      {formatExact(c.price)}
+                    </span>
                   </div>
-                  <div style={{ flex: 1, background: "#f5f0e8", borderRadius: "5px", overflow: "hidden", height: "19px" }}>
+                  {/* Progress bar */}
+                  <div style={{ background: "#f5f0e8", borderRadius: "5px", overflow: "hidden", height: "7px" }}>
                     <div
                       style={{
-                        width: `${(c.price / Math.max(...best5.map(x => x.price))) * 100}%`, height: "100%",
-                        background: isCurrent
-                          ? "linear-gradient(90deg, var(--gold), #e8c870)"
-                          : i === 0 ? "linear-gradient(90deg, #2baa74, #36c786)" : BAR_COLORS[i % BAR_COLORS.length],
-                        borderRadius: "5px", transition: "width 0.8s ease",
-                        display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: "6px",
-                        boxShadow: isCurrent ? "0 0 8px rgba(197,160,89,0.35)" : i === 0 ? "0 0 8px rgba(43,170,116,0.3)" : "none",
+                        width: `${(c.price / maxBest5Price) * 100}%`,
+                        height: "100%",
+                        background: barColor,
+                        borderRadius: "5px",
+                        transition: "width 0.8s ease",
+                        boxShadow: isCurrent ? "0 0 6px rgba(197,160,89,0.35)" : i === 0 ? "0 0 6px rgba(43,170,116,0.3)" : "none",
                       }}
-                    >
-                      <span style={{ fontSize: "0.58rem", color: "#fff", fontWeight: 700 }}>{formatExact(c.price)}</span>
-                    </div>
+                    />
                   </div>
                 </div>
               );
             })}
           </div>
           <div style={{ marginTop: "10px", fontSize: "0.6rem", color: "#bbb", textAlign: "center" }}>
-            مرتبة تصاعدياً • الأفضل سعراً يظهر أولاً • اضغط على أي مقاول لعرض بياناته
+            مرتبة حسب أفضل قيمة (60% سعر + 40% تقييم) • اضغط على أي مقاول لعرض بياناته
           </div>
         </div>
       )}
@@ -396,10 +426,10 @@ export default function MainContent({ contractor, allContractors, filteredContra
           {/* Context header */}
           <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: "0.6rem", color: "rgba(197,160,89,0.75)", fontWeight: 700, letterSpacing: "0.06em" }}>
-              تحليل أسعار البند • بحث شامل في قاعدة البيانات
+              تحليل أسعار نوع الأعمال • {contractor?.workType || "—"}
             </span>
             <span style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.28)", background: "rgba(255,255,255,0.06)", borderRadius: "5px", padding: "2px 9px" }}>
-              {scopePoolSize > 1 ? `${scopePoolSize} سجل مطابق للوصف الفني` : "سجل واحد — لا توجد مقارنة بعد"}
+              {scopePoolSize > 1 ? `${scopePoolSize} سجل مطابق لنوع الأعمال` : "سجل واحد — لا توجد مقارنة بعد"}
             </span>
           </div>
 
