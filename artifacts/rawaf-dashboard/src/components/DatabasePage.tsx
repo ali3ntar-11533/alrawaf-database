@@ -181,6 +181,35 @@ const iconBtnStyle = (color: string): React.CSSProperties => ({ display: "inline
 const submitBtnStyle: React.CSSProperties = { flex: 1, background: "linear-gradient(135deg, var(--gold), #a88540)", color: "#fff", border: "none", borderRadius: "10px", padding: "12px", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" };
 const cancelBtnStyle: React.CSSProperties = { background: "#f5f0e8", color: "var(--charcoal)", border: "none", borderRadius: "10px", padding: "12px 20px", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" };
 const roFieldStyle: React.CSSProperties = { ...inputStyle, background: "#f0ece4", color: "#888", cursor: "not-allowed" };
+const truncateCellStyle: React.CSSProperties = {
+  minWidth: 0,
+  overflow: "hidden",
+  whiteSpace: "nowrap",
+  textOverflow: "ellipsis",
+};
+
+function TruncatedText({
+  value,
+  title,
+  style,
+}: {
+  value: string;
+  title?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <span
+      title={title ?? value}
+      style={{
+        display: "block",
+        ...truncateCellStyle,
+        ...style,
+      }}
+    >
+      {value}
+    </span>
+  );
+}
 
 /* ─── Props ───────────────────────────────── */
 interface Props {
@@ -492,8 +521,25 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                   <td style={tdStyle} title={c.project}>{c.project}</td>
                   <td style={tdStyle} title={c.portfolio}>{c.portfolio}</td>
                   <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#3b8fcc" }} title={(c as any).mainActivity || "—"}>{(c as any).mainActivity || "—"}</td>
-                  <td style={{ ...tdStyle, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={(c as any).workType || "—"}>
-                    <span style={{ background: "rgba(197,160,89,0.1)", color: "var(--gold)", borderRadius: "6px", padding: "2px 8px", fontSize: "0.7rem", fontWeight: 700, whiteSpace: "nowrap" }}>{c.workType}</span>
+                  <td style={{ ...tdStyle, minWidth: 0, overflow: "hidden" }} title={(c as any).workType || "—"}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        maxWidth: "100%",
+                        background: "rgba(197,160,89,0.1)",
+                        color: "var(--gold)",
+                        borderRadius: "6px",
+                        padding: "2px 8px",
+                        fontSize: "0.7rem",
+                        fontWeight: 700,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        verticalAlign: "middle",
+                      }}
+                    >
+                      {c.workType}
+                    </span>
                   </td>
                   {/* Technical scope — clickable → search in main tab */}
                   <td
