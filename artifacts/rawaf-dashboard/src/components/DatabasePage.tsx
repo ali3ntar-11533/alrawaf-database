@@ -211,6 +211,12 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
 
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
+  useEffect(() => {
+    if (sessionStorage.getItem(SESSION_KEY) !== "1" && authenticated) {
+      setAuthenticated(false);
+    }
+  }, [authenticated]);
+
   /* ── Idle auto-lock (5 min inactivity) ── */
   const IDLE_MS       = 5 * 60 * 1000; // 5 minutes
   const idleTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
