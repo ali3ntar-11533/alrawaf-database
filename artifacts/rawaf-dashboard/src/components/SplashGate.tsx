@@ -241,8 +241,19 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
       </div>
 
       {/* ═══ TOP RIGHT LABEL ═══ */}
-      <div style={{ position: "absolute", top: 34, right: 32, zIndex: 20, animation: "sg-fadein 1s ease 0.3s both", textAlign: "left" }}>
-        <div style={{ fontSize: "0.66rem", color: "rgba(197,160,89,0.80)", fontWeight: 700, letterSpacing: "0.05em", textShadow: "0 1px 6px rgba(0,0,0,0.6)" }}>إحدى شركات مجموعة ساكف القابضة</div>
+      <div style={{ position: "absolute", top: 32, right: 32, zIndex: 20, animation: "sg-fadein 1s ease 0.3s both", textAlign: "left" }}>
+        <div style={{
+          fontSize: "0.82rem",
+          fontWeight: 900,
+          color: "#e8c96a",
+          letterSpacing: "0.04em",
+          textShadow: "0 0 22px rgba(232,201,106,0.55), 0 2px 10px rgba(0,0,0,0.75)",
+          background: "rgba(0,0,0,0.28)",
+          borderRadius: "8px",
+          padding: "5px 13px",
+          border: "1px solid rgba(232,201,106,0.22)",
+          backdropFilter: "blur(8px)",
+        }}>إحدى شركات مجموعة ساكف القابضة</div>
       </div>
 
       {/* ═══ MAIN CENTER CONTENT ═══ */}
@@ -328,12 +339,12 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
 
         <div style={{ marginTop: 20, display: "flex", alignItems: "center", gap: 7, animation: "sg-fadein 1s ease 0.7s both" }}>
           <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#2baa74", boxShadow: "0 0 6px #2baa74" }} />
-          <span style={{ fontSize: "0.57rem", color: "rgba(255,255,255,0.18)", letterSpacing: "0.08em" }}>بيئة آمنة ومشفرة • للاستخدام الداخلي فقط</span>
+          <span style={{ fontSize: "0.66rem", fontWeight: 700, color: "rgba(220,210,185,0.92)", letterSpacing: "0.07em", textShadow: "0 1px 6px rgba(0,0,0,0.7)" }}>بيئة آمنة ومشفرة • للاستخدام الداخلي فقط</span>
         </div>
       </div>
 
       {/* Footer */}
-      <div style={{ position: "absolute", bottom: 20, left: "50%", transform: "translateX(-50%)", zIndex: 20, fontSize: "0.54rem", color: "rgba(255,255,255,0.15)", whiteSpace: "nowrap", letterSpacing: "0.08em", animation: "sg-fadein 1s ease 0.8s both" }}>
+      <div style={{ position: "absolute", bottom: 20, left: "50%", transform: "translateX(-50%)", zIndex: 20, fontSize: "0.64rem", fontWeight: 700, color: "rgba(220,210,185,0.85)", whiteSpace: "nowrap", letterSpacing: "0.07em", animation: "sg-fadein 1s ease 0.8s both", textShadow: "0 1px 6px rgba(0,0,0,0.75)" }}>
         © 2026 شركة الرواف للمقاولات — جميع الحقوق محفوظة
       </div>
 
