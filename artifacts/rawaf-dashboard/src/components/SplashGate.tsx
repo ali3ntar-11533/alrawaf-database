@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import logoImg from "@assets/image_1776506412986.png";
+import logoImg from "@assets/logo_1776506524686.jpg";
 /* ── Three new Alrawaf branded background images ── */
 import bg1 from "@assets/Image_jo77t3jo77t3jo1_1776495109728.png"; // equipment at golden sunset
 import bg2 from "@assets/Image_jo77t3jo77t3jo2_1776495109727.png"; // buildings at night — golden LED lines
@@ -381,7 +381,7 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
 
               {/* Header */}
               <div style={{ textAlign: "center", marginBottom: 28 }}>
-                <div style={{ width: 64, height: 64, borderRadius: 15, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(197,160,89,0.25)", display: "flex", alignItems: "center", justifyContent: "center", padding: 9, margin: "0 auto 13px" }}>
+                <div style={{ width: 72, height: 72, borderRadius: 16, background: "#fff", border: "1.5px solid rgba(197,160,89,0.35)", boxShadow: "0 6px 28px rgba(0,0,0,0.35), 0 0 0 3px rgba(197,160,89,0.12)", display: "flex", alignItems: "center", justifyContent: "center", padding: 10, margin: "0 auto 13px", overflow: "hidden" }}>
                   <img src={logoImg} alt="الرواف" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                 </div>
                 <div style={{ fontSize: "0.5rem", color: "rgba(197,160,89,0.85)", letterSpacing: "0.16em", marginBottom: 5 }}>ALRAWAF CONTRACTING</div>

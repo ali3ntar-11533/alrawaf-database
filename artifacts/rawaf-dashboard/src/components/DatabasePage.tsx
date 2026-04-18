@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { X, Plus, Trash2, Pencil, Lock, Download, Copy } from "lucide-react";
-import logoImg from "@assets/image_1776506412986.png";
+import logoImg from "@assets/logo_1776506524686.jpg";
 import * as XLSX from "xlsx";
 import {
   useListContractors,

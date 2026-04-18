@@ -1,4 +1,4 @@
-import logoImg from "@assets/image_1776506412986.png";
+import logoImg from "@assets/logo_1776506524686.jpg";
 
 export default function WelcomeHero() {
   return (
