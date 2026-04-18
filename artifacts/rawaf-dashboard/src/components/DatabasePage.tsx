@@ -150,6 +150,7 @@ function exportToExcel(data: Contractor[]) {
     "نوع العمل":            (c as any).workCategory ?? "",
     "الوحدة":               (c as any).unit ?? "",
     "السعر (ريال)":         c.price,
+    "المحتوى المحلي":       (c as any).localContent ?? "",
     "رقم التواصل":          c.phone,
     "البريد الإلكتروني":    c.email,
     "التقييم":              (c as any).rating ?? 0,
@@ -160,11 +161,11 @@ function exportToExcel(data: Contractor[]) {
   ws["!cols"] = [
     { wch: 14 }, { wch: 28 }, { wch: 24 }, { wch: 12 },
     { wch: 18 }, { wch: 14 }, { wch: 36 }, { wch: 14 },
-    { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 28 }, { wch: 8 },
+    { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 28 }, { wch: 8 },
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "المقاولون");
-  XLSX.writeFile(wb, `rawaf_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  XLSX.writeFile(wb, `rawaf_contractors_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
 /* ─── Styles ───────────────────────────────── */
@@ -262,7 +263,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
   }, [authenticated]);
 
   const queryClient    = useQueryClient();
-  const { data: contractors = [], isLoading } = useListContractors();
+  const { data: contractors = [], isLoading, isError } = useListContractors();
   const createMutation = useCreateContractor();
   const updateMutation = useUpdateContractor();
   const deleteMutation = useDeleteContractor();
@@ -457,9 +458,26 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={14} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>جاري التحميل...</td></tr>
+                <tr><td colSpan={14} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+                    <div style={{ width: 32, height: 32, border: "3px solid rgba(197,160,89,0.2)", borderTopColor: "var(--gold)", borderRadius: "50%", animation: "spin-loader 0.9s linear infinite" }} />
+                    جاري تحميل البيانات...
+                  </div>
+                </td></tr>
+              ) : isError ? (
+                <tr><td colSpan={14} style={{ textAlign: "center", padding: "50px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+                    <div style={{ fontSize: "2rem" }}>⚠️</div>
+                    <div style={{ fontSize: "0.85rem", color: "#e74c3c", fontWeight: 700 }}>تعذّر تحميل البيانات</div>
+                    <div style={{ fontSize: "0.75rem", color: "#aaa" }}>تحقق من اتصال الشبكة أو أعد تحميل الصفحة</div>
+                    <button onClick={() => queryClient.invalidateQueries({ queryKey: getListContractorsQueryKey() })}
+                      style={{ marginTop: "6px", background: "linear-gradient(135deg, var(--gold), #a88540)", color: "#fff", border: "none", borderRadius: "8px", padding: "8px 20px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}>
+                      إعادة المحاولة
+                    </button>
+                  </div>
+                </td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={14} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>لا توجد سجلات مطابقة</td></tr>
+                <tr><td colSpan={14} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>لا توجد سجلات مطابقة للبحث</td></tr>
               ) : filtered.map((c: Contractor, idx: number) => (
                 <tr key={c.id} style={{ background: idx % 2 === 0 ? "#fff" : "#faf8f4", borderBottom: "1px solid #f0ebe0" }}>
                   <td style={tdStyle} title={c.contractNo}>{c.contractNo}</td>

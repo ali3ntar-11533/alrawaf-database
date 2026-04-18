@@ -2,6 +2,7 @@ import { useState } from "react";
 import { TabType } from "../App";
 import { Search } from "lucide-react";
 import logoImg from "@assets/logo_1776506524686.jpg";
+import heroBg from "@assets/Image_jo77t3jo77t3jo1_1776495109728.png";
 
 interface HeaderProps {
   activeTab: TabType;
@@ -18,7 +19,14 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange 
   }
 
   return (
-    <header className="hero-banner animate-fade">
+    <header
+      className="hero-banner animate-fade"
+      style={{
+        backgroundImage: `linear-gradient(160deg, rgba(26,22,18,0.88) 0%, rgba(58,54,50,0.75) 50%, rgba(26,22,18,0.92) 100%), url(${heroBg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center 30%",
+      }}
+    >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
         {/* Logo + Title */}
         <div className="animate-slide-in" style={{ display: "flex", alignItems: "center", gap: "20px" }}>
