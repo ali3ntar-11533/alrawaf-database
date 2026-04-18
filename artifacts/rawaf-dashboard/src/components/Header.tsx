@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { TabType } from "../App";
 import { Search } from "lucide-react";
-import logoImg from "@assets/logo_1776260992247.jpg";
+import logoImg from "@assets/image_1776506412986.png";
 
 interface HeaderProps {
   activeTab: TabType;

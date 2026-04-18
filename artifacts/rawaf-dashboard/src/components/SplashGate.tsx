@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import logoImg from "@assets/logo_1776260992247.jpg";
+import logoImg from "@assets/image_1776506412986.png";
 /* ── Three new Alrawaf branded background images ── */
 import bg1 from "@assets/Image_jo77t3jo77t3jo1_1776495109728.png"; // equipment at golden sunset
 import bg2 from "@assets/Image_jo77t3jo77t3jo2_1776495109727.png"; // buildings at night — golden LED lines
