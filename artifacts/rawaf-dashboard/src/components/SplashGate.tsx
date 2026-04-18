@@ -5,7 +5,9 @@ import bg1 from "@assets/Image_jo77t3jo77t3jo1_1776495109728.png"; // equipment 
 import bg2 from "@assets/Image_jo77t3jo77t3jo2_1776495109727.png"; // buildings at night — golden LED lines
 import bg3 from "@assets/Image_jo77t3jo77t3jo3_1776495109728.png"; // steel beam close-up — brand identity
 
-const GATE_KEY = "rawaf_gate_auth";
+const GATE_KEY   = "rawaf_gate_auth";
+const DB_KEY     = "rawaf_db_auth";
+const IDLE_MS    = 5 * 60 * 1000; // 5 minutes — applies to whole-app session
 
 /* ─── CSS keyframes injected once ─────────────────────────────────────── */
 const KEYFRAMES = `
@@ -439,18 +441,53 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
   );
 }
 
-/* ── Hidden listener: fires handleLogout when logo dispatches 'rawaf-logout' ──
-   Uses a ref so the listener is registered ONCE and never goes stale, even if
-   the parent re-renders (e.g. during slide animations). ── */
+/* ── Security layer: logout events + 5-min idle + session wipe on exit ──
+   Mounted only while phase === "app". All three guards share one stable ref
+   so the freshest handleLogout is always called without re-registering. ── */
 function LogoutListener({ onLogout }: { onLogout: () => void }) {
   const callbackRef = useRef(onLogout);
-  /* Keep ref in sync with latest callback without re-registering the listener */
   useEffect(() => { callbackRef.current = onLogout; });
-  /* Register once — ref ensures we always call the freshest callback */
+
+  /* 1 ── Logo-click logout (rawaf-logout custom event from Header) */
   useEffect(() => {
     const handler = () => callbackRef.current();
     window.addEventListener("rawaf-logout", handler);
     return () => window.removeEventListener("rawaf-logout", handler);
   }, []);
+
+  /* 2 ── 5-minute idle auto-logout for the whole app session
+          Resets on any mouse / keyboard / touch / scroll activity. */
+  useEffect(() => {
+    const idleRef: { timer: ReturnType<typeof setTimeout> | null } = { timer: null };
+
+    function resetTimer() {
+      if (idleRef.timer) clearTimeout(idleRef.timer);
+      idleRef.timer = setTimeout(() => {
+        sessionStorage.removeItem(DB_KEY); // lock DB sub-session first
+        callbackRef.current();             // then full splash logout
+      }, IDLE_MS);
+    }
+
+    const EVENTS = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"] as const;
+    EVENTS.forEach((ev) => window.addEventListener(ev, resetTimer, { passive: true }));
+    resetTimer(); // arm immediately on mount
+
+    return () => {
+      EVENTS.forEach((ev) => window.removeEventListener(ev, resetTimer));
+      if (idleRef.timer) clearTimeout(idleRef.timer);
+    };
+  }, []); // mount-once — always calls freshest callback via ref
+
+  /* 3 ── Session wipe on tab-close / navigate-away (belt + suspenders over
+          sessionStorage's built-in per-tab clearing). */
+  useEffect(() => {
+    function clearOnExit() {
+      sessionStorage.removeItem(GATE_KEY);
+      sessionStorage.removeItem(DB_KEY);
+    }
+    window.addEventListener("beforeunload", clearOnExit);
+    return () => window.removeEventListener("beforeunload", clearOnExit);
+  }, []);
+
   return null;
 }
