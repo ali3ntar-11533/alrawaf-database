@@ -115,11 +115,11 @@ function exactMatch(haystack: string, needle: string): boolean {
 function StarDisplay({ rating }: { rating?: number | null }) {
   const r = Math.max(0, Math.min(5, Math.round(rating ?? 0)));
   return (
-    <div style={{ display: "flex", gap: "1px", alignItems: "center" }}>
+    <div style={{ display: "flex", gap: "1px", alignItems: "center", flexWrap: "nowrap", whiteSpace: "nowrap" }}>
       {[1, 2, 3, 4, 5].map((i) => (
-        <span key={i} style={{ fontSize: "0.95rem", color: i <= r ? "#f5c518" : "#e0dbd0", lineHeight: 1, filter: i <= r ? "drop-shadow(0 0 2px rgba(245,197,24,0.4))" : "none" }}>★</span>
+        <span key={i} style={{ fontSize: "0.75rem", color: i <= r ? "#f5c518" : "#e0dbd0", lineHeight: 1, flexShrink: 0, filter: i <= r ? "drop-shadow(0 0 2px rgba(245,197,24,0.4))" : "none" }}>★</span>
       ))}
-      {r > 0 && <span style={{ fontSize: "0.6rem", color: "#aaa", marginRight: "3px" }}>{r}/5</span>}
+      {r > 0 && <span style={{ fontSize: "0.55rem", color: "#aaa", marginRight: "2px", flexShrink: 0 }}>{r}/5</span>}
     </div>
   );
 }
@@ -176,7 +176,7 @@ const modalTitleStyle: React.CSSProperties = { fontSize: "0.95rem", fontWeight: 
 const labelStyle: React.CSSProperties = { fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.04em" };
 const inputStyle: React.CSSProperties = { width: "100%", padding: "9px 12px", border: "1.5px solid #e8e0d0", borderRadius: "8px", fontSize: "0.8rem", fontFamily: "Tajawal, sans-serif", direction: "rtl", outline: "none", background: "#faf8f4", boxSizing: "border-box", transition: "border-color 0.18s" };
 const textareaStyle: React.CSSProperties = { ...inputStyle, resize: "vertical", lineHeight: 1.6 };
-const iconBtnStyle = (color: string): React.CSSProperties => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "24px", height: "24px", borderRadius: "5px", background: `${color}15`, border: `1px solid ${color}30`, color, cursor: "pointer", transition: "background 0.15s" });
+const iconBtnStyle = (color: string): React.CSSProperties => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "28px", height: "28px", borderRadius: "6px", background: `${color}12`, border: `1.5px solid ${color}35`, color, cursor: "pointer", transition: "background 0.15s, box-shadow 0.15s", flexShrink: 0 });
 const submitBtnStyle: React.CSSProperties = { flex: 1, background: "linear-gradient(135deg, var(--gold), #a88540)", color: "#fff", border: "none", borderRadius: "10px", padding: "12px", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" };
 const cancelBtnStyle: React.CSSProperties = { background: "#f5f0e8", color: "var(--charcoal)", border: "none", borderRadius: "10px", padding: "12px 20px", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" };
 const roFieldStyle: React.CSSProperties = { ...inputStyle, background: "#f0ece4", color: "#888", cursor: "not-allowed" };
@@ -389,7 +389,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
 
   /* ── Main Table View ── */
   return (
-    <div style={{ padding: "24px 20px", maxWidth: "1600px", margin: "0 auto" }}>
+    <div style={{ padding: "20px 16px", width: "100%" }}>
 
       {/* Actions row */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
@@ -418,24 +418,23 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
 
       {/* Table */}
       <div className="card" style={{ padding: 0, overflow: "hidden", width: "100%" }}>
-        <div style={{ overflowX: "hidden", width: "100%" }}>
-          <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", direction: "rtl" }}>
-            {/* Percentage-based columns — sums to 100%, no pixel overflow possible */}
+        <div style={{ overflowX: "auto", width: "100%" }}>
+          <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", direction: "rtl", minWidth: "900px" }}>
             <colgroup>
-              <col style={{ width: "6%" }} />   {/* رقم العقد */}
-              <col style={{ width: "10%" }} />  {/* المقاول */}
-              <col style={{ width: "9%" }} />   {/* المشروع */}
-              <col style={{ width: "6%" }} />   {/* المحفظة */}
-              <col style={{ width: "7%" }} />   {/* النشاط الرئيسي */}
-              <col style={{ width: "6%" }} />   {/* نوع الأعمال */}
-              <col style={{ width: "11%" }} />  {/* الوصف الفني */}
-              <col style={{ width: "7%" }} />   {/* نوع العمل */}
-              <col style={{ width: "5%" }} />   {/* الوحدة */}
-              <col style={{ width: "6%" }} />   {/* السعر */}
-              <col style={{ width: "6%" }} />   {/* المحتوى المحلي */}
-              <col style={{ width: "7%" }} />   {/* التواصل */}
-              <col style={{ width: "5%" }} />   {/* التقييم */}
-              <col style={{ width: "9%" }} />   {/* إجراءات — needs room for 3 icon buttons */}
+              <col style={{ width: "6%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "8%" }} />
+              <col style={{ width: "5%" }} />
+              <col style={{ width: "7%" }} />
+              <col style={{ width: "5%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "6%" }} />
+              <col style={{ width: "4%" }} />
+              <col style={{ width: "6%" }} />
+              <col style={{ width: "5%" }} />
+              <col style={{ width: "7%" }} />
+              <col style={{ width: "7%" }} />
+              <col style={{ width: "14%" }} />
             </colgroup>
             <thead>
               <tr style={{ background: "var(--charcoal)" }}>
@@ -444,7 +443,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                   "النشاط الرئيسي", "نوع الأعمال", "الوصف الفني للبند",
                   "نوع العمل", "الوحدة", "السعر", "المحتوى المحلي", "التواصل", "التقييم", "إجراءات"
                 ].map((h, i) => (
-                  <th key={i} style={{ padding: "12px 10px", textAlign: "right", fontSize: "0.63rem", fontWeight: 700, color: "rgba(197,160,89,0.9)", letterSpacing: "0.05em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", borderBottom: "2px solid rgba(197,160,89,0.2)" }}>
+                  <th key={i} style={{ padding: "12px 10px", textAlign: i >= 12 ? "center" : "right", fontSize: "0.63rem", fontWeight: 700, color: "rgba(197,160,89,0.9)", letterSpacing: "0.05em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", borderBottom: "2px solid rgba(197,160,89,0.2)" }}>
                     {h}
                   </th>
                 ))}
@@ -501,14 +500,14 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                       <div style={{ direction: "ltr", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis" }}>{c.email}</div>
                     </div>
                   </td>
-                  <td style={tdStyle}>
+                  <td style={{ ...tdStyle, textAlign: "center", verticalAlign: "middle" }}>
                     <StarDisplay rating={(c as any).rating} />
                   </td>
-                  <td style={tdStyle}>
-                    <div style={{ display: "flex", gap: "4px" }}>
-                      <button onClick={(e) => { e.stopPropagation(); openEdit(c); }} style={iconBtnStyle("#c5a059")} title="تعديل البيانات"><Pencil size={12} /></button>
-                      <button onClick={(e) => { e.stopPropagation(); openClone(c); }} style={iconBtnStyle("#2baa74")} title="إضافة بند جديد لنفس الشركة (تكرار)"><Copy size={12} /></button>
-                      <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(c.id); }} style={iconBtnStyle("#e74c3c")} title="حذف السجل"><Trash2 size={12} /></button>
+                  <td style={{ ...tdStyle, textAlign: "center", verticalAlign: "middle" }}>
+                    <div style={{ display: "flex", gap: "6px", flexWrap: "nowrap", alignItems: "center", justifyContent: "center", minWidth: 0 }}>
+                      <button onClick={(e) => { e.stopPropagation(); openEdit(c); }} style={iconBtnStyle("#c5a059")} title="تعديل البيانات"><Pencil size={13} /></button>
+                      <button onClick={(e) => { e.stopPropagation(); openClone(c); }} style={iconBtnStyle("#2baa74")} title="إضافة بند جديد لنفس الشركة (تكرار)"><Copy size={13} /></button>
+                      <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(c.id); }} style={iconBtnStyle("#e74c3c")} title="حذف السجل"><Trash2 size={13} /></button>
                     </div>
                   </td>
                 </tr>
