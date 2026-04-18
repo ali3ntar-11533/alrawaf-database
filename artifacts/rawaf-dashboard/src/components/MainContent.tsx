@@ -66,12 +66,23 @@ function TruncatedBadge({
   return (
     <span
       title={title ?? value}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.whiteSpace = "normal";
+        e.currentTarget.style.overflow = "visible";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.whiteSpace = "nowrap";
+        e.currentTarget.style.overflow = "hidden";
+      }}
       style={{
         display: "block",
         minWidth: 0,
         overflow: "hidden",
         whiteSpace: "nowrap",
         textOverflow: "ellipsis",
+        direction: "rtl",
+        position: "relative",
+        zIndex: 1,
       }}
     >
       {value}
@@ -260,16 +271,20 @@ export default function MainContent({ contractor, allContractors, filteredContra
           <div style={{ background: "linear-gradient(135deg, rgba(197,160,89,0.07), rgba(197,160,89,0.02))", border: "1px solid rgba(197,160,89,0.2)", borderRadius: "9px", padding: "12px 14px", minWidth: 0, overflow: "hidden" }}>
             <div style={{ fontSize: "0.55rem", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>نوع الأعمال</div>
             <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)", minWidth: 0, overflow: "hidden" }}>
-              <TruncatedBadge value={contractor.workType || "—"} />
+              <TruncatedBadge value={contractor.workType || "—"} title={contractor.workType || "—"} />
             </div>
           </div>
           <div style={{ background: "linear-gradient(135deg, rgba(58,54,50,0.04), rgba(58,54,50,0.01))", border: "1px solid rgba(58,54,50,0.1)", borderRadius: "9px", padding: "12px 14px" }}>
             <div style={{ fontSize: "0.55rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>نوع العمل</div>
-            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>{(contractor as any).workCategory || "—"}</div>
+            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>
+              <TruncatedBadge value={(contractor as any).workCategory || "—"} title={(contractor as any).workCategory || "—"} />
+            </div>
           </div>
           <div style={{ background: "linear-gradient(135deg, rgba(58,54,50,0.04), rgba(58,54,50,0.01))", border: "1px solid rgba(58,54,50,0.1)", borderRadius: "9px", padding: "12px 14px" }}>
             <div style={{ fontSize: "0.55rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>الوحدة</div>
-            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>{(contractor as any).unit || "—"}</div>
+            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>
+              <TruncatedBadge value={(contractor as any).unit || "—"} title={(contractor as any).unit || "—"} />
+            </div>
           </div>
         </div>
       </div>
