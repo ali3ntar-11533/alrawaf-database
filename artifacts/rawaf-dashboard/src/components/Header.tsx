@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { TabType } from "../App";
 import { Search } from "lucide-react";
 import logoImg from "@assets/logo_1776260992247.jpg";
@@ -10,27 +11,70 @@ interface HeaderProps {
 }
 
 export default function Header({ activeTab, onTabChange, search, onSearchChange }: HeaderProps) {
+  const [logoHover, setLogoHover] = useState(false);
+
+  function handleLogoClick() {
+    window.dispatchEvent(new CustomEvent("rawaf-logout"));
+  }
+
   return (
     <header className="hero-banner animate-fade">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
         {/* Logo + Title */}
         <div className="animate-slide-in" style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+          {/* ── Clickable Logo — dispatches rawaf-logout event ── */}
           <div
+            onClick={handleLogoClick}
+            onMouseEnter={() => setLogoHover(true)}
+            onMouseLeave={() => setLogoHover(false)}
+            title="تسجيل الخروج من النظام"
             style={{
               width: "68px", height: "68px",
               background: "#fff",
               borderRadius: "12px",
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(197,160,89,0.3)",
+              boxShadow: logoHover
+                ? "0 8px 28px rgba(0,0,0,0.5), 0 0 0 2px rgba(197,160,89,0.7), 0 0 20px rgba(197,160,89,0.3)"
+                : "0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(197,160,89,0.3)",
               flexShrink: 0, overflow: "hidden", padding: "6px",
+              cursor: "pointer",
+              opacity: logoHover ? 0.78 : 1,
+              transform: logoHover ? "scale(1.07)" : "scale(1)",
+              transition: "opacity 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease",
+              position: "relative",
             }}
           >
             <img
               src={logoImg}
-              alt="شركة الرواف للمقاولات"
+              alt="شركة الرواف للمقاولات — اضغط للخروج"
               style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "7px" }}
             />
+            {/* Logout hint tooltip that appears on hover */}
+            {logoHover && (
+              <div style={{
+                position: "absolute",
+                bottom: "-34px",
+                right: "50%",
+                transform: "translateX(50%)",
+                background: "rgba(20,14,8,0.92)",
+                border: "1px solid rgba(197,160,89,0.35)",
+                borderRadius: 7,
+                padding: "4px 10px",
+                fontSize: "0.58rem",
+                color: "rgba(197,160,89,0.9)",
+                fontWeight: 700,
+                whiteSpace: "nowrap",
+                pointerEvents: "none",
+                zIndex: 100,
+                backdropFilter: "blur(8px)",
+                fontFamily: "Tajawal, sans-serif",
+                letterSpacing: "0.04em",
+              }}>
+                تسجيل الخروج
+              </div>
+            )}
           </div>
+
           <div>
             <h1
               style={{

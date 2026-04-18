@@ -1,85 +1,41 @@
 import { useState, useEffect, useRef } from "react";
 import logoImg from "@assets/logo_1776260992247.jpg";
-import bgPhoto from "@assets/screenshot-1776492202470.png";
+/* ── Three new Alrawaf branded background images ── */
+import bg1 from "@assets/Image_jo77t3jo77t3jo1_1776495109728.png"; // equipment at golden sunset
+import bg2 from "@assets/Image_jo77t3jo77t3jo2_1776495109727.png"; // buildings at night — golden LED lines
+import bg3 from "@assets/Image_jo77t3jo77t3jo3_1776495109728.png"; // steel beam close-up — brand identity
 
 const GATE_KEY = "rawaf_gate_auth";
 
-/* ─── All CSS keyframes injected once ─────────────────────────────────── */
+/* ─── CSS keyframes injected once ─────────────────────────────────────── */
 const KEYFRAMES = `
 @keyframes sg-ken-burns-1 {
-  0%   { transform: scale(1)    translate(0%,    0%);    }
-  100% { transform: scale(1.18) translate(-2.5%, -1.5%); }
+  0%   { transform: scale(1)    translate(0%,   0%);    }
+  100% { transform: scale(1.14) translate(-1.5%, -1%);  }
 }
 @keyframes sg-ken-burns-2 {
-  0%   { transform: scale(1.1) translate(1.5%, 1%); }
-  100% { transform: scale(1)   translate(-1%, -0.5%); }
+  0%   { transform: scale(1.1) translate(0%, 1.5%);  }
+  100% { transform: scale(1)   translate(0%, -1%);   }
 }
 @keyframes sg-ken-burns-3 {
-  0%   { transform: scale(1)    translate(0%, 1.5%);   }
-  100% { transform: scale(1.14) translate(1%, -1%); }
+  0%   { transform: scale(1)    translate(1%, 0%);    }
+  100% { transform: scale(1.18) translate(-1%, -0.5%); }
 }
-
-/* Blueprint grid drift */
-@keyframes sg-grid-drift {
-  0%   { transform: translate(0, 0);    }
-  100% { transform: translate(48px, 48px); }
-}
-/* Grid dot pulse */
-@keyframes sg-dot-pulse {
-  0%, 100% { opacity: 0.18; r: 2; }
-  50%       { opacity: 0.6;  r: 3.5; }
-}
-/* Light beam sweep */
-@keyframes sg-beam-sweep {
-  0%   { opacity: 0;    transform: rotate(-35deg) translateX(-40%); }
-  15%  { opacity: 0.18; }
-  50%  { opacity: 0.12; transform: rotate(-35deg) translateX(0%); }
-  85%  { opacity: 0.18; }
-  100% { opacity: 0;    transform: rotate(-35deg) translateX(40%); }
-}
-@keyframes sg-beam-sweep2 {
-  0%   { opacity: 0;    transform: rotate(-55deg) translateX(40%); }
-  20%  { opacity: 0.12; }
-  60%  { opacity: 0.08; transform: rotate(-55deg) translateX(-20%); }
-  100% { opacity: 0;    transform: rotate(-55deg) translateX(-60%); }
-}
-/* Floating particles (sparks) */
-@keyframes sg-spark-a {
-  0%   { transform: translate(0, 0)      scale(1);    opacity: 0.7; }
-  80%  { opacity: 0.3; }
-  100% { transform: translate(20px,-90px) scale(0.4); opacity: 0;   }
-}
-@keyframes sg-spark-b {
-  0%   { transform: translate(0, 0)       scale(1);    opacity: 0.6; }
-  100% { transform: translate(-30px,-70px) scale(0.3); opacity: 0;   }
-}
-@keyframes sg-spark-c {
-  0%   { transform: translate(0, 0)      scale(0.8); opacity: 0.8; }
-  100% { transform: translate(15px,-110px) scale(0.2); opacity: 0;  }
-}
-/* Glowing orbs */
-@keyframes sg-orb-pulse {
-  0%, 100% { opacity: 0.1; transform: scale(1);    }
-  50%       { opacity: 0.3; transform: scale(1.12); }
-}
-
-/* Shared helpers */
 @keyframes sg-float-a {
   0%,100% { transform: translateY(0px)   rotate(0deg)   scale(1);    opacity: 0.4; }
-  33%      { transform: translateY(-24px) rotate(6deg)   scale(1.04); opacity: 0.6; }
-  66%      { transform: translateY(12px)  rotate(-3deg)  scale(0.97); opacity: 0.45; }
+  33%      { transform: translateY(-22px) rotate(5deg)   scale(1.03); opacity: 0.6; }
+  66%      { transform: translateY(10px)  rotate(-3deg)  scale(0.97); opacity: 0.45; }
 }
 @keyframes sg-float-b {
-  0%,100% { transform: translateY(0px)   rotate(0deg);  opacity: 0.25; }
-  50%      { transform: translateY(-18px) rotate(180deg);opacity: 0.45; }
+  0%,100% { transform: translateY(0px)   rotate(0deg);  opacity: 0.22; }
+  50%      { transform: translateY(-16px) rotate(180deg);opacity: 0.42; }
 }
 @keyframes sg-float-c {
-  0%,100% { transform: translateX(0px)  scale(1);    opacity: 0.3; }
-  50%      { transform: translateX(20px) scale(1.07); opacity: 0.5; }
+  0%,100% { transform: translateX(0px)  scale(1);    opacity: 0.28; }
+  50%      { transform: translateX(18px) scale(1.06); opacity: 0.48; }
 }
 @keyframes sg-spin      { from { transform: rotate(0deg);   } to { transform: rotate(360deg);  } }
 @keyframes sg-spin-rev  { from { transform: rotate(0deg);   } to { transform: rotate(-360deg); } }
-
 @keyframes sg-pulse-btn {
   0%,100% { box-shadow: 0 0 0 0   rgba(197,160,89,0.55), 0 8px 32px rgba(197,160,89,0.30); }
   50%      { box-shadow: 0 0 0 14px rgba(197,160,89,0),   0 12px 48px rgba(197,160,89,0.50); }
@@ -88,8 +44,8 @@ const KEYFRAMES = `
   from { opacity: 0; transform: translateY(32px); }
   to   { opacity: 1; transform: translateY(0);    }
 }
-@keyframes sg-fadein   { from { opacity: 0; } to { opacity: 1; } }
-@keyframes sg-scalein  {
+@keyframes sg-fadein  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sg-scalein {
   from { opacity: 0; transform: scale(0.88) translateY(24px); }
   to   { opacity: 1; transform: scale(1)    translateY(0);    }
 }
@@ -104,16 +60,17 @@ const KEYFRAMES = `
   60%      { transform: translateX(-4px); }
   80%      { transform: translateX(4px);  }
 }
+@keyframes sg-orb-pulse {
+  0%, 100% { opacity: 0.08; transform: scale(1);    }
+  50%       { opacity: 0.22; transform: scale(1.10); }
+}
 `;
 
-/* ── Sparks data (random-ish but deterministic) ─────────────────────────── */
-const SPARKS = [
-  { x: "62%", y: "72%", delay: "0s",    dur: "2.2s", anim: "sg-spark-a", color: "#f5c542" },
-  { x: "61%", y: "74%", delay: "0.4s",  dur: "1.8s", anim: "sg-spark-b", color: "#ff8c22" },
-  { x: "63%", y: "73%", delay: "0.9s",  dur: "2.5s", anim: "sg-spark-c", color: "#fff5cc" },
-  { x: "60%", y: "75%", delay: "1.3s",  dur: "2.0s", anim: "sg-spark-a", color: "#f5c542" },
-  { x: "64%", y: "71%", delay: "1.8s",  dur: "1.6s", anim: "sg-spark-b", color: "#ff8c22" },
-  { x: "62%", y: "76%", delay: "2.2s",  dur: "2.8s", anim: "sg-spark-c", color: "#fff5cc" },
+/* ── Slides: all real branded photos ─────────────────────────────────── */
+const SLIDES = [
+  { src: bg1, anim: "sg-ken-burns-1 26s ease-out    infinite alternate", pos: "center bottom" },
+  { src: bg2, anim: "sg-ken-burns-2 22s ease-in-out infinite alternate", pos: "center center" },
+  { src: bg3, anim: "sg-ken-burns-3 28s ease-in-out infinite alternate", pos: "center 40%"   },
 ];
 
 const SLIDE_DURATION = 7000;
@@ -131,7 +88,6 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
   const [shake, setShake]         = useState(false);
   const [btnHover, setBtnHover]   = useState(false);
   const [lBtnHover, setLBtnHover] = useState(false);
-  const [logoutHover, setLogoutHover] = useState(false);
   const userRef = useRef<HTMLInputElement>(null);
 
   /* Inject keyframes once */
@@ -145,7 +101,7 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
   /* Slideshow timer */
   useEffect(() => {
     if (phase !== "splash") return;
-    const t = setInterval(() => setSlideIdx(i => (i + 1) % 3), SLIDE_DURATION);
+    const t = setInterval(() => setSlideIdx(i => (i + 1) % SLIDES.length), SLIDE_DURATION);
     return () => clearInterval(t);
   }, [phase]);
 
@@ -162,55 +118,12 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
     setUsername(""); setPassword(""); setError("");
   }
 
-  /* ── Authenticated wrapper ── */
+  /* ── App phase: listen for logo-click logout event from Header ── */
   if (phase === "app") {
     return (
       <div style={{ position: "relative" }}>
+        <LogoutListener onLogout={handleLogout} />
         {children}
-
-        {/* ── Logout button: fixed, top-left, directly below nav tabs ── */}
-        <button
-          onClick={handleLogout}
-          onMouseEnter={() => setLogoutHover(true)}
-          onMouseLeave={() => setLogoutHover(false)}
-          title="تسجيل الخروج من النظام"
-          style={{
-            position: "fixed",
-            top: 78,
-            left: 20,
-            zIndex: 9998,
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            background: logoutHover
-              ? "linear-gradient(135deg, rgba(197,160,89,0.18), rgba(197,160,89,0.08))"
-              : "rgba(10,8,6,0.72)",
-            color: logoutHover ? "#e8d5a3" : "rgba(197,160,89,0.65)",
-            border: `1px solid ${logoutHover ? "rgba(197,160,89,0.5)" : "rgba(197,160,89,0.2)"}`,
-            borderRadius: 8,
-            padding: "6px 12px 6px 10px",
-            fontSize: "0.68rem",
-            fontWeight: 700,
-            cursor: "pointer",
-            fontFamily: "Tajawal, sans-serif",
-            backdropFilter: "blur(12px)",
-            boxShadow: logoutHover
-              ? "0 4px 20px rgba(0,0,0,0.45), 0 0 0 1px rgba(197,160,89,0.12)"
-              : "0 2px 12px rgba(0,0,0,0.35)",
-            transition: "all 0.22s ease",
-            transform: logoutHover ? "translateY(-1px)" : "none",
-            direction: "rtl",
-            whiteSpace: "nowrap",
-            letterSpacing: "0.03em",
-          }}
-        >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
-          خروج
-        </button>
       </div>
     );
   }
@@ -241,120 +154,65 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
         position: "fixed", inset: 0, zIndex: 9999,
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: "Tajawal, sans-serif", overflow: "hidden",
-        /* Photo as permanent base — eliminates black gap during slide crossfades */
-        backgroundImage: `url(${bgPhoto})`,
+        /* bg1 as permanent base — ensures no black gap during slide crossfades */
+        backgroundImage: `url(${bg1})`,
         backgroundSize: "cover",
-        backgroundPosition: "center 30%",
+        backgroundPosition: "center bottom",
       }}
     >
 
-      {/* ═══ BACKGROUND SLIDESHOW ═══ */}
+      {/* ═══ BACKGROUND SLIDESHOW — 3 real Alrawaf branded photos ═══ */}
       <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
-
-        {/* ── Slide 0: Real Alrawaf project photo — Ken Burns ── */}
-        <div style={{ position: "absolute", inset: 0, opacity: slideIdx === 0 ? 1 : 0, transition: "opacity 2.2s ease", overflow: "hidden" }}>
-          <div style={{
-            position: "absolute", inset: "-8%",
-            backgroundImage: `url(${bgPhoto})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center 30%",
-            animation: "sg-ken-burns-1 24s ease-out infinite alternate",
-          }} />
-          {/* Sparks overlay — mimics welding from the photo */}
-          {slideIdx === 0 && SPARKS.map((s, i) => (
+        {SLIDES.map((slide, i) => (
+          <div
+            key={i}
+            style={{
+              position: "absolute", inset: 0,
+              opacity: slideIdx === i ? 1 : 0,
+              transition: "opacity 2.5s ease",
+              overflow: "hidden",
+            }}
+          >
             <div
-              key={i}
               style={{
-                position: "absolute",
-                left: s.x, top: s.y,
-                width: 5, height: 5,
-                borderRadius: "50%",
-                background: s.color,
-                boxShadow: `0 0 6px ${s.color}`,
-                animation: `${s.anim} ${s.dur} ease-out ${s.delay} infinite`,
-                pointerEvents: "none",
+                position: "absolute", inset: "-8%",
+                backgroundImage: `url(${slide.src})`,
+                backgroundSize: "cover",
+                backgroundPosition: slide.pos,
+                animation: slide.anim,
               }}
             />
-          ))}
-        </div>
+          </div>
+        ))}
 
-        {/* ── Slide 1: Blueprint engineering night ── */}
-        <div style={{ position: "absolute", inset: 0, opacity: slideIdx === 1 ? 1 : 0, transition: "opacity 2.2s ease", overflow: "hidden" }}>
-          {/* Base deep-blue background */}
-          <div style={{
-            position: "absolute", inset: "-5%",
-            background: "linear-gradient(160deg, #04080f 0%, #0a1525 45%, #060d1c 100%)",
-            animation: "sg-ken-burns-2 22s ease-in-out infinite alternate",
-          }} />
-          {/* Blueprint grid — moving */}
+        {/* ── Warm gold ambiance overlay for slide 2 (steel beam) — tones down the grey ── */}
+        {slideIdx === 2 && (
           <div style={{
             position: "absolute", inset: 0,
-            backgroundImage: `
-              linear-gradient(rgba(59,130,200,0.12) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(59,130,200,0.12) 1px, transparent 1px),
-              linear-gradient(rgba(59,130,200,0.04) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(59,130,200,0.04) 1px, transparent 1px)
-            `,
-            backgroundSize: "80px 80px, 80px 80px, 20px 20px, 20px 20px",
-            animation: "sg-grid-drift 14s linear infinite",
+            background: "radial-gradient(ellipse at 60% 50%, rgba(197,140,40,0.12) 0%, transparent 70%)",
+            animation: "sg-orb-pulse 6s ease-in-out infinite",
+            pointerEvents: "none",
           }} />
-          {/* Glowing orbs (construction lights) */}
-          <div style={{ position: "absolute", top: "22%", right: "28%", width: 280, height: 180, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(90,160,240,0.18) 0%, transparent 70%)", animation: "sg-orb-pulse 6s ease-in-out infinite" }} />
-          <div style={{ position: "absolute", bottom: "25%", left: "20%", width: 200, height: 140, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(197,160,89,0.14) 0%, transparent 70%)", animation: "sg-orb-pulse 8s ease-in-out infinite 2s" }} />
-          <div style={{ position: "absolute", top: "55%", right: "10%", width: 160, height: 100, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(90,160,240,0.10) 0%, transparent 70%)", animation: "sg-orb-pulse 5s ease-in-out infinite 1s" }} />
-          {/* Animated scan line */}
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, transparent 0%, rgba(59,130,200,0.5) 50%, transparent 100%)", animation: "sg-grid-drift 6s linear infinite" }} />
-        </div>
+        )}
 
-        {/* ── Slide 2: Construction site / molten atmosphere ── */}
-        <div style={{ position: "absolute", inset: 0, opacity: slideIdx === 2 ? 1 : 0, transition: "opacity 2.2s ease", overflow: "hidden" }}>
-          <div style={{
-            position: "absolute", inset: "-5%",
-            background: "linear-gradient(160deg, #100804 0%, #1e0e06 40%, #0c0503 100%)",
-            animation: "sg-ken-burns-3 26s ease-in-out infinite alternate",
-          }} />
-          {/* Sweeping light beams (crane/searchlight effect) */}
-          <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
-            <div style={{
-              position: "absolute",
-              top: "-50%", left: "35%",
-              width: "40%", height: "200%",
-              background: "linear-gradient(transparent 0%, rgba(255,210,120,0.06) 30%, rgba(255,210,120,0.10) 50%, rgba(255,210,120,0.06) 70%, transparent 100%)",
-              transformOrigin: "top center",
-              animation: "sg-beam-sweep 12s ease-in-out infinite",
-            }} />
-            <div style={{
-              position: "absolute",
-              top: "-50%", left: "55%",
-              width: "30%", height: "200%",
-              background: "linear-gradient(transparent 0%, rgba(255,180,80,0.05) 30%, rgba(255,180,80,0.08) 50%, rgba(255,180,80,0.05) 70%, transparent 100%)",
-              transformOrigin: "top center",
-              animation: "sg-beam-sweep2 18s ease-in-out infinite 3s",
-            }} />
-          </div>
-          {/* Warm glow pools */}
-          <div style={{ position: "absolute", bottom: "5%", right: "15%", width: 420, height: 240, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(220,110,30,0.20) 0%, transparent 70%)", animation: "sg-orb-pulse 6s ease-in-out infinite" }} />
-          <div style={{ position: "absolute", bottom: "0%", left: "20%", width: 300, height: 200, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(197,160,89,0.16) 0%, transparent 70%)", animation: "sg-orb-pulse 9s ease-in-out infinite 3s" }} />
-          <div style={{ position: "absolute", top: "30%", right: "5%", width: 180, height: 120, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(255,130,30,0.12) 0%, transparent 70%)", animation: "sg-orb-pulse 7s ease-in-out infinite 1.5s" }} />
-        </div>
-
-        {/* ── Master overlays ── */}
-        {/* Vertical vignette */}
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.52) 38%, rgba(0,0,0,0.30) 65%, rgba(0,0,0,0.65) 100%)", pointerEvents: "none" }} />
-        {/* Side vignettes */}
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(0,0,0,0.55) 0%, transparent 22%, transparent 78%, rgba(0,0,0,0.55) 100%)", pointerEvents: "none" }} />
-        {/* Warm gold tone */}
-        <div style={{ position: "absolute", inset: 0, background: "rgba(16,10,4,0.38)", pointerEvents: "none" }} />
+        {/* ── Master overlays — keep text readable over all photos ── */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.44) 38%, rgba(0,0,0,0.22) 65%, rgba(0,0,0,0.55) 100%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(0,0,0,0.48) 0%, transparent 22%, transparent 78%, rgba(0,0,0,0.48) 100%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", inset: 0, background: "rgba(12,7,2,0.22)", pointerEvents: "none" }} />
       </div>
 
       {/* ═══ SLIDE INDICATORS ═══ */}
       <div style={{ position: "absolute", bottom: 36, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 8, zIndex: 10 }}>
-        {[0, 1, 2].map(i => (
-          <div key={i} onClick={() => setSlideIdx(i)} style={{ width: slideIdx === i ? 28 : 8, height: 4, borderRadius: 3, background: slideIdx === i ? "#c5a059" : "rgba(255,255,255,0.22)", transition: "all 0.4s ease", cursor: "pointer" }} />
+        {SLIDES.map((_, i) => (
+          <div
+            key={i}
+            onClick={() => setSlideIdx(i)}
+            style={{ width: slideIdx === i ? 28 : 8, height: 4, borderRadius: 3, background: slideIdx === i ? "#c5a059" : "rgba(255,255,255,0.25)", transition: "all 0.4s ease", cursor: "pointer" }}
+          />
         ))}
       </div>
 
-      {/* ═══ DECORATIVE SHAPES ═══ */}
+      {/* ═══ DECORATIVE FLOATING SHAPES ═══ */}
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 5 }}>
         <div style={{ position: "absolute", top: "10%", right: "7%", width: 200, height: 200, borderRadius: "50%", border: "1px solid rgba(197,160,89,0.18)", animation: "sg-float-a 10s ease-in-out infinite" }} />
         <div style={{ position: "absolute", top: "14%", right: "10.5%", width: 100, height: 100, borderRadius: "50%", border: "1px solid rgba(197,160,89,0.10)", animation: "sg-float-a 10s ease-in-out infinite 2s" }} />
@@ -368,7 +226,7 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
         <div style={{ position: "absolute", top: "-80px", left: "50%", transform: "translateX(-50%)", width: 600, height: 320, background: "radial-gradient(ellipse, rgba(197,160,89,0.06) 0%, transparent 70%)" }} />
       </div>
 
-      {/* ═══ رؤية 2030 BADGE (top-left) ═══ */}
+      {/* ═══ رؤية 2030 BADGE ═══ */}
       <div style={{ position: "absolute", top: 28, left: 32, zIndex: 20, animation: "sg-fadein 1s ease 0.3s both" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(197,160,89,0.08)", border: "1px solid rgba(197,160,89,0.22)", borderRadius: 10, padding: "6px 14px", backdropFilter: "blur(10px)" }}>
           <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #2b5f34, #1a4a24)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.42rem", fontWeight: 900, color: "#fff", textAlign: "center", lineHeight: 1.3 }}>
@@ -428,7 +286,7 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
           ))}
         </div>
 
-        {/* CTA */}
+        {/* CTA Button */}
         <button
           onClick={() => { setShowLogin(true); setError(""); setUsername(""); setPassword(""); }}
           onMouseEnter={() => setBtnHover(true)}
@@ -470,7 +328,6 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
           onClick={(e) => { if (e.target === e.currentTarget) setShowLogin(false); }}
           style={{
             position: "fixed", inset: 0, zIndex: 10000,
-            /* Very light overlay — background stays clearly visible, just softly blurred */
             background: "rgba(2,1,0,0.12)",
             backdropFilter: "blur(22px) saturate(0.85)",
             display: "flex", alignItems: "center", justifyContent: "center",
@@ -478,8 +335,7 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
           }}
         >
           <div style={{
-            /* True frosted glass — background shines through beautifully */
-            background: "rgba(12, 9, 5, 0.42)",
+            background: "rgba(12,9,5,0.42)",
             border: "1px solid rgba(197,160,89,0.35)",
             borderTop: "1px solid rgba(255,255,255,0.12)",
             borderRadius: 22,
@@ -490,18 +346,14 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
             backdropFilter: "blur(32px) saturate(1.3)",
             animation: "sg-scalein 0.3s cubic-bezier(0.34,1.56,0.64,1) both",
           }}>
-
             <div style={{ animation: shake ? "sg-shake 0.5s ease" : "none" }}>
 
               {/* Close */}
-              <button
-                onClick={() => setShowLogin(false)}
-                style={{ position: "absolute", top: 16, left: 16, width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.38)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem", lineHeight: 1 }}
-              >×</button>
+              <button onClick={() => setShowLogin(false)} style={{ position: "absolute", top: 16, left: 16, width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.38)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem", lineHeight: 1 }}>×</button>
 
               {/* Header */}
               <div style={{ textAlign: "center", marginBottom: 28 }}>
-                <div style={{ width: 64, height: 64, borderRadius: 15, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(197,160,89,0.22)", display: "flex", alignItems: "center", justifyContent: "center", padding: 9, margin: "0 auto 13px" }}>
+                <div style={{ width: 64, height: 64, borderRadius: 15, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(197,160,89,0.25)", display: "flex", alignItems: "center", justifyContent: "center", padding: 9, margin: "0 auto 13px" }}>
                   <img src={logoImg} alt="الرواف" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                 </div>
                 <div style={{ fontSize: "0.5rem", color: "rgba(197,160,89,0.85)", letterSpacing: "0.16em", marginBottom: 5 }}>ALRAWAF CONTRACTING</div>
@@ -512,11 +364,11 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
               {/* Form */}
               <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {([
-                  { key: "username" as const, label: "اسم المستخدم", type: "text",     placeholder: "أدخل اسم المستخدم", isRef: true },
-                  { key: "password" as const, label: "كلمة المرور",   type: "password", placeholder: "أدخل كلمة المرور",   isRef: false },
+                  { key: "username" as const, label: "اسم المستخدم", type: "text",     placeholder: "أدخل اسم المستخدم", isRef: true  },
+                  { key: "password" as const, label: "كلمة المرور",   type: "password", placeholder: "أدخل كلمة المرور",  isRef: false },
                 ] as const).map((f) => (
                   <div key={f.key}>
-                    <label style={{ display: "block", fontSize: "0.62rem", color: "rgba(197,160,89,0.75)", fontWeight: 700, marginBottom: 6, letterSpacing: "0.06em" }}>{f.label}</label>
+                    <label style={{ display: "block", fontSize: "0.62rem", color: "rgba(197,160,89,0.85)", fontWeight: 700, marginBottom: 6, letterSpacing: "0.06em" }}>{f.label}</label>
                     <input
                       ref={f.isRef ? userRef : undefined}
                       type={f.type}
@@ -524,9 +376,9 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
                       onChange={(e) => { f.key === "username" ? setUsername(e.target.value) : setPassword(e.target.value); setError(""); }}
                       placeholder={f.placeholder}
                       autoComplete={f.key === "username" ? "username" : "current-password"}
-                      style={{ width: "100%", padding: "12px 14px", background: "rgba(255,255,255,0.10)", border: `1.5px solid ${error ? "#e74c3c" : "rgba(197,160,89,0.35)"}`, borderRadius: 10, color: "#fff", fontSize: "0.88rem", fontFamily: "Tajawal, sans-serif", direction: "rtl", outline: "none", transition: "border-color 0.2s, background 0.2s", boxSizing: "border-box", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
-                      onFocus={(e) => (e.target.style.borderColor = "rgba(197,160,89,0.65)")}
-                      onBlur={(e)  => (e.target.style.borderColor = error ? "#e74c3c" : "rgba(197,160,89,0.2)")}
+                      style={{ width: "100%", padding: "12px 14px", background: "rgba(255,255,255,0.10)", border: `1.5px solid ${error ? "#e74c3c" : "rgba(197,160,89,0.35)"}`, borderRadius: 10, color: "#fff", fontSize: "0.88rem", fontFamily: "Tajawal, sans-serif", direction: "rtl", outline: "none", transition: "border-color 0.2s, background 0.2s", boxSizing: "border-box" }}
+                      onFocus={(e) => { e.target.style.borderColor = "rgba(197,160,89,0.7)"; e.target.style.background = "rgba(255,255,255,0.14)"; }}
+                      onBlur={(e)  => { e.target.style.borderColor = error ? "#e74c3c" : "rgba(197,160,89,0.35)"; e.target.style.background = "rgba(255,255,255,0.10)"; }}
                     />
                   </div>
                 ))}
@@ -550,7 +402,7 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
                 </button>
               </form>
 
-              <div style={{ marginTop: 20, textAlign: "center", fontSize: "0.57rem", color: "rgba(255,255,255,0.16)", lineHeight: 1.7 }}>
+              <div style={{ marginTop: 20, textAlign: "center", fontSize: "0.57rem", color: "rgba(255,255,255,0.22)", lineHeight: 1.7 }}>
                 للاستخدام الداخلي الرسمي فقط<br />شركة الرواف للمقاولات — نظام إدارة الموردين
               </div>
             </div>
@@ -559,4 +411,14 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
       )}
     </div>
   );
+}
+
+/* ── Hidden listener: fires handleLogout when logo dispatches 'rawaf-logout' ── */
+function LogoutListener({ onLogout }: { onLogout: () => void }) {
+  useEffect(() => {
+    const handler = () => onLogout();
+    window.addEventListener("rawaf-logout", handler);
+    return () => window.removeEventListener("rawaf-logout", handler);
+  }, [onLogout]);
+  return null;
 }
