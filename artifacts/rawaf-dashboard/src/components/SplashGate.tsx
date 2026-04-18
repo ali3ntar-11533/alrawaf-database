@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import logoImg from "@assets/logo_1776260992247.jpg";
 /* ── Three new Alrawaf branded background images ── */
 import bg1 from "@assets/Image_jo77t3jo77t3jo1_1776495109728.png"; // equipment at golden sunset
@@ -110,13 +110,14 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
     if (showLogin) setTimeout(() => userRef.current?.focus(), 80);
   }, [showLogin]);
 
-  /* ── Logout ── */
-  function handleLogout() {
+  /* ── Logout — stable reference via useCallback ── */
+  const handleLogout = useCallback(() => {
     sessionStorage.removeItem(GATE_KEY);
     setPhase("splash");
     setShowLogin(false);
-    setUsername(""); setPassword(""); setError("");
-  }
+    setSlideIdx(0);
+    setUsername(""); setPassword(""); setError(""); setBusy(false);
+  }, []);
 
   /* ── App phase: listen for logo-click logout event from Header ── */
   if (phase === "app") {
@@ -248,12 +249,38 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
       {/* ═══ MAIN CENTER CONTENT ═══ */}
       <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "0 24px", maxWidth: 560, animation: "sg-fadeup 0.9s ease 0.1s both" }}>
 
-        {/* Logo */}
-        <div style={{ width: 108, height: 108, borderRadius: 22, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(197,160,89,0.3)", display: "flex", alignItems: "center", justifyContent: "center", padding: 13, marginBottom: 26, animation: "sg-logo-glow 4s ease-in-out infinite", backdropFilter: "blur(10px)" }}>
-          <img src={logoImg} alt="الرواف" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+        {/* Logo — circular dark medallion; inverted filter makes:
+             • white JPEG bg → near-black = matches container → "disappears"
+             • dark logo symbol → bright gold = floats on dark bg
+             No blend-mode tricks needed — pure container+filter match. */}
+        <div style={{
+          width: 116, height: 116,
+          borderRadius: "50%",
+          /* Nearly pure black container matches the inverted white JPEG background */
+          background: "radial-gradient(circle, #0d0804 60%, #060401 100%)",
+          border: "1.5px solid rgba(197,160,89,0.55)",
+          boxShadow: "0 0 0 3px rgba(197,160,89,0.08), 0 0 32px rgba(197,160,89,0.65), 0 0 64px rgba(197,160,89,0.22), 0 12px 40px rgba(0,0,0,0.6)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 16,
+          marginBottom: 26,
+          overflow: "hidden",
+          animation: "sg-logo-glow 4s ease-in-out infinite",
+          flexShrink: 0,
+        }}>
+          <img
+            src={logoImg}
+            alt="الرواف"
+            style={{
+              width: "100%", height: "100%", objectFit: "contain",
+              /* grayscale first → removes unexpected hue shifts after invert
+                 invert: white-bg→black (matches dark container), grey symbol→bright
+                 sepia+saturate: uniform warm-gold tone across the entire symbol */
+              filter: "grayscale(1) invert(1) sepia(0.85) saturate(3.5) brightness(1.2)",
+            }}
+          />
         </div>
 
-        <div style={{ fontSize: "0.54rem", color: "rgba(197,160,89,0.55)", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 9, fontFamily: "'Inter', sans-serif" }}>
+        <div style={{ fontSize: "0.54rem", color: "rgba(197,160,89,0.92)", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 9, fontFamily: "'Inter', sans-serif" }}>
           ALRAWAF CONTRACTING COMPANY
         </div>
 
@@ -267,7 +294,7 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
           <div style={{ width: 44, height: 1, background: "linear-gradient(90deg, rgba(197,160,89,0.55), transparent)" }} />
         </div>
 
-        <p style={{ fontSize: "0.74rem", color: "rgba(255,255,255,0.30)", lineHeight: 2, maxWidth: 380, marginBottom: 40, textShadow: "0 1px 6px rgba(0,0,0,0.6)" }}>
+        <p style={{ fontSize: "0.74rem", color: "rgba(255,255,255,0.80)", lineHeight: 2, maxWidth: 380, marginBottom: 40, textShadow: "0 2px 10px rgba(0,0,0,0.75)" }}>
           منصة داخلية متكاملة لإدارة بيانات المقاولين والموردين<br />
           وتحليل الأسعار وتنسيق المشاريع الإنشائية
         </p>
@@ -281,7 +308,7 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
           ].map((s, i) => (
             <div key={i} style={{ textAlign: "center" }}>
               <div style={{ fontSize: "1.15rem", fontWeight: 900, color: "#c5a059", lineHeight: 1, marginBottom: 5, direction: "ltr", textShadow: "0 0 20px rgba(197,160,89,0.3)" }}>{s.value}</div>
-              <div style={{ fontSize: "0.54rem", color: "rgba(255,255,255,0.28)", letterSpacing: "0.1em" }}>{s.label}</div>
+              <div style={{ fontSize: "0.54rem", color: "rgba(255,255,255,0.72)", letterSpacing: "0.1em", textShadow: "0 1px 6px rgba(0,0,0,0.7)" }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -413,12 +440,18 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
   );
 }
 
-/* ── Hidden listener: fires handleLogout when logo dispatches 'rawaf-logout' ── */
+/* ── Hidden listener: fires handleLogout when logo dispatches 'rawaf-logout' ──
+   Uses a ref so the listener is registered ONCE and never goes stale, even if
+   the parent re-renders (e.g. during slide animations). ── */
 function LogoutListener({ onLogout }: { onLogout: () => void }) {
+  const callbackRef = useRef(onLogout);
+  /* Keep ref in sync with latest callback without re-registering the listener */
+  useEffect(() => { callbackRef.current = onLogout; });
+  /* Register once — ref ensures we always call the freshest callback */
   useEffect(() => {
-    const handler = () => onLogout();
+    const handler = () => callbackRef.current();
     window.addEventListener("rawaf-logout", handler);
     return () => window.removeEventListener("rawaf-logout", handler);
-  }, [onLogout]);
+  }, []);
   return null;
 }

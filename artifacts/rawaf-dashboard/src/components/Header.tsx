@@ -29,25 +29,34 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange 
             onMouseLeave={() => setLogoHover(false)}
             title="تسجيل الخروج من النظام"
             style={{
-              width: "68px", height: "68px",
-              background: "#fff",
-              borderRadius: "12px",
-              display: "flex", alignItems: "center", justifyContent: "center",
+              width: "66px", height: "66px",
+              borderRadius: "50%",
+              background: "radial-gradient(circle, #0d0804 60%, #060401 100%)",
+              border: logoHover
+                ? "1.5px solid rgba(197,160,89,0.85)"
+                : "1.5px solid rgba(197,160,89,0.50)",
               boxShadow: logoHover
-                ? "0 8px 28px rgba(0,0,0,0.5), 0 0 0 2px rgba(197,160,89,0.7), 0 0 20px rgba(197,160,89,0.3)"
-                : "0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(197,160,89,0.3)",
-              flexShrink: 0, overflow: "hidden", padding: "6px",
+                ? "0 0 0 3px rgba(197,160,89,0.12), 0 0 20px rgba(197,160,89,0.9), 0 0 40px rgba(197,160,89,0.35)"
+                : "0 0 0 2px rgba(197,160,89,0.06), 0 0 12px rgba(197,160,89,0.5)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: "10px",
+              overflow: "hidden",
+              flexShrink: 0,
               cursor: "pointer",
-              opacity: logoHover ? 0.78 : 1,
-              transform: logoHover ? "scale(1.07)" : "scale(1)",
-              transition: "opacity 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease",
+              opacity: logoHover ? 0.88 : 1,
+              transform: logoHover ? "scale(1.09)" : "scale(1)",
+              transition: "opacity 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease",
               position: "relative",
             }}
           >
             <img
               src={logoImg}
               alt="شركة الرواف للمقاولات — اضغط للخروج"
-              style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "7px" }}
+              style={{
+                width: "100%", height: "100%", objectFit: "contain",
+                /* grayscale+invert+sepia = consistent warm gold, no unexpected hue shifts */
+                filter: "grayscale(1) invert(1) sepia(0.85) saturate(3.5) brightness(1.2)",
+              }}
             />
             {/* Logout hint tooltip that appears on hover */}
             {logoHover && (
