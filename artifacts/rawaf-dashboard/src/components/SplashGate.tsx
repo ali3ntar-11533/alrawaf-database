@@ -241,7 +241,10 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
         position: "fixed", inset: 0, zIndex: 9999,
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: "Tajawal, sans-serif", overflow: "hidden",
-        background: "#060402",
+        /* Photo as permanent base — eliminates black gap during slide crossfades */
+        backgroundImage: `url(${bgPhoto})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center 30%",
       }}
     >
 
@@ -467,23 +470,24 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
           onClick={(e) => { if (e.target === e.currentTarget) setShowLogin(false); }}
           style={{
             position: "fixed", inset: 0, zIndex: 10000,
-            /* Lighter overlay — animated background is visible & beautifully blurred through it */
-            background: "rgba(4,2,1,0.48)",
-            backdropFilter: "blur(20px) saturate(0.7)",
+            /* Very light overlay — background stays clearly visible, just softly blurred */
+            background: "rgba(2,1,0,0.12)",
+            backdropFilter: "blur(22px) saturate(0.85)",
             display: "flex", alignItems: "center", justifyContent: "center",
             animation: "sg-fadein 0.25s ease both",
           }}
         >
           <div style={{
-            /* Frosted-glass card — sits over the blurred bg */
-            background: "linear-gradient(160deg, rgba(28,22,16,0.96) 0%, rgba(20,16,11,0.98) 100%)",
-            border: "1px solid rgba(197,160,89,0.28)",
+            /* True frosted glass — background shines through beautifully */
+            background: "rgba(12, 9, 5, 0.42)",
+            border: "1px solid rgba(197,160,89,0.35)",
+            borderTop: "1px solid rgba(255,255,255,0.12)",
             borderRadius: 22,
             padding: "40px 38px",
             width: "100%", maxWidth: 410,
-            boxShadow: "0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(197,160,89,0.06) inset",
+            boxShadow: "0 24px 80px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)",
             position: "relative",
-            backdropFilter: "blur(2px)",
+            backdropFilter: "blur(32px) saturate(1.3)",
             animation: "sg-scalein 0.3s cubic-bezier(0.34,1.56,0.64,1) both",
           }}>
 
@@ -500,9 +504,9 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
                 <div style={{ width: 64, height: 64, borderRadius: 15, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(197,160,89,0.22)", display: "flex", alignItems: "center", justifyContent: "center", padding: 9, margin: "0 auto 13px" }}>
                   <img src={logoImg} alt="الرواف" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                 </div>
-                <div style={{ fontSize: "0.5rem", color: "rgba(197,160,89,0.5)", letterSpacing: "0.16em", marginBottom: 5 }}>ALRAWAF CONTRACTING</div>
-                <h2 style={{ fontSize: "1.08rem", fontWeight: 800, color: "#fff", marginBottom: 4 }}>تسجيل الدخول</h2>
-                <p style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.25)", lineHeight: 1.6 }}>أدخل بيانات الدخول للوصول إلى النظام</p>
+                <div style={{ fontSize: "0.5rem", color: "rgba(197,160,89,0.85)", letterSpacing: "0.16em", marginBottom: 5 }}>ALRAWAF CONTRACTING</div>
+                <h2 style={{ fontSize: "1.08rem", fontWeight: 800, color: "#fff", marginBottom: 4, textShadow: "0 2px 12px rgba(0,0,0,0.8)" }}>تسجيل الدخول</h2>
+                <p style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.7)", lineHeight: 1.6, textShadow: "0 1px 6px rgba(0,0,0,0.7)" }}>أدخل بيانات الدخول للوصول إلى النظام</p>
               </div>
 
               {/* Form */}
@@ -520,7 +524,7 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
                       onChange={(e) => { f.key === "username" ? setUsername(e.target.value) : setPassword(e.target.value); setError(""); }}
                       placeholder={f.placeholder}
                       autoComplete={f.key === "username" ? "username" : "current-password"}
-                      style={{ width: "100%", padding: "12px 14px", background: "rgba(255,255,255,0.04)", border: `1.5px solid ${error ? "#e74c3c" : "rgba(197,160,89,0.2)"}`, borderRadius: 10, color: "#fff", fontSize: "0.88rem", fontFamily: "Tajawal, sans-serif", direction: "rtl", outline: "none", transition: "border-color 0.2s", boxSizing: "border-box" }}
+                      style={{ width: "100%", padding: "12px 14px", background: "rgba(255,255,255,0.10)", border: `1.5px solid ${error ? "#e74c3c" : "rgba(197,160,89,0.35)"}`, borderRadius: 10, color: "#fff", fontSize: "0.88rem", fontFamily: "Tajawal, sans-serif", direction: "rtl", outline: "none", transition: "border-color 0.2s, background 0.2s", boxSizing: "border-box", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
                       onFocus={(e) => (e.target.style.borderColor = "rgba(197,160,89,0.65)")}
                       onBlur={(e)  => (e.target.style.borderColor = error ? "#e74c3c" : "rgba(197,160,89,0.2)")}
                     />
