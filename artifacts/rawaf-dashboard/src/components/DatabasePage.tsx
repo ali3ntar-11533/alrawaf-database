@@ -421,20 +421,20 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
         <div style={{ overflowX: "auto", width: "100%" }}>
           <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", direction: "rtl", minWidth: "900px" }}>
             <colgroup>
-              <col style={{ width: "6%" }} />
-              <col style={{ width: "10%" }} />
-              <col style={{ width: "8%" }} />
               <col style={{ width: "5%" }} />
+              <col style={{ width: "12%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "4%" }} />
               <col style={{ width: "7%" }} />
               <col style={{ width: "5%" }} />
-              <col style={{ width: "10%" }} />
+              <col style={{ width: "13%" }} />
               <col style={{ width: "6%" }} />
               <col style={{ width: "4%" }} />
               <col style={{ width: "6%" }} />
               <col style={{ width: "5%" }} />
               <col style={{ width: "7%" }} />
               <col style={{ width: "7%" }} />
-              <col style={{ width: "14%" }} />
+              <col style={{ width: "9%" }} />
             </colgroup>
             <thead>
               <tr style={{ background: "var(--charcoal)" }}>
@@ -495,9 +495,9 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                     ) : <span style={{ color: "#ccc", fontSize: "0.7rem" }}>—</span>}
                   </td>
                   <td style={tdStyle} title={`${c.phone} | ${c.email}`}>
-                    <div style={{ fontSize: "0.7rem", color: "#888" }}>
-                      <div style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{c.phone}</div>
-                      <div style={{ direction: "ltr", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis" }}>{c.email}</div>
+                    <div style={{ fontSize: "0.7rem", color: "#888", minWidth: 0 }}>
+                      <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.phone}</div>
+                      <div style={{ direction: "ltr", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#bbb", fontSize: "0.65rem" }}>{c.email}</div>
                     </div>
                   </td>
                   <td style={{ ...tdStyle, textAlign: "center", verticalAlign: "middle" }}>
