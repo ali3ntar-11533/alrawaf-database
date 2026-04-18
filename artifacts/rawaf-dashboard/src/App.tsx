@@ -3,6 +3,7 @@ import "./index.css";
 import Header from "./components/Header";
 import MainDashboard from "./components/MainDashboard";
 import DatabasePage from "./components/DatabasePage";
+import SplashGate from "./components/SplashGate";
 
 export type TabType = "main" | "database";
 
@@ -17,29 +18,31 @@ function App() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "var(--body-bg)" }}>
-      <Header
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        search={search}
-        onSearchChange={handleSearchChange}
-      />
-      <div key={activeTab}>
-        {activeTab === "main" ? (
-          <MainDashboard
-            search={search}
-            selectedId={selectedId}
-            onSelectId={setSelectedId}
-          />
-        ) : (
-          <DatabasePage
+    <SplashGate>
+      <div style={{ minHeight: "100vh", backgroundColor: "var(--body-bg)" }}>
+        <Header
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
           search={search}
-          onSelectContractor={(id) => { setSelectedId(id); setActiveTab("main"); }}
-          onSearchAndNavigate={(term) => { setSearch(term); setSelectedId(null); setActiveTab("main"); }}
+          onSearchChange={handleSearchChange}
         />
-        )}
+        <div key={activeTab}>
+          {activeTab === "main" ? (
+            <MainDashboard
+              search={search}
+              selectedId={selectedId}
+              onSelectId={setSelectedId}
+            />
+          ) : (
+            <DatabasePage
+              search={search}
+              onSelectContractor={(id) => { setSelectedId(id); setActiveTab("main"); }}
+              onSearchAndNavigate={(term) => { setSearch(term); setSelectedId(null); setActiveTab("main"); }}
+            />
+          )}
+        </div>
       </div>
-    </div>
+    </SplashGate>
   );
 }
 
