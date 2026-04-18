@@ -121,11 +121,26 @@ export default function Sidebar({
                     <div style={{ fontWeight: 700, fontSize: "0.76rem", color: "var(--charcoal)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: "3px" }}>
                       {c.contractor}
                     </div>
-                    <div style={{ display: "flex", gap: "5px", alignItems: "center", flexWrap: "wrap" }}>
-                      <span style={{ fontSize: "0.6rem", color: "#888", background: "#f0ebe0", borderRadius: "4px", padding: "1px 5px", whiteSpace: "nowrap" }}>
-                        {icon} {c.workType}
-                      </span>
-                      <span style={{ fontSize: "0.6rem", color: "#bbb" }}>{c.portfolio}</span>
+                    <div style={{ display: "flex", gap: "5px", alignItems: "center", minWidth: 0 }}>
+                      {(() => {
+                        const activity = (c as any).mainActivity as string | null | undefined;
+                        const label = activity?.trim() || c.workType || "—";
+                        return (
+                          <span
+                            title={label}
+                            style={{
+                              fontSize: "0.6rem", color: "#888", background: "#f0ebe0",
+                              borderRadius: "4px", padding: "1px 5px",
+                              maxWidth: "120px", overflow: "hidden",
+                              whiteSpace: "nowrap", textOverflow: "ellipsis",
+                              display: "inline-block", flexShrink: 1,
+                            }}
+                          >
+                            {icon} {label}
+                          </span>
+                        );
+                      })()}
+                      <span style={{ fontSize: "0.6rem", color: "#bbb", whiteSpace: "nowrap", flexShrink: 0 }}>{c.portfolio}</span>
                     </div>
                   </div>
                   <div style={{ textAlign: "left", flexShrink: 0 }}>
