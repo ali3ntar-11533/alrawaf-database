@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { X, Plus, Trash2, Pencil, Lock, Download, Copy } from "lucide-react";
+import type { FilterState } from "./FilterBar";
 import logoImg from "@assets/logo_1776506524686.jpg";
 import * as XLSX from "xlsx";
 import {
@@ -195,13 +196,14 @@ const truncateCellStyle: React.CSSProperties = {
 
 /* ─── Props ───────────────────────────────── */
 interface Props {
-  search: string;
+  search:              string;
+  filters:             FilterState;
   onSelectContractor?: (id: number) => void;
   onSearchAndNavigate?: (term: string) => void;
 }
 
 /* ─── Main Component ───────────────────────────── */
-export default function DatabasePage({ search, onSelectContractor, onSearchAndNavigate }: Props) {
+export default function DatabasePage({ search, filters, onSelectContractor, onSearchAndNavigate }: Props) {
   const [authenticated, setAuthenticated] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1");
   const [wasAutoLocked, setWasAutoLocked] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
@@ -282,8 +284,8 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
   /* Exact-match filter + sort by contractor name then ID */
   const filtered = contractors
     .filter((c: Contractor) => {
-      if (!search) return true;
-      return (
+      /* ── Main search bar ── */
+      const matchesSearch = !search || (
         exactMatch(c.contractNo, search)                     ||
         exactMatch(c.contractor, search)                     ||
         exactMatch(c.project, search)                        ||
@@ -297,6 +299,16 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
         exactMatch(c.phone, search)                          ||
         exactMatch(c.email, search)
       );
+      /* ── Advanced filters (all active ones must match) ── */
+      const matchesFilters =
+        (!filters.contractor      || exactMatch(c.contractor,                        filters.contractor))      &&
+        (!filters.portfolio       || exactMatch(c.portfolio,                         filters.portfolio))       &&
+        (!filters.project         || exactMatch(c.project,                           filters.project))         &&
+        (!filters.businessProgram || exactMatch((c as any).businessProgram ?? "",    filters.businessProgram)) &&
+        (!filters.workType        || exactMatch(c.workType,                          filters.workType))        &&
+        (!filters.workCategory    || exactMatch((c as any).workCategory ?? "",       filters.workCategory));
+
+      return matchesSearch && matchesFilters;
     })
     .sort((a: Contractor, b: Contractor) => {
       const nameA = a.contractor.trim().toLowerCase();
