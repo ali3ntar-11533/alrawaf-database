@@ -20,6 +20,8 @@ export interface AnalyticsFilters {
   dateTo?: string;
   valueMin?: number;
   valueMax?: number;
+  contractType?: string;
+  vendorName?: string;
 }
 
 export async function listContracts(params?: { status?: string; stage?: number } & AnalyticsFilters): Promise<Contract[]> {
@@ -30,6 +32,8 @@ export async function listContracts(params?: { status?: string; stage?: number }
   if (params?.dateTo)              qs.set("dateTo",   params.dateTo);
   if (params?.valueMin !== undefined) qs.set("valueMin", String(params.valueMin));
   if (params?.valueMax !== undefined) qs.set("valueMax", String(params.valueMax));
+  if (params?.contractType)        qs.set("contractType", params.contractType);
+  if (params?.vendorName)          qs.set("vendorName",   params.vendorName);
   const q = qs.toString();
   return apiFetch<Contract[]>(`/contracts${q ? `?${q}` : ""}`);
 }
@@ -44,6 +48,8 @@ export async function getContractStats(params?: AnalyticsFilters): Promise<Contr
   if (params?.dateTo)              qs.set("dateTo",   params.dateTo);
   if (params?.valueMin !== undefined) qs.set("valueMin", String(params.valueMin));
   if (params?.valueMax !== undefined) qs.set("valueMax", String(params.valueMax));
+  if (params?.contractType)        qs.set("contractType", params.contractType);
+  if (params?.vendorName)          qs.set("vendorName",   params.vendorName);
   const q = qs.toString();
   return apiFetch<ContractStats>(`/contracts/stats${q ? `?${q}` : ""}`);
 }
@@ -65,10 +71,12 @@ export interface ActivityEntry {
   title: string;
 }
 
-export async function getRecentActivity(params?: Pick<AnalyticsFilters, "dateFrom" | "dateTo">): Promise<ActivityEntry[]> {
+export async function getRecentActivity(params?: Pick<AnalyticsFilters, "dateFrom" | "dateTo" | "contractType" | "vendorName">): Promise<ActivityEntry[]> {
   const qs = new URLSearchParams();
-  if (params?.dateFrom) qs.set("dateFrom", params.dateFrom);
-  if (params?.dateTo)   qs.set("dateTo",   params.dateTo);
+  if (params?.dateFrom)     qs.set("dateFrom",     params.dateFrom);
+  if (params?.dateTo)       qs.set("dateTo",       params.dateTo);
+  if (params?.contractType) qs.set("contractType", params.contractType);
+  if (params?.vendorName)   qs.set("vendorName",   params.vendorName);
   const q = qs.toString();
   return apiFetch<ActivityEntry[]>(`/contracts/activity${q ? `?${q}` : ""}`);
 }

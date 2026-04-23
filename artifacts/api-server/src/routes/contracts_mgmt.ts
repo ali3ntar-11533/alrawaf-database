@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and, sql, gte, lte } from "drizzle-orm";
+import { eq, desc, and, sql, gte, lte, like } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db, contractsTable, contractStageLogTable, contractDocumentsTable } from "@workspace/db";
 
@@ -24,10 +24,12 @@ interface FilterParams {
   dateTo?: Date;
   valueMin?: number;
   valueMax?: number;
+  contractType?: string;
+  vendorName?: string;
 }
 
 function parseFilterParams(
-  query: { dateFrom?: string; dateTo?: string; valueMin?: string; valueMax?: string },
+  query: { dateFrom?: string; dateTo?: string; valueMin?: string; valueMax?: string; contractType?: string; vendorName?: string },
   res: import("express").Response,
 ): FilterParams | null {
   const result: FilterParams = {};
@@ -64,6 +66,8 @@ function parseFilterParams(
     }
     result.valueMax = n;
   }
+  if (query.contractType) result.contractType = query.contractType.trim();
+  if (query.vendorName)   result.vendorName   = query.vendorName.trim();
   return result;
 }
 
@@ -73,6 +77,8 @@ function buildContractFilters(params: FilterParams) {
   if (params.dateTo)   filters.push(lte(contractsTable.createdAt, params.dateTo));
   if (params.valueMin !== undefined) filters.push(gte(contractsTable.value, params.valueMin));
   if (params.valueMax !== undefined) filters.push(lte(contractsTable.value, params.valueMax));
+  if (params.contractType) filters.push(eq(contractsTable.contractType, params.contractType));
+  if (params.vendorName)   filters.push(like(contractsTable.vendorName, `%${params.vendorName}%`));
   return filters;
 }
 
@@ -116,13 +122,14 @@ const StageActionBody = z.object({
 });
 
 router.get("/contracts", async (req, res): Promise<void> => {
-  const { status, stage, dateFrom, dateTo, valueMin, valueMax } = req.query as {
+  const { status, stage, dateFrom, dateTo, valueMin, valueMax, contractType, vendorName } = req.query as {
     status?: string; stage?: string;
     dateFrom?: string; dateTo?: string;
     valueMin?: string; valueMax?: string;
+    contractType?: string; vendorName?: string;
   };
 
-  const fp = parseFilterParams({ dateFrom, dateTo, valueMin, valueMax }, res);
+  const fp = parseFilterParams({ dateFrom, dateTo, valueMin, valueMax, contractType, vendorName }, res);
   if (fp === null) return;
 
   const filters = [...buildContractFilters(fp)];
@@ -168,13 +175,15 @@ router.post("/contracts", async (req, res): Promise<void> => {
 });
 
 router.get("/contracts/activity", async (req, res): Promise<void> => {
-  const { dateFrom, dateTo } = req.query as { dateFrom?: string; dateTo?: string };
-  const fp = parseFilterParams({ dateFrom, dateTo }, res);
+  const { dateFrom, dateTo, contractType, vendorName } = req.query as { dateFrom?: string; dateTo?: string; contractType?: string; vendorName?: string };
+  const fp = parseFilterParams({ dateFrom, dateTo, contractType, vendorName }, res);
   if (fp === null) return;
 
   const filters = [];
   if (fp.dateFrom) filters.push(gte(contractStageLogTable.createdAt, fp.dateFrom));
   if (fp.dateTo)   filters.push(lte(contractStageLogTable.createdAt, fp.dateTo));
+  if (fp.contractType) filters.push(eq(contractsTable.contractType, fp.contractType));
+  if (fp.vendorName)   filters.push(like(contractsTable.vendorName, `%${fp.vendorName}%`));
 
   const logs = await db
     .select({
@@ -202,12 +211,13 @@ router.get("/contracts/activity", async (req, res): Promise<void> => {
 });
 
 router.get("/contracts/stats", async (req, res): Promise<void> => {
-  const { dateFrom, dateTo, valueMin, valueMax } = req.query as {
+  const { dateFrom, dateTo, valueMin, valueMax, contractType, vendorName } = req.query as {
     dateFrom?: string; dateTo?: string;
     valueMin?: string; valueMax?: string;
+    contractType?: string; vendorName?: string;
   };
 
-  const fp = parseFilterParams({ dateFrom, dateTo, valueMin, valueMax }, res);
+  const fp = parseFilterParams({ dateFrom, dateTo, valueMin, valueMax, contractType, vendorName }, res);
   if (fp === null) return;
 
   const filters = buildContractFilters(fp);

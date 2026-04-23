@@ -81,6 +81,8 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
   const [customDateTo, setCustomTo]     = useState("");
   const [valueMin, setValueMin]         = useState("");
   const [valueMax, setValueMax]         = useState("");
+  const [contractType, setContractType] = useState("");
+  const [vendorName, setVendorName]     = useState("");
 
   const load = useCallback(async () => {
     const { dateFrom, dateTo } = getPresetRange(datePreset, customDateFrom, customDateTo);
@@ -89,12 +91,14 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
       dateTo,
       valueMin: valueMin ? parseInt(valueMin, 10) : undefined,
       valueMax: valueMax ? parseInt(valueMax, 10) : undefined,
+      contractType: contractType || undefined,
+      vendorName:   vendorName   || undefined,
     };
     try {
       const [c, s, a] = await Promise.all([
         listContracts(filters),
         getContractStats(filters),
-        getRecentActivity({ dateFrom, dateTo }),
+        getRecentActivity({ dateFrom, dateTo, contractType: filters.contractType, vendorName: filters.vendorName }),
       ]);
       setContracts(c);
       setStats(s);
@@ -102,7 +106,7 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [datePreset, customDateFrom, customDateTo, valueMin, valueMax]);
+  }, [datePreset, customDateFrom, customDateTo, valueMin, valueMax, contractType, vendorName]);
 
   useEffect(() => {
     load();
@@ -336,8 +340,46 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
             }}
           />
 
+          {/* Contract type dropdown */}
+          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#8B6914", marginRight: 8, whiteSpace: "nowrap" }}>
+            📋 نوع العقد:
+          </span>
+          <select
+            value={contractType}
+            onChange={e => setContractType(e.target.value)}
+            style={{
+              padding: "4px 8px", borderRadius: 7, border: `1px solid ${GOLD_BORDER}`,
+              background: GOLD_BG, color: contractType ? "#4a3520" : "#9b8060",
+              fontSize: "0.72rem", fontFamily: "'Cairo', 'Tajawal', sans-serif",
+              cursor: "pointer",
+            }}
+          >
+            <option value="">الكل</option>
+            <option value="إنشاء">إنشاء</option>
+            <option value="صيانة">صيانة</option>
+            <option value="توريد">توريد</option>
+            <option value="خدمات">خدمات</option>
+            <option value="مقاولات">مقاولات</option>
+          </select>
+
+          {/* Vendor name text input */}
+          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#8B6914", marginRight: 8, whiteSpace: "nowrap" }}>
+            🏢 المورد:
+          </span>
+          <input
+            type="text"
+            placeholder="اسم المورد..."
+            value={vendorName}
+            onChange={e => setVendorName(e.target.value)}
+            style={{
+              width: 140, padding: "4px 8px", borderRadius: 7, border: `1px solid ${GOLD_BORDER}`,
+              background: GOLD_BG, color: "#4a3520", fontSize: "0.72rem",
+              fontFamily: "'Cairo', 'Tajawal', sans-serif",
+            }}
+          />
+
           {/* Reset button */}
-          {(datePreset !== "all" || valueMin || valueMax) && (
+          {(datePreset !== "all" || valueMin || valueMax || contractType || vendorName) && (
             <button
               onClick={() => {
                 setDatePreset("all");
@@ -345,6 +387,8 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
                 setCustomTo("");
                 setValueMin("");
                 setValueMax("");
+                setContractType("");
+                setVendorName("");
               }}
               style={{
                 padding: "5px 10px", borderRadius: 7,
@@ -361,7 +405,7 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
         </div>
 
         {/* Active filter summary */}
-        {(datePreset !== "all" || valueMin || valueMax) && (
+        {(datePreset !== "all" || valueMin || valueMax || contractType || vendorName) && (
           <div style={{ marginTop: 8, fontSize: "0.68rem", color: "#9b8060", display: "flex", gap: 12, flexWrap: "wrap" }}>
             {datePreset !== "all" && (() => {
               const { dateFrom, dateTo } = getPresetRange(datePreset, customDateFrom, customDateTo);
@@ -370,6 +414,8 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
             })()}
             {valueMin && <span>💰 من {parseInt(valueMin).toLocaleString("ar-SA")} ر.س</span>}
             {valueMax && <span>حتى {parseInt(valueMax).toLocaleString("ar-SA")} ر.س</span>}
+            {contractType && <span>📋 نوع: {contractType}</span>}
+            {vendorName && <span>🏢 مورد: {vendorName}</span>}
           </div>
         )}
       </div>
@@ -716,6 +762,8 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
             } else if (valueMax) {
               parts.push(`القيمة: حتى ${parseInt(valueMax).toLocaleString("ar-SA")} ر.س`);
             }
+            if (contractType) parts.push(`نوع العقد: ${contractType}`);
+            if (vendorName)   parts.push(`المورد: ${vendorName}`);
             if (parts.length === 0) return null;
             return (
               <div style={{
