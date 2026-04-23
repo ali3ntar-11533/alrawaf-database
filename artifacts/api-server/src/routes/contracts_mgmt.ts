@@ -386,6 +386,9 @@ router.get("/contracts/:id/comments", async (req, res): Promise<void> => {
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
+  const [contract] = await db.select({ id: contractsTable.id }).from(contractsTable).where(eq(contractsTable.id, id));
+  if (!contract) { res.status(404).json({ error: "العقد غير موجود" }); return; }
+
   const rows = await db.select().from(contractCommentsTable)
     .where(eq(contractCommentsTable.contractId, id))
     .orderBy(contractCommentsTable.createdAt);
@@ -396,6 +399,9 @@ router.get("/contracts/:id/comments", async (req, res): Promise<void> => {
 router.post("/contracts/:id/comments", async (req, res): Promise<void> => {
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const [contract] = await db.select({ id: contractsTable.id }).from(contractsTable).where(eq(contractsTable.id, id));
+  if (!contract) { res.status(404).json({ error: "العقد غير موجود" }); return; }
 
   const parsed = AddCommentBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
@@ -472,6 +478,7 @@ const SEED_COMMENTS: { contractIndex: number; comments: Array<{ actorName: strin
 router.post("/contracts/seed", async (_req, res): Promise<void> => {
   // always wipe and rebuild for a canonical demo dataset
   await db.delete(contractCommentsTable);
+  await db.delete(contractDocumentsTable);
   await db.delete(contractStageLogTable);
   await db.delete(contractsTable);
 
