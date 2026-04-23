@@ -9,10 +9,11 @@ interface Props {
 }
 
 const TABS: { id: ContractTab; label: string; icon: string }[] = [
-  { id: "dashboard", label: "الرئيسية",                icon: "🏠" },
-  { id: "requests",  label: "طلبات العقود",             icon: "📋" },
-  { id: "tracking",  label: "نظام متابعة العقود",       icon: "🛡️" },
-  { id: "archive",   label: "قاعدة البيانات والتقارير", icon: "💾" },
+  { id: "dashboard",  label: "الرئيسية",                icon: "🏠" },
+  { id: "requests",   label: "طلبات العقود",             icon: "📋" },
+  { id: "tracking",   label: "نظام متابعة العقود",       icon: "🛡️" },
+  { id: "analytics",  label: "التحليلات والتقارير",      icon: "📊" },
+  { id: "archive",    label: "قاعدة البيانات",           icon: "💾" },
 ];
 
 export default function ContractSidebar({ activeTab, onTabChange, pendingCount, onExit, roleName }: Props) {

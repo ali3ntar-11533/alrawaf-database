@@ -35,6 +35,23 @@ export async function getContractAudit(id: number): Promise<StageLog[]> {
   return apiFetch<StageLog[]>(`/contracts/${id}/audit`);
 }
 
+export interface ActivityEntry {
+  logId: number;
+  stage: number;
+  action: string;
+  actorRole: string;
+  actorName: string;
+  notes: string;
+  logCreatedAt: string;
+  contractId: number;
+  contractNo: string;
+  title: string;
+}
+
+export async function getRecentActivity(): Promise<ActivityEntry[]> {
+  return apiFetch<ActivityEntry[]>("/contracts/activity");
+}
+
 export interface ContractDocument {
   id: number;
   contractId: number;

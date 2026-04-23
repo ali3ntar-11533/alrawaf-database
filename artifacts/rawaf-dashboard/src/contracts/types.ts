@@ -38,7 +38,7 @@ export interface ContractStats {
   completed: number;
 }
 
-export type ContractTab = "dashboard" | "requests" | "tracking" | "archive";
+export type ContractTab = "dashboard" | "requests" | "tracking" | "archive" | "analytics";
 
 export const STAGES: { label: string; role: string; icon: string }[] = [
   { label: "إنشاء العقد",            role: "مدير المشروع",       icon: "📝" },

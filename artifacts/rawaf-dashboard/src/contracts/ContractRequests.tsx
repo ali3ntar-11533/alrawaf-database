@@ -8,11 +8,13 @@ interface Props {
   role: string;
   actorName: string;
   onOpenContract: (id: number) => void;
+  filterStage?: number;
+  onClearFilter?: () => void;
 }
 
 const CONTRACT_TYPES = ["خدمات", "مستلزمات", "إنشاءات", "استشارات", "أخرى"];
 
-export default function ContractRequests({ role, actorName, onOpenContract }: Props) {
+export default function ContractRequests({ role, actorName, onOpenContract, filterStage, onClearFilter }: Props) {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -36,9 +38,11 @@ export default function ContractRequests({ role, actorName, onOpenContract }: Pr
 
   useEffect(() => { loadContracts(); }, [filterStatus]);
 
-  const filtered = contracts.filter(c =>
-    !search || c.title.includes(search) || c.vendorName.includes(search) || c.contractNo.includes(search)
-  );
+  const filtered = contracts.filter(c => {
+    const matchSearch = !search || c.title.includes(search) || c.vendorName.includes(search) || c.contractNo.includes(search);
+    const matchStage = filterStage == null || c.currentStage === filterStage;
+    return matchSearch && matchStage;
+  });
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -102,6 +106,26 @@ export default function ContractRequests({ role, actorName, onOpenContract }: Pr
           </button>
         )}
       </div>
+
+      {filterStage != null && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10,
+          background: "rgba(197,160,89,0.10)", border: `1px solid ${GOLD_BORDER}`,
+          borderRadius: 9, padding: "8px 14px", marginBottom: 14,
+        }}>
+          <span style={{ fontSize: "0.78rem", color: "#8B6914", fontWeight: 700 }}>
+            📊 فلتر من لوحة التحليلات: المرحلة {filterStage} — {STAGES[filterStage - 1]?.label}
+          </span>
+          <button
+            onClick={() => onClearFilter?.()}
+            style={{
+              marginRight: "auto", background: "none", border: "none",
+              cursor: "pointer", color: "#c0392b", fontSize: "0.75rem",
+              fontFamily: "'Cairo', 'Tajawal', sans-serif", fontWeight: 700,
+            }}
+          >✕ إلغاء الفلتر</button>
+        </div>
+      )}
 
       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
         <input

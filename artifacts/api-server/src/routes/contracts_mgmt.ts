@@ -102,6 +102,31 @@ router.post("/contracts", async (req, res): Promise<void> => {
   res.status(201).json(serializeContract(updated));
 });
 
+router.get("/contracts/activity", async (_req, res): Promise<void> => {
+  const logs = await db
+    .select({
+      logId:        contractStageLogTable.id,
+      stage:        contractStageLogTable.stage,
+      action:       contractStageLogTable.action,
+      actorRole:    contractStageLogTable.actorRole,
+      actorName:    contractStageLogTable.actorName,
+      notes:        contractStageLogTable.notes,
+      logCreatedAt: contractStageLogTable.createdAt,
+      contractId:   contractsTable.id,
+      contractNo:   contractsTable.contractNo,
+      title:        contractsTable.title,
+    })
+    .from(contractStageLogTable)
+    .innerJoin(contractsTable, eq(contractStageLogTable.contractId, contractsTable.id))
+    .orderBy(desc(contractStageLogTable.createdAt))
+    .limit(10);
+
+  res.json(logs.map(l => ({
+    ...l,
+    logCreatedAt: l.logCreatedAt.toISOString(),
+  })));
+});
+
 router.get("/contracts/stats", async (_req, res): Promise<void> => {
   const [stats] = await db.select({
     total:      sql<string>`count(*)`,

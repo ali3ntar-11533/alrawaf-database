@@ -5,6 +5,7 @@ import ContractRequests from "./ContractRequests";
 import ContractDetail from "./ContractDetail";
 import ContractTracking from "./ContractTracking";
 import ContractArchive from "./ContractArchive";
+import ContractAnalytics from "./ContractAnalytics";
 import RoleSelector, { computePendingByRole } from "./RoleSelector";
 import { ROLES, type ContractTab } from "./types";
 import type { Contract } from "./types";
@@ -24,6 +25,7 @@ export default function ContractApp({ onExit }: Props) {
   const [openContractId, setOpenContractId] = useState<number | null>(null);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loadingContracts, setLoadingContracts] = useState(false);
+  const [filterStage, setFilterStage] = useState<number | null>(null);
 
   useEffect(() => {
     if (!role) return;
@@ -78,7 +80,7 @@ export default function ContractApp({ onExit }: Props) {
 
       <ContractSidebar
         activeTab={activeTab}
-        onTabChange={(tab) => { setActiveTab(tab); setOpenContractId(null); }}
+        onTabChange={(tab) => { setActiveTab(tab); setOpenContractId(null); if (tab !== "requests") setFilterStage(null); }}
         pendingCount={pendingCount}
         onExit={handleExit}
         roleName={role}
@@ -103,11 +105,21 @@ export default function ContractApp({ onExit }: Props) {
             role={role}
             actorName={actorName}
             onOpenContract={setOpenContractId}
+            filterStage={filterStage ?? undefined}
+            onClearFilter={() => setFilterStage(null)}
           />
         ) : activeTab === "tracking" ? (
           <ContractTracking
             role={role}
             onOpenContract={setOpenContractId}
+          />
+        ) : activeTab === "analytics" ? (
+          <ContractAnalytics
+            onNavigateStage={(stage) => {
+              setFilterStage(stage);
+              setActiveTab("requests");
+              setOpenContractId(null);
+            }}
           />
         ) : (
           <ContractArchive onOpenContract={setOpenContractId} />
