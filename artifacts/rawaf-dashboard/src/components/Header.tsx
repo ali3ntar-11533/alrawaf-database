@@ -3,15 +3,19 @@ import { TabType } from "../App";
 import { Search } from "lucide-react";
 import logoImg from "@assets/logo_1776506524686.jpg";
 import heroBg from "@assets/Image_jo77t3jo77t3jo1_1776495109728.png";
+import FilterBar from "./FilterBar";
+import type { FilterState } from "./filterTypes";
 
 interface HeaderProps {
-  activeTab: TabType;
-  onTabChange: (tab: TabType) => void;
-  search: string;
-  onSearchChange: (value: string) => void;
+  activeTab:       TabType;
+  onTabChange:     (tab: TabType) => void;
+  search:          string;
+  onSearchChange:  (value: string) => void;
+  filters:         FilterState;
+  onFiltersChange: (f: FilterState) => void;
 }
 
-export default function Header({ activeTab, onTabChange, search, onSearchChange }: HeaderProps) {
+export default function Header({ activeTab, onTabChange, search, onSearchChange, filters, onFiltersChange }: HeaderProps) {
   const [logoHover, setLogoHover] = useState(false);
 
   function handleLogoClick() {
@@ -218,6 +222,9 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange 
           </span>
         </div>
       </div>
+
+      {/* ── Advanced Filter Bar ── */}
+      <FilterBar filters={filters} onFiltersChange={onFiltersChange} />
     </header>
   );
 }

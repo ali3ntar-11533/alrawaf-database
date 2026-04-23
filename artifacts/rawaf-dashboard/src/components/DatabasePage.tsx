@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { X, Plus, Trash2, Pencil, Lock, Download, Copy } from "lucide-react";
-import type { FilterState } from "./FilterBar";
+import type { FilterState } from "./filterTypes";
 import logoImg from "@assets/logo_1776506524686.jpg";
 import * as XLSX from "xlsx";
 import {

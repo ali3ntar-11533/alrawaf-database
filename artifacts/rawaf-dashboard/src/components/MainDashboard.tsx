@@ -3,7 +3,7 @@ import Sidebar from "./Sidebar";
 import MainContent from "./MainContent";
 import WelcomeHero from "./WelcomeHero";
 import type { Contractor } from "@workspace/api-client-react";
-import type { FilterState } from "./FilterBar";
+import type { FilterState } from "./filterTypes";
 
 interface Props {
   search:      string;

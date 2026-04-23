@@ -4,15 +4,15 @@ import Header from "./components/Header";
 import MainDashboard from "./components/MainDashboard";
 import DatabasePage from "./components/DatabasePage";
 import SplashGate from "./components/SplashGate";
-import FilterBar, { EMPTY_FILTERS, type FilterState } from "./components/FilterBar";
+import { EMPTY_FILTERS, type FilterState } from "./components/filterTypes";
 
 export type TabType = "main" | "database";
 
 function App() {
-  const [activeTab, setActiveTab]     = useState<TabType>("main");
-  const [search, setSearch]           = useState("");
-  const [selectedId, setSelectedId]   = useState<number | null>(null);
-  const [filters, setFilters]         = useState<FilterState>(EMPTY_FILTERS);
+  const [activeTab, setActiveTab]   = useState<TabType>("main");
+  const [search, setSearch]         = useState("");
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [filters, setFilters]       = useState<FilterState>(EMPTY_FILTERS);
 
   function handleSearchChange(value: string) {
     setSearch(value);
@@ -32,8 +32,9 @@ function App() {
           onTabChange={setActiveTab}
           search={search}
           onSearchChange={handleSearchChange}
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
         />
-        <FilterBar filters={filters} onFiltersChange={handleFiltersChange} />
         <div key={activeTab}>
           {activeTab === "main" ? (
             <MainDashboard
@@ -47,7 +48,12 @@ function App() {
               search={search}
               filters={filters}
               onSelectContractor={(id) => { setSelectedId(id); setActiveTab("main"); }}
-              onSearchAndNavigate={(term) => { setSearch(term); setSelectedId(null); setFilters(EMPTY_FILTERS); setActiveTab("main"); }}
+              onSearchAndNavigate={(term) => {
+                setSearch(term);
+                setSelectedId(null);
+                setFilters(EMPTY_FILTERS);
+                setActiveTab("main");
+              }}
             />
           )}
         </div>

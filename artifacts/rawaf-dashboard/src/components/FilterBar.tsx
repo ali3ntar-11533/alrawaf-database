@@ -2,29 +2,12 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { ChevronDown, X } from "lucide-react";
 import { useListContractors } from "@workspace/api-client-react";
 import type { Contractor } from "@workspace/api-client-react";
-
-/* ── Types ── */
-export interface FilterState {
-  contractor:      string;
-  portfolio:       string;
-  project:         string;
-  businessProgram: string;
-  workType:        string;
-  workCategory:    string;
-}
-
-export const EMPTY_FILTERS: FilterState = {
-  contractor:      "",
-  portfolio:       "",
-  project:         "",
-  businessProgram: "",
-  workType:        "",
-  workCategory:    "",
-};
+import type { FilterState } from "./filterTypes";
+import { EMPTY_FILTERS } from "./filterTypes";
 
 interface FilterBarProps {
-  filters: FilterState;
-  onFiltersChange: (f: FilterState) => void;
+  filters:          FilterState;
+  onFiltersChange:  (f: FilterState) => void;
 }
 
 /* ── Helpers ── */
@@ -51,7 +34,7 @@ function getUnique(contractors: Contractor[], getter: (c: Contractor) => string)
   return result.sort((a, b) => a.localeCompare(b, "ar"));
 }
 
-/* ── Filter descriptor ── */
+/* ── Filter descriptors ── */
 const FILTER_DEFS: { key: keyof FilterState; label: string; getter: (c: Contractor) => string }[] = [
   { key: "contractor",      label: "المقاول / المورد",  getter: (c) => c.contractor },
   { key: "portfolio",       label: "المحفظة",           getter: (c) => c.portfolio },
@@ -69,16 +52,16 @@ function FilterDropdown({
   onSelect,
   onClear,
 }: {
-  label: string;
-  value: string;
-  options: string[];
+  label:    string;
+  value:    string;
+  options:  string[];
   onSelect: (v: string) => void;
-  onClear: () => void;
+  onClear:  () => void;
 }) {
-  const [open, setOpen]         = useState(false);
+  const [open, setOpen]               = useState(false);
   const [innerSearch, setInnerSearch] = useState("");
-  const containerRef            = useRef<HTMLDivElement>(null);
-  const searchInputRef          = useRef<HTMLInputElement>(null);
+  const containerRef                  = useRef<HTMLDivElement>(null);
+  const searchInputRef                = useRef<HTMLInputElement>(null);
 
   const isActive = value !== "";
 
@@ -95,16 +78,12 @@ function FilterDropdown({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  /* Auto-focus search when dropdown opens */
+  /* Auto-focus search field when dropdown opens */
   useEffect(() => {
-    if (open) {
-      setTimeout(() => searchInputRef.current?.focus(), 60);
-    }
+    if (open) setTimeout(() => searchInputRef.current?.focus(), 60);
   }, [open]);
 
-  const filtered = options.filter((o) =>
-    normalize(o).includes(normalize(innerSearch))
-  );
+  const filteredOpts = options.filter((o) => normalize(o).includes(normalize(innerSearch)));
 
   function handleSelect(v: string) {
     onSelect(v);
@@ -114,100 +93,106 @@ function FilterDropdown({
 
   return (
     <div ref={containerRef} style={{ position: "relative", flexShrink: 0 }}>
-      {/* Trigger button */}
+      {/* ── Trigger pill ── */}
       <button
         onClick={() => { setOpen((p) => !p); setInnerSearch(""); }}
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "6px",
-          padding: "7px 13px",
-          borderRadius: "9px",
-          border: isActive
-            ? "1.5px solid var(--gold)"
-            : "1.5px solid rgba(197,160,89,0.22)",
-          background: isActive
-            ? "rgba(197,160,89,0.14)"
-            : "rgba(255,255,255,0.06)",
-          color: isActive ? "var(--gold)" : "rgba(255,255,255,0.72)",
-          fontSize: "0.72rem",
-          fontWeight: isActive ? 700 : 600,
-          fontFamily: "Tajawal, sans-serif",
-          cursor: "pointer",
-          whiteSpace: "nowrap",
-          transition: "all 0.18s",
-          backdropFilter: "blur(6px)",
-          boxShadow: isActive ? "0 0 10px rgba(197,160,89,0.18)" : "none",
+          display:        "flex",
+          alignItems:     "center",
+          gap:            "6px",
+          padding:        "7px 14px",
+          borderRadius:   "20px",
+          border:         isActive ? "1.5px solid var(--gold)" : "1.5px solid rgba(197,160,89,0.3)",
+          background:     isActive ? "rgba(197,160,89,0.18)" : "rgba(255,255,255,0.08)",
+          color:          isActive ? "var(--gold)" : "rgba(255,255,255,0.80)",
+          fontSize:       "0.73rem",
+          fontWeight:     isActive ? 700 : 500,
+          fontFamily:     "Tajawal, sans-serif",
+          cursor:         "pointer",
+          whiteSpace:     "nowrap",
+          transition:     "all 0.18s",
+          backdropFilter: "blur(8px)",
+          boxShadow:      isActive ? "0 0 12px rgba(197,160,89,0.22)" : "none",
+          letterSpacing:  "0.01em",
         }}
         onMouseEnter={(e) => {
+          const btn = e.currentTarget as HTMLButtonElement;
           if (!isActive) {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(197,160,89,0.5)";
-            (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.10)";
+            btn.style.borderColor = "rgba(197,160,89,0.55)";
+            btn.style.background  = "rgba(255,255,255,0.13)";
+            btn.style.color       = "#fff";
           }
         }}
         onMouseLeave={(e) => {
+          const btn = e.currentTarget as HTMLButtonElement;
           if (!isActive) {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(197,160,89,0.22)";
-            (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)";
+            btn.style.borderColor = "rgba(197,160,89,0.3)";
+            btn.style.background  = "rgba(255,255,255,0.08)";
+            btn.style.color       = "rgba(255,255,255,0.80)";
           }
         }}
       >
-        <span>{isActive ? value : label}</span>
+        <span style={{ maxWidth: "130px", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {isActive ? value : label}
+        </span>
+
         {isActive ? (
+          /* Clear (×) badge */
           <span
             onClick={(e) => { e.stopPropagation(); onClear(); }}
             style={{
-              display: "inline-flex", alignItems: "center", justifyContent: "center",
-              width: "16px", height: "16px", borderRadius: "50%",
-              background: "rgba(197,160,89,0.3)", color: "var(--gold)",
-              fontSize: "10px", cursor: "pointer", flexShrink: 0,
-              transition: "background 0.15s",
+              display:         "inline-flex",
+              alignItems:      "center",
+              justifyContent:  "center",
+              width:           "16px",
+              height:          "16px",
+              borderRadius:    "50%",
+              background:      "rgba(197,160,89,0.35)",
+              color:           "var(--gold)",
+              cursor:          "pointer",
+              flexShrink:      0,
+              transition:      "background 0.15s",
             }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "rgba(197,160,89,0.5)")}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "rgba(197,160,89,0.3)")}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "rgba(197,160,89,0.6)")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "rgba(197,160,89,0.35)")}
           >
             <X size={9} />
           </span>
         ) : (
           <ChevronDown
             size={12}
-            style={{
-              transition: "transform 0.18s",
-              transform: open ? "rotate(180deg)" : "rotate(0deg)",
-              flexShrink: 0,
-            }}
+            style={{ transition: "transform 0.18s", transform: open ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }}
           />
         )}
       </button>
 
-      {/* Dropdown menu */}
+      {/* ── Dropdown panel ── */}
       {open && (
         <div
           style={{
-            position: "absolute",
-            top: "calc(100% + 6px)",
-            right: 0,
-            minWidth: "210px",
-            maxWidth: "280px",
-            background: "rgba(26,22,18,0.97)",
-            border: "1.5px solid rgba(197,160,89,0.25)",
-            borderRadius: "12px",
-            boxShadow: "0 12px 36px rgba(0,0,0,0.45), 0 0 0 1px rgba(197,160,89,0.08)",
-            zIndex: 1000,
-            overflow: "hidden",
-            backdropFilter: "blur(16px)",
-            animation: "filterDropIn 0.15s ease",
+            position:       "absolute",
+            top:            "calc(100% + 8px)",
+            right:          0,
+            /* auto-fit width to longest content; min 200px */
+            width:          "max-content",
+            minWidth:       "200px",
+            maxWidth:       "320px",
+            background:     "rgba(22,18,14,0.98)",
+            border:         "1.5px solid rgba(197,160,89,0.28)",
+            borderRadius:   "13px",
+            boxShadow:      "0 16px 48px rgba(0,0,0,0.55), 0 0 0 1px rgba(197,160,89,0.06)",
+            zIndex:         2000,
+            overflow:       "hidden",
+            backdropFilter: "blur(20px)",
+            animation:      "filterDropIn 0.15s ease",
           }}
         >
-          {/* Fixed header: inner search */}
+          {/* Fixed search header */}
           <div
             style={{
-              padding: "10px",
-              borderBottom: "1px solid rgba(197,160,89,0.12)",
-              background: "rgba(197,160,89,0.04)",
-              position: "sticky",
-              top: 0,
-              zIndex: 1,
+              padding:         "10px 10px 8px",
+              borderBottom:    "1px solid rgba(197,160,89,0.10)",
+              background:      "rgba(197,160,89,0.04)",
             }}
           >
             <input
@@ -217,89 +202,76 @@ function FilterDropdown({
               value={innerSearch}
               onChange={(e) => setInnerSearch(e.target.value)}
               style={{
-                width: "100%",
-                padding: "7px 11px",
-                background: "rgba(255,255,255,0.07)",
-                border: "1px solid rgba(197,160,89,0.25)",
-                borderRadius: "7px",
-                fontSize: "0.72rem",
-                fontFamily: "Tajawal, sans-serif",
-                direction: "rtl",
-                color: "#fff",
-                outline: "none",
-                boxSizing: "border-box",
+                width:       "100%",
+                padding:     "7px 11px",
+                background:  "rgba(255,255,255,0.07)",
+                border:      "1px solid rgba(197,160,89,0.22)",
+                borderRadius: "8px",
+                fontSize:    "0.72rem",
+                fontFamily:  "Tajawal, sans-serif",
+                direction:   "rtl",
+                color:       "#fff",
+                outline:     "none",
+                boxSizing:   "border-box",
+                transition:  "border-color 0.18s",
               }}
-              onFocus={(e) => (e.target.style.borderColor = "rgba(197,160,89,0.7)")}
-              onBlur={(e) => (e.target.style.borderColor = "rgba(197,160,89,0.25)")}
+              onFocus={(e) => (e.target.style.borderColor = "rgba(197,160,89,0.75)")}
+              onBlur={(e)  => (e.target.style.borderColor = "rgba(197,160,89,0.22)")}
             />
           </div>
 
-          {/* Scrollable options */}
+          {/* Scrollable options list */}
           <div style={{ maxHeight: "250px", overflowY: "auto" }}>
-            {filtered.length === 0 ? (
-              <div style={{
-                padding: "18px 14px",
-                textAlign: "center",
-                fontSize: "0.72rem",
-                color: "rgba(255,255,255,0.3)",
-                fontFamily: "Tajawal, sans-serif",
-              }}>
+            {filteredOpts.length === 0 ? (
+              <div style={{ padding: "18px 14px", textAlign: "center", fontSize: "0.72rem", color: "rgba(255,255,255,0.3)", fontFamily: "Tajawal, sans-serif" }}>
                 لا توجد نتائج مطابقة
               </div>
-            ) : (
-              filtered.map((opt) => {
-                const isSelected = opt === value;
-                return (
-                  <div
-                    key={opt}
-                    onClick={() => handleSelect(opt)}
-                    style={{
-                      padding: "9px 14px",
-                      fontSize: "0.75rem",
-                      fontFamily: "Tajawal, sans-serif",
-                      direction: "rtl",
-                      cursor: "pointer",
-                      color: isSelected ? "var(--gold)" : "rgba(255,255,255,0.78)",
-                      background: isSelected ? "rgba(197,160,89,0.10)" : "transparent",
-                      fontWeight: isSelected ? 700 : 400,
-                      borderRight: isSelected ? "3px solid var(--gold)" : "3px solid transparent",
-                      transition: "background 0.12s, color 0.12s",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: "8px",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isSelected) {
-                        (e.currentTarget as HTMLDivElement).style.background = "rgba(197,160,89,0.06)";
-                        (e.currentTarget as HTMLDivElement).style.color = "#fff";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isSelected) {
-                        (e.currentTarget as HTMLDivElement).style.background = "transparent";
-                        (e.currentTarget as HTMLDivElement).style.color = "rgba(255,255,255,0.78)";
-                      }
-                    }}
-                  >
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{opt}</span>
-                    {isSelected && <span style={{ fontSize: "0.65rem", color: "var(--gold)", flexShrink: 0 }}>✓</span>}
-                  </div>
-                );
-              })
-            )}
+            ) : filteredOpts.map((opt) => {
+              const isSelected = opt === value;
+              return (
+                <div
+                  key={opt}
+                  onClick={() => handleSelect(opt)}
+                  style={{
+                    padding:       "9px 14px",
+                    fontSize:      "0.75rem",
+                    fontFamily:    "Tajawal, sans-serif",
+                    direction:     "rtl",
+                    cursor:        "pointer",
+                    color:         isSelected ? "var(--gold)" : "rgba(255,255,255,0.80)",
+                    background:    isSelected ? "rgba(197,160,89,0.10)" : "transparent",
+                    fontWeight:    isSelected ? 700 : 400,
+                    borderRight:   isSelected ? "3px solid var(--gold)" : "3px solid transparent",
+                    transition:    "background 0.12s, color 0.12s",
+                    display:       "flex",
+                    alignItems:    "center",
+                    justifyContent:"space-between",
+                    gap:           "12px",
+                    whiteSpace:    "nowrap",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) {
+                      (e.currentTarget as HTMLDivElement).style.background = "rgba(197,160,89,0.07)";
+                      (e.currentTarget as HTMLDivElement).style.color      = "#fff";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) {
+                      (e.currentTarget as HTMLDivElement).style.background = "transparent";
+                      (e.currentTarget as HTMLDivElement).style.color      = "rgba(255,255,255,0.80)";
+                    }
+                  }}
+                >
+                  <span>{opt}</span>
+                  {isSelected && <span style={{ fontSize: "0.65rem", color: "var(--gold)", flexShrink: 0 }}>✓</span>}
+                </div>
+              );
+            })}
           </div>
 
-          {/* Options count */}
-          <div style={{
-            padding: "5px 14px",
-            borderTop: "1px solid rgba(197,160,89,0.08)",
-            fontSize: "0.6rem",
-            color: "rgba(255,255,255,0.25)",
-            textAlign: "center",
-            fontFamily: "Tajawal, sans-serif",
-          }}>
-            {filtered.length} خيار متاح
+          {/* Footer count */}
+          <div style={{ padding: "5px 14px", borderTop: "1px solid rgba(197,160,89,0.07)", fontSize: "0.6rem", color: "rgba(255,255,255,0.22)", textAlign: "center", fontFamily: "Tajawal, sans-serif" }}>
+            {filteredOpts.length} خيار متاح
           </div>
         </div>
       )}
@@ -313,24 +285,20 @@ export default function FilterBar({ filters, onFiltersChange }: FilterBarProps) 
 
   const activeCount = Object.values(filters).filter(Boolean).length;
 
-  const optionsMap = useCallback(() => {
-    const map: Record<keyof FilterState, string[]> = {} as any;
+  const options = useCallback((): Record<keyof FilterState, string[]> => {
+    const map = {} as Record<keyof FilterState, string[]>;
     for (const def of FILTER_DEFS) {
       map[def.key] = getUnique(contractors as Contractor[], def.getter);
     }
     return map;
-  }, [contractors]);
-
-  const options = optionsMap();
+  }, [contractors])();
 
   function setFilter(key: keyof FilterState, value: string) {
     onFiltersChange({ ...filters, [key]: value });
   }
-
   function clearFilter(key: keyof FilterState) {
     onFiltersChange({ ...filters, [key]: "" });
   }
-
   function clearAll() {
     onFiltersChange(EMPTY_FILTERS);
   }
@@ -339,52 +307,30 @@ export default function FilterBar({ filters, onFiltersChange }: FilterBarProps) 
     <>
       <style>{`
         @keyframes filterDropIn {
-          from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-          to   { opacity: 1; transform: translateY(0)   scale(1); }
+          from { opacity: 0; transform: translateY(-5px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0)   scale(1);    }
         }
-        .filter-bar-scroll::-webkit-scrollbar { display: none; }
-        .filter-bar-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .filter-pill-scroll::-webkit-scrollbar { display: none; }
+        .filter-pill-scroll { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
-      <div
-        style={{
-          background: "linear-gradient(180deg, rgba(26,22,18,0.97) 0%, rgba(30,26,20,0.95) 100%)",
-          borderBottom: "1px solid rgba(197,160,89,0.12)",
-          padding: "10px 20px",
-          position: "sticky",
-          top: 0,
-          zIndex: 200,
-          backdropFilter: "blur(12px)",
-        }}
-      >
+      {/* Centered row of filter pills — sits inside the hero banner */}
+      <div style={{ marginTop: "14px", maxWidth: "720px", margin: "14px auto 0" }}>
+        {/* Divider line */}
+        <div style={{ borderTop: "1px solid rgba(197,160,89,0.13)", marginBottom: "12px" }} />
+
         <div
-          className="filter-bar-scroll"
+          className="filter-pill-scroll"
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            overflowX: "auto",
-            maxWidth: "1200px",
-            margin: "0 auto",
+            display:        "flex",
+            alignItems:     "center",
+            justifyContent: "center",
+            gap:            "8px",
+            overflowX:      "auto",
+            flexWrap:       "wrap",
+            rowGap:         "6px",
           }}
         >
-          {/* Label */}
-          <span style={{
-            fontSize: "0.62rem",
-            color: "rgba(197,160,89,0.55)",
-            fontWeight: 700,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            whiteSpace: "nowrap",
-            flexShrink: 0,
-            fontFamily: "'Inter', sans-serif",
-          }}>
-            فلترة
-          </span>
-
-          <div style={{ width: "1px", height: "18px", background: "rgba(197,160,89,0.15)", flexShrink: 0 }} />
-
-          {/* Filter dropdowns */}
           {FILTER_DEFS.map((def) => (
             <FilterDropdown
               key={def.key}
@@ -396,45 +342,53 @@ export default function FilterBar({ filters, onFiltersChange }: FilterBarProps) 
             />
           ))}
 
-          {/* Clear all button — shown only when any filter is active */}
+          {/* Clear-all — only when filters are active */}
           {activeCount > 0 && (
-            <>
-              <div style={{ width: "1px", height: "18px", background: "rgba(197,160,89,0.15)", flexShrink: 0 }} />
-              <button
-                onClick={clearAll}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "5px",
-                  padding: "7px 12px",
-                  borderRadius: "9px",
-                  border: "1.5px solid rgba(231,76,60,0.35)",
-                  background: "rgba(231,76,60,0.08)",
-                  color: "rgba(231,76,60,0.8)",
-                  fontSize: "0.68rem",
-                  fontWeight: 700,
-                  fontFamily: "Tajawal, sans-serif",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                  transition: "all 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(231,76,60,0.16)";
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(231,76,60,0.6)";
-                  (e.currentTarget as HTMLButtonElement).style.color = "rgba(231,76,60,1)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background = "rgba(231,76,60,0.08)";
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(231,76,60,0.35)";
-                  (e.currentTarget as HTMLButtonElement).style.color = "rgba(231,76,60,0.8)";
-                }}
-              >
-                <X size={10} />
-                مسح الكل ({activeCount})
-              </button>
-            </>
+            <button
+              onClick={clearAll}
+              style={{
+                display:      "flex",
+                alignItems:   "center",
+                gap:          "5px",
+                padding:      "7px 13px",
+                borderRadius: "20px",
+                border:       "1.5px solid rgba(231,76,60,0.4)",
+                background:   "rgba(231,76,60,0.10)",
+                color:        "rgba(231,76,60,0.85)",
+                fontSize:     "0.68rem",
+                fontWeight:   700,
+                fontFamily:   "Tajawal, sans-serif",
+                cursor:       "pointer",
+                whiteSpace:   "nowrap",
+                flexShrink:   0,
+                transition:   "all 0.15s",
+              }}
+              onMouseEnter={(e) => {
+                const b = e.currentTarget as HTMLButtonElement;
+                b.style.background   = "rgba(231,76,60,0.20)";
+                b.style.borderColor  = "rgba(231,76,60,0.7)";
+                b.style.color        = "rgba(231,76,60,1)";
+              }}
+              onMouseLeave={(e) => {
+                const b = e.currentTarget as HTMLButtonElement;
+                b.style.background   = "rgba(231,76,60,0.10)";
+                b.style.borderColor  = "rgba(231,76,60,0.4)";
+                b.style.color        = "rgba(231,76,60,0.85)";
+              }}
+            >
+              <X size={10} />
+              مسح الكل ({activeCount})
+            </button>
           )}
+        </div>
+
+        {/* Hint text */}
+        <div style={{ textAlign: "center", marginTop: "8px" }}>
+          <span style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.22)", letterSpacing: "0.04em", fontFamily: "Tajawal, sans-serif" }}>
+            {activeCount > 0
+              ? `${activeCount} فلتر نشط — النتائج تتحدث تلقائياً`
+              : "اختر فلتراً لتضييق نطاق البحث"}
+          </span>
         </div>
       </div>
     </>
