@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { ROLES, type ContractTab } from "./types";
+import NotificationBell from "./NotificationBell";
+import type { StoredNotification } from "./useContractNotifications";
 
 const GOLD       = "#C5A059";
 const GOLD2      = "#a88540";
@@ -18,6 +20,12 @@ interface Props {
   onRoleChange: (role: string) => void;
   onNameChange: (name: string) => void;
   pendingByRole: Record<string, number>;
+  notifications: StoredNotification[];
+  unreadCount: number;
+  onMarkAllRead: () => void;
+  onDismissOne: (id: string) => void;
+  onDismissAll: () => void;
+  onOpenContract: (id: number) => void;
 }
 
 const TABS: { id: ContractTab; label: string; icon: string }[] = [
@@ -31,6 +39,7 @@ const TABS: { id: ContractTab; label: string; icon: string }[] = [
 export default function ContractSidebar({
   activeTab, onTabChange, pendingCount, onExit,
   role, actorName, onRoleChange, onNameChange, pendingByRole,
+  notifications, unreadCount, onMarkAllRead, onDismissOne, onDismissAll, onOpenContract,
 }: Props) {
   const [nameEditing, setNameEditing] = useState(false);
   const myRoleInfo = ROLES.find(r => r.name === role);
@@ -59,12 +68,20 @@ export default function ContractSidebar({
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: "1.2rem", boxShadow: `0 4px 14px rgba(197,160,89,0.4)`, flexShrink: 0,
           }}>🏛️</div>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: "0.7rem", fontWeight: 900, color: "#1A1A1A", lineHeight: 1.2 }}>
               نظام إدارة العقود
             </div>
             <div style={{ fontSize: "0.58rem", color: "#9b8060" }}>الرواف للمقاولات</div>
           </div>
+          <NotificationBell
+            notifications={notifications}
+            unreadCount={unreadCount}
+            onMarkAllRead={onMarkAllRead}
+            onDismissOne={onDismissOne}
+            onDismissAll={onDismissAll}
+            onOpenContract={onOpenContract}
+          />
         </div>
 
         {/* Role picker */}

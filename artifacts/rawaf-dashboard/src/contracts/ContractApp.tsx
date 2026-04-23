@@ -58,7 +58,12 @@ export default function ContractApp({ onExit }: Props) {
     listContracts().then(setContracts).catch(() => {});
   }, []);
 
-  useContractNotifications({ role, actorName, enabled: !!role, onNewActivity: refreshContracts });
+  const { notifications, unreadCount, markAllRead, dismissOne, dismissAll } =
+    useContractNotifications({ role, actorName, enabled: !!role, onNewActivity: refreshContracts });
+
+  function handleOpenContractFromNotification(contractId: number) {
+    setOpenContractId(contractId);
+  }
 
   const myRoleInfo  = ROLES.find(r => r.name === role);
   const myPending   = contracts.filter(c =>
@@ -93,6 +98,12 @@ export default function ContractApp({ onExit }: Props) {
         onRoleChange={handleRoleChange}
         onNameChange={handleNameChange}
         pendingByRole={pendingByRole}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        onMarkAllRead={markAllRead}
+        onDismissOne={dismissOne}
+        onDismissAll={dismissAll}
+        onOpenContract={handleOpenContractFromNotification}
       />
 
       <Toaster
