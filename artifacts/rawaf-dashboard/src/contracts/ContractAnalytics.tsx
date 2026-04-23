@@ -137,6 +137,33 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
   const review = contracts.filter(c => c.status === "active" && c.currentStage >= 1 && c.currentStage <= 7).length;
   const signed = contracts.filter(c => c.status === "completed").length;
 
+  function buildFilterSummary(): string {
+    const parts: string[] = [];
+    const presetLabels: Record<DatePreset, string> = {
+      all: "",
+      thisMonth: "هذا الشهر",
+      thisQuarter: "هذا الربع",
+      thisYear: "هذه السنة",
+      custom: "",
+    };
+    if (datePreset !== "all") {
+      if (datePreset === "custom") {
+        const fmt = (d: string) =>
+          d ? new Date(d).toLocaleDateString("ar-SA", { year: "numeric", month: "short", day: "numeric" }) : "";
+        const from = fmt(customDateFrom);
+        const to   = fmt(customDateTo);
+        if (from || to) parts.push(`${from} — ${to}`.trim());
+      } else {
+        parts.push(presetLabels[datePreset]);
+      }
+    }
+    if (valueMin) parts.push(`من ${parseInt(valueMin, 10).toLocaleString("ar-SA")} ر.س`);
+    if (valueMax) parts.push(`حتى ${parseInt(valueMax, 10).toLocaleString("ar-SA")} ر.س`);
+    if (contractType) parts.push(contractType);
+    if (vendorName)   parts.push(vendorName);
+    return parts.length > 0 ? parts.join(" • ") : "";
+  }
+
   function handleExportPDF() {
     const style = document.createElement("style");
     style.id = "print-analytics-style";
@@ -152,11 +179,17 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
     if (printRef.current) {
       printRef.current.id = "analytics-print-root";
     }
-    window.print();
-    setTimeout(() => {
-      document.head.removeChild(style);
+    const originalTitle = document.title;
+    const filterSummary = buildFilterSummary();
+    document.title = filterSummary ? `تقرير الرواف — ${filterSummary}` : "تقرير الرواف";
+    function cleanup() {
+      document.title = originalTitle;
+      if (document.head.contains(style)) document.head.removeChild(style);
       if (printRef.current) printRef.current.removeAttribute("id");
-    }, 1000);
+      window.removeEventListener("afterprint", cleanup);
+    }
+    window.addEventListener("afterprint", cleanup);
+    window.print();
   }
 
   const kpiCards = [
