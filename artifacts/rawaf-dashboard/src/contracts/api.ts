@@ -15,10 +15,21 @@ async function apiFetch<T>(url: string, opts?: RequestInit): Promise<T> {
   return res.json();
 }
 
-export async function listContracts(params?: { status?: string; stage?: number }): Promise<Contract[]> {
+export interface AnalyticsFilters {
+  dateFrom?: string;
+  dateTo?: string;
+  valueMin?: number;
+  valueMax?: number;
+}
+
+export async function listContracts(params?: { status?: string; stage?: number } & AnalyticsFilters): Promise<Contract[]> {
   const qs = new URLSearchParams();
-  if (params?.status) qs.set("status", params.status);
-  if (params?.stage !== undefined) qs.set("stage", String(params.stage));
+  if (params?.status)              qs.set("status",   params.status);
+  if (params?.stage !== undefined) qs.set("stage",    String(params.stage));
+  if (params?.dateFrom)            qs.set("dateFrom", params.dateFrom);
+  if (params?.dateTo)              qs.set("dateTo",   params.dateTo);
+  if (params?.valueMin !== undefined) qs.set("valueMin", String(params.valueMin));
+  if (params?.valueMax !== undefined) qs.set("valueMax", String(params.valueMax));
   const q = qs.toString();
   return apiFetch<Contract[]>(`/contracts${q ? `?${q}` : ""}`);
 }
@@ -27,8 +38,14 @@ export async function getContract(id: number): Promise<Contract> {
   return apiFetch<Contract>(`/contracts/${id}`);
 }
 
-export async function getContractStats(): Promise<ContractStats> {
-  return apiFetch<ContractStats>("/contracts/stats");
+export async function getContractStats(params?: AnalyticsFilters): Promise<ContractStats> {
+  const qs = new URLSearchParams();
+  if (params?.dateFrom)            qs.set("dateFrom", params.dateFrom);
+  if (params?.dateTo)              qs.set("dateTo",   params.dateTo);
+  if (params?.valueMin !== undefined) qs.set("valueMin", String(params.valueMin));
+  if (params?.valueMax !== undefined) qs.set("valueMax", String(params.valueMax));
+  const q = qs.toString();
+  return apiFetch<ContractStats>(`/contracts/stats${q ? `?${q}` : ""}`);
 }
 
 export async function getContractAudit(id: number): Promise<StageLog[]> {
@@ -48,8 +65,12 @@ export interface ActivityEntry {
   title: string;
 }
 
-export async function getRecentActivity(): Promise<ActivityEntry[]> {
-  return apiFetch<ActivityEntry[]>("/contracts/activity");
+export async function getRecentActivity(params?: Pick<AnalyticsFilters, "dateFrom" | "dateTo">): Promise<ActivityEntry[]> {
+  const qs = new URLSearchParams();
+  if (params?.dateFrom) qs.set("dateFrom", params.dateFrom);
+  if (params?.dateTo)   qs.set("dateTo",   params.dateTo);
+  const q = qs.toString();
+  return apiFetch<ActivityEntry[]>(`/contracts/activity${q ? `?${q}` : ""}`);
 }
 
 export interface ContractDocument {

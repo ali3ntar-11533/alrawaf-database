@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, gte, lte } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db, contractsTable, contractStageLogTable, contractDocumentsTable } from "@workspace/db";
 
@@ -18,6 +18,63 @@ const STAGE_ROLES: Record<number, string[]> = {
   10: ["مسؤول التوقيعات"],
   11: ["مسؤول التوقيعات"],
 };
+
+interface FilterParams {
+  dateFrom?: Date;
+  dateTo?: Date;
+  valueMin?: number;
+  valueMax?: number;
+}
+
+function parseFilterParams(
+  query: { dateFrom?: string; dateTo?: string; valueMin?: string; valueMax?: string },
+  res: import("express").Response,
+): FilterParams | null {
+  const result: FilterParams = {};
+
+  if (query.dateFrom) {
+    const d = new Date(query.dateFrom);
+    if (isNaN(d.getTime())) {
+      res.status(400).json({ error: "قيمة dateFrom غير صالحة" });
+      return null;
+    }
+    result.dateFrom = d;
+  }
+  if (query.dateTo) {
+    const d = new Date(query.dateTo);
+    if (isNaN(d.getTime())) {
+      res.status(400).json({ error: "قيمة dateTo غير صالحة" });
+      return null;
+    }
+    result.dateTo = d;
+  }
+  if (query.valueMin !== undefined) {
+    const n = parseInt(query.valueMin, 10);
+    if (isNaN(n) || n < 0) {
+      res.status(400).json({ error: "قيمة valueMin غير صالحة" });
+      return null;
+    }
+    result.valueMin = n;
+  }
+  if (query.valueMax !== undefined) {
+    const n = parseInt(query.valueMax, 10);
+    if (isNaN(n) || n < 0) {
+      res.status(400).json({ error: "قيمة valueMax غير صالحة" });
+      return null;
+    }
+    result.valueMax = n;
+  }
+  return result;
+}
+
+function buildContractFilters(params: FilterParams) {
+  const filters = [];
+  if (params.dateFrom) filters.push(gte(contractsTable.createdAt, params.dateFrom));
+  if (params.dateTo)   filters.push(lte(contractsTable.createdAt, params.dateTo));
+  if (params.valueMin !== undefined) filters.push(gte(contractsTable.value, params.valueMin));
+  if (params.valueMax !== undefined) filters.push(lte(contractsTable.value, params.valueMax));
+  return filters;
+}
 
 function generateContractNo(id: number): string {
   const year = new Date().getFullYear();
@@ -59,8 +116,16 @@ const StageActionBody = z.object({
 });
 
 router.get("/contracts", async (req, res): Promise<void> => {
-  const { status, stage } = req.query as { status?: string; stage?: string };
-  const filters = [];
+  const { status, stage, dateFrom, dateTo, valueMin, valueMax } = req.query as {
+    status?: string; stage?: string;
+    dateFrom?: string; dateTo?: string;
+    valueMin?: string; valueMax?: string;
+  };
+
+  const fp = parseFilterParams({ dateFrom, dateTo, valueMin, valueMax }, res);
+  if (fp === null) return;
+
+  const filters = [...buildContractFilters(fp)];
   if (status) filters.push(eq(contractsTable.status, status));
   if (stage)  filters.push(eq(contractsTable.currentStage, parseInt(stage, 10)));
 
@@ -102,7 +167,15 @@ router.post("/contracts", async (req, res): Promise<void> => {
   res.status(201).json(serializeContract(updated));
 });
 
-router.get("/contracts/activity", async (_req, res): Promise<void> => {
+router.get("/contracts/activity", async (req, res): Promise<void> => {
+  const { dateFrom, dateTo } = req.query as { dateFrom?: string; dateTo?: string };
+  const fp = parseFilterParams({ dateFrom, dateTo }, res);
+  if (fp === null) return;
+
+  const filters = [];
+  if (fp.dateFrom) filters.push(gte(contractStageLogTable.createdAt, fp.dateFrom));
+  if (fp.dateTo)   filters.push(lte(contractStageLogTable.createdAt, fp.dateTo));
+
   const logs = await db
     .select({
       logId:        contractStageLogTable.id,
@@ -118,6 +191,7 @@ router.get("/contracts/activity", async (_req, res): Promise<void> => {
     })
     .from(contractStageLogTable)
     .innerJoin(contractsTable, eq(contractStageLogTable.contractId, contractsTable.id))
+    .where(filters.length > 0 ? and(...filters) : undefined)
     .orderBy(desc(contractStageLogTable.createdAt))
     .limit(10);
 
@@ -127,14 +201,25 @@ router.get("/contracts/activity", async (_req, res): Promise<void> => {
   })));
 });
 
-router.get("/contracts/stats", async (_req, res): Promise<void> => {
+router.get("/contracts/stats", async (req, res): Promise<void> => {
+  const { dateFrom, dateTo, valueMin, valueMax } = req.query as {
+    dateFrom?: string; dateTo?: string;
+    valueMin?: string; valueMax?: string;
+  };
+
+  const fp = parseFilterParams({ dateFrom, dateTo, valueMin, valueMax }, res);
+  if (fp === null) return;
+
+  const filters = buildContractFilters(fp);
+
   const [stats] = await db.select({
     total:      sql<string>`count(*)`,
     draft:      sql<string>`count(*) filter (where current_stage = 1 and status = 'active')`,
     inProgress: sql<string>`count(*) filter (where current_stage between 2 and 9 and status = 'active')`,
     approved:   sql<string>`count(*) filter (where current_stage >= 9 and status = 'active')`,
     completed:  sql<string>`count(*) filter (where status = 'completed')`,
-  }).from(contractsTable);
+  }).from(contractsTable)
+    .where(filters.length > 0 ? and(...filters) : undefined);
 
   res.json({
     total:      parseInt(stats?.total      ?? "0", 10),

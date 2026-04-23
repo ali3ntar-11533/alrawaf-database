@@ -4,7 +4,7 @@ import {
   PieChart, Pie, Cell, Legend,
 } from "recharts";
 import { listContracts, getContractStats, getRecentActivity } from "./api";
-import type { ActivityEntry } from "./api";
+import type { ActivityEntry, AnalyticsFilters } from "./api";
 import type { Contract, ContractStats } from "./types";
 import { STAGES, GOLD, GOLD_BG, GOLD_BORDER } from "./types";
 
@@ -43,6 +43,32 @@ function numberToArabic(n: number): string {
 
 const PIE_COLORS = [GREEN, GOLD, RED, "#3498db"];
 
+type DatePreset = "all" | "thisMonth" | "thisQuarter" | "thisYear" | "custom";
+
+function getPresetRange(preset: DatePreset, customFrom: string, customTo: string): { dateFrom?: string; dateTo?: string } {
+  const now = new Date();
+  if (preset === "thisMonth") {
+    const from = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { dateFrom: from.toISOString(), dateTo: now.toISOString() };
+  }
+  if (preset === "thisQuarter") {
+    const q = Math.floor(now.getMonth() / 3);
+    const from = new Date(now.getFullYear(), q * 3, 1);
+    return { dateFrom: from.toISOString(), dateTo: now.toISOString() };
+  }
+  if (preset === "thisYear") {
+    const from = new Date(now.getFullYear(), 0, 1);
+    return { dateFrom: from.toISOString(), dateTo: now.toISOString() };
+  }
+  if (preset === "custom") {
+    return {
+      dateFrom: customFrom ? new Date(customFrom).toISOString() : undefined,
+      dateTo:   customTo   ? new Date(customTo + "T23:59:59").toISOString() : undefined,
+    };
+  }
+  return {};
+}
+
 export default function ContractAnalytics({ onNavigateStage }: Props) {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [stats, setStats]         = useState<ContractStats | null>(null);
@@ -50,12 +76,25 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
   const [loading, setLoading]     = useState(true);
   const printRef = useRef<HTMLDivElement>(null);
 
+  const [datePreset, setDatePreset]     = useState<DatePreset>("all");
+  const [customDateFrom, setCustomFrom] = useState("");
+  const [customDateTo, setCustomTo]     = useState("");
+  const [valueMin, setValueMin]         = useState("");
+  const [valueMax, setValueMax]         = useState("");
+
   const load = useCallback(async () => {
+    const { dateFrom, dateTo } = getPresetRange(datePreset, customDateFrom, customDateTo);
+    const filters: AnalyticsFilters = {
+      dateFrom,
+      dateTo,
+      valueMin: valueMin ? parseInt(valueMin, 10) : undefined,
+      valueMax: valueMax ? parseInt(valueMax, 10) : undefined,
+    };
     try {
       const [c, s, a] = await Promise.all([
-        listContracts(),
-        getContractStats(),
-        getRecentActivity(),
+        listContracts(filters),
+        getContractStats(filters),
+        getRecentActivity({ dateFrom, dateTo }),
       ]);
       setContracts(c);
       setStats(s);
@@ -63,7 +102,7 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [datePreset, customDateFrom, customDateTo, valueMin, valueMax]);
 
   useEffect(() => {
     load();
@@ -175,7 +214,7 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
       `}</style>
 
       {/* ── Header ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <div>
           <h2 style={{ fontSize: "1.35rem", fontWeight: 900, color: "#1a1206", marginBottom: 4 }}>
             📊 لوحة التحليلات والتقارير
@@ -200,6 +239,138 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
           <span>📄</span>
           تصدير تقرير PDF
         </button>
+      </div>
+
+      {/* ── Filter Bar ── */}
+      <div className="no-print" style={{
+        background: "#fff", border: `1px solid ${GOLD_BORDER}`,
+        borderRadius: 12, padding: "14px 18px", marginBottom: 20,
+        boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          {/* Date preset buttons */}
+          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#8B6914", whiteSpace: "nowrap" }}>
+            📅 الفترة الزمنية:
+          </span>
+          {(["all", "thisMonth", "thisQuarter", "thisYear", "custom"] as DatePreset[]).map(preset => {
+            const labels: Record<DatePreset, string> = {
+              all: "الكل", thisMonth: "هذا الشهر",
+              thisQuarter: "هذا الربع", thisYear: "هذه السنة", custom: "مخصص",
+            };
+            const active = datePreset === preset;
+            return (
+              <button
+                key={preset}
+                onClick={() => setDatePreset(preset)}
+                style={{
+                  padding: "5px 12px", borderRadius: 7, border: `1px solid ${active ? GOLD : GOLD_BORDER}`,
+                  background: active ? `linear-gradient(135deg, ${GOLD}, ${GOLD2})` : GOLD_BG,
+                  color: active ? "#fff" : "#8B6914",
+                  fontSize: "0.72rem", fontWeight: 700,
+                  fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                  cursor: "pointer", transition: "all 0.15s",
+                  boxShadow: active ? "0 2px 8px rgba(197,160,89,0.35)" : "none",
+                }}
+              >
+                {labels[preset]}
+              </button>
+            );
+          })}
+
+          {/* Custom date pickers */}
+          {datePreset === "custom" && (
+            <>
+              <span style={{ fontSize: "0.7rem", color: "#9b8060", marginRight: 4 }}>من:</span>
+              <input
+                type="date"
+                value={customDateFrom}
+                onChange={e => setCustomFrom(e.target.value)}
+                style={{
+                  padding: "4px 8px", borderRadius: 7, border: `1px solid ${GOLD_BORDER}`,
+                  background: GOLD_BG, color: "#4a3520", fontSize: "0.72rem",
+                  fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                }}
+              />
+              <span style={{ fontSize: "0.7rem", color: "#9b8060" }}>إلى:</span>
+              <input
+                type="date"
+                value={customDateTo}
+                onChange={e => setCustomTo(e.target.value)}
+                style={{
+                  padding: "4px 8px", borderRadius: 7, border: `1px solid ${GOLD_BORDER}`,
+                  background: GOLD_BG, color: "#4a3520", fontSize: "0.72rem",
+                  fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                }}
+              />
+            </>
+          )}
+
+          {/* Value range */}
+          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#8B6914", marginRight: 8, whiteSpace: "nowrap" }}>
+            💰 القيمة (ر.س):
+          </span>
+          <input
+            type="number"
+            placeholder="الحد الأدنى"
+            value={valueMin}
+            onChange={e => setValueMin(e.target.value)}
+            min={0}
+            style={{
+              width: 110, padding: "4px 8px", borderRadius: 7, border: `1px solid ${GOLD_BORDER}`,
+              background: GOLD_BG, color: "#4a3520", fontSize: "0.72rem",
+              fontFamily: "'Cairo', 'Tajawal', sans-serif",
+            }}
+          />
+          <span style={{ fontSize: "0.7rem", color: "#9b8060" }}>—</span>
+          <input
+            type="number"
+            placeholder="الحد الأقصى"
+            value={valueMax}
+            onChange={e => setValueMax(e.target.value)}
+            min={0}
+            style={{
+              width: 110, padding: "4px 8px", borderRadius: 7, border: `1px solid ${GOLD_BORDER}`,
+              background: GOLD_BG, color: "#4a3520", fontSize: "0.72rem",
+              fontFamily: "'Cairo', 'Tajawal', sans-serif",
+            }}
+          />
+
+          {/* Reset button */}
+          {(datePreset !== "all" || valueMin || valueMax) && (
+            <button
+              onClick={() => {
+                setDatePreset("all");
+                setCustomFrom("");
+                setCustomTo("");
+                setValueMin("");
+                setValueMax("");
+              }}
+              style={{
+                padding: "5px 10px", borderRadius: 7,
+                border: "1px solid rgba(192,57,43,0.3)",
+                background: "rgba(192,57,43,0.07)",
+                color: "#c0392b", fontSize: "0.7rem", fontWeight: 700,
+                fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                cursor: "pointer",
+              }}
+            >
+              ✕ مسح الفلاتر
+            </button>
+          )}
+        </div>
+
+        {/* Active filter summary */}
+        {(datePreset !== "all" || valueMin || valueMax) && (
+          <div style={{ marginTop: 8, fontSize: "0.68rem", color: "#9b8060", display: "flex", gap: 12, flexWrap: "wrap" }}>
+            {datePreset !== "all" && (() => {
+              const { dateFrom, dateTo } = getPresetRange(datePreset, customDateFrom, customDateTo);
+              const fmt = (d?: string) => d ? new Date(d).toLocaleDateString("ar-SA", { year: "numeric", month: "short", day: "numeric" }) : "—";
+              return <span>📅 {fmt(dateFrom)} ← {fmt(dateTo)}</span>;
+            })()}
+            {valueMin && <span>💰 من {parseInt(valueMin).toLocaleString("ar-SA")} ر.س</span>}
+            {valueMax && <span>حتى {parseInt(valueMax).toLocaleString("ar-SA")} ر.س</span>}
+          </div>
+        )}
       </div>
 
       {/* ── KPI Cards ── */}
