@@ -3,7 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from "recharts";
-import { listContracts, getContractStats, getRecentActivity } from "./api";
+import { listContracts, getContractStats, getRecentActivity, getVendors } from "./api";
 import type { ActivityEntry, AnalyticsFilters } from "./api";
 import type { Contract, ContractStats } from "./types";
 import { STAGES, GOLD, GOLD_BG, GOLD_BORDER } from "./types";
@@ -95,6 +95,12 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
   const [contractType, setContractType] = useState("");
   const [vendorName, setVendorName]     = useState("");
 
+  const [vendors, setVendors]           = useState<string[]>([]);
+  const [vendorQuery, setVendorQuery]   = useState("");
+  const [showVendorDrop, setShowVendorDrop] = useState(false);
+  const vendorInputRef = useRef<HTMLInputElement>(null);
+  const vendorDropRef  = useRef<HTMLDivElement>(null);
+
   const load = useCallback(async () => {
     const { dateFrom, dateTo } = getPresetRange(datePreset, customDateFrom, customDateTo);
     const filters: AnalyticsFilters = {
@@ -124,6 +130,23 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
     const t = setInterval(load, 30000);
     return () => clearInterval(t);
   }, [load]);
+
+  useEffect(() => {
+    getVendors().then(setVendors).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        vendorInputRef.current && !vendorInputRef.current.contains(e.target as Node) &&
+        vendorDropRef.current  && !vendorDropRef.current.contains(e.target as Node)
+      ) {
+        setShowVendorDrop(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const stageData = STAGE_SHORT.map((name, i) => ({
     name,
@@ -427,21 +450,73 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
             <option value="مقاولات">مقاولات</option>
           </select>
 
-          {/* Vendor name text input */}
+          {/* Vendor autocomplete dropdown */}
           <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#8B6914", marginRight: 8, whiteSpace: "nowrap" }}>
             🏢 المورد:
           </span>
-          <input
-            type="text"
-            placeholder="اسم المورد..."
-            value={vendorName}
-            onChange={e => setVendorName(e.target.value)}
-            style={{
-              width: 140, padding: "4px 8px", borderRadius: 7, border: `1px solid ${GOLD_BORDER}`,
-              background: GOLD_BG, color: "#4a3520", fontSize: "0.72rem",
-              fontFamily: "'Cairo', 'Tajawal', sans-serif",
-            }}
-          />
+          <div style={{ position: "relative" }}>
+            <input
+              ref={vendorInputRef}
+              type="text"
+              placeholder="ابحث عن المورد..."
+              value={vendorQuery}
+              onChange={e => {
+                setVendorQuery(e.target.value);
+                setVendorName(e.target.value);
+                setShowVendorDrop(true);
+              }}
+              onFocus={() => setShowVendorDrop(true)}
+              style={{
+                width: 150, padding: "4px 8px", borderRadius: 7,
+                border: `1px solid ${vendorName ? GOLD : GOLD_BORDER}`,
+                background: GOLD_BG, color: "#4a3520", fontSize: "0.72rem",
+                fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                outline: "none",
+              }}
+            />
+            {showVendorDrop && (() => {
+              const q = vendorQuery.trim().toLowerCase();
+              const filtered = vendors.filter(v => !q || v.toLowerCase().includes(q));
+              if (filtered.length === 0) return null;
+              return (
+                <div
+                  ref={vendorDropRef}
+                  style={{
+                    position: "absolute", top: "calc(100% + 4px)", right: 0,
+                    minWidth: 190, maxHeight: 200, overflowY: "auto",
+                    background: "#fff", border: `1px solid ${GOLD_BORDER}`,
+                    borderRadius: 8, boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+                    zIndex: 1000,
+                  }}
+                >
+                  {filtered.map(v => (
+                    <div
+                      key={v}
+                      onMouseDown={e => {
+                        e.preventDefault();
+                        setVendorName(v);
+                        setVendorQuery(v);
+                        setShowVendorDrop(false);
+                      }}
+                      style={{
+                        padding: "7px 12px", fontSize: "0.75rem",
+                        fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                        color: "#4a3520", cursor: "pointer",
+                        borderBottom: `1px solid ${GOLD_BORDER}`,
+                        background: vendorName === v ? GOLD_BG : "#fff",
+                        fontWeight: vendorName === v ? 700 : 400,
+                        transition: "background 0.1s",
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = GOLD_BG)}
+                      onMouseLeave={e => (e.currentTarget.style.background = vendorName === v ? GOLD_BG : "#fff")}
+                    >
+                      {v}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
 
           {/* Reset button */}
           {(datePreset !== "all" || valueMin || valueMax || contractType || vendorName) && (
@@ -454,6 +529,7 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
                 setValueMax("");
                 setContractType("");
                 setVendorName("");
+                setVendorQuery("");
               }}
               style={{
                 padding: "5px 10px", borderRadius: 7,

@@ -174,6 +174,15 @@ router.post("/contracts", async (req, res): Promise<void> => {
   res.status(201).json(serializeContract(updated));
 });
 
+router.get("/contracts/vendors", async (req, res): Promise<void> => {
+  const rows = await db
+    .selectDistinct({ vendorName: contractsTable.vendorName })
+    .from(contractsTable)
+    .orderBy(contractsTable.vendorName);
+  const names = rows.map(r => r.vendorName).filter(Boolean);
+  res.json(names);
+});
+
 router.get("/contracts/activity", async (req, res): Promise<void> => {
   const { dateFrom, dateTo, contractType, vendorName } = req.query as { dateFrom?: string; dateTo?: string; contractType?: string; vendorName?: string };
   const fp = parseFilterParams({ dateFrom, dateTo, contractType, vendorName }, res);

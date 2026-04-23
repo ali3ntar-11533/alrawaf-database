@@ -160,3 +160,7 @@ export async function addContractComment(id: number, payload: AddCommentPayload)
     body: JSON.stringify(payload),
   });
 }
+
+export async function getVendors(): Promise<string[]> {
+  return apiFetch<string[]>("/contracts/vendors");
+}
