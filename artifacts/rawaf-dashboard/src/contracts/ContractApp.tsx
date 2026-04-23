@@ -6,7 +6,7 @@ import ContractDetail from "./ContractDetail";
 import ContractTracking from "./ContractTracking";
 import ContractArchive from "./ContractArchive";
 import ContractAnalytics from "./ContractAnalytics";
-import RoleSelector, { computePendingByRole } from "./RoleSelector";
+import { computePendingByRole } from "./RoleSelector";
 import { ROLES, type ContractTab } from "./types";
 import type { Contract } from "./types";
 import { listContracts } from "./api";
@@ -19,24 +19,24 @@ interface Props {
 }
 
 export default function ContractApp({ onExit }: Props) {
-  const [role, setRole] = useState(() => sessionStorage.getItem(ROLE_KEY) ?? "");
+  const [role, setRole]           = useState(() => sessionStorage.getItem(ROLE_KEY) ?? "");
   const [actorName, setActorName] = useState(() => sessionStorage.getItem(NAME_KEY) ?? "");
   const [activeTab, setActiveTab] = useState<ContractTab>("dashboard");
   const [openContractId, setOpenContractId] = useState<number | null>(null);
   const [contracts, setContracts] = useState<Contract[]>([]);
-  const [loadingContracts, setLoadingContracts] = useState(false);
   const [filterStage, setFilterStage] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!role) return;
-    setLoadingContracts(true);
-    listContracts().then(setContracts).finally(() => setLoadingContracts(false));
-  }, [role, openContractId, activeTab]);
+    listContracts().then(setContracts);
+  }, [openContractId, activeTab]);
 
-  function handleRoleSelect(selectedRole: string, name: string) {
-    setRole(selectedRole);
+  function handleRoleChange(newRole: string) {
+    setRole(newRole);
+    sessionStorage.setItem(ROLE_KEY, newRole);
+  }
+
+  function handleNameChange(name: string) {
     setActorName(name);
-    sessionStorage.setItem(ROLE_KEY, selectedRole);
     sessionStorage.setItem(NAME_KEY, name);
   }
 
@@ -46,21 +46,12 @@ export default function ContractApp({ onExit }: Props) {
     onExit();
   }
 
-  const pendingByRole = computePendingByRole(contracts);
-  const myRoleInfo = ROLES.find(r => r.name === role);
-  const myPending = contracts.filter(c =>
+  const myRoleInfo  = ROLES.find(r => r.name === role);
+  const myPending   = contracts.filter(c =>
     c.status !== "completed" && myRoleInfo?.stage.includes(c.currentStage)
   );
-  const pendingCount = myPending.length;
-
-  if (!role) {
-    return (
-      <RoleSelector
-        onSelect={handleRoleSelect}
-        pendingByRole={pendingByRole}
-      />
-    );
-  }
+  const pendingCount    = myPending.length;
+  const pendingByRole   = computePendingByRole(contracts);
 
   return (
     <div
@@ -68,7 +59,7 @@ export default function ContractApp({ onExit }: Props) {
       style={{
         position: "fixed", inset: 0, zIndex: 9000,
         display: "flex", flexDirection: "row",
-        background: "#f5f3ee",
+        background: "#F9F9F9",
         fontFamily: "'Cairo', 'Tajawal', sans-serif",
         overflowX: "hidden",
       }}
@@ -83,7 +74,11 @@ export default function ContractApp({ onExit }: Props) {
         onTabChange={(tab) => { setActiveTab(tab); setOpenContractId(null); if (tab !== "requests") setFilterStage(null); }}
         pendingCount={pendingCount}
         onExit={handleExit}
-        roleName={role}
+        role={role}
+        actorName={actorName}
+        onRoleChange={handleRoleChange}
+        onNameChange={handleNameChange}
+        pendingByRole={pendingByRole}
       />
 
       <div style={{ flex: 1, overflowY: "auto", minWidth: 0 }}>
@@ -96,7 +91,9 @@ export default function ContractApp({ onExit }: Props) {
           />
         ) : activeTab === "dashboard" ? (
           <ContractDashboard
-            roleName={role}
+            role={role}
+            actorName={actorName}
+            contracts={contracts}
             pendingContracts={myPending}
             onOpenContract={setOpenContractId}
           />

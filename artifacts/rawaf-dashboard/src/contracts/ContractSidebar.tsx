@@ -1,25 +1,37 @@
-import { GOLD, GOLD_BG, GOLD_BORDER, type ContractTab } from "./types";
+import { useState } from "react";
+import { ROLES, GOLD, GOLD_BG, GOLD_BORDER, type ContractTab } from "./types";
 
 interface Props {
   activeTab: ContractTab;
   onTabChange: (tab: ContractTab) => void;
   pendingCount: number;
   onExit: () => void;
-  roleName: string;
+  role: string;
+  actorName: string;
+  onRoleChange: (role: string) => void;
+  onNameChange: (name: string) => void;
+  pendingByRole: Record<string, number>;
 }
 
 const TABS: { id: ContractTab; label: string; icon: string }[] = [
-  { id: "dashboard",  label: "الرئيسية",                icon: "🏠" },
+  { id: "dashboard",  label: "لوحة التحكم",             icon: "🏠" },
   { id: "requests",   label: "طلبات العقود",             icon: "📋" },
   { id: "tracking",   label: "نظام متابعة العقود",       icon: "🛡️" },
   { id: "analytics",  label: "التحليلات والتقارير",      icon: "📊" },
   { id: "archive",    label: "قاعدة البيانات",           icon: "💾" },
 ];
 
-export default function ContractSidebar({ activeTab, onTabChange, pendingCount, onExit, roleName }: Props) {
+export default function ContractSidebar({
+  activeTab, onTabChange, pendingCount, onExit,
+  role, actorName, onRoleChange, onNameChange, pendingByRole,
+}: Props) {
+  const [nameEditing, setNameEditing] = useState(false);
+
+  const myRoleInfo = ROLES.find(r => r.name === role);
+
   return (
     <div dir="rtl" style={{
-      width: 220, flexShrink: 0,
+      width: 230, flexShrink: 0,
       background: "#fff",
       borderLeft: `1px solid ${GOLD_BORDER}`,
       display: "flex", flexDirection: "column",
@@ -27,44 +39,129 @@ export default function ContractSidebar({ activeTab, onTabChange, pendingCount, 
       fontFamily: "'Cairo', 'Tajawal', sans-serif",
       boxShadow: "2px 0 12px rgba(0,0,0,0.04)",
     }}>
+
+      {/* ── Logo ── */}
       <div style={{
-        padding: "20px 16px 16px",
+        padding: "18px 14px 14px",
         borderBottom: `1px solid ${GOLD_BORDER}`,
-        background: "linear-gradient(135deg, #faf9f5, #f5f0e8)",
+        background: "linear-gradient(135deg, #1a1206, #2a2015)",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
           <div style={{
-            width: 38, height: 38, borderRadius: 10,
+            width: 40, height: 40, borderRadius: 11,
             background: `linear-gradient(135deg, ${GOLD}, #a88540)`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "1.1rem", boxShadow: "0 3px 10px rgba(197,160,89,0.4)",
+            fontSize: "1.2rem", boxShadow: "0 3px 12px rgba(197,160,89,0.45)",
+            flexShrink: 0,
           }}>🏛️</div>
           <div>
-            <div style={{ fontSize: "0.72rem", fontWeight: 900, color: "#1a1206", lineHeight: 1.2 }}>
+            <div style={{ fontSize: "0.72rem", fontWeight: 900, color: "#fff", lineHeight: 1.2 }}>
               نظام إدارة العقود
             </div>
-            <div style={{ fontSize: "0.58rem", color: "#9b8060" }}>الرواف للمقاولات</div>
+            <div style={{ fontSize: "0.58rem", color: "rgba(197,160,89,0.7)" }}>الرواف للمقاولات</div>
           </div>
         </div>
-        <div style={{
-          background: GOLD_BG, border: `1px solid ${GOLD_BORDER}`,
-          borderRadius: 8, padding: "6px 10px",
-          fontSize: "0.68rem", color: "#8B6914", fontWeight: 700,
-          display: "flex", alignItems: "center", gap: 6,
-        }}>
-          <span>👤</span>
-          <span>{roleName}</span>
-          {pendingCount > 0 && (
+
+        {/* ── Role Picker ── */}
+        <div>
+          <div style={{ fontSize: "0.58rem", fontWeight: 700, color: "rgba(197,160,89,0.7)", marginBottom: 5, letterSpacing: "0.04em" }}>
+            الدور الوظيفي
+          </div>
+          <div style={{ position: "relative" }}>
+            <select
+              value={role}
+              onChange={e => onRoleChange(e.target.value)}
+              style={{
+                width: "100%", padding: "8px 10px",
+                borderRadius: 8,
+                border: role ? `1.5px solid rgba(197,160,89,0.5)` : "1.5px solid rgba(255,255,255,0.15)",
+                background: role ? "rgba(197,160,89,0.15)" : "rgba(255,255,255,0.07)",
+                color: role ? "#e8c96a" : "rgba(255,255,255,0.5)",
+                fontSize: "0.72rem", fontWeight: 700,
+                fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                appearance: "none", cursor: "pointer",
+                outline: "none",
+              }}
+            >
+              <option value="" style={{ background: "#1a1206", color: "#9b8060" }}>
+                — اختر دورك الوظيفي —
+              </option>
+              {ROLES.map(r => {
+                const pending = pendingByRole[r.name] ?? 0;
+                return (
+                  <option key={r.name} value={r.name} style={{ background: "#1a1206", color: "#e8c96a" }}>
+                    {r.icon} {r.name}{pending > 0 ? ` (${pending})` : ""}
+                  </option>
+                );
+              })}
+            </select>
             <span style={{
-              marginRight: "auto", background: "#e74c3c", color: "#fff",
-              borderRadius: "50%", width: 18, height: 18,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "0.6rem", fontWeight: 800,
-            }}>{pendingCount}</span>
+              position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)",
+              color: "rgba(197,160,89,0.6)", fontSize: "0.6rem", pointerEvents: "none",
+            }}>▾</span>
+          </div>
+
+          {role && (
+            <div style={{ marginTop: 6 }}>
+              {nameEditing || !actorName ? (
+                <input
+                  autoFocus
+                  value={actorName}
+                  onChange={e => onNameChange(e.target.value)}
+                  onBlur={() => setNameEditing(false)}
+                  placeholder="اسمك الكامل (للسجلات)"
+                  style={{
+                    width: "100%", padding: "7px 10px",
+                    borderRadius: 7, border: "1.5px solid rgba(197,160,89,0.4)",
+                    background: "rgba(255,255,255,0.07)", color: "#fff",
+                    fontSize: "0.68rem", fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                    outline: "none", boxSizing: "border-box",
+                  }}
+                />
+              ) : (
+                <div
+                  onClick={() => setNameEditing(true)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    padding: "6px 10px", borderRadius: 7,
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    cursor: "pointer",
+                  }}
+                >
+                  <span style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.5)" }}>👤</span>
+                  <span style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.8)", flex: 1 }}>{actorName}</span>
+                  <span style={{ fontSize: "0.55rem", color: "rgba(197,160,89,0.6)" }}>✏️</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {role && myRoleInfo && (
+            <div style={{
+              marginTop: 6, display: "flex", alignItems: "center", gap: 6,
+              padding: "4px 8px", borderRadius: 6,
+              background: "rgba(197,160,89,0.12)",
+            }}>
+              <span style={{ fontSize: "0.7rem" }}>{myRoleInfo.icon}</span>
+              <span style={{ fontSize: "0.6rem", color: "rgba(197,160,89,0.8)" }}>
+                مرحلة {myRoleInfo.stage.join("، ")}
+              </span>
+              {pendingCount > 0 && (
+                <span style={{
+                  marginRight: "auto",
+                  background: "#e74c3c", color: "#fff",
+                  borderRadius: "50%", width: 16, height: 16,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "0.55rem", fontWeight: 800,
+                }}>{pendingCount}</span>
+              )}
+            </div>
           )}
         </div>
       </div>
 
+      {/* ── Navigation ── */}
       <nav style={{ flex: 1, padding: "12px 10px", display: "flex", flexDirection: "column", gap: 4 }}>
         {TABS.map(tab => {
           const isActive = activeTab === tab.id;
@@ -101,7 +198,22 @@ export default function ContractSidebar({ activeTab, onTabChange, pendingCount, 
         })}
       </nav>
 
+      {/* ── Footer ── */}
       <div style={{ padding: "12px 10px", borderTop: `1px solid ${GOLD_BORDER}` }}>
+        {role && (
+          <button
+            onClick={() => onRoleChange("")}
+            style={{
+              width: "100%", padding: "7px", borderRadius: 8,
+              border: "1px solid rgba(231,76,60,0.25)", background: "rgba(231,76,60,0.05)",
+              cursor: "pointer", fontSize: "0.68rem", color: "#c0392b",
+              fontFamily: "'Cairo', 'Tajawal', sans-serif", marginBottom: 8,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+            }}
+          >
+            🔄 تغيير الدور
+          </button>
+        )}
         <button
           onClick={onExit}
           style={{
