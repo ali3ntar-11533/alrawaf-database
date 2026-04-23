@@ -34,7 +34,6 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
         {/* Logo + Title */}
         <div className="animate-slide-in" style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          {/* ── Clickable Logo — dispatches rawaf-logout event ── */}
           <div
             onClick={handleLogoClick}
             onMouseEnter={() => setLogoHover(true)}
@@ -61,7 +60,6 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
               alt="شركة الرواف للمقاولات — اضغط للخروج"
               style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "7px" }}
             />
-            {/* Logout hint tooltip that appears on hover */}
             {logoHover && (
               <div style={{
                 position: "absolute",
@@ -132,8 +130,9 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
           }}
         >
           {([
-            { key: "main" as TabType,     label: "لوحة التنسيق الفني" },
-            { key: "database" as TabType, label: "قاعدة البيانات" },
+            { key: "main" as TabType,      label: "لوحة التنسيق الفني" },
+            { key: "database" as TabType,  label: "قاعدة البيانات" },
+            { key: "contracts" as TabType, label: "🏛️ منصة العقود" },
           ]).map((tab) => (
             <span
               key={tab.key}
@@ -146,7 +145,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
         </nav>
       </div>
 
-      {/* ── Unified Search Bar ── */}
+      {/* ── Search + Filters (hidden on contracts tab) ── */}
       <div style={{ marginTop: "22px" }}>
         <div
           style={{
