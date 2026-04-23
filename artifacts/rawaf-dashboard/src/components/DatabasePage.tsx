@@ -223,6 +223,11 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
 
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
+  const [editError, setEditError]     = useState<string | null>(null);
+  const [addError, setAddError]       = useState<string | null>(null);
+  const [cloneError, setCloneError]   = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   useEffect(() => {
     if (sessionStorage.getItem(SESSION_KEY) !== "1" && authenticated) {
       setAuthenticated(false);
@@ -342,10 +347,13 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
     e.preventDefault();
     if (!editRow) return;
     setIsSaving(true);
+    setEditError(null);
     try {
       await updateContractor(editRow.id, buildPutData(editForm, editRating));
       refetch();
       setEditRow(null);
+    } catch {
+      setEditError("تعذّر حفظ التعديلات. تحقق من اتصال الشبكة وأعد المحاولة.");
     } finally {
       setIsSaving(false);
     }
@@ -354,12 +362,15 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
   async function handleAddSubmit(e: React.FormEvent) {
     e.preventDefault();
     setIsSaving(true);
+    setAddError(null);
     try {
       await createContractor(buildPutData(addForm, addRating));
       refetch();
       setAddForm(EMPTY_FORM);
       setAddRating(0);
       setShowAddForm(false);
+    } catch {
+      setAddError("تعذّر إضافة السجل. تحقق من اتصال الشبكة وأعد المحاولة.");
     } finally {
       setIsSaving(false);
     }
@@ -369,6 +380,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
     e.preventDefault();
     if (!cloneSource) return;
     setIsSaving(true);
+    setCloneError(null);
     try {
       const baseForm = contractorToForm(cloneSource);
       await createContractor(
@@ -379,6 +391,8 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
       );
       refetch();
       setCloneSource(null);
+    } catch {
+      setCloneError("تعذّر حفظ السجل الجديد. تحقق من اتصال الشبكة وأعد المحاولة.");
     } finally {
       setIsSaving(false);
     }
@@ -386,10 +400,13 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
 
   async function handleDelete(id: number) {
     setIsSaving(true);
+    setDeleteError(null);
     try {
       await deleteContractor(id);
       refetch();
       setDeleteConfirm(null);
+    } catch {
+      setDeleteError("تعذّر حذف السجل. تحقق من اتصال الشبكة وأعد المحاولة.");
     } finally {
       setIsSaving(false);
     }
@@ -601,13 +618,18 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
 
       {/* ── Delete Confirm ── */}
       {deleteConfirm !== null && (
-        <div style={overlayStyle} onClick={() => setDeleteConfirm(null)}>
+        <div style={overlayStyle} onClick={() => { setDeleteConfirm(null); setDeleteError(null); }}>
           <div className="card animate-fade-up" style={{ maxWidth: "360px", width: "100%", padding: "28px", textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
             <Trash2 size={32} style={{ color: "#e74c3c", margin: "0 auto 12px" }} />
             <h3 style={{ ...modalTitleStyle, marginBottom: "8px" }}>تأكيد الحذف</h3>
             <p style={{ fontSize: "0.8rem", color: "#888", marginBottom: "20px" }}>هذا الإجراء لا يمكن التراجع عنه. هل أنت متأكد؟</p>
+            {deleteError && (
+              <div style={{ background: "rgba(231,76,60,0.08)", border: "1px solid rgba(231,76,60,0.3)", borderRadius: "8px", padding: "10px 14px", marginBottom: "16px", fontSize: "0.78rem", color: "#c0392b", textAlign: "right" }}>
+                ⚠️ {deleteError}
+              </div>
+            )}
             <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={() => setDeleteConfirm(null)} style={cancelBtnStyle}>إلغاء</button>
+              <button onClick={() => { setDeleteConfirm(null); setDeleteError(null); }} style={cancelBtnStyle}>إلغاء</button>
               <button onClick={() => handleDelete(deleteConfirm)} disabled={isSaving}
                 style={{ flex: 1, background: "linear-gradient(135deg, #e74c3c, #c0392b)", color: "#fff", border: "none", borderRadius: "10px", padding: "12px", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}>
                 {isSaving ? "جاري الحذف..." : "تأكيد الحذف"}
@@ -619,11 +641,16 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
 
       {/* ── Edit Modal ── */}
       {editRow && (
-        <div style={overlayStyle} onClick={() => setEditRow(null)}>
+        <div style={overlayStyle} onClick={() => { setEditRow(null); setEditError(null); }}>
           <div className="card animate-fade-up" style={modalStyle} onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setEditRow(null)} style={closeBtnStyle}><X size={16} /></button>
+            <button onClick={() => { setEditRow(null); setEditError(null); }} style={closeBtnStyle}><X size={16} /></button>
             <h3 style={modalTitleStyle}>تعديل بيانات: {editRow.contractor}</h3>
             <p style={{ fontSize: "0.72rem", color: "#aaa", marginBottom: "20px" }}>جميع الحقول اختيارية — عدّل ما تحتاجه ثم احفظ</p>
+            {editError && (
+              <div style={{ background: "rgba(231,76,60,0.08)", border: "1px solid rgba(231,76,60,0.3)", borderRadius: "8px", padding: "10px 14px", marginBottom: "16px", fontSize: "0.78rem", color: "#c0392b" }}>
+                ⚠️ {editError}
+              </div>
+            )}
             <form onSubmit={handleEditSubmit}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
                 {FORM_FIELDS.map((f) => (
@@ -648,7 +675,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                 </div>
               </div>
               <div style={{ display: "flex", gap: "10px" }}>
-                <button type="button" onClick={() => setEditRow(null)} style={cancelBtnStyle}>إلغاء</button>
+                <button type="button" onClick={() => { setEditRow(null); setEditError(null); }} style={cancelBtnStyle}>إلغاء</button>
                 <button type="submit" disabled={isSaving} style={submitBtnStyle}>
                   {isSaving ? "جاري الحفظ..." : "حفظ التعديلات"}
                 </button>
@@ -660,11 +687,16 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
 
       {/* ── Add Modal ── */}
       {showAddForm && (
-        <div style={overlayStyle} onClick={() => setShowAddForm(false)}>
+        <div style={overlayStyle} onClick={() => { setShowAddForm(false); setAddError(null); }}>
           <div className="card animate-fade-up" style={modalStyle} onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setShowAddForm(false)} style={closeBtnStyle}><X size={16} /></button>
+            <button onClick={() => { setShowAddForm(false); setAddError(null); }} style={closeBtnStyle}><X size={16} /></button>
             <h3 style={modalTitleStyle}>إضافة سجل جديد</h3>
             <p style={{ fontSize: "0.72rem", color: "#aaa", marginBottom: "20px" }}>جميع الحقول اختيارية — أدخل المعلومات المتوفرة</p>
+            {addError && (
+              <div style={{ background: "rgba(231,76,60,0.08)", border: "1px solid rgba(231,76,60,0.3)", borderRadius: "8px", padding: "10px 14px", marginBottom: "16px", fontSize: "0.78rem", color: "#c0392b" }}>
+                ⚠️ {addError}
+              </div>
+            )}
             <form onSubmit={handleAddSubmit}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
                 {FORM_FIELDS.map((f) => (
@@ -689,7 +721,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                 </div>
               </div>
               <div style={{ display: "flex", gap: "10px" }}>
-                <button type="button" onClick={() => setShowAddForm(false)} style={cancelBtnStyle}>إلغاء</button>
+                <button type="button" onClick={() => { setShowAddForm(false); setAddError(null); }} style={cancelBtnStyle}>إلغاء</button>
                 <button type="submit" disabled={isSaving} style={submitBtnStyle}>
                   {isSaving ? "جاري الحفظ..." : "إضافة السجل"}
                 </button>
@@ -701,9 +733,9 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
 
       {/* ── Clone Modal ("+") ── */}
       {cloneSource && (
-        <div style={overlayStyle} onClick={() => setCloneSource(null)}>
+        <div style={overlayStyle} onClick={() => { setCloneSource(null); setCloneError(null); }}>
           <div className="card animate-fade-up" style={{ ...modalStyle, maxWidth: "560px" }} onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setCloneSource(null)} style={closeBtnStyle}><X size={16} /></button>
+            <button onClick={() => { setCloneSource(null); setCloneError(null); }} style={closeBtnStyle}><X size={16} /></button>
             <h3 style={modalTitleStyle}>إضافة بند جديد لنفس الشركة</h3>
             <p style={{ fontSize: "0.72rem", color: "#aaa", marginBottom: "18px" }}>
               سيتم نسخ بيانات الشركة كما هي — عدّل الوصف الفني والسعر فقط ثم احفظ كسجل جديد مستقل
@@ -730,6 +762,11 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
               </div>
             </div>
             {/* Editable fields */}
+            {cloneError && (
+              <div style={{ background: "rgba(231,76,60,0.08)", border: "1px solid rgba(231,76,60,0.3)", borderRadius: "8px", padding: "10px 14px", marginBottom: "16px", fontSize: "0.78rem", color: "#c0392b" }}>
+                ⚠️ {cloneError}
+              </div>
+            )}
             <form onSubmit={handleCloneSubmit}>
               <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "18px" }}>
                 <div>
@@ -761,7 +798,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                 </div>
               </div>
               <div style={{ display: "flex", gap: "10px" }}>
-                <button type="button" onClick={() => setCloneSource(null)} style={cancelBtnStyle}>إلغاء</button>
+                <button type="button" onClick={() => { setCloneSource(null); setCloneError(null); }} style={cancelBtnStyle}>إلغاء</button>
                 <button type="submit" disabled={isSaving} style={{ ...submitBtnStyle, background: "linear-gradient(135deg, #2baa74, #1d8a5a)" }}>
                   {isSaving ? "جاري الحفظ..." : "حفظ كسجل جديد"}
                 </button>
