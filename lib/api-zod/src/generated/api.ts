@@ -43,6 +43,9 @@ export const ListContractorsResponseItem = zod.object({
   workCategory: zod.string().nullish(),
   unit: zod.string().nullish(),
   businessProgram: zod.string().nullish(),
+  mainActivity: zod.string().nullish(),
+  rating: zod.number().nullish(),
+  localContent: zod.string().nullish(),
   createdAt: zod.string(),
 });
 export const ListContractorsResponse = zod.array(ListContractorsResponseItem);
@@ -65,6 +68,9 @@ export const CreateContractorBody = zod.object({
   workCategory: zod.string().nullish(),
   unit: zod.string().nullish(),
   businessProgram: zod.string().nullish(),
+  mainActivity: zod.string().nullish(),
+  rating: zod.number().nullish(),
+  localContent: zod.string().nullish(),
 });
 
 /**
@@ -90,6 +96,9 @@ export const GetContractorResponse = zod.object({
   workCategory: zod.string().nullish(),
   unit: zod.string().nullish(),
   businessProgram: zod.string().nullish(),
+  mainActivity: zod.string().nullish(),
+  rating: zod.number().nullish(),
+  localContent: zod.string().nullish(),
   createdAt: zod.string(),
 });
 
@@ -115,6 +124,9 @@ export const UpdateContractorBody = zod.object({
   workCategory: zod.string().nullish(),
   unit: zod.string().nullish(),
   businessProgram: zod.string().nullish(),
+  mainActivity: zod.string().nullish(),
+  rating: zod.number().nullish(),
+  localContent: zod.string().nullish(),
 });
 
 export const UpdateContractorResponse = zod.object({
@@ -133,6 +145,9 @@ export const UpdateContractorResponse = zod.object({
   workCategory: zod.string().nullish(),
   unit: zod.string().nullish(),
   businessProgram: zod.string().nullish(),
+  mainActivity: zod.string().nullish(),
+  rating: zod.number().nullish(),
+  localContent: zod.string().nullish(),
   createdAt: zod.string(),
 });
 

@@ -381,6 +381,12 @@ components:
           type: ["string", "null"]
         businessProgram:
           type: ["string", "null"]
+        mainActivity:
+          type: ["string", "null"]
+        rating:
+          type: ["integer", "null"]
+        localContent:
+          type: ["string", "null"]
         createdAt:
           type: string
       required:
@@ -426,6 +432,12 @@ components:
         unit:
           type: ["string", "null"]
         businessProgram:
+          type: ["string", "null"]
+        mainActivity:
+          type: ["string", "null"]
+        rating:
+          type: ["integer", "null"]
+        localContent:
           type: ["string", "null"]
       required:
         - contractNo

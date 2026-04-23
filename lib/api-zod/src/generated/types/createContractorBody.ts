@@ -26,4 +26,10 @@ export interface CreateContractorBody {
   unit?: string | null;
   /** @nullable */
   businessProgram?: string | null;
+  /** @nullable */
+  mainActivity?: string | null;
+  /** @nullable */
+  rating?: number | null;
+  /** @nullable */
+  localContent?: string | null;
 }
