@@ -43,6 +43,7 @@ export const ListContractorsResponseItem = zod.object({
   workCategory: zod.string().nullish(),
   unit: zod.string().nullish(),
   mainActivity: zod.string().nullish(),
+  businessProgram: zod.string().nullish(),
   rating: zod.number().int().min(0).max(5).nullish(),
   localContent: zod.string().nullish(),
   createdAt: zod.string(),
@@ -67,6 +68,7 @@ export const CreateContractorBody = zod.object({
   workCategory: zod.string().nullish(),
   unit: zod.string().nullish(),
   mainActivity: zod.string().nullish(),
+  businessProgram: zod.string().nullish(),
   rating: zod.number().int().min(0).max(5).nullish(),
   localContent: zod.string().nullish(),
 });
@@ -94,6 +96,7 @@ export const GetContractorResponse = zod.object({
   workCategory: zod.string().nullish(),
   unit: zod.string().nullish(),
   mainActivity: zod.string().nullish(),
+  businessProgram: zod.string().nullish(),
   rating: zod.number().int().min(0).max(5).nullish(),
   localContent: zod.string().nullish(),
   createdAt: zod.string(),

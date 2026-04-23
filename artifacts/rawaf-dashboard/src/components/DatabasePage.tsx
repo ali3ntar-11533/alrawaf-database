@@ -17,27 +17,28 @@ const SESSION_KEY = "rawaf_db_auth";
 
 /* ─── Form Data ───────────────────────────────── */
 interface FormData {
-  contractNo:     string;
-  contractor:     string;
-  project:        string;
-  portfolio:      string;
-  mainActivity:   string;
-  workType:       string;
-  technicalScope: string;
-  workCategory:   string;
-  unit:           string;
-  price:          string;
-  phone:          string;
-  email:          string;
+  contractNo:      string;
+  contractor:      string;
+  project:         string;
+  portfolio:       string;
+  mainActivity:    string;
+  businessProgram: string;
+  workType:        string;
+  technicalScope:  string;
+  workCategory:    string;
+  unit:            string;
+  price:           string;
+  phone:           string;
+  email:           string;
   /* preserved but hidden from form UI */
-  localContent:   string;
-  workDescription:string;
-  workScopeText:  string;
+  localContent:    string;
+  workDescription: string;
+  workScopeText:   string;
 }
 
 const EMPTY_FORM: FormData = {
   contractNo: "", contractor: "", project: "", portfolio: "",
-  mainActivity: "", workType: "", technicalScope: "",
+  mainActivity: "", businessProgram: "", workType: "", technicalScope: "",
   workCategory: "", unit: "", price: "", phone: "", email: "",
   localContent: "", workDescription: "", workScopeText: "",
 };
@@ -50,15 +51,16 @@ const FORM_FIELDS: { key: keyof FormData; label: string; type?: string; wide?: b
   { key: "contractor",     label: "٢. اسم المقاول / المورد" },
   { key: "project",        label: "٣. المشروع" },
   { key: "portfolio",      label: "٤. المحفظة" },
-  { key: "mainActivity",   label: "٥. النشاط الرئيسي" },
-  { key: "workType",       label: "٦. نوع الأعمال" },
-  { key: "technicalScope", label: "٧. الوصف الفني للبند", wide: true, rows: 3 },
-  { key: "workCategory",   label: "٨. نوع العمل (تصنيف)" },
-  { key: "unit",           label: "٩. الوحدة" },
-  { key: "price",          label: "١٠. السعر (ريال)", type: "number" },
-  { key: "localContent",   label: "١١. المحتوى المحلي", type: "dropdown", options: LOCAL_CONTENT_OPTIONS },
-  { key: "phone",          label: "١٢. رقم التواصل" },
-  { key: "email",          label: "١٣. البريد الإلكتروني" },
+  { key: "mainActivity",    label: "٥. النشاط الرئيسي" },
+  { key: "businessProgram", label: "٦. برنامج الأعمال" },
+  { key: "workType",        label: "٧. نوع الأعمال" },
+  { key: "technicalScope", label: "٨. الوصف الفني للبند", wide: true, rows: 3 },
+  { key: "workCategory",   label: "٩. نوع العمل (تصنيف)" },
+  { key: "unit",           label: "١٠. الوحدة" },
+  { key: "price",          label: "١١. السعر (ريال)", type: "number" },
+  { key: "localContent",   label: "١٢. المحتوى المحلي", type: "dropdown", options: LOCAL_CONTENT_OPTIONS },
+  { key: "phone",          label: "١٣. رقم التواصل" },
+  { key: "email",          label: "١٤. البريد الإلكتروني" },
 ];
 
 /* ─── Helpers ───────────────────────────────── */
@@ -69,6 +71,7 @@ function contractorToForm(c: Contractor): FormData {
     project:         c.project,
     portfolio:       c.portfolio,
     mainActivity:    (c as any).mainActivity ?? "",
+    businessProgram: (c as any).businessProgram ?? "",
     workType:        c.workType,
     technicalScope:  c.technicalScope,
     workCategory:    (c as any).workCategory ?? "",
@@ -89,6 +92,7 @@ function buildPutData(f: FormData, rating?: number | null) {
     project:         f.project,
     portfolio:       f.portfolio,
     mainActivity:    f.mainActivity.trim()    || null,
+    businessProgram: f.businessProgram.trim() || null,
     workType:        f.workType,
     technicalScope:  f.technicalScope,
     workCategory:    f.workCategory.trim()    || null,
@@ -145,6 +149,7 @@ function exportToExcel(data: Contractor[]) {
     "المشروع":              c.project,
     "المحفظة":              c.portfolio,
     "النشاط الرئيسي":       (c as any).mainActivity ?? "",
+    "برنامج الأعمال":       (c as any).businessProgram ?? "",
     "نوع الأعمال":          c.workType,
     "الوصف الفني للبند":    c.technicalScope,
     "نوع العمل":            (c as any).workCategory ?? "",
@@ -286,6 +291,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
         exactMatch(c.technicalScope, search)                 ||
         exactMatch(c.workType, search)                       ||
         exactMatch((c as any).mainActivity ?? "", search)    ||
+        exactMatch((c as any).businessProgram ?? "", search) ||
         exactMatch((c as any).workCategory ?? "", search)    ||
         exactMatch((c as any).unit ?? "", search)            ||
         exactMatch(c.phone, search)                          ||
@@ -435,28 +441,29 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
           <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", direction: "rtl", minWidth: "900px" }}>
             <colgroup>
               <col style={{ width: "5%" }} />
+              <col style={{ width: "11%" }} />
+              <col style={{ width: "9%" }} />
+              <col style={{ width: "4%" }} />
+              <col style={{ width: "6%" }} />
+              <col style={{ width: "6%" }} />
+              <col style={{ width: "5%" }} />
               <col style={{ width: "12%" }} />
-              <col style={{ width: "10%" }} />
-              <col style={{ width: "4%" }} />
-              <col style={{ width: "7%" }} />
-              <col style={{ width: "5%" }} />
-              <col style={{ width: "13%" }} />
               <col style={{ width: "6%" }} />
               <col style={{ width: "4%" }} />
               <col style={{ width: "6%" }} />
               <col style={{ width: "5%" }} />
-              <col style={{ width: "7%" }} />
-              <col style={{ width: "7%" }} />
+              <col style={{ width: "6%" }} />
+              <col style={{ width: "6%" }} />
               <col style={{ width: "9%" }} />
             </colgroup>
             <thead>
               <tr style={{ background: "var(--charcoal)" }}>
                 {[
                   "رقم العقد", "المقاول / المورد", "المشروع", "المحفظة",
-                  "النشاط الرئيسي", "نوع الأعمال", "الوصف الفني للبند",
+                  "النشاط الرئيسي", "برنامج الأعمال", "نوع الأعمال", "الوصف الفني للبند",
                   "نوع العمل", "الوحدة", "السعر", "المحتوى المحلي", "التواصل", "التقييم", "إجراءات"
                 ].map((h, i) => (
-                  <th key={i} style={{ padding: "12px 10px", textAlign: i >= 12 ? "center" : "right", fontSize: "0.63rem", fontWeight: 700, color: "rgba(197,160,89,0.9)", letterSpacing: "0.05em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", borderBottom: "2px solid rgba(197,160,89,0.2)" }}>
+                  <th key={i} style={{ padding: "12px 10px", textAlign: i >= 13 ? "center" : "right", fontSize: "0.63rem", fontWeight: 700, color: "rgba(197,160,89,0.9)", letterSpacing: "0.05em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", borderBottom: "2px solid rgba(197,160,89,0.2)" }}>
                     {h}
                   </th>
                 ))}
@@ -464,14 +471,14 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={14} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>
+                <tr><td colSpan={15} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
                     <div style={{ width: 32, height: 32, border: "3px solid rgba(197,160,89,0.2)", borderTopColor: "var(--gold)", borderRadius: "50%", animation: "spin-loader 0.9s linear infinite" }} />
                     جاري تحميل البيانات...
                   </div>
                 </td></tr>
               ) : isError ? (
-                <tr><td colSpan={14} style={{ textAlign: "center", padding: "50px" }}>
+                <tr><td colSpan={15} style={{ textAlign: "center", padding: "50px" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
                     <div style={{ fontSize: "2rem" }}>⚠️</div>
                     <div style={{ fontSize: "0.85rem", color: "#e74c3c", fontWeight: 700 }}>تعذّر تحميل البيانات</div>
@@ -483,7 +490,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                   </div>
                 </td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={14} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>لا توجد سجلات مطابقة للبحث</td></tr>
+                <tr><td colSpan={15} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>لا توجد سجلات مطابقة للبحث</td></tr>
               ) : filtered.map((c: Contractor, idx: number) => (
                 <tr key={c.id} style={{ background: idx % 2 === 0 ? "#fff" : "#faf8f4", borderBottom: "1px solid #f0ebe0" }}>
                   <td style={tdStyle} title={c.contractNo}>{c.contractNo}</td>
@@ -498,6 +505,7 @@ export default function DatabasePage({ search, onSelectContractor, onSearchAndNa
                   <td style={tdStyle} title={c.project}>{c.project}</td>
                   <td style={tdStyle} title={c.portfolio}>{c.portfolio}</td>
                   <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#3b8fcc" }} title={(c as any).mainActivity || "—"}>{(c as any).mainActivity || "—"}</td>
+                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={(c as any).businessProgram || "—"}>{(c as any).businessProgram || "—"}</td>
                   <td style={{ ...tdStyle, minWidth: 0, overflow: "hidden" }} title={(c as any).workType || "—"}>
                     <span
                       style={{

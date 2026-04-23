@@ -185,6 +185,8 @@ components:
           type: ["string", "null"]
         unit:
           type: ["string", "null"]
+        businessProgram:
+          type: ["string", "null"]
         createdAt:
           type: string
       required:
@@ -228,6 +230,8 @@ components:
         workCategory:
           type: ["string", "null"]
         unit:
+          type: ["string", "null"]
+        businessProgram:
           type: ["string", "null"]
       required:
         - contractNo
