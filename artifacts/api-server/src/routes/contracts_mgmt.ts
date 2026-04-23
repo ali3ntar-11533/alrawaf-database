@@ -451,7 +451,8 @@ const COMPLETED_CONTRACTS = [
   { title: "عقد إنشاء مركز التدريب المهني والتقني",       vendorName: "شركة التعليم والتطوير",        vendorContact: "0509000005", value:  7_800_000, contractType: "إنشاء",  projectName: "مشروع التدريب الوطني",        createdBy: "محمد الشهري",   startDate: "2024-05-01", endDate: "2025-05-01" },
 ];
 
-// rejected contracts — advanced then rejected
+// rejected/returned contracts — "rejection" semantic: status stays "active", rejectionReason is set, currentStage resets to 1.
+// This matches the existing UI convention where "مُعادة" is detected via rejectionReason presence rather than a separate status value.
 const REJECTED_CONTRACTS = [
   { title: "عقد صيانة مولدات الطوارئ والمحطات الفرعية",  vendorName: "شركة الطاقة الاحتياطية",       vendorContact: "0511000006", value:   580_000, contractType: "صيانة",  projectName: "مشروع الطوارئ الكهربائية",    createdBy: "سعد العتيبي",   startDate: "2025-08-01", endDate: "2026-02-01", rejectionStage: 3, rejectionReason: "العقد يحتاج مراجعة المواصفات الفنية وإعادة تسعير البنود" },
   { title: "عقد توريد مستلزمات المكاتب والقرطاسية",      vendorName: "شركة اللوازم المكتبية الدولية", vendorContact: "0559000007", value:   420_000, contractType: "توريد",  projectName: "مشروع التجهيزات الإدارية",    createdBy: "أحمد المطيري",  startDate: "2025-09-01", endDate: "2026-01-01", rejectionStage: 5, rejectionReason: "الأسعار المقدمة تتجاوز حدود الميزانية المعتمدة بنسبة 35%" },
