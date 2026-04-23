@@ -7,6 +7,7 @@ import ContractDetail from "./ContractDetail";
 import ContractTracking from "./ContractTracking";
 import ContractArchive from "./ContractArchive";
 import ContractAnalytics from "./ContractAnalytics";
+import StageDetailPage from "./StageDetailPage";
 import { computePendingByRole } from "./RoleSelector";
 import { ROLES, type ContractTab } from "./types";
 import type { Contract } from "./types";
@@ -27,6 +28,7 @@ export default function ContractApp({ onExit }: Props) {
   const [openContractId, setOpenContractId] = useState<number | null>(null);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [filterStage, setFilterStage] = useState<number | null>(null);
+  const [stageDetailNum, setStageDetailNum] = useState<number | null>(null);
 
   useEffect(() => {
     seedSampleContracts().catch(() => {}).finally(() => {
@@ -127,6 +129,14 @@ export default function ContractApp({ onExit }: Props) {
             actorName={actorName}
             onBack={() => setOpenContractId(null)}
           />
+        ) : stageDetailNum !== null ? (
+          <StageDetailPage
+            stageNum={stageDetailNum}
+            role={role}
+            actorName={actorName}
+            onBack={() => setStageDetailNum(null)}
+            onOpenContract={(id) => { setStageDetailNum(null); setOpenContractId(id); }}
+          />
         ) : activeTab === "dashboard" ? (
           <ContractDashboard
             role={role}
@@ -134,6 +144,7 @@ export default function ContractApp({ onExit }: Props) {
             contracts={contracts}
             pendingContracts={myPending}
             onOpenContract={setOpenContractId}
+            onOpenStage={(n) => setStageDetailNum(n)}
           />
         ) : activeTab === "requests" ? (
           <ContractRequests
