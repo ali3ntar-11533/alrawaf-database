@@ -365,4 +365,43 @@ router.patch("/contracts/:id/stage", async (req, res): Promise<void> => {
   res.json(serializeContract(updated));
 });
 
+// ── Seed endpoint ──────────────────────────────────────────────────
+const SAMPLE_CONTRACTS = [
+  { title: "عقد إنشاء مبنى إداري متعدد الطوابق", vendorName: "شركة البناء المتطور", vendorContact: "0501234567", value: 4_500_000, contractType: "إنشاء", projectName: "مشروع المقر الرئيسي", createdBy: "أحمد الغامدي", startDate: "2025-01-15", endDate: "2026-01-15", targetStage: 4 },
+  { title: "عقد صيانة شبكة المياه - المنطقة الشمالية", vendorName: "مؤسسة الأمانة للمقاولات", vendorContact: "0559876543", value: 1_200_000, contractType: "صيانة", projectName: "مشروع تحديث البنية التحتية", createdBy: "سعد العتيبي", startDate: "2025-02-01", endDate: "2025-10-01", targetStage: 7 },
+  { title: "عقد توريد مواد البناء والتشطيبات", vendorName: "شركة الرافد التجارية", vendorContact: "0534567890", value: 850_000, contractType: "توريد", projectName: "مشروع التوسعة الغربية", createdBy: "محمد الشهري", startDate: "2025-03-01", endDate: "2025-09-01", targetStage: 2 },
+  { title: "عقد تأهيل المنشآت الرياضية والترفيهية", vendorName: "مجموعة ستار للإنشاءات", vendorContact: "0571234567", value: 2_300_000, contractType: "إنشاء", projectName: "مشروع الملاعب الرياضية", createdBy: "فهد الحربي", startDate: "2025-01-01", endDate: "2026-06-01", targetStage: 9 },
+  { title: "عقد إنشاء خزانات المياه الرئيسية", vendorName: "شركة الواحة الهندسية", vendorContact: "0509876543", value: 680_000, contractType: "إنشاء", projectName: "مشروع البنية التحتية للمياه", createdBy: "خالد السبيعي", startDate: "2025-04-01", endDate: "2025-12-01", targetStage: 5 },
+];
+
+const STAGE_ACTOR_ROLES: Record<number, string> = {
+  1: "مدير المشروع", 2: "مدير القطاع", 3: "مدير PMO",
+  4: "أخصائي العقود", 5: "أدمن العقود", 6: "أدمن العقود",
+  7: "مدير الإدارة", 8: "نائب الرئيس", 9: "الرئيس التنفيذي",
+  10: "مسؤول التوقيعات", 11: "مسؤول التوقيعات",
+};
+
+router.post("/contracts/seed", async (_req, res): Promise<void> => {
+  const existing = await db.select({ id: contractsTable.id }).from(contractsTable).limit(1);
+  if (existing.length > 0) {
+    res.json({ skipped: true, message: "بيانات العقود موجودة بالفعل" });
+    return;
+  }
+
+  for (const sample of SAMPLE_CONTRACTS) {
+    const { targetStage, ...fields } = sample;
+    const [row] = await db.insert(contractsTable).values({ ...fields, currentStage: 1, status: "active" }).returning();
+    const contractNo = generateContractNo(row.id);
+    await db.update(contractsTable).set({ contractNo }).where(eq(contractsTable.id, row.id));
+    await db.insert(contractStageLogTable).values({ contractId: row.id, stage: 1, action: "create", actorRole: "مدير المشروع", actorName: fields.createdBy, notes: "إنشاء العقد" });
+
+    for (let s = 1; s < targetStage; s++) {
+      await db.insert(contractStageLogTable).values({ contractId: row.id, stage: s, action: "advance", actorRole: STAGE_ACTOR_ROLES[s] ?? "مدير المشروع", actorName: fields.createdBy, notes: `اعتماد المرحلة ${s}` });
+      await db.update(contractsTable).set({ currentStage: s + 1, updatedAt: new Date() }).where(eq(contractsTable.id, row.id));
+    }
+  }
+
+  res.json({ seeded: true, count: SAMPLE_CONTRACTS.length });
+});
+
 export default router;

@@ -97,6 +97,10 @@ export async function getContractPdfData(id: number): Promise<ContractPdfData> {
   return apiFetch<ContractPdfData>(`/contracts/${id}/pdf-data`);
 }
 
+export async function seedSampleContracts(): Promise<{ seeded?: boolean; skipped?: boolean }> {
+  return apiFetch<{ seeded?: boolean; skipped?: boolean }>("/contracts/seed", { method: "POST" });
+}
+
 export interface CreateContractPayload {
   title: string;
   vendorName: string;

@@ -1,19 +1,75 @@
+import { useState } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from "recharts";
-import { GOLD, GOLD_BG, GOLD_BORDER, STAGES, ROLES } from "./types";
+import { STAGES, ROLES } from "./types";
 import type { Contract } from "./types";
 
-const DARK  = "#1A1A1A";
-const DARK2 = "#2a2015";
-const GOLD2 = "#a88540";
+// ── Design tokens ──────────────────────────────────────────────────
+const GOLD       = "#C5A059";
+const GOLD2      = "#a88540";
 const GOLD_LIGHT = "#e8c96a";
-const GREEN = "#27ae60";
-const RED   = "#c0392b";
-const BLUE  = "#2980b9";
-const PIE_COLORS = [GOLD, GREEN, RED, "#9b59b6", BLUE];
+const GOLD_BG    = "rgba(197,160,89,0.07)";
+const GOLD_BOR   = "rgba(197,160,89,0.22)";
+const CREAM      = "#FBF9F4";
+const GREEN      = "#27ae60";
+const RED        = "#c0392b";
+const AMBER      = "#f39c12";
+const SHADOW_G   = "0 4px 24px rgba(197,160,89,0.14)";
 
+const PIE_COLORS = [GOLD, GREEN, RED, "#9b59b6"];
+
+// ── Helpers ────────────────────────────────────────────────────────
+function arabicNum(n: number) {
+  const m: Record<string, string> = { "0":"٠","1":"١","2":"٢","3":"٣","4":"٤","5":"٥","6":"٦","7":"٧","8":"٨","9":"٩" };
+  return String(n).replace(/[0-9]/g, d => m[d] ?? d);
+}
+function daysAgo(iso: string) {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+}
+function formatSAR(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)} مليون ر.س`;
+  if (n >= 1_000)     return `${(n / 1_000).toFixed(0)} ألف ر.س`;
+  return `${n} ر.س`;
+}
+function urgencyColor(days: number) {
+  return days >= 7 ? RED : days >= 3 ? AMBER : GREEN;
+}
+
+// ── Card wrapper ───────────────────────────────────────────────────
+function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div style={{
+      background: "#fff", borderRadius: 16,
+      border: `1px solid ${GOLD_BOR}`,
+      boxShadow: SHADOW_G,
+      overflow: "hidden",
+      ...style,
+    }}>{children}</div>
+  );
+}
+function CardHeader({ icon, title, subtitle }: { icon: string; title: string; subtitle?: string }) {
+  return (
+    <div style={{
+      padding: "14px 20px", borderBottom: `1px solid ${GOLD_BOR}`,
+      background: CREAM, display: "flex", alignItems: "center", gap: 10,
+    }}>
+      <div style={{
+        width: 34, height: 34, borderRadius: 10,
+        background: `linear-gradient(135deg, ${GOLD}, ${GOLD2})`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: "0.9rem", boxShadow: `0 3px 10px rgba(197,160,89,0.35)`, flexShrink: 0,
+      }}>{icon}</div>
+      <div>
+        <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "#1A1A1A" }}>{title}</div>
+        {subtitle && <div style={{ fontSize: "0.62rem", color: "#9b8060" }}>{subtitle}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ── Props ──────────────────────────────────────────────────────────
 interface Props {
   role: string;
   actorName: string;
@@ -22,193 +78,173 @@ interface Props {
   onOpenContract: (id: number) => void;
 }
 
-function arabicNum(n: number) {
-  const m: Record<number,string> = {0:"٠",1:"١",2:"٢",3:"٣",4:"٤",5:"٥",6:"٦",7:"٧",8:"٨",9:"٩"};
-  return String(n).split("").map(d => m[parseInt(d)] ?? d).join("");
-}
-
-function daysAgo(iso: string) {
-  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
-}
-
-function formatSAR(n: number) {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)} م`;
-  if (n >= 1_000)     return `${(n / 1_000).toFixed(0)} ك`;
-  return String(n);
-}
-
 export default function ContractDashboard({ role, actorName, contracts, pendingContracts, onOpenContract }: Props) {
+  const [hoveredStage, setHoveredStage] = useState<number | null>(null);
+
+  // ── Computed ──
   const total    = contracts.length;
   const active   = contracts.filter(c => c.status === "active").length;
   const done     = contracts.filter(c => c.status === "completed").length;
   const rejected = contracts.filter(c => c.rejectionReason && c.status !== "completed").length;
   const totalSAR = contracts.filter(c => c.status === "active").reduce((s, c) => s + (c.value || 0), 0);
-  const maxSAR   = contracts.reduce((s, c) => s + (c.value || 0), 0);
   const completePct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const avgDays = active > 0
+    ? Math.round(contracts.filter(c => c.status === "active").reduce((s, c) => s + daysAgo(c.updatedAt), 0) / active)
+    : 0;
 
-  // Stage distribution
   const stageCounts = STAGES.map((_, i) =>
-    contracts.filter(c => c.currentStage === i + 1 && c.status === "active").length
+    contracts.filter(c => c.currentStage === i + 1 && c.status === "active")
   );
-  const maxCount = Math.max(...stageCounts, 1);
 
-  // Per-admin bar chart data
   const adminData = ROLES.map(r => ({
     name: r.name.replace("مدير ", "").replace("أخصائي ", "").replace("مسؤول ", ""),
-    fullName: r.name,
-    icon: r.icon,
+    fullName: r.name, icon: r.icon,
     count: r.stage.reduce((s, stg) =>
       s + contracts.filter(c => c.currentStage === stg && c.status === "active").length, 0
     ),
   })).filter(d => d.count > 0);
 
-  // Donut chart data
   const pieData = [
     { name: "قيد الإجراء", value: active },
     { name: "مكتملة",      value: done },
     { name: "مُعادة",      value: rejected },
   ].filter(d => d.value > 0);
 
-  // Smart table — all contracts sorted by urgency (most days at stage first)
   const tableContracts = [...contracts].sort((a, b) => {
-    const dA = daysAgo(a.updatedAt);
-    const dB = daysAgo(b.updatedAt);
     const myRole = role ? ROLES.find(r => r.name === role) : null;
-    const aIsMine = myRole?.stage.includes(a.currentStage) && a.status !== "completed";
-    const bIsMine = myRole?.stage.includes(b.currentStage) && b.status !== "completed";
-    if (aIsMine && !bIsMine) return -1;
-    if (!aIsMine && bIsMine) return  1;
-    return dB - dA;
+    const aM = myRole?.stage.includes(a.currentStage) && a.status !== "completed";
+    const bM = myRole?.stage.includes(b.currentStage) && b.status !== "completed";
+    if (aM && !bM) return -1;
+    if (!aM && bM)  return  1;
+    return daysAgo(b.updatedAt) - daysAgo(a.updatedAt);
   });
 
-  return (
-    <div dir="rtl" style={{ fontFamily: "'Cairo', 'Tajawal', sans-serif", background: "#F9F9F9", minHeight: "100vh" }}>
+  const myRoleInfo = ROLES.find(r => r.name === role);
 
+  return (
+    <div dir="rtl" style={{
+      background: "#F8F9FA",
+      minHeight: "100vh",
+      fontFamily: "'Cairo', 'Tajawal', sans-serif",
+    }}>
       <style>{`
-        @keyframes golden-pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(197,160,89,0.45); }
-          50%       { box-shadow: 0 0 22px 6px rgba(197,160,89,0.12); }
+        @keyframes pulse-gold {
+          0%,100% { box-shadow: 0 0 0 0 rgba(197,160,89,.4); }
+          50%      { box-shadow: 0 0 18px 5px rgba(197,160,89,.1); }
         }
-        @keyframes stage-bar-glow {
-          0%, 100% { box-shadow: 0 0 6px 2px rgba(197,160,89,0.35); }
-          50%       { box-shadow: 0 0 14px 4px rgba(197,160,89,0.12); }
+        @keyframes slide-up {
+          from { opacity:0; transform:translateY(12px); }
+          to   { opacity:1; transform:translateY(0); }
         }
-        @keyframes slide-in {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .tr-hover:hover { background: rgba(197,160,89,0.05) !important; cursor:pointer; }
-        .kpi-card:hover { transform: translateY(-2px); }
+        .hover-lift { transition: transform 0.18s, box-shadow 0.18s; }
+        .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(197,160,89,0.22) !important; }
+        .tr-row { cursor:pointer; transition:background 0.12s; }
+        .tr-row:hover { background: rgba(197,160,89,0.05) !important; }
+        .stage-node { transition: transform 0.18s, box-shadow 0.18s; cursor:default; }
+        .stage-node:hover { transform: scale(1.08); }
+        .popover-enter { animation: slide-up 0.18s ease; }
       `}</style>
 
-      {/* ── Hero Header ── */}
+      {/* ── Cream Hero Bar ── */}
       <div style={{
-        background: `linear-gradient(135deg, ${DARK} 0%, ${DARK2} 55%, #3a2e14 100%)`,
-        padding: "24px 28px 28px",
+        background: `linear-gradient(135deg, ${CREAM} 0%, #F5EED9 100%)`,
+        borderBottom: `2px solid ${GOLD_BOR}`,
+        padding: "20px 28px 18px",
         position: "relative", overflow: "hidden",
       }}>
-        <div style={{ position:"absolute", top:-50, left:-50, width:200, height:200, borderRadius:"50%", border:"1px solid rgba(197,160,89,0.10)", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", bottom:-30, right:60, width:160, height:160, borderRadius:"50%", border:"1px solid rgba(197,160,89,0.06)", pointerEvents:"none" }} />
+        {/* Decorative circle */}
+        <div style={{ position:"absolute", top:-60, left:-60, width:200, height:200, borderRadius:"50%", background:"rgba(197,160,89,0.06)", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", bottom:-40, right:80, width:150, height:150, borderRadius:"50%", background:"rgba(197,160,89,0.04)", pointerEvents:"none" }} />
 
-        <div style={{ position:"relative", zIndex:1 }}>
-          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", flexWrap:"wrap", gap:12 }}>
-            <div>
-              <div style={{ fontSize:"0.65rem", fontWeight:700, color:"rgba(197,160,89,0.7)", letterSpacing:"0.1em", marginBottom:4 }}>
-                AL-RAWAF CONTRACTS MANAGEMENT
-              </div>
-              <h1 style={{ fontSize:"1.4rem", fontWeight:900, color:"#fff", marginBottom:4, lineHeight:1.2 }}>
-                لوحة التحكم التفاعلية
-              </h1>
-              <p style={{ fontSize:"0.78rem", color:"rgba(255,255,255,0.5)" }}>
-                {role
-                  ? `مرحباً ${actorName || role} — مرحلتك تحتوي على ${arabicNum(pendingContracts.length)} عقد بانتظار إجراءك`
-                  : "اختر دورك من القائمة الجانبية لتفعيل منطقة العمل الشخصية"
-                }
-              </p>
+        <div style={{ position:"relative", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12 }}>
+          <div>
+            <div style={{ fontSize:"0.58rem", fontWeight:800, letterSpacing:"0.12em", color:"rgba(197,160,89,0.8)", marginBottom:4 }}>
+              AL-RAWAF CONTRACT MANAGEMENT SYSTEM
             </div>
-
-            {/* Financial Counter */}
-            <div style={{ display:"flex", gap:16, flexWrap:"wrap" }}>
-              {[
-                { label:"إجمالي قيمة العقود النشطة", val:`${formatSAR(totalSAR)} ر.س`, icon:"💰", color:GOLD_LIGHT },
-                { label:"نسبة الإنجاز الكلية", val:`${arabicNum(completePct)}%`, icon:"📈", color:GREEN },
-                { label:"إجمالي العقود", val:arabicNum(total), icon:"📁", color:"rgba(255,255,255,0.7)" },
-              ].map((c,i) => (
-                <div key={i} style={{
-                  background:"rgba(255,255,255,0.06)",
-                  border:"1px solid rgba(255,255,255,0.1)",
-                  borderRadius:12, padding:"10px 16px", textAlign:"center",
-                  minWidth:110,
-                }}>
-                  <div style={{ fontSize:"0.62rem", color:"rgba(255,255,255,0.4)", marginBottom:3 }}>{c.label}</div>
-                  <div style={{ fontSize:"1.05rem", fontWeight:900, color:c.color }}>{c.icon} {c.val}</div>
-                </div>
-              ))}
-            </div>
+            <h1 style={{ fontSize:"1.45rem", fontWeight:900, color:"#1A1A1A", margin:0, lineHeight:1.2 }}>
+              لوحة القيادة التنفيذية
+            </h1>
+            <p style={{ fontSize:"0.76rem", color:"#6b5b3e", marginTop:4 }}>
+              {role
+                ? `مرحباً ${actorName || role} · ${pendingContracts.length} عقد بانتظار قرارك`
+                : "اختر دورك من القائمة الجانبية لتفعيل منطقة العمل الشخصية"
+              }
+            </p>
           </div>
 
-          {/* Overall progress bar */}
-          <div style={{ height:3, background:"rgba(255,255,255,0.08)", borderRadius:3, marginTop:18 }}>
+          {/* Live Progress Indicator */}
+          <div style={{
+            display:"flex", alignItems:"center", gap:8,
+            background:"#fff", border:`1px solid ${GOLD_BOR}`,
+            borderRadius:12, padding:"8px 16px",
+            boxShadow: SHADOW_G,
+          }}>
             <div style={{
-              height:"100%", borderRadius:3,
-              width:`${completePct}%`,
-              background:`linear-gradient(90deg, ${GOLD}, ${GOLD_LIGHT})`,
-              transition:"width 1.2s ease",
-              boxShadow:`0 0 10px rgba(197,160,89,0.6)`,
-            }} />
+              width:42, height:42, borderRadius:"50%",
+              background:`conic-gradient(${GOLD} ${completePct * 3.6}deg, #e8e8e8 0deg)`,
+              display:"flex", alignItems:"center", justifyContent:"center",
+            }}>
+              <div style={{ width:30, height:30, borderRadius:"50%", background:"#fff", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <span style={{ fontSize:"0.55rem", fontWeight:900, color:GOLD }}>{arabicNum(completePct)}%</span>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize:"0.68rem", fontWeight:800, color:"#1A1A1A" }}>نسبة الإنجاز</div>
+              <div style={{ fontSize:"0.6rem", color:"#9b8060" }}>{arabicNum(done)} من {arabicNum(total)} عقد</div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div style={{ padding:"20px 24px", display:"flex", flexDirection:"column", gap:18 }}>
+      <div style={{ padding:"20px 24px", display:"flex", flexDirection:"column", gap:20 }}>
 
-        {/* ── My Tasks (only when role is set + has pending) ── */}
-        {role && pendingContracts.length > 0 && (
-          <div style={{
-            background:"#fff",
-            border:`1.5px solid ${GOLD_BORDER}`,
-            borderRadius:14,
-            overflow:"hidden",
-            animation:"golden-pulse 3s ease-in-out infinite, slide-in 0.4s ease",
-          }}>
-            <div style={{
-              padding:"12px 18px",
-              background:`linear-gradient(135deg, rgba(197,160,89,0.15), rgba(197,160,89,0.06))`,
-              borderBottom:`1px solid ${GOLD_BORDER}`,
-              display:"flex", alignItems:"center", gap:10,
+        {/* ── KPI Tiles ── */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:14 }}>
+          {[
+            { label:"إجمالي العقود",         val:arabicNum(total),            icon:"📁", color:"#2980b9",  sub:"كل الحالات"            },
+            { label:"العقود النشطة",          val:arabicNum(active),           icon:"⚡", color:GOLD,       sub:"قيد التنفيذ الآن"       },
+            { label:"قيمة العقود النشطة",     val:formatSAR(totalSAR),         icon:"💰", color:GREEN,      sub:"ريال سعودي"             },
+            { label:"متوسط زمن الاعتماد",     val:`${arabicNum(avgDays)} يوم`, icon:"⏱️", color:active>0 && avgDays>5 ? RED : GREEN, sub:"لكل مرحلة" },
+          ].map((k, i) => (
+            <div key={i} className="hover-lift" style={{
+              background:"#fff", border:`1px solid ${GOLD_BOR}`,
+              borderRadius:14, padding:"16px 18px",
+              boxShadow: SHADOW_G,
+              borderTop:`3px solid ${k.color}`,
             }}>
-              <div style={{
-                background:`linear-gradient(135deg, ${GOLD}, ${GOLD2})`,
-                borderRadius:8, width:32, height:32,
-                display:"flex", alignItems:"center", justifyContent:"center",
-                fontSize:"0.9rem", boxShadow:`0 2px 10px rgba(197,160,89,0.45)`,
-              }}>⚡</div>
-              <div>
-                <div style={{ fontSize:"0.88rem", fontWeight:900, color:"#8B6914" }}>
-                  منطقة عملك — {role}
-                </div>
-                <div style={{ fontSize:"0.65rem", color:"#9b8060" }}>
-                  {arabicNum(pendingContracts.length)} عقد في مرحلتك تنتظر قرارك
-                </div>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+                <div style={{ fontSize:"0.7rem", fontWeight:700, color:"#6b5b3e" }}>{k.label}</div>
+                <div style={{
+                  width:32, height:32, borderRadius:9, flexShrink:0,
+                  background:`${k.color}15`, border:`1px solid ${k.color}30`,
+                  display:"flex", alignItems:"center", justifyContent:"center", fontSize:"0.85rem",
+                }}>{k.icon}</div>
               </div>
+              <div style={{ fontSize:"1.25rem", fontWeight:900, color:"#1A1A1A" }}>{k.val}</div>
+              <div style={{ fontSize:"0.58rem", color:"#aaa", marginTop:2 }}>{k.sub}</div>
             </div>
-            <div style={{ padding:"10px 14px", display:"flex", flexDirection:"column", gap:8 }}>
+          ))}
+        </div>
+
+        {/* ── My Tasks ── (only if role + pending) */}
+        {role && pendingContracts.length > 0 && (
+          <Card style={{ animation:"pulse-gold 3s ease-in-out infinite, slide-up 0.35s ease" }}>
+            <CardHeader icon="⚡" title={`منطقة عملك — ${role}`} subtitle={`${arabicNum(pendingContracts.length)} عقد في مرحلتك`} />
+            <div style={{ padding:"12px 16px", display:"flex", flexDirection:"column", gap:8 }}>
               {pendingContracts.map(c => {
                 const days = daysAgo(c.updatedAt);
-                const urgency = days >= 7 ? RED : days >= 3 ? "#f39c12" : GREEN;
+                const urg  = urgencyColor(days);
                 return (
                   <div
                     key={c.id}
                     onClick={() => onOpenContract(c.id)}
+                    className="hover-lift"
                     style={{
                       display:"flex", alignItems:"center", gap:12,
-                      background: GOLD_BG,
-                      border:`1px solid ${GOLD_BORDER}`,
-                      borderRadius:10, padding:"10px 14px",
-                      cursor:"pointer", transition:"box-shadow 0.2s",
+                      padding:"11px 14px", borderRadius:11,
+                      background: GOLD_BG, border:`1px solid ${GOLD_BOR}`,
+                      cursor:"pointer",
                     }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 16px rgba(197,160,89,0.28)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = "none"; }}
                   >
                     <div style={{
                       width:38, height:38, borderRadius:10, flexShrink:0,
@@ -217,258 +253,241 @@ export default function ContractDashboard({ role, actorName, contracts, pendingC
                       fontSize:"1.05rem", boxShadow:`0 2px 8px rgba(197,160,89,0.35)`,
                     }}>{STAGES[c.currentStage - 1]?.icon ?? "📄"}</div>
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:"0.8rem", fontWeight:800, color:"#1a1206", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                        {c.title}
-                      </div>
-                      <div style={{ fontSize:"0.64rem", color:"#9b8060", marginTop:1 }}>
-                        {c.contractNo} · م{c.currentStage}: {STAGES[c.currentStage-1]?.label}
-                      </div>
+                      <div style={{ fontSize:"0.82rem", fontWeight:800, color:"#1A1A1A", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.title}</div>
+                      <div style={{ fontSize:"0.64rem", color:"#9b8060", marginTop:1 }}>{c.contractNo} · م{c.currentStage}: {STAGES[c.currentStage-1]?.label}</div>
                     </div>
                     <div style={{ textAlign:"center", flexShrink:0 }}>
-                      <div style={{ fontSize:"0.68rem", fontWeight:900, color:urgency }}>
+                      <div style={{ fontSize:"0.72rem", fontWeight:900, color:urg, background:`${urg}14`, borderRadius:6, padding:"2px 8px" }}>
                         {arabicNum(days)} يوم
                       </div>
-                      <div style={{ fontSize:"0.55rem", color:"#bbb" }}>في المرحلة</div>
                     </div>
-                    <span style={{ color:GOLD, fontSize:"1.1rem" }}>←</span>
+                    <span style={{ color:GOLD, fontWeight:800 }}>←</span>
                   </div>
                 );
               })}
             </div>
-          </div>
+          </Card>
         )}
-
-        {/* ── Workflow Stepper ── */}
-        <div style={{
-          background:"#fff",
-          border:`1px solid ${GOLD_BORDER}`,
-          borderRadius:14, overflow:"hidden",
-          boxShadow:"0 4px 20px rgba(0,0,0,0.05)",
-        }}>
-          <div style={{
-            padding:"13px 20px",
-            background:`linear-gradient(135deg, ${DARK}, ${DARK2})`,
-            borderBottom:`1px solid rgba(197,160,89,0.2)`,
-            display:"flex", alignItems:"center", gap:10,
-          }}>
-            <div style={{
-              width:30, height:30, borderRadius:8,
-              background:`linear-gradient(135deg, ${GOLD}, ${GOLD2})`,
-              display:"flex", alignItems:"center", justifyContent:"center", fontSize:"0.85rem",
-              boxShadow:`0 2px 10px rgba(197,160,89,0.4)`,
-            }}>⛲</div>
-            <div>
-              <div style={{ fontSize:"0.85rem", fontWeight:800, color:"#fff" }}>
-                شريط تتبع المسار الحي — 11 مرحلة
-              </div>
-              <div style={{ fontSize:"0.62rem", color:"rgba(197,160,89,0.7)" }}>
-                العقود الفعّالة في كل مرحلة · مضيئة تلقائياً
-              </div>
-            </div>
-            {role && (
-              <div style={{
-                marginRight:"auto",
-                background:"rgba(197,160,89,0.2)", border:"1px solid rgba(197,160,89,0.4)",
-                borderRadius:6, padding:"3px 10px",
-                fontSize:"0.6rem", fontWeight:700, color:GOLD_LIGHT,
-              }}>
-                {ROLES.find(r => r.name === role)?.icon} مرحلتك: {ROLES.find(r => r.name === role)?.stage.join("، ")}
-              </div>
-            )}
-          </div>
-
-          <div style={{ padding:"14px 14px 12px", overflowX:"auto" }}>
-            <div style={{ display:"flex", alignItems:"flex-end", gap:3, minWidth:"max-content", direction:"rtl" }}>
-              {STAGES.map((stage, idx) => {
-                const stageNum = idx + 1;
-                const count = stageCounts[idx] ?? 0;
-                const hasC = count > 0;
-                const isMyStage = role && ROLES.find(r => r.name === role)?.stage.includes(stageNum);
-                const barH = hasC ? Math.max(10, Math.round((count / maxCount) * 48)) : 4;
-
-                return (
-                  <div key={stageNum} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4, minWidth:74 }}>
-                    <div style={{
-                      fontSize:"0.65rem", fontWeight:900,
-                      color: hasC ? GOLD : "transparent",
-                      background: hasC ? "rgba(197,160,89,0.12)" : "transparent",
-                      border: hasC ? `1px solid ${GOLD_BORDER}` : "1px solid transparent",
-                      borderRadius:5, padding:"1px 6px", minWidth:22, textAlign:"center",
-                    }}>
-                      {hasC ? arabicNum(count) : "—"}
-                    </div>
-
-                    <div style={{
-                      width:50, borderRadius:"5px 5px 0 0",
-                      height: barH,
-                      background: hasC
-                        ? `linear-gradient(180deg, ${GOLD_LIGHT}, ${GOLD2})`
-                        : "rgba(0,0,0,0.07)",
-                      boxShadow: hasC ? "0 0 10px rgba(197,160,89,0.3)" : "none",
-                      animation: hasC ? "stage-bar-glow 2.5s ease-in-out infinite" : "none",
-                      transition:"height 0.7s ease",
-                      position:"relative",
-                    }}>
-                      {hasC && (
-                        <div style={{
-                          position:"absolute", top:0, left:0, right:0, height:"40%",
-                          background:"linear-gradient(180deg,rgba(255,255,255,0.25),transparent)",
-                          borderRadius:"5px 5px 0 0",
-                        }}/>
-                      )}
-                    </div>
-
-                    <div style={{
-                      display:"flex", flexDirection:"column", alignItems:"center", gap:3,
-                      padding:"6px 5px 5px", width:"100%",
-                      background: isMyStage
-                        ? "rgba(197,160,89,0.12)"
-                        : hasC ? "rgba(197,160,89,0.05)" : "rgba(0,0,0,0.02)",
-                      border: isMyStage
-                        ? `2px solid ${GOLD}`
-                        : hasC ? `1px solid ${GOLD_BORDER}` : "1.5px solid transparent",
-                      borderRadius:9,
-                      animation: isMyStage ? "golden-pulse 2.5s ease-in-out infinite" : "none",
-                    }}>
-                      <div style={{
-                        width:28, height:28, borderRadius:"50%",
-                        display:"flex", alignItems:"center", justifyContent:"center",
-                        background: isMyStage
-                          ? `linear-gradient(135deg, ${GOLD}, ${GOLD2})`
-                          : hasC ? `linear-gradient(135deg, ${GOLD2}, #6b5010)` : "rgba(0,0,0,0.06)",
-                        color: (hasC || isMyStage) ? "#fff" : "#ccc",
-                        fontSize:"0.7rem", fontWeight:900,
-                        boxShadow: isMyStage ? `0 2px 10px rgba(197,160,89,0.5)` : hasC ? `0 1px 6px rgba(197,160,89,0.3)` : "none",
-                      }}>
-                        {stage.icon}
-                      </div>
-                      <div style={{
-                        fontSize:"0.48rem", textAlign:"center",
-                        color: isMyStage ? "#8B6914" : hasC ? "#8B6914" : "#bbb",
-                        fontWeight: (hasC || isMyStage) ? 800 : 400,
-                        maxWidth:66, lineHeight:1.3,
-                      }}>
-                        م{stageNum} {stage.label}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
 
         {/* ── Charts Row ── */}
         {total > 0 && (
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
-
-            {/* Donut Chart */}
-            <div style={{
-              background:"#fff", border:`1px solid ${GOLD_BORDER}`,
-              borderRadius:14, padding:"18px 16px",
-              boxShadow:"0 4px 20px rgba(0,0,0,0.05)",
-            }}>
-              <div style={{ fontSize:"0.85rem", fontWeight:800, color:"#1a1206", marginBottom:2 }}>
-                توزيع حالة العقود
-              </div>
-              <div style={{ fontSize:"0.65rem", color:"#9b8060", marginBottom:8 }}>رسم بياني دائري</div>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={52} outerRadius={78} paddingAngle={3} dataKey="value">
-                    {pieData.map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(v: unknown) => [`${v} عقد`, ""]}
-                    contentStyle={{ fontFamily:"'Cairo',sans-serif", fontSize:"0.75rem", direction:"rtl", border:`1px solid ${GOLD_BORDER}`, borderRadius:8 }}
-                  />
-                  <Legend
-                    formatter={(val) => <span style={{ fontSize:"0.68rem", fontFamily:"'Cairo',sans-serif", color:"#4a3520" }}>{val}</span>}
-                    iconSize={9} iconType="circle"
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Bar Chart — contracts per admin */}
-            <div style={{
-              background:"#fff", border:`1px solid ${GOLD_BORDER}`,
-              borderRadius:14, padding:"18px 16px",
-              boxShadow:"0 4px 20px rgba(0,0,0,0.05)",
-            }}>
-              <div style={{ fontSize:"0.85rem", fontWeight:800, color:"#1a1206", marginBottom:2 }}>
-                العقود المتوقفة لدى كل مسؤول
-              </div>
-              <div style={{ fontSize:"0.65rem", color:"#9b8060", marginBottom:8 }}>يحدد نقاط الاختناق الفعلية</div>
-              {adminData.length === 0 ? (
-                <div style={{ textAlign:"center", padding:40, color:"#bbb", fontSize:"0.8rem" }}>لا عقود نشطة</div>
-              ) : (
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={adminData} margin={{ top:5, right:5, left:-20, bottom:30 }}>
-                    <defs>
-                      <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={GOLD_LIGHT} />
-                        <stop offset="100%" stopColor={GOLD2} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fontSize:9, fill:"#6b6360", fontFamily:"'Cairo',sans-serif" }} angle={-30} textAnchor="end" interval={0} height={40} />
-                    <YAxis tick={{ fontSize:9, fill:"#9b8060" }} allowDecimals={false} />
+            <Card>
+              <CardHeader icon="🍩" title="توزيع حالة العقود" subtitle="رسم بياني دائري تفاعلي" />
+              <div style={{ padding:"12px 16px 16px" }}>
+                <ResponsiveContainer width="100%" height={210}>
+                  <PieChart>
+                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={82} paddingAngle={3} dataKey="value">
+                      {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} stroke="none" />)}
+                    </Pie>
                     <Tooltip
                       formatter={(v: unknown) => [`${v} عقد`, ""]}
-                      labelFormatter={(l: unknown) => adminData.find(d => d.name === l)?.fullName ?? String(l)}
-                      contentStyle={{ fontFamily:"'Cairo',sans-serif", fontSize:"0.75rem", direction:"rtl", border:`1px solid ${GOLD_BORDER}`, borderRadius:8 }}
-                      cursor={{ fill:"rgba(197,160,89,0.08)" }}
+                      contentStyle={{ fontFamily:"'Cairo',sans-serif", fontSize:"0.78rem", direction:"rtl", border:`1px solid ${GOLD_BOR}`, borderRadius:10, boxShadow:SHADOW_G }}
                     />
-                    <Bar dataKey="count" fill="url(#barGrad)" radius={[4,4,0,0]} maxBarSize={36} />
-                  </BarChart>
+                    <Legend
+                      formatter={(val) => <span style={{ fontSize:"0.7rem", fontFamily:"'Cairo',sans-serif", color:"#4a3520" }}>{val}</span>}
+                      iconSize={9} iconType="circle"
+                    />
+                  </PieChart>
                 </ResponsiveContainer>
-              )}
-            </div>
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader icon="📊" title="ضغط العمل على كل مسؤول" subtitle="نقاط الاختناق الفعلية في المسار" />
+              <div style={{ padding:"12px 16px 16px" }}>
+                {adminData.length === 0 ? (
+                  <div style={{ textAlign:"center", padding:"40px 0", color:"#ccc", fontSize:"0.8rem" }}>لا عقود نشطة</div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={210}>
+                    <BarChart data={adminData} margin={{ top:5, right:10, left:-20, bottom:36 }}>
+                      <defs>
+                        <linearGradient id="barG" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={GOLD_LIGHT} />
+                          <stop offset="100%" stopColor={GOLD2} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize:9, fill:"#6b6360", fontFamily:"'Cairo',sans-serif" }} angle={-25} textAnchor="end" interval={0} height={44} />
+                      <YAxis tick={{ fontSize:9, fill:"#9b8060" }} allowDecimals={false} />
+                      <Tooltip
+                        formatter={(v: unknown) => [`${v} عقد`, ""]}
+                        labelFormatter={(l: unknown) => adminData.find(d => d.name === l)?.fullName ?? String(l)}
+                        contentStyle={{ fontFamily:"'Cairo',sans-serif", fontSize:"0.78rem", direction:"rtl", border:`1px solid ${GOLD_BOR}`, borderRadius:10, boxShadow:SHADOW_G }}
+                        cursor={{ fill:"rgba(197,160,89,0.07)" }}
+                      />
+                      <Bar dataKey="count" fill="url(#barG)" radius={[5,5,0,0]} maxBarSize={40} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </Card>
           </div>
         )}
 
-        {/* ── Smart Contract Table ── */}
-        <div style={{
-          background:"#fff", border:`1px solid ${GOLD_BORDER}`,
-          borderRadius:14, overflow:"hidden",
-          boxShadow:"0 4px 20px rgba(0,0,0,0.05)",
-        }}>
-          <div style={{
-            padding:"13px 20px", borderBottom:`1px solid ${GOLD_BORDER}`,
-            background:"linear-gradient(135deg, #faf9f5, #f5f0e8)",
-            display:"flex", alignItems:"center", gap:10,
-          }}>
+        {/* ── Interactive Roadmap ── */}
+        <Card>
+          <CardHeader
+            icon="🗺️"
+            title="خريطة دورة حياة العقد التفاعلية"
+            subtitle="مرر المؤشر فوق أي مرحلة لمشاهدة العقود الموجودة فيها حالياً"
+          />
+          {myRoleInfo && (
             <div style={{
-              background:`linear-gradient(135deg, ${DARK}, ${DARK2})`,
-              borderRadius:7, padding:"5px 7px", fontSize:"0.82rem",
-            }}>📋</div>
-            <div>
-              <div style={{ fontSize:"0.85rem", fontWeight:800, color:"#1a1206" }}>جدول العقود الذكي</div>
-              <div style={{ fontSize:"0.62rem", color:"#9b8060" }}>
-                {total === 0 ? "لا توجد عقود بعد" : `${arabicNum(total)} عقد · مرتبة بالأولوية`}
-                {role ? " · مرحلتك مُميّزة بالذهبي" : ""}
-              </div>
+              padding:"6px 20px",
+              background:`linear-gradient(135deg, ${GOLD_BG}, rgba(197,160,89,0.03))`,
+              borderBottom:`1px solid ${GOLD_BOR}`,
+              fontSize:"0.68rem", fontWeight:700, color:"#8B6914",
+              display:"flex", alignItems:"center", gap:6,
+            }}>
+              {myRoleInfo.icon} مرحلتك: {myRoleInfo.stage.map(s => `م${s} ${STAGES[s-1]?.label}`).join("  ·  ")}
+            </div>
+          )}
+
+          <div style={{ padding:"22px 16px 20px", overflowX:"auto" }}>
+            <div style={{ display:"flex", alignItems:"center", minWidth:"max-content", direction:"rtl", gap:0, position:"relative" }}>
+              {/* Connecting line */}
+              <div style={{
+                position:"absolute", top:28, right:36, left:36,
+                height:2, background:`linear-gradient(90deg, ${GOLD_BOR}, ${GOLD_BOR})`,
+                zIndex:0,
+              }} />
+
+              {STAGES.map((stage, idx) => {
+                const stageNum = idx + 1;
+                const stageContracts = stageCounts[idx] ?? [];
+                const hasC    = stageContracts.length > 0;
+                const isMyStage = myRoleInfo?.stage.includes(stageNum) ?? false;
+                const isHov   = hoveredStage === stageNum;
+
+                return (
+                  <div
+                    key={stageNum}
+                    style={{ position:"relative", display:"flex", flexDirection:"column", alignItems:"center", zIndex:1, minWidth:76 }}
+                    onMouseEnter={() => setHoveredStage(stageNum)}
+                    onMouseLeave={() => setHoveredStage(null)}
+                  >
+                    {/* Popover */}
+                    {isHov && (
+                      <div className="popover-enter" style={{
+                        position:"absolute", bottom:"100%", marginBottom:10,
+                        background:"#fff", border:`1.5px solid ${GOLD_BOR}`,
+                        borderRadius:12, padding:"10px 14px",
+                        minWidth:190, maxWidth:220,
+                        boxShadow:"0 8px 32px rgba(0,0,0,0.12)",
+                        zIndex:50,
+                        left:"50%", transform:"translateX(-50%)",
+                      }}>
+                        <div style={{ fontSize:"0.68rem", fontWeight:800, color:GOLD, marginBottom:6, borderBottom:`1px solid ${GOLD_BOR}`, paddingBottom:5 }}>
+                          {stage.icon} م{stageNum}: {stage.label}
+                        </div>
+                        {stageContracts.length === 0 ? (
+                          <div style={{ fontSize:"0.64rem", color:"#ccc", textAlign:"center", padding:"4px 0" }}>لا عقود في هذه المرحلة</div>
+                        ) : (
+                          stageContracts.map(c => (
+                            <div
+                              key={c.id}
+                              onClick={() => onOpenContract(c.id)}
+                              style={{
+                                fontSize:"0.68rem", color:"#1A1A1A", padding:"4px 0",
+                                borderBottom:"1px solid #f0f0f0", cursor:"pointer",
+                                display:"flex", alignItems:"center", gap:6,
+                              }}
+                            >
+                              <span style={{ fontSize:"0.55rem", color:GOLD }}>◆</span>
+                              <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.title}</span>
+                            </div>
+                          ))
+                        )}
+                        {/* Arrow */}
+                        <div style={{
+                          position:"absolute", bottom:-7, left:"50%", transform:"translateX(-50%) rotate(45deg)",
+                          width:12, height:12, background:"#fff", border:`1px solid ${GOLD_BOR}`,
+                          borderTop:"none", borderRight:"none",
+                        }} />
+                      </div>
+                    )}
+
+                    {/* Count Badge */}
+                    <div style={{
+                      height:20, display:"flex", alignItems:"center", justifyContent:"center",
+                      marginBottom:6,
+                    }}>
+                      {hasC && (
+                        <div style={{
+                          background:`linear-gradient(135deg, ${GOLD}, ${GOLD2})`,
+                          color:"#fff", borderRadius:"50%",
+                          width:20, height:20, display:"flex", alignItems:"center", justifyContent:"center",
+                          fontSize:"0.6rem", fontWeight:900,
+                          boxShadow:`0 2px 8px rgba(197,160,89,0.45)`,
+                        }}>{stageContracts.length}</div>
+                      )}
+                    </div>
+
+                    {/* Node */}
+                    <div className="stage-node" style={{
+                      width:56, height:56, borderRadius:"50%", flexShrink:0,
+                      background: isMyStage
+                        ? `linear-gradient(135deg, ${GOLD}, ${GOLD2})`
+                        : hasC ? `linear-gradient(135deg, ${GOLD}88, ${GOLD2}66)`
+                               : "#f0f0f0",
+                      display:"flex", alignItems:"center", justifyContent:"center",
+                      fontSize:"1.1rem",
+                      border: isMyStage ? `3px solid ${GOLD}` : hasC ? `2px solid ${GOLD_BOR}` : "2px solid #e0e0e0",
+                      boxShadow: isMyStage
+                        ? `0 0 0 4px rgba(197,160,89,0.2), 0 4px 16px rgba(197,160,89,0.4)`
+                        : hasC ? `0 4px 14px rgba(197,160,89,0.25)` : "0 2px 6px rgba(0,0,0,0.06)",
+                      animation: isMyStage ? "pulse-gold 2.5s ease-in-out infinite" : "none",
+                      zIndex:2,
+                    }}>
+                      {stage.icon}
+                    </div>
+
+                    {/* Label */}
+                    <div style={{
+                      marginTop:7, textAlign:"center",
+                      padding:"4px 3px",
+                      background: isMyStage ? GOLD_BG : "transparent",
+                      border: isMyStage ? `1px solid ${GOLD_BOR}` : "1px solid transparent",
+                      borderRadius:7,
+                    }}>
+                      <div style={{ fontSize:"0.52rem", fontWeight:900, color:isMyStage ? "#8B6914" : hasC ? GOLD2 : "#aaa" }}>
+                        م{stageNum}
+                      </div>
+                      <div style={{ fontSize:"0.5rem", color:isMyStage ? "#6b5b3e" : hasC ? "#6b5b3e" : "#ccc", lineHeight:1.3, maxWidth:68 }}>
+                        {stage.label}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
+        </Card>
 
+        {/* ── Smart Contract Table ── */}
+        <Card>
+          <CardHeader
+            icon="📋"
+            title="جدول العقود الذكي"
+            subtitle={total === 0 ? "لا توجد عقود بعد" : `${arabicNum(total)} عقد · مرتبة حسب الأولوية${role ? " · مرحلتك مُميّزة" : ""}`}
+          />
           {total === 0 ? (
-            <div style={{ padding:"40px 20px", textAlign:"center", color:"#bbb", fontSize:"0.85rem" }}>
-              <div style={{ fontSize:"2rem", marginBottom:10 }}>📭</div>
-              لا يوجد عقود بعد — ابدأ بإنشاء عقد جديد من قسم طلبات العقود
+            <div style={{ padding:"50px 20px", textAlign:"center" }}>
+              <div style={{ fontSize:"2.5rem", marginBottom:10 }}>📭</div>
+              <div style={{ fontSize:"0.88rem", color:"#bbb" }}>لا يوجد عقود بعد — ابدأ من قسم طلبات العقود</div>
             </div>
           ) : (
             <div style={{ overflowX:"auto" }}>
               <table style={{ width:"100%", borderCollapse:"collapse" }}>
                 <thead>
-                  <tr style={{ background:"#faf9f5" }}>
-                    {["رقم العقد","العنوان","المورد","المرحلة الحالية","أيام في المرحلة","الحالة","تقدم"].map(h => (
+                  <tr style={{ background:CREAM }}>
+                    {["رقم العقد","العنوان","المورد","المرحلة","الأيام","الحالة","التقدم"].map(h => (
                       <th key={h} style={{
-                        padding:"9px 14px", textAlign:"right",
-                        fontSize:"0.68rem", fontWeight:700, color:"#8B6914",
-                        borderBottom:`1px solid ${GOLD_BORDER}`,
-                        whiteSpace:"nowrap",
+                        padding:"10px 16px", textAlign:"right",
+                        fontSize:"0.68rem", fontWeight:800, color:"#8B6914",
+                        borderBottom:`1.5px solid ${GOLD_BOR}`,
+                        whiteSpace:"nowrap", letterSpacing:"0.02em",
                       }}>{h}</th>
                     ))}
                   </tr>
@@ -477,8 +496,8 @@ export default function ContractDashboard({ role, actorName, contracts, pendingC
                   {tableContracts.map((c, i) => {
                     const myRole = role ? ROLES.find(r => r.name === role) : null;
                     const isMine = myRole?.stage.includes(c.currentStage) && c.status !== "completed";
-                    const days = daysAgo(c.updatedAt);
-                    const urgency = days >= 7 ? RED : days >= 3 ? "#f39c12" : GREEN;
+                    const days   = daysAgo(c.updatedAt);
+                    const urg    = urgencyColor(days);
                     const statusColor = c.status === "completed" ? GREEN : c.rejectionReason ? RED : GOLD;
                     const statusLabel = c.status === "completed" ? "مكتمل" : c.rejectionReason ? "مُعاد" : "نشط";
                     const pct = c.status === "completed" ? 100 : Math.round((c.currentStage / 11) * 100);
@@ -486,75 +505,69 @@ export default function ContractDashboard({ role, actorName, contracts, pendingC
                     return (
                       <tr
                         key={c.id}
-                        className="tr-hover"
+                        className="tr-row"
                         onClick={() => onOpenContract(c.id)}
                         style={{
-                          background: isMine ? "rgba(197,160,89,0.06)" : i % 2 === 0 ? "#fff" : "#fdfcfa",
+                          background: isMine ? "rgba(197,160,89,0.05)" : i % 2 === 0 ? "#fff" : "#fdfcfa",
                           borderBottom:`1px solid rgba(0,0,0,0.04)`,
                           borderRight: isMine ? `3px solid ${GOLD}` : "3px solid transparent",
-                          transition:"background 0.15s",
                         }}
                       >
-                        <td style={{ padding:"10px 14px", fontSize:"0.68rem", fontWeight:700, color:"#8B6914", whiteSpace:"nowrap" }}>
+                        <td style={{ padding:"11px 16px", fontSize:"0.7rem", fontWeight:800, color:"#8B6914", whiteSpace:"nowrap" }}>
                           {c.contractNo}
                         </td>
-                        <td style={{ padding:"10px 14px" }}>
-                          <div style={{ fontSize:"0.78rem", fontWeight:700, color:"#1a1206", maxWidth:180, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                        <td style={{ padding:"11px 16px" }}>
+                          <div style={{ fontSize:"0.8rem", fontWeight:700, color:"#1A1A1A", maxWidth:180, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                             {c.title}
                           </div>
                           {isMine && (
-                            <div style={{ fontSize:"0.58rem", color:GOLD, fontWeight:800, marginTop:1 }}>
-                              ⚡ في مرحلتك
-                            </div>
+                            <div style={{ fontSize:"0.58rem", color:GOLD, fontWeight:800, marginTop:1 }}>⚡ في مرحلتك</div>
                           )}
                         </td>
-                        <td style={{ padding:"10px 14px", fontSize:"0.72rem", color:"#4a3520", whiteSpace:"nowrap" }}>
+                        <td style={{ padding:"11px 16px", fontSize:"0.74rem", color:"#4a3520", whiteSpace:"nowrap" }}>
                           {c.vendorName}
                         </td>
-                        <td style={{ padding:"10px 14px" }}>
+                        <td style={{ padding:"11px 16px" }}>
                           <span style={{
                             display:"inline-flex", alignItems:"center", gap:4,
-                            background: isMine ? GOLD_BG : "rgba(0,0,0,0.04)",
-                            border: isMine ? `1px solid ${GOLD_BORDER}` : "1px solid rgba(0,0,0,0.08)",
-                            borderRadius:6, padding:"3px 8px",
+                            background: isMine ? GOLD_BG : "#f8f8f8",
+                            border: isMine ? `1px solid ${GOLD_BOR}` : "1px solid #eee",
+                            borderRadius:7, padding:"3px 9px",
                             fontSize:"0.65rem", fontWeight:700,
-                            color: isMine ? "#8B6914" : "#4a3520",
-                            whiteSpace:"nowrap",
+                            color: isMine ? "#8B6914" : "#4a3520", whiteSpace:"nowrap",
                           }}>
-                            {STAGES[c.currentStage - 1]?.icon} م{c.currentStage} {STAGES[c.currentStage - 1]?.label?.substring(0,12)}
+                            {STAGES[c.currentStage - 1]?.icon} م{c.currentStage} {STAGES[c.currentStage - 1]?.label?.slice(0,10)}
                           </span>
                         </td>
-                        <td style={{ padding:"10px 14px", textAlign:"center" }}>
+                        <td style={{ padding:"11px 16px", textAlign:"center" }}>
                           <span style={{
-                            fontSize:"0.7rem", fontWeight:900, color:urgency,
-                            background:`${urgency}15`,
-                            borderRadius:5, padding:"2px 7px",
+                            fontSize:"0.72rem", fontWeight:900, color:urg,
+                            background:`${urg}14`, borderRadius:6, padding:"2px 8px",
                           }}>
-                            {arabicNum(days)} يوم
+                            {arabicNum(days)}
                           </span>
                         </td>
-                        <td style={{ padding:"10px 14px" }}>
+                        <td style={{ padding:"11px 16px" }}>
                           <span style={{
                             fontSize:"0.65rem", fontWeight:700, color:statusColor,
-                            background:`${statusColor}15`, border:`1px solid ${statusColor}30`,
-                            borderRadius:6, padding:"2px 8px",
+                            background:`${statusColor}14`, border:`1px solid ${statusColor}28`,
+                            borderRadius:7, padding:"3px 9px",
                           }}>
                             {statusLabel}
                           </span>
                         </td>
-                        <td style={{ padding:"10px 14px", minWidth:90 }}>
-                          <div style={{ display:"flex", alignItems:"center", gap:5 }}>
-                            <div style={{ flex:1, height:4, borderRadius:3, background:"rgba(0,0,0,0.07)" }}>
+                        <td style={{ padding:"11px 16px", minWidth:100 }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                            <div style={{ flex:1, height:5, borderRadius:3, background:"#ececec" }}>
                               <div style={{
                                 height:"100%", borderRadius:3,
                                 width:`${pct}%`,
                                 background: c.status === "completed"
-                                  ? GREEN
-                                  : `linear-gradient(90deg, ${GOLD}, ${GOLD_LIGHT})`,
-                                transition:"width 0.7s",
+                                  ? `linear-gradient(90deg, ${GREEN}, #2ecc71)`
+                                  : `linear-gradient(90deg, ${GOLD2}, ${GOLD_LIGHT})`,
                               }} />
                             </div>
-                            <span style={{ fontSize:"0.6rem", fontWeight:800, color:statusColor, flexShrink:0 }}>
+                            <span style={{ fontSize:"0.6rem", fontWeight:900, color:statusColor, flexShrink:0 }}>
                               {arabicNum(pct)}%
                             </span>
                           </div>
@@ -566,7 +579,7 @@ export default function ContractDashboard({ role, actorName, contracts, pendingC
               </table>
             </div>
           )}
-        </div>
+        </Card>
 
       </div>
     </div>

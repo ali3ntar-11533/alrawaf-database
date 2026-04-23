@@ -10,7 +10,7 @@ import ContractAnalytics from "./ContractAnalytics";
 import { computePendingByRole } from "./RoleSelector";
 import { ROLES, type ContractTab } from "./types";
 import type { Contract } from "./types";
-import { listContracts } from "./api";
+import { listContracts, seedSampleContracts } from "./api";
 import { useContractNotifications } from "./useContractNotifications";
 
 const ROLE_KEY = "rawaf_contracts_role";
@@ -27,6 +27,12 @@ export default function ContractApp({ onExit }: Props) {
   const [openContractId, setOpenContractId] = useState<number | null>(null);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [filterStage, setFilterStage] = useState<number | null>(null);
+
+  useEffect(() => {
+    seedSampleContracts().catch(() => {}).finally(() => {
+      listContracts().then(setContracts);
+    });
+  }, []);
 
   useEffect(() => {
     listContracts().then(setContracts);
