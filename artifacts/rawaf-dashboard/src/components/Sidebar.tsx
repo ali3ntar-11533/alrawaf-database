@@ -1,4 +1,4 @@
-import type { Contractor } from "@workspace/api-client-react";
+import type { Contractor } from "../contractors/types";
 
 interface Props {
   filtered: Contractor[];

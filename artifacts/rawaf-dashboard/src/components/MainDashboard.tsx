@@ -1,8 +1,8 @@
-import { useListContractors } from "@workspace/api-client-react";
+import { useContractors } from "../contractors/api";
 import Sidebar from "./Sidebar";
 import MainContent from "./MainContent";
 import WelcomeHero from "./WelcomeHero";
-import type { Contractor } from "@workspace/api-client-react";
+import type { Contractor } from "../contractors/types";
 import type { FilterState } from "./filterTypes";
 
 interface Props {
@@ -53,7 +53,7 @@ function contractorMatchesFilters(c: Contractor, filters: FilterState): boolean 
 }
 
 export default function MainDashboard({ search, filters, selectedId, onSelectId }: Props) {
-  const { data: allContractors = [], isLoading } = useListContractors();
+  const { data: allContractors = [], isLoading } = useContractors();
 
   const hasSearch       = search.trim().length > 0;
   const hasFilters      = Object.values(filters).some(Boolean);

@@ -4,14 +4,12 @@ import type { FilterState } from "./filterTypes";
 import logoImg from "@assets/logo_1776506524686.jpg";
 import * as XLSX from "xlsx";
 import {
-  useListContractors,
-  useCreateContractor,
-  useDeleteContractor,
-  useUpdateContractor,
-  getListContractorsQueryKey,
-} from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
-import type { Contractor } from "@workspace/api-client-react";
+  useContractors,
+  createContractor,
+  updateContractor,
+  deleteContractor,
+} from "../contractors/api";
+import type { Contractor } from "../contractors/types";
 
 const DB_PASSWORD = "maged@2026";
 const SESSION_KEY = "rawaf_db_auth";
@@ -86,7 +84,7 @@ function contractorToForm(c: Contractor): FormData {
   };
 }
 
-function buildPutData(f: FormData, rating?: number | null) {
+function buildPutData(f: FormData, rating?: number | null): Omit<Contractor, "id"> {
   return {
     contractNo:      f.contractNo,
     contractor:      f.contractor,
@@ -275,11 +273,8 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authenticated]);
 
-  const queryClient    = useQueryClient();
-  const { data: contractors = [], isLoading, isError } = useListContractors();
-  const createMutation = useCreateContractor();
-  const updateMutation = useUpdateContractor();
-  const deleteMutation = useDeleteContractor();
+  const { data: contractors = [], isLoading, isError, refetch } = useContractors();
+  const [isSaving, setIsSaving] = useState(false);
 
   /* Exact-match filter + sort by contractor name then ID */
   const filtered = contractors
@@ -346,38 +341,58 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
   async function handleEditSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!editRow) return;
-    await updateMutation.mutateAsync({ id: editRow.id, data: buildPutData(editForm, editRating) });
-    queryClient.invalidateQueries({ queryKey: getListContractorsQueryKey() });
-    setEditRow(null);
+    setIsSaving(true);
+    try {
+      await updateContractor(editRow.id, buildPutData(editForm, editRating));
+      refetch();
+      setEditRow(null);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   async function handleAddSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await createMutation.mutateAsync({ data: buildPutData(addForm, addRating) });
-    queryClient.invalidateQueries({ queryKey: getListContractorsQueryKey() });
-    setAddForm(EMPTY_FORM);
-    setAddRating(0);
-    setShowAddForm(false);
+    setIsSaving(true);
+    try {
+      await createContractor(buildPutData(addForm, addRating));
+      refetch();
+      setAddForm(EMPTY_FORM);
+      setAddRating(0);
+      setShowAddForm(false);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   async function handleCloneSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!cloneSource) return;
-    const baseForm = contractorToForm(cloneSource);
-    await createMutation.mutateAsync({
-      data: buildPutData(
-        { ...baseForm, technicalScope: cloneTechScope, price: clonePrice, unit: cloneUnit, localContent: cloneLocalContent },
-        (cloneSource as any).rating ?? null,
-      ),
-    });
-    queryClient.invalidateQueries({ queryKey: getListContractorsQueryKey() });
-    setCloneSource(null);
+    setIsSaving(true);
+    try {
+      const baseForm = contractorToForm(cloneSource);
+      await createContractor(
+        buildPutData(
+          { ...baseForm, technicalScope: cloneTechScope, price: clonePrice, unit: cloneUnit, localContent: cloneLocalContent },
+          (cloneSource as any).rating ?? null,
+        ),
+      );
+      refetch();
+      setCloneSource(null);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   async function handleDelete(id: number) {
-    await deleteMutation.mutateAsync({ id });
-    queryClient.invalidateQueries({ queryKey: getListContractorsQueryKey() });
-    setDeleteConfirm(null);
+    setIsSaving(true);
+    try {
+      await deleteContractor(id);
+      refetch();
+      setDeleteConfirm(null);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   /* ── Password gate ── */
@@ -495,7 +510,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                     <div style={{ fontSize: "2rem" }}>⚠️</div>
                     <div style={{ fontSize: "0.85rem", color: "#e74c3c", fontWeight: 700 }}>تعذّر تحميل البيانات</div>
                     <div style={{ fontSize: "0.75rem", color: "#aaa" }}>تحقق من اتصال الشبكة أو أعد تحميل الصفحة</div>
-                    <button onClick={() => queryClient.invalidateQueries({ queryKey: getListContractorsQueryKey() })}
+                    <button onClick={() => refetch()}
                       style={{ marginTop: "6px", background: "linear-gradient(135deg, var(--gold), #a88540)", color: "#fff", border: "none", borderRadius: "8px", padding: "8px 20px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}>
                       إعادة المحاولة
                     </button>
@@ -593,9 +608,9 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
             <p style={{ fontSize: "0.8rem", color: "#888", marginBottom: "20px" }}>هذا الإجراء لا يمكن التراجع عنه. هل أنت متأكد؟</p>
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={() => setDeleteConfirm(null)} style={cancelBtnStyle}>إلغاء</button>
-              <button onClick={() => handleDelete(deleteConfirm)} disabled={deleteMutation.isPending}
+              <button onClick={() => handleDelete(deleteConfirm)} disabled={isSaving}
                 style={{ flex: 1, background: "linear-gradient(135deg, #e74c3c, #c0392b)", color: "#fff", border: "none", borderRadius: "10px", padding: "12px", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}>
-                {deleteMutation.isPending ? "جاري الحذف..." : "تأكيد الحذف"}
+                {isSaving ? "جاري الحذف..." : "تأكيد الحذف"}
               </button>
             </div>
           </div>
@@ -634,8 +649,8 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
               </div>
               <div style={{ display: "flex", gap: "10px" }}>
                 <button type="button" onClick={() => setEditRow(null)} style={cancelBtnStyle}>إلغاء</button>
-                <button type="submit" disabled={updateMutation.isPending} style={submitBtnStyle}>
-                  {updateMutation.isPending ? "جاري الحفظ..." : "حفظ التعديلات"}
+                <button type="submit" disabled={isSaving} style={submitBtnStyle}>
+                  {isSaving ? "جاري الحفظ..." : "حفظ التعديلات"}
                 </button>
               </div>
             </form>
@@ -675,8 +690,8 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
               </div>
               <div style={{ display: "flex", gap: "10px" }}>
                 <button type="button" onClick={() => setShowAddForm(false)} style={cancelBtnStyle}>إلغاء</button>
-                <button type="submit" disabled={createMutation.isPending} style={submitBtnStyle}>
-                  {createMutation.isPending ? "جاري الحفظ..." : "إضافة السجل"}
+                <button type="submit" disabled={isSaving} style={submitBtnStyle}>
+                  {isSaving ? "جاري الحفظ..." : "إضافة السجل"}
                 </button>
               </div>
             </form>
@@ -747,8 +762,8 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
               </div>
               <div style={{ display: "flex", gap: "10px" }}>
                 <button type="button" onClick={() => setCloneSource(null)} style={cancelBtnStyle}>إلغاء</button>
-                <button type="submit" disabled={createMutation.isPending} style={{ ...submitBtnStyle, background: "linear-gradient(135deg, #2baa74, #1d8a5a)" }}>
-                  {createMutation.isPending ? "جاري الحفظ..." : "حفظ كسجل جديد"}
+                <button type="submit" disabled={isSaving} style={{ ...submitBtnStyle, background: "linear-gradient(135deg, #2baa74, #1d8a5a)" }}>
+                  {isSaving ? "جاري الحفظ..." : "حفظ كسجل جديد"}
                 </button>
               </div>
             </form>

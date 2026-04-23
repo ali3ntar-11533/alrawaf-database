@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Building2, Mail, Phone, FileText, Briefcase, MapPin, DollarSign, Clock } from "lucide-react";
-import type { Contractor } from "@workspace/api-client-react";
+import type { Contractor } from "../contractors/types";
 
 interface Props {
   contractor: Contractor | null;
