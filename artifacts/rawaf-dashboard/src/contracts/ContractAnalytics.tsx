@@ -209,6 +209,7 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
         @media print {
           body { -webkit-print-color-adjust: exact; color-adjust: exact; }
           .no-print { display: none !important; }
+          .print-header { display: block !important; }
         }
         .analytics-bar:hover { filter: brightness(1.15); cursor: pointer; }
       `}</style>
@@ -695,6 +696,41 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
           <div style={{ fontSize: "0.75rem", color: "#9b8060", marginTop: 4 }}>
             تاريخ التقرير: {new Date().toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" })}
           </div>
+          {(() => {
+            const fmtDate = (d?: string) =>
+              d ? new Date(d).toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" }) : "—";
+            const periodLabels: Record<DatePreset, string> = {
+              all: "", thisMonth: "هذا الشهر", thisQuarter: "هذا الربع", thisYear: "هذه السنة", custom: "مخصص",
+            };
+            const parts: string[] = [];
+            if (datePreset !== "all") {
+              const { dateFrom, dateTo } = getPresetRange(datePreset, customDateFrom, customDateTo);
+              if (datePreset !== "custom" || dateFrom || dateTo) {
+                parts.push(`الفترة: ${periodLabels[datePreset]} (${fmtDate(dateFrom)} — ${fmtDate(dateTo)})`);
+              }
+            }
+            if (valueMin && valueMax) {
+              parts.push(`القيمة: من ${parseInt(valueMin).toLocaleString("ar-SA")} ر.س إلى ${parseInt(valueMax).toLocaleString("ar-SA")} ر.س`);
+            } else if (valueMin) {
+              parts.push(`القيمة: من ${parseInt(valueMin).toLocaleString("ar-SA")} ر.س فأكثر`);
+            } else if (valueMax) {
+              parts.push(`القيمة: حتى ${parseInt(valueMax).toLocaleString("ar-SA")} ر.س`);
+            }
+            if (parts.length === 0) return null;
+            return (
+              <div style={{
+                marginTop: 10, display: "inline-block",
+                background: "rgba(197,160,89,0.10)", border: `1px solid ${GOLD_BORDER}`,
+                borderRadius: 8, padding: "6px 18px",
+              }}>
+                {parts.map((p, i) => (
+                  <div key={i} style={{ fontSize: "0.78rem", color: "#8B6914", fontWeight: 700 }}>
+                    {p}
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       </div>
 
