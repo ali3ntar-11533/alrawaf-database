@@ -1,33 +1,24 @@
 import { useState, useEffect, useRef } from "react";
 import {
   BarChart, Bar, XAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell,
+  PieChart, Pie, Cell, AreaChart, Area, CartesianGrid,
 } from "recharts";
 import { STAGES, ROLES } from "./types";
 import type { Contract } from "./types";
 import logoImg from "@assets/logo_1776506524686.jpg";
 
 // ── Tokens ──────────────────────────────────────────────────────────
-const GOLD      = "#C5A059";
-const GOLD2     = "#a88540";
-const GOLD_END  = "#E2C275";
-const GOLD_GLOW = "rgba(197,160,89,0.55)";
-const GOLD_BOR  = "rgba(197,160,89,0.28)";
-const GREEN     = "#22c55e";
-const GREEN_D   = "#15803d";
-const RED       = "#ef4444";
-const RED_D     = "#b91c1c";
-const AMBER     = "#f59e0b";
-const BLUE      = "#3b82f6";
-const BLUE_D    = "#1d4ed8";
-// Dark luxury palette
-const BG        = "#07090F";
-const CARD      = "rgba(14,17,26,0.98)";
-const BORD      = "rgba(255,255,255,0.07)";
-const BORD_HI   = "rgba(255,255,255,0.13)";
-const TX        = "rgba(255,255,255,0.90)";
-const TX2       = "rgba(255,255,255,0.50)";
-const TX3       = "rgba(255,255,255,0.22)";
+const GOLD     = "#C5A059";
+const GOLD2    = "#a88540";
+const GOLD_END = "#E2C275";
+const GREEN    = "#16a34a";
+const GREEN_L  = "#22c55e";
+const ORANGE   = "#ea580c";
+const ORANGE_L = "#f97316";
+const BLUE     = "#2563eb";
+const BLUE_L   = "#3b82f6";
+const RED      = "#dc2626";
+const AMBER    = "#d97706";
 
 function daysSince(iso: string) {
   return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
@@ -49,37 +40,35 @@ interface Props {
   onOpenStage: (stageNum: number) => void;
 }
 
-// ── Animated Counter ────────────────────────────────────────────────
-function AnimatedNum({ value, color }: { value: number; color?: string }) {
-  const [display, setDisplay] = useState(0);
+// ── Animated counter ────────────────────────────────────────────────
+function AnimCount({ value, color }: { value: number; color?: string }) {
+  const [v, setV] = useState(0);
   const prev = useRef(0);
   useEffect(() => {
-    const start = prev.current;
-    const diff  = value - start;
-    if (diff === 0) return;
-    const dur = Math.min(900, Math.abs(diff) * 40);
-    const t0  = performance.now();
-    const raf = (t: number) => {
+    const from = prev.current, to = value;
+    if (from === to) return;
+    const dur = Math.min(700, Math.abs(to - from) * 30 + 200);
+    const t0 = performance.now();
+    const tick = (t: number) => {
       const p = Math.min(1, (t - t0) / dur);
-      const ease = 1 - Math.pow(1 - p, 3);
-      setDisplay(Math.round(start + diff * ease));
-      if (p < 1) requestAnimationFrame(raf);
-      else { setDisplay(value); prev.current = value; }
+      const e = 1 - Math.pow(1 - p, 3);
+      setV(Math.round(from + (to - from) * e));
+      if (p < 1) requestAnimationFrame(tick);
+      else { setV(to); prev.current = to; }
     };
-    requestAnimationFrame(raf);
+    requestAnimationFrame(tick);
   }, [value]);
-  return <span style={{ color: color ?? TX }}>{display}</span>;
+  return <span style={{ color }}>{v}</span>;
 }
 
-// ── Stage Row (pipeline card) ────────────────────────────────────────
+// ── Single stage row (reference-image style) ─────────────────────────
 function StageRow({
-  stageNum, contracts, totalForTab, isMine, viewTab, pulseActive, onEnter, isFirst, isLast, idx,
+  stageNum, contracts, maxCount, isMine, viewTab, pulseActive, onEnter, idx,
 }: {
-  stageNum: number; contracts: Contract[]; totalForTab: number; isMine: boolean;
-  viewTab: ViewTab; pulseActive: boolean; onEnter: () => void;
-  isFirst: boolean; isLast: boolean; idx: number;
+  stageNum: number; contracts: Contract[]; maxCount: number; isMine: boolean;
+  viewTab: ViewTab; pulseActive: boolean; onEnter: () => void; idx: number;
 }) {
-  const [hovered, setHovered] = useState(false);
+  const [hov, setHov] = useState(false);
   const stage = STAGES[stageNum - 1];
 
   const activeC    = contracts.filter(c => c.currentStage === stageNum && c.status === "active").length;
@@ -90,184 +79,142 @@ function StageRow({
   const urgent = contracts.filter(c => c.currentStage === stageNum && c.status === "active" && daysSince(c.updatedAt) >= 7).length;
   const warn   = contracts.filter(c => c.currentStage === stageNum && c.status === "active" && daysSince(c.updatedAt) >= 3 && daysSince(c.updatedAt) < 7).length;
 
-  const pct = totalForTab > 0 ? Math.min(100, Math.round((count / totalForTab) * 100)) : 0;
-
-  const accent =
-    viewTab === "completed" ? GREEN :
-    viewTab === "rejected"  ? RED :
-    urgent > 0              ? RED :
-    warn > 0                ? AMBER :
-    isMine                  ? GOLD :
-    count > 0               ? BLUE  :
-    "rgba(255,255,255,0.1)";
+  const pct      = maxCount > 0 ? (count / maxCount) * 100 : 0;
   const isEmpty  = count === 0;
-  const lineClr  = isEmpty ? "rgba(255,255,255,0.05)" : accent + "55";
   const shouldPulse = pulseActive && count > 0;
+
+  // Bar color based on count proportion
+  const barColor = viewTab === "completed" ? GREEN_L
+    : viewTab === "rejected" ? RED
+    : urgent > 0 ? RED
+    : warn > 0   ? AMBER
+    : pct >= 50  ? GREEN_L
+    : pct >= 20  ? ORANGE_L
+    : count > 0  ? BLUE_L
+    : "#E5E7EB";
+
+  const numColor = viewTab === "completed" ? GREEN
+    : viewTab === "rejected" ? RED
+    : count === 0 ? "#D1D5DB"
+    : urgent > 0  ? RED
+    : warn > 0    ? AMBER
+    : BLUE;
 
   return (
     <div
       className={shouldPulse ? "row-pulse" : ""}
-      style={{ display: "flex", alignItems: "stretch", animation: `slideIn 0.42s ease ${idx * 0.035}s both` }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      onClick={() => !isEmpty && onEnter()}
+      style={{
+        display: "flex", alignItems: "center", gap: 0,
+        padding: "10px 0",
+        borderBottom: "1px solid #F3F4F6",
+        cursor: isEmpty ? "default" : "pointer",
+        background: hov && !isEmpty
+          ? isMine ? "rgba(197,160,89,0.04)" : "#FAFAFA"
+          : "transparent",
+        borderRadius: hov ? 8 : 0,
+        transition: "background 0.18s ease",
+        animation: `rowFadeIn 0.35s ease ${idx * 0.03}s both`,
+        opacity: isEmpty ? 0.55 : 1,
+      }}
     >
-      {/* ── Pipeline track (right side in RTL = logical start) */}
-      <div style={{ width: 52, flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <div style={{ flex: 1, width: 2, background: isFirst ? "transparent" : lineClr, minHeight: 14, transition: "background 0.4s" }}/>
-        {/* Numbered node */}
-        <div style={{
-          width: 36, height: 36, borderRadius: "50%", flexShrink: 0, zIndex: 1,
-          background: isEmpty ? "rgba(255,255,255,0.05)" : `linear-gradient(135deg, ${accent}, ${accent}80)`,
-          border: `2px solid ${isEmpty ? BORD : accent + "70"}`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "0.68rem", fontWeight: 900, color: isEmpty ? TX3 : "#fff",
-          boxShadow: isEmpty ? "none" : `0 0 0 4px ${accent}10, 0 0 16px ${accent}40`,
-          transition: "all 0.35s ease",
-          transform: hovered && !isEmpty ? "scale(1.1)" : "scale(1)",
-        }}>{stageNum}</div>
-        <div style={{ flex: 1, width: 2, background: isLast ? "transparent" : lineClr, minHeight: 14, transition: "background 0.4s" }}/>
+      {/* Count number — left side */}
+      <div style={{
+        width: 52, flexShrink: 0, textAlign: "left",
+        paddingLeft: 6,
+        fontSize: count >= 100 ? "1.3rem" : count >= 10 ? "1.55rem" : "1.8rem",
+        fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1,
+        fontVariantNumeric: "tabular-nums",
+      }}>
+        <AnimCount value={count} color={numColor}/>
       </div>
 
-      {/* ── Card */}
-      <div
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          flex: 1, marginTop: 3, marginBottom: 3,
-          background: isEmpty ? "rgba(255,255,255,0.015)" :
-                      isMine  ? `rgba(197,160,89,0.07)` : CARD,
-          border: `1px solid ${hovered && !isEmpty ? (isMine ? GOLD_BOR : BORD_HI) : (isMine ? GOLD_BOR : BORD)}`,
-          borderRight: `3px solid ${isEmpty ? "transparent" : accent}`,
-          borderRadius: 16,
-          display: "flex", alignItems: "center",
-          overflow: "hidden",
-          boxShadow: hovered && !isEmpty
-            ? `0 8px 32px ${accent}22, 0 2px 8px rgba(0,0,0,0.3)`
-            : isEmpty ? "none" : "0 4px 18px rgba(0,0,0,0.2)",
-          transition: "all 0.25s ease",
-          opacity: isEmpty && viewTab !== "all" ? 0.45 : isEmpty ? 0.6 : 1,
-          transform: hovered && !isEmpty ? "translateX(-2px)" : "none",
-        }}
-      >
-        {/* Shimmer on hover */}
-        {hovered && !isEmpty && (
+      {/* Bar + urgency — middle */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5, padding: "0 14px 0 8px" }}>
+        {/* Bar track */}
+        <div style={{
+          height: 7, background: "#EEF0F2", borderRadius: 99, overflow: "hidden",
+        }}>
           <div style={{
-            position: "absolute", inset: 0, pointerEvents: "none", borderRadius: 16,
-            background: `linear-gradient(105deg, transparent 40%, ${accent}08 50%, transparent 60%)`,
-            animation: "shimmer 1.5s ease infinite",
+            height: "100%",
+            width: pct > 0 ? `${Math.max(pct, 3)}%` : "0%",
+            borderRadius: 99,
+            background: isEmpty ? "transparent" : barColor,
+            boxShadow: pct > 0 && !isEmpty ? `0 0 6px ${barColor}70` : "none",
+            transition: "width 1.1s cubic-bezier(0.22,1,0.36,1)",
           }}/>
-        )}
-
-        {/* Stage info */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", flex: "0 0 auto", minWidth: 250 }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 13, flexShrink: 0,
-            background: isEmpty ? "rgba(255,255,255,0.04)" : isMine ? `linear-gradient(135deg, ${GOLD}, ${GOLD_END})` : `${accent}20`,
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem",
-            boxShadow: isEmpty ? "none" : isMine ? `0 4px 14px ${GOLD_GLOW}` : `0 2px 10px ${accent}30`,
-            transition: "transform 0.25s", transform: hovered && !isEmpty ? "scale(1.08) rotate(-3deg)" : "scale(1)",
-          }}>{stage?.icon ?? "📄"}</div>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
-              {isMine && (
-                <span style={{ fontSize: "0.5rem", background: "rgba(197,160,89,0.15)", border: `1px solid ${GOLD_BOR}`, borderRadius: 8, padding: "1px 6px", color: GOLD, fontWeight: 800 }}>
-                  ⭐ مرحلتك
-                </span>
-              )}
-            </div>
-            <div style={{ fontSize: "0.84rem", fontWeight: 800, color: isEmpty ? TX3 : TX, lineHeight: 1.25 }}>{stage?.label}</div>
-            <div style={{ fontSize: "0.58rem", color: TX3, marginTop: 3 }}>👤 {stage?.role}</div>
-          </div>
         </div>
-
-        {/* Divider */}
-        <div style={{ width: 1, height: 38, background: BORD, flexShrink: 0 }}/>
-
-        {/* Count + bar */}
-        <div style={{ flex: 1, padding: "11px 18px", display: "flex", alignItems: "center", gap: 14 }}>
-          {/* Glowing orb */}
-          <div style={{
-            width: 48, height: 48, borderRadius: "50%", flexShrink: 0,
-            background: isEmpty ? "rgba(255,255,255,0.04)" : `linear-gradient(135deg, ${accent}BB, ${accent}70)`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: count >= 100 ? "0.82rem" : count >= 10 ? "1rem" : "1.28rem",
-            fontWeight: 900, color: isEmpty ? TX3 : "#fff",
-            boxShadow: isEmpty ? "none" : `0 0 0 5px ${accent}10, 0 0 24px ${accent}38`,
-            letterSpacing: "-0.02em",
-            animation: shouldPulse ? "orbPulse 0.8s ease 3" : "none",
-          }}>{count}</div>
-
-          {/* Progress info */}
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-              <span style={{ fontSize: "0.58rem", color: TX3 }}>
-                {isEmpty ? "لا طلبات حالياً" : `${count} طلب · ${pct}%`}
+        {/* Urgency pills */}
+        {(urgent > 0 || warn > 0) && (
+          <div style={{ display: "flex", gap: 5, paddingRight: 2 }}>
+            {urgent > 0 && (
+              <span style={{ fontSize: "0.52rem", fontWeight: 800, color: RED, background: "#FEF2F2", border: "1px solid #FCA5A580", borderRadius: 20, padding: "1px 7px" }}>
+                ⚠ {urgent} عاجل
               </span>
-              <div style={{ display: "flex", gap: 4 }}>
-                {urgent > 0 && (
-                  <span style={{ fontSize: "0.52rem", fontWeight: 800, color: RED, background: `${RED}14`, border: `1px solid ${RED}22`, borderRadius: 8, padding: "1px 6px", animation: "urgentBlink 2s ease infinite" }}>
-                    ⚠ {urgent} عاجل
-                  </span>
-                )}
-                {warn > 0 && (
-                  <span style={{ fontSize: "0.52rem", fontWeight: 800, color: AMBER, background: `${AMBER}14`, border: `1px solid ${AMBER}22`, borderRadius: 8, padding: "1px 6px" }}>
-                    🔔 {warn}
-                  </span>
-                )}
-              </div>
-            </div>
-            <div style={{ height: 6, background: "rgba(255,255,255,0.07)", borderRadius: 4, overflow: "hidden" }}>
-              <div style={{
-                height: "100%", width: `${pct}%`, borderRadius: 4,
-                background: isEmpty ? "transparent" : isMine
-                  ? `linear-gradient(90deg, ${GOLD}, ${GOLD_END})`
-                  : `linear-gradient(90deg, ${accent}, ${accent}60)`,
-                boxShadow: pct > 0 ? `0 0 8px ${accent}50` : "none",
-                transition: "width 1.1s cubic-bezier(0.22,1,0.36,1)",
-              }}/>
-            </div>
+            )}
+            {warn > 0 && (
+              <span style={{ fontSize: "0.52rem", fontWeight: 800, color: AMBER, background: "#FFFBEB", border: "1px solid #FCD34D80", borderRadius: 20, padding: "1px 7px" }}>
+                🔔 {warn} تنبيه
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Stage name + role — right side */}
+      <div style={{ width: 200, flexShrink: 0, textAlign: "right", paddingRight: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 6 }}>
+          {isMine && (
+            <span style={{ fontSize: "0.48rem", fontWeight: 800, color: GOLD2, background: "rgba(197,160,89,0.1)", border: "1px solid rgba(197,160,89,0.25)", borderRadius: 20, padding: "1px 6px" }}>
+              مرحلتك ⭐
+            </span>
+          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ fontSize: "0.82rem", fontWeight: 700, color: isEmpty ? "#C9CDD4" : "#1F2937", lineHeight: 1.2 }}>
+              {stage?.label}
+            </span>
+            <span style={{ fontSize: "0.9rem" }}>{stage?.icon}</span>
           </div>
         </div>
-
-        {/* Divider */}
-        <div style={{ width: 1, height: 38, background: BORD, flexShrink: 0 }}/>
-
-        {/* Enter button */}
-        <div style={{ padding: "11px 16px", flexShrink: 0 }}>
-          <button
-            onClick={onEnter}
-            disabled={isEmpty}
-            style={{
-              background: isEmpty
-                ? "rgba(255,255,255,0.04)"
-                : `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_END} 100%)`,
-              color: isEmpty ? TX3 : "#fff",
-              border: isEmpty ? `1px solid ${BORD}` : "none",
-              borderRadius: 11,
-              padding: "8px 16px",
-              fontFamily: "'Cairo','Tajawal',sans-serif",
-              fontSize: "0.73rem", fontWeight: 800,
-              cursor: isEmpty ? "default" : "pointer",
-              boxShadow: isEmpty ? "none" : `0 4px 16px ${GOLD_GLOW}`,
-              whiteSpace: "nowrap",
-              transition: "all 0.18s ease",
-              letterSpacing: "0.02em",
-            }}
-            onMouseEnter={e => { if (!isEmpty) { const b = e.currentTarget; b.style.transform = "scale(1.06)"; b.style.boxShadow = `0 6px 24px ${GOLD_GLOW}`; }}}
-            onMouseLeave={e => { const b = e.currentTarget; b.style.transform = "scale(1)"; b.style.boxShadow = isEmpty ? "none" : `0 4px 16px ${GOLD_GLOW}`; }}
-          >
-            {isEmpty ? "فارغة" : "دخول ←"}
-          </button>
+        <div style={{ fontSize: "0.56rem", color: "#9CA3AF", marginTop: 2, textAlign: "right" }}>
+          {stage?.role}
         </div>
+      </div>
+
+      {/* Enter button — shown on hover */}
+      <div style={{
+        width: hov && !isEmpty ? 76 : 0, overflow: "hidden",
+        transition: "width 0.22s ease",
+        flexShrink: 0, paddingLeft: hov && !isEmpty ? 8 : 0,
+      }}>
+        {!isEmpty && (
+          <button
+            onClick={e => { e.stopPropagation(); onEnter(); }}
+            style={{
+              background: isMine
+                ? `linear-gradient(135deg, ${GOLD}, ${GOLD_END})`
+                : `linear-gradient(135deg, ${BLUE}, ${BLUE_L})`,
+              color: "#fff", border: "none", borderRadius: 8,
+              padding: "6px 12px", fontSize: "0.65rem", fontWeight: 800,
+              cursor: "pointer", whiteSpace: "nowrap",
+              fontFamily: "'Cairo','Tajawal',sans-serif",
+              boxShadow: isMine ? `0 3px 12px rgba(197,160,89,0.4)` : `0 3px 12px rgba(37,99,235,0.3)`,
+            }}
+          >دخول ←</button>
+        )}
       </div>
     </div>
   );
 }
 
-// ── Metric Tile ─────────────────────────────────────────────────────
-function MetricTile({
-  label, sub, count, icon, accent, accentD, isActive, onClick, hint,
+// ── Stat card ────────────────────────────────────────────────────────
+function StatCard({
+  label, sub, count, icon, accent, isActive, onClick,
 }: {
   label: string; sub: string; count: number; icon: string;
-  accent: string; accentD: string; isActive: boolean; onClick: () => void; hint?: string;
+  accent: string; isActive: boolean; onClick: () => void;
 }) {
   const [hov, setHov] = useState(false);
   return (
@@ -276,77 +223,51 @@ function MetricTile({
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        borderRadius: 20, padding: "20px 22px",
-        background: isActive ? `linear-gradient(145deg, ${accent}18, ${accent}08)` : CARD,
-        border: `1px solid ${isActive ? accent + "40" : hov ? BORD_HI : BORD}`,
+        borderRadius: 16, padding: "18px 20px",
+        background: isActive ? "#fff" : "#fff",
+        border: `1.5px solid ${isActive ? accent + "60" : hov ? "#E5E7EB" : "#F3F4F6"}`,
         boxShadow: isActive
-          ? `0 8px 32px ${accent}25, inset 0 1px 0 ${accent}18`
-          : hov ? `0 8px 24px rgba(0,0,0,0.3)` : "0 2px 10px rgba(0,0,0,0.2)",
+          ? `0 8px 28px ${accent}22, 0 2px 6px ${accent}12`
+          : hov ? "0 6px 20px rgba(0,0,0,0.08)" : "0 1px 4px rgba(0,0,0,0.04)",
         cursor: "pointer",
         position: "relative", overflow: "hidden",
-        transform: isActive ? "translateY(-5px)" : hov ? "translateY(-2px)" : "none",
-        transition: "all 0.22s ease",
+        transform: isActive ? "translateY(-4px)" : hov ? "translateY(-2px)" : "none",
+        transition: "all 0.2s ease",
       }}
     >
-      {/* Top accent line */}
       {isActive && (
-        <div style={{
-          position: "absolute", top: 0, left: 0, right: 0, height: 3,
-          background: `linear-gradient(90deg, ${accent}, ${accentD})`,
-          borderRadius: "20px 20px 0 0",
-          boxShadow: `0 0 12px ${accent}80`,
-        }}/>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent, borderRadius: "16px 16px 0 0" }}/>
       )}
-      {/* Corner glow */}
-      {isActive && (
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1 }}>
+          <span style={{ fontSize: "0.68rem", fontWeight: 600, color: isActive ? accent : "#6B7280" }}>{sub}</span>
+        </div>
         <div style={{
-          position: "absolute", top: -30, right: -30, width: 80, height: 80,
-          borderRadius: "50%", background: `radial-gradient(ellipse, ${accent}18, transparent 70%)`,
-          pointerEvents: "none",
-        }}/>
-      )}
-
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-        <div style={{
-          width: 44, height: 44, borderRadius: 13,
-          background: isActive ? `${accent}20` : "rgba(255,255,255,0.05)",
-          border: `1px solid ${isActive ? accent + "35" : BORD}`,
-          display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.15rem",
-          boxShadow: isActive ? `0 4px 14px ${accent}30` : "none",
-          transition: "all 0.22s ease",
+          width: 40, height: 40, borderRadius: 12,
+          background: isActive ? accent + "15" : "#F9FAFB",
+          border: `1px solid ${isActive ? accent + "30" : "#F3F4F6"}`,
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem",
+          boxShadow: isActive ? `0 2px 10px ${accent}20` : "none",
         }}>{icon}</div>
-        {isActive
-          ? <span style={{ fontSize: "0.52rem", fontWeight: 800, color: accent, background: `${accent}14`, border: `1px solid ${accent}25`, borderRadius: 20, padding: "3px 9px" }}>● نشط</span>
-          : hint
-            ? <span style={{ fontSize: "0.5rem", color: TX3, background: "rgba(255,255,255,0.05)", border: `1px solid ${BORD}`, borderRadius: 20, padding: "3px 9px" }}>{hint}</span>
-            : null
-        }
       </div>
-
       <div style={{
-        fontSize: "2.3rem", fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1,
-        color: isActive ? accent : TX,
-        textShadow: isActive ? `0 0 30px ${accent}40` : "none",
-        transition: "color 0.3s",
+        fontSize: "2.2rem", fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1,
+        color: isActive ? accent : "#111827",
       }}>
-        <AnimatedNum value={count} color={isActive ? accent : TX}/>
+        <AnimCount value={count} color={isActive ? accent : "#111827"}/>
       </div>
-      <div style={{ fontSize: "0.73rem", fontWeight: 700, color: isActive ? accent + "CC" : TX2, marginTop: 6 }}>{label}</div>
-      <div style={{ fontSize: "0.58rem", color: isActive ? accent + "80" : TX3, marginTop: 2 }}>{sub}</div>
+      <div style={{ fontSize: "0.72rem", fontWeight: 600, color: isActive ? accent + "CC" : "#374151", marginTop: 5 }}>{label}</div>
     </div>
   );
 }
 
 // ══════════════════════════════════════════════════════════════════
-// Main Dashboard
-// ══════════════════════════════════════════════════════════════════
 export default function ContractDashboard({
   role, actorName, contracts, pendingContracts, onOpenContract, onOpenStage,
 }: Props) {
-  const [viewTab, setViewTab]       = useState<ViewTab>("all");
+  const [viewTab, setViewTab]         = useState<ViewTab>("all");
   const [pulseActive, setPulseActive] = useState(false);
 
-  // Aggregates
   const total      = contracts.length;
   const cActive    = contracts.filter(c => c.status === "active" && !c.rejectionReason).length;
   const cDone      = contracts.filter(c => c.status === "completed").length;
@@ -363,238 +284,221 @@ export default function ContractDashboard({
 
   const myRoleInfo = ROLES.find(r => r.name === role);
 
-  const totalForTab =
-    viewTab === "completed" ? cDone :
-    viewTab === "rejected"  ? cRejected : cActive;
+  // Max count for bar scaling
+  const maxCount = Math.max(
+    ...STAGES.map((_, i) => {
+      const n = i + 1;
+      return viewTab === "completed"
+        ? contracts.filter(c => c.currentStage === n && c.status === "completed").length
+        : viewTab === "rejected"
+        ? contracts.filter(c => c.currentStage === n && !!c.rejectionReason).length
+        : contracts.filter(c => c.currentStage === n && c.status === "active").length;
+    }),
+    1
+  );
 
   // Bottleneck
   const bottleneckData = STAGES.map((s, i) => ({
-    name: s.label.length > 8 ? s.label.slice(0, 8) + "…" : s.label,
+    name: s.label.length > 9 ? s.label.slice(0, 9) + "…" : s.label,
     fullName: s.label, icon: s.icon, stageNum: i + 1,
     count: contracts.filter(c => c.currentStage === i + 1 && c.status === "active").length,
   })).filter(d => d.count > 0).sort((a, b) => b.count - a.count);
   const maxB = Math.max(...bottleneckData.map(d => d.count), 1);
 
   const pieData = [
-    { name: "نشطة",   value: cActive,   color: GOLD  },
-    { name: "مكتملة", value: cDone,     color: GREEN },
-    { name: "مرفوضة", value: cRejected, color: RED   },
+    { name: "نشطة",   value: cActive,   color: GOLD     },
+    { name: "مكتملة", value: cDone,     color: GREEN_L  },
+    { name: "مرفوضة", value: cRejected, color: RED      },
   ].filter(d => d.value > 0);
 
-  const TAB_META: { key: ViewTab; label: string; sub: string; count: number; icon: string; accent: string; accentD: string; hint?: string }[] = [
-    { key: "all",       label: "إجمالي العقود",   sub: "جميع الحالات",      count: total,     icon: "📁", accent: BLUE,  accentD: BLUE_D,  hint: "عرض الكل" },
-    { key: "active",    label: "الطلبات النشطة",   sub: "قيد التنفيذ الآن",  count: cActive,   icon: "⚡", accent: GOLD,  accentD: GOLD2,   hint: "يُضيء الصفوف" },
-    { key: "completed", label: "العقود المكتملة",  sub: "أُنجزت بنجاح",      count: cDone,     icon: "✅", accent: GREEN, accentD: GREEN_D, hint: "عرض الإنجاز" },
-    { key: "rejected",  label: "العقود المرفوضة",  sub: "أُعيدت أو رُفضت",   count: cRejected, icon: "↩", accent: RED,   accentD: RED_D,   hint: "عرض المرفوض" },
+  const areaData = [
+    { name: "الأسبوع الماضي", مكتملة: completedLastWeek  },
+    { name: "هذا الأسبوع",    مكتملة: completedThisWeek },
   ];
 
-  function handleTabClick(tab: ViewTab) {
-    setViewTab(tab);
-    if (tab === "active") {
+  const TABS = [
+    { key: "all"       as ViewTab, label: "إجمالي العقود",  sub: "جميع الحالات",     count: total,     icon: "📁", accent: BLUE   },
+    { key: "active"    as ViewTab, label: "الطلبات النشطة", sub: "قيد التنفيذ الآن", count: cActive,   icon: "⚡", accent: GOLD   },
+    { key: "completed" as ViewTab, label: "العقود المكتملة", sub: "أُنجزت بنجاح",   count: cDone,     icon: "✅", accent: GREEN  },
+    { key: "rejected"  as ViewTab, label: "العقود المرفوضة", sub: "مرفوضة / معادة",  count: cRejected, icon: "↩", accent: RED    },
+  ];
+
+  const tabMeta =
+    viewTab === "completed" ? { title: "حالات العقود المكتملة حسب المرحلة", color: GREEN }
+    : viewTab === "rejected"  ? { title: "حالات العقود المرفوضة حسب المرحلة", color: RED   }
+    : viewTab === "active"    ? { title: "حالات الطلبات الجارية", color: BLUE  }
+    : { title: "حالات الطلبات الجارية", color: BLUE };
+
+  function handleTab(t: ViewTab) {
+    setViewTab(t);
+    if (t === "active") {
       setPulseActive(true);
-      setTimeout(() => setPulseActive(false), 3600);
+      setTimeout(() => setPulseActive(false), 3500);
     } else {
       setPulseActive(false);
     }
   }
 
-  const tabLabel =
-    viewTab === "completed" ? "عدد العقود المكتملة لكل مرحلة" :
-    viewTab === "rejected"  ? "عدد العقود المرفوضة لكل مرحلة" :
-    viewTab === "active"    ? "الطلبات النشطة — المراحل متوهجة" :
-    "الطلبات النشطة لكل مرحلة";
-
   return (
-    <div dir="rtl" style={{ background: BG, minHeight: "100%", fontFamily: "'Cairo','Tajawal',sans-serif" }}>
+    <div dir="rtl" style={{ background: "#F8FAFC", minHeight: "100%", fontFamily: "'Cairo','Tajawal',sans-serif" }}>
       <style>{`
-        @keyframes glowLogo {
-          0%,100% { box-shadow: 0 0 0 2px rgba(197,160,89,0.4), 0 6px 24px rgba(0,0,0,0.5); }
-          50%      { box-shadow: 0 0 0 3px rgba(197,160,89,0.8), 0 8px 32px rgba(197,160,89,0.35); }
-        }
-        @keyframes slideIn {
-          from { opacity:0; transform:translateX(14px); }
+        @keyframes rowFadeIn {
+          from { opacity:0; transform:translateX(10px); }
           to   { opacity:1; transform:translateX(0); }
         }
         @keyframes fadeUp {
-          from { opacity:0; transform:translateY(10px); }
+          from { opacity:0; transform:translateY(8px); }
           to   { opacity:1; transform:translateY(0); }
         }
-        @keyframes shimmer {
-          0%   { background-position: -200% center; }
-          100% { background-position: 200% center; }
+        @keyframes shimmerText {
+          0%   { background-position:-200% center; }
+          100% { background-position:200% center; }
         }
-        @keyframes orbPulse {
-          0%,100% { transform:scale(1); }
-          50%     { transform:scale(1.18); }
-        }
-        @keyframes urgentBlink {
-          0%,100% { opacity:1; }
-          50%     { opacity:0.55; }
+        @keyframes glowLogo {
+          0%,100% { box-shadow: 0 0 0 2px rgba(197,160,89,0.35), 0 4px 20px rgba(0,0,0,0.18); }
+          50%     { box-shadow: 0 0 0 3px rgba(197,160,89,0.7), 0 6px 28px rgba(197,160,89,0.25); }
         }
         @keyframes row-pulse-kf {
-          0%,100% { box-shadow:0 4px 18px rgba(0,0,0,0.2); }
-          40%     { box-shadow:0 0 0 2px ${GOLD_BOR}, 0 8px 32px rgba(197,160,89,0.28); }
+          0%,100% { background:transparent; }
+          40%     { background:rgba(197,160,89,0.06); }
         }
-        @keyframes headerShimmer {
-          0%   { background-position: -300% center; }
-          100% { background-position: 300% center; }
+        @keyframes urgBlink {
+          0%,100%{opacity:1;}50%{opacity:0.5;}
         }
-        .row-pulse { animation: row-pulse-kf 1.1s ease 3; }
-        .tile-hover { transition: all 0.22s ease; }
+        .row-pulse { animation: row-pulse-kf 1.1s ease 3 !important; }
       `}</style>
 
-      {/* ═══ HEADER ══════════════════════════════════════════════════ */}
+      {/* ═══ HEADER ════════════════════════════════════════════════ */}
       <div style={{
-        background: "linear-gradient(115deg, #0D0B08 0%, #1A1508 45%, #0D0B08 100%)",
-        borderBottom: `1px solid ${GOLD_BOR}`,
-        padding: "16px 28px 14px",
-        position: "relative", overflow: "hidden",
+        background: "#fff",
+        borderBottom: "1px solid #E5E7EB",
+        padding: "14px 28px",
+        display: "flex", alignItems: "center", gap: 16,
+        boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
       }}>
-        {/* BG decoration */}
-        <div style={{ position: "absolute", top: -60, left: -60, width: 220, height: 220, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(197,160,89,0.07) 0%, transparent 70%)", pointerEvents: "none" }}/>
-        <div style={{ position: "absolute", bottom: -40, right: "40%", width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(197,160,89,0.04) 0%, transparent 70%)", pointerEvents: "none" }}/>
-
-        <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 16 }}>
-          {/* Logo */}
-          <div style={{ width: 52, height: 52, borderRadius: 16, overflow: "hidden", flexShrink: 0, animation: "glowLogo 4s ease-in-out infinite" }}>
-            <img src={logoImg} alt="الرواف" style={{ width: "100%", height: "100%", objectFit: "cover" }}/>
+        {/* Logo */}
+        <div style={{ width: 48, height: 48, borderRadius: 14, overflow: "hidden", flexShrink: 0, animation: "glowLogo 4s ease infinite" }}>
+          <img src={logoImg} alt="الرواف" style={{ width: "100%", height: "100%", objectFit: "cover" }}/>
+        </div>
+        <div>
+          <div style={{ fontSize: "0.48rem", fontWeight: 800, letterSpacing: "0.14em", color: GOLD2, marginBottom: 1 }}>
+            ALRAWAF CONTRACTING
           </div>
-
-          <div>
-            <div style={{ fontSize: "0.5rem", fontWeight: 800, letterSpacing: "0.16em", color: "rgba(197,160,89,0.6)", marginBottom: 2 }}>
-              ALRAWAF CONTRACTING — EXECUTIVE COMMAND CENTER
-            </div>
-            <div style={{
-              fontSize: "1.3rem", fontWeight: 900, letterSpacing: "-0.02em",
-              background: `linear-gradient(120deg, ${GOLD_END}, ${GOLD}, ${GOLD2}, ${GOLD_END})`,
-              backgroundSize: "300%",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-              animation: "headerShimmer 6s linear infinite",
-            }}>لوحة القيادة التنفيذية</div>
-            <div style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.4)", marginTop: 2 }}>
-              {role
-                ? `${actorName || role} · ${pendingContracts.length} عقد بانتظار قرارك`
-                : "نظام إدارة العقود — اختر دورك من القائمة الجانبية"}
-            </div>
+          <div style={{
+            fontSize: "1.2rem", fontWeight: 900, letterSpacing: "-0.02em",
+            background: `linear-gradient(120deg, #1F2937, #374151, ${GOLD2})`,
+            backgroundSize: "200%",
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}>لوحة القيادة التنفيذية</div>
+          <div style={{ fontSize: "0.6rem", color: "#9CA3AF", marginTop: 1 }}>
+            {role ? `${actorName || role} · ${pendingContracts.length} عقد بانتظار قرارك` : "نظام إدارة العقود"}
           </div>
+        </div>
 
-          {/* Right chips */}
-          <div style={{ marginRight: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-            {urgentCount > 0 && (
-              <div style={{
-                background: "rgba(239,68,68,0.18)", border: "1px solid rgba(239,68,68,0.32)", borderRadius: 22,
-                padding: "6px 14px", fontSize: "0.63rem", fontWeight: 800, color: "#FCA5A5",
-                animation: "urgentBlink 2.5s ease infinite",
-              }}>
-                ⚠️ {urgentCount} عاجل
-              </div>
-            )}
-            {/* Completion mini-ring */}
+        <div style={{ marginRight: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+          {urgentCount > 0 && (
             <div style={{
-              display: "flex", alignItems: "center", gap: 12,
-              background: "rgba(255,255,255,0.05)", border: `1px solid ${GOLD_BOR}`,
-              borderRadius: 14, padding: "8px 16px", backdropFilter: "blur(10px)",
-            }}>
-              {/* SVG ring */}
-              <svg width="38" height="38" style={{ flexShrink: 0 }}>
-                <circle cx="19" cy="19" r="15" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="4"/>
-                <circle
-                  cx="19" cy="19" r="15" fill="none" stroke={GOLD} strokeWidth="4"
-                  strokeDasharray={`${2 * Math.PI * 15}`}
-                  strokeDashoffset={`${2 * Math.PI * 15 * (1 - completePct / 100)}`}
-                  strokeLinecap="round"
-                  transform="rotate(-90 19 19)"
-                  style={{ transition: "stroke-dashoffset 1.2s ease", filter: `drop-shadow(0 0 4px ${GOLD_GLOW})` }}
-                />
-                <text x="19" y="23" textAnchor="middle" fill={GOLD_END} fontSize="8" fontWeight="900" fontFamily="Cairo">{completePct}%</text>
-              </svg>
-              <div>
-                <div style={{ fontSize: "0.66rem", fontWeight: 800, color: TX2 }}>نسبة الإنجاز</div>
-                <div style={{ fontSize: "0.58rem", color: TX3 }}>{cDone} من {total} عقد</div>
-              </div>
+              background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 20,
+              padding: "5px 13px", fontSize: "0.62rem", fontWeight: 800, color: RED,
+              animation: "urgBlink 2.5s ease infinite",
+            }}>⚠️ {urgentCount} عاجل</div>
+          )}
+          {/* Completion chip */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10,
+            background: "#F9FAFB", border: "1px solid #E5E7EB",
+            borderRadius: 14, padding: "8px 16px",
+          }}>
+            <svg width="36" height="36">
+              <circle cx="18" cy="18" r="14" fill="none" stroke="#E5E7EB" strokeWidth="3.5"/>
+              <circle cx="18" cy="18" r="14" fill="none" stroke={GOLD} strokeWidth="3.5"
+                strokeDasharray={`${2 * Math.PI * 14}`}
+                strokeDashoffset={`${2 * Math.PI * 14 * (1 - completePct / 100)}`}
+                strokeLinecap="round" transform="rotate(-90 18 18)"
+                style={{ transition: "stroke-dashoffset 1.2s ease", filter: `drop-shadow(0 0 3px rgba(197,160,89,0.5))` }}
+              />
+              <text x="18" y="22" textAnchor="middle" fill={GOLD2} fontSize="7.5" fontWeight="900" fontFamily="Cairo">{completePct}%</text>
+            </svg>
+            <div>
+              <div style={{ fontSize: "0.64rem", fontWeight: 700, color: "#374151" }}>نسبة الإنجاز</div>
+              <div style={{ fontSize: "0.56rem", color: "#9CA3AF" }}>{cDone} من {total} عقد</div>
             </div>
           </div>
         </div>
       </div>
 
-      <div style={{ padding: "18px 22px", display: "flex", flexDirection: "column", gap: 18 }}>
+      <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
 
-        {/* ═══ METRIC TILES ═══════════════════════════════════════════ */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, animation: "fadeUp 0.45s ease both" }}>
-          {TAB_META.map(t => (
-            <MetricTile
+        {/* ═══ STAT TILES ════════════════════════════════════════════ */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, animation: "fadeUp 0.4s ease both" }}>
+          {TABS.map(t => (
+            <StatCard
               key={t.key}
               label={t.label} sub={t.sub} count={t.count} icon={t.icon}
-              accent={t.accent} accentD={t.accentD}
-              isActive={viewTab === t.key}
-              onClick={() => handleTabClick(t.key)}
-              hint={t.hint}
+              accent={t.accent} isActive={viewTab === t.key}
+              onClick={() => handleTab(t.key)}
             />
           ))}
         </div>
 
-        {/* ═══ PIPELINE ════════════════════════════════════════════════ */}
+        {/* ═══ STAGE LIST (reference-image style) ════════════════════ */}
         <div style={{
-          background: "rgba(255,255,255,0.015)",
-          border: `1px solid ${BORD}`,
-          borderRadius: 24,
+          background: "#fff",
+          border: "1px solid #E5E7EB",
+          borderRadius: 20,
           overflow: "hidden",
-          boxShadow: "0 8px 40px rgba(0,0,0,0.3)",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
         }}>
           {/* Section header */}
           <div style={{
-            background: "linear-gradient(90deg, rgba(197,160,89,0.06) 0%, rgba(197,160,89,0.02) 100%)",
-            borderBottom: `1px solid ${GOLD_BOR}`,
-            padding: "14px 22px",
-            display: "flex", alignItems: "center", gap: 12,
+            padding: "16px 24px 14px",
+            borderBottom: "1px solid #F3F4F6",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
           }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: 11, flexShrink: 0,
-              background: `linear-gradient(135deg, ${GOLD}, ${GOLD_END})`,
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.95rem",
-              boxShadow: `0 4px 14px ${GOLD_GLOW}`,
-            }}>🗺️</div>
-            <div>
-              <div style={{ fontSize: "0.88rem", fontWeight: 900, color: TX }}>
-                مسار دورة حياة العقد — {STAGES.length} مرحلة
-              </div>
-              <div style={{ fontSize: "0.58rem", color: TX3, marginTop: 1 }}>{tabLabel}</div>
-            </div>
-            {myRoleInfo && (
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{
-                marginRight: "auto",
-                background: "rgba(197,160,89,0.1)", border: `1px solid ${GOLD_BOR}`,
-                borderRadius: 11, padding: "5px 13px",
-                fontSize: "0.63rem", fontWeight: 800, color: GOLD,
-                display: "flex", alignItems: "center", gap: 5,
-              }}>
-                {myRoleInfo.icon} {myRoleInfo.stage.map(s => `م${s}`).join("، ")}
+                width: 8, height: 32, borderRadius: 4,
+                background: `linear-gradient(180deg, ${tabMeta.color}, ${tabMeta.color}60)`,
+              }}/>
+              <div>
+                <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "#111827" }}>{tabMeta.title}</div>
+                <div style={{ fontSize: "0.6rem", color: "#9CA3AF", marginTop: 1 }}>
+                  اضغط على أي مرحلة لعرض تفاصيل طلباتها
+                </div>
               </div>
-            )}
-            {/* View indicator badges */}
-            <div style={{ display: "flex", gap: 6 }}>
-              {viewTab !== "all" && (
-                <div style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${BORD}`, borderRadius: 10, padding: "4px 12px", fontSize: "0.58rem", color: TX2 }}>
-                  {totalForTab} إجمالاً
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {myRoleInfo && (
+                <div style={{
+                  background: "rgba(197,160,89,0.08)", border: "1px solid rgba(197,160,89,0.2)",
+                  borderRadius: 20, padding: "5px 13px",
+                  fontSize: "0.62rem", fontWeight: 700, color: GOLD2,
+                }}>
+                  {myRoleInfo.icon} مرحلتك: {myRoleInfo.stage.map(s => `م${s}`).join("، ")}
                 </div>
               )}
+              <div style={{
+                background: "#F3F4F6", borderRadius: 20, padding: "5px 12px",
+                fontSize: "0.6rem", color: "#6B7280", fontWeight: 600,
+              }}>
+                {maxCount} أعلى عدد
+              </div>
             </div>
           </div>
 
           {/* Rows */}
-          <div style={{ padding: "14px 16px 10px", display: "flex", flexDirection: "column" }}>
+          <div style={{ padding: "8px 24px 12px" }}>
             {STAGES.map((_, i) => (
               <StageRow
                 key={i}
                 stageNum={i + 1}
                 contracts={contracts}
-                totalForTab={totalForTab}
+                maxCount={maxCount}
                 isMine={myRoleInfo?.stage.includes(i + 1) ?? false}
                 viewTab={viewTab}
                 pulseActive={pulseActive}
                 onEnter={() => onOpenStage(i + 1)}
-                isFirst={i === 0}
-                isLast={i === STAGES.length - 1}
                 idx={i}
               />
             ))}
@@ -602,33 +506,33 @@ export default function ContractDashboard({
         </div>
 
         {/* ═══ ANALYTICS ROW ══════════════════════════════════════════ */}
-        <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr", gap: 14, animation: "fadeUp 0.5s ease 0.12s both" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1.25fr 1fr 1fr", gap: 14, animation: "fadeUp 0.45s ease 0.08s both" }}>
 
-          {/* Bottleneck */}
-          <div style={{ background: CARD, border: `1px solid ${BORD}`, borderRadius: 20, overflow: "hidden" }}>
-            <div style={{ padding: "12px 18px 11px", borderBottom: `1px solid ${BORD}`, background: "rgba(197,160,89,0.04)", display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 30, height: 30, borderRadius: 9, background: `linear-gradient(135deg, ${GOLD}, ${GOLD_END})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8rem", boxShadow: `0 2px 10px ${GOLD_GLOW}` }}>🚥</div>
+          {/* Bottleneck bars */}
+          <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: 18, overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
+            <div style={{ padding: "13px 18px 11px", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 8, height: 28, borderRadius: 4, background: `linear-gradient(180deg, ${RED}, ${ORANGE_L})` }}/>
               <div>
-                <div style={{ fontSize: "0.8rem", fontWeight: 800, color: TX }}>نقاط الاختناق</div>
-                <div style={{ fontSize: "0.57rem", color: TX3 }}>المراحل الأكثر ضغطاً</div>
+                <div style={{ fontSize: "0.8rem", fontWeight: 800, color: "#111827" }}>نقاط الاختناق</div>
+                <div style={{ fontSize: "0.57rem", color: "#9CA3AF" }}>المراحل الأكثر ضغطاً</div>
               </div>
             </div>
-            <div style={{ padding: "12px 16px" }}>
+            <div style={{ padding: "12px 18px" }}>
               {bottleneckData.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "24px 0", color: TX3, fontSize: "0.75rem" }}>لا عقود نشطة</div>
+                <div style={{ textAlign: "center", padding: "22px 0", color: "#D1D5DB", fontSize: "0.75rem" }}>لا عقود نشطة</div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
                   {bottleneckData.slice(0, 6).map((d, i) => {
-                    const p = Math.round((d.count / maxB) * 100);
-                    const clr = i === 0 ? RED : i === 1 ? AMBER : GOLD;
+                    const p  = (d.count / maxB) * 100;
+                    const c  = i === 0 ? RED : i === 1 ? ORANGE : GOLD;
                     return (
                       <div key={d.stageNum} style={{ cursor: "pointer" }} onClick={() => onOpenStage(d.stageNum)}>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                          <span style={{ fontSize: "0.6rem", fontWeight: 700, color: i === 0 ? RED : TX2 }}>{d.icon} {d.fullName}</span>
-                          <span style={{ fontSize: "0.6rem", fontWeight: 900, color: clr }}>{d.count}</span>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                          <span style={{ fontSize: "0.75rem", fontWeight: 900, letterSpacing: "-0.02em", color: c }}>{d.count}</span>
+                          <span style={{ fontSize: "0.6rem", fontWeight: 600, color: i === 0 ? RED : "#374151" }}>{d.icon} {d.fullName}</span>
                         </div>
-                        <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 4, overflow: "hidden" }}>
-                          <div style={{ height: "100%", width: `${p}%`, borderRadius: 4, background: `linear-gradient(90deg, ${clr}, ${clr}60)`, boxShadow: i === 0 ? `0 0 8px ${clr}60` : "none", transition: "width 0.9s ease" }}/>
+                        <div style={{ height: 6, background: "#F3F4F6", borderRadius: 99, overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${p}%`, borderRadius: 99, background: c, boxShadow: i === 0 ? `0 0 8px ${c}60` : "none", transition: "width 0.9s ease" }}/>
                         </div>
                       </div>
                     );
@@ -638,38 +542,40 @@ export default function ContractDashboard({
             </div>
           </div>
 
-          {/* Status donut */}
-          <div style={{ background: CARD, border: `1px solid ${BORD}`, borderRadius: 20, overflow: "hidden" }}>
-            <div style={{ padding: "12px 18px 11px", borderBottom: `1px solid ${BORD}`, background: "rgba(197,160,89,0.04)", display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 30, height: 30, borderRadius: 9, background: `linear-gradient(135deg, ${GOLD}, ${GOLD_END})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8rem", boxShadow: `0 2px 10px ${GOLD_GLOW}` }}>🍩</div>
-              <div style={{ fontSize: "0.8rem", fontWeight: 800, color: TX }}>توزيع الحالات</div>
+          {/* Donut */}
+          <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: 18, overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
+            <div style={{ padding: "13px 18px 11px", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 8, height: 28, borderRadius: 4, background: `linear-gradient(180deg, ${GOLD}, ${GOLD_END})` }}/>
+              <div style={{ fontSize: "0.8rem", fontWeight: 800, color: "#111827" }}>توزيع الحالات</div>
             </div>
             <div style={{ padding: "10px 16px", display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ width: 96, height: 96, flexShrink: 0 }}>
+              <div style={{ width: 90, height: 90, flexShrink: 0 }}>
                 {pieData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={28} outerRadius={44} paddingAngle={5} dataKey="value">
+                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={26} outerRadius={42} paddingAngle={5} dataKey="value">
                         {pieData.map((d, i) => <Cell key={i} fill={d.color} stroke="none"/>)}
                       </Pie>
-                      <Tooltip formatter={(v: unknown) => [`${v} عقد`, ""]} contentStyle={{ fontFamily: "'Cairo',sans-serif", fontSize: "0.7rem", direction: "rtl", background: "#111", border: `1px solid ${BORD}`, borderRadius: 10, color: TX }}/>
+                      <Tooltip formatter={(v: unknown) => [`${v} عقد`, ""]} contentStyle={{ fontFamily: "'Cairo',sans-serif", fontSize: "0.7rem", direction: "rtl", borderRadius: 10, border: "1px solid #E5E7EB" }}/>
                     </PieChart>
                   </ResponsiveContainer>
-                ) : <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: TX3, fontSize: "0.72rem" }}>لا بيانات</div>}
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#D1D5DB", fontSize: "0.72rem" }}>لا بيانات</div>
+                )}
               </div>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
                 {[
-                  { label: "نشطة",   count: cActive,   color: GOLD  },
-                  { label: "مكتملة", count: cDone,     color: GREEN },
-                  { label: "مرفوضة", count: cRejected, color: RED   },
+                  { label: "نشطة",   count: cActive,   color: GOLD    },
+                  { label: "مكتملة", count: cDone,     color: GREEN_L },
+                  { label: "مرفوضة", count: cRejected, color: RED     },
                 ].map((item, i) => (
                   <div key={i}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
-                      <span style={{ fontSize: "0.58rem", fontWeight: 700, color: TX2 }}>{item.label}</span>
-                      <span style={{ fontSize: "0.6rem", fontWeight: 900, color: item.color }}>{item.count}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                      <span style={{ fontSize: "0.72rem", fontWeight: 700, color: item.color }}>{item.count}</span>
+                      <span style={{ fontSize: "0.6rem", color: "#6B7280" }}>{item.label}</span>
                     </div>
-                    <div style={{ height: 5, background: "rgba(255,255,255,0.07)", borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: total > 0 ? `${Math.round(item.count/total*100)}%` : "0%", borderRadius: 3, background: `linear-gradient(90deg, ${item.color}, ${item.color}60)`, transition: "width 0.8s ease" }}/>
+                    <div style={{ height: 5, background: "#F3F4F6", borderRadius: 99, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: total > 0 ? `${Math.round(item.count/total*100)}%` : "0%", borderRadius: 99, background: item.color, transition: "width 0.8s ease" }}/>
                     </div>
                   </div>
                 ))}
@@ -677,39 +583,43 @@ export default function ContractDashboard({
             </div>
           </div>
 
-          {/* Weekly + urgency */}
-          <div style={{ background: CARD, border: `1px solid ${BORD}`, borderRadius: 20, overflow: "hidden" }}>
-            <div style={{ padding: "12px 18px 11px", borderBottom: `1px solid ${BORD}`, background: "rgba(197,160,89,0.04)", display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 30, height: 30, borderRadius: 9, background: `linear-gradient(135deg, ${GOLD}, ${GOLD_END})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8rem", boxShadow: `0 2px 10px ${GOLD_GLOW}` }}>📈</div>
-              <div style={{ fontSize: "0.8rem", fontWeight: 800, color: TX }}>الأداء الأسبوعي</div>
+          {/* Weekly area chart + urgency */}
+          <div style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: 18, overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
+            <div style={{ padding: "13px 18px 11px", borderBottom: "1px solid #F3F4F6", display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 8, height: 28, borderRadius: 4, background: `linear-gradient(180deg, ${GREEN_L}, ${GREEN})` }}/>
+              <div style={{ fontSize: "0.8rem", fontWeight: 800, color: "#111827" }}>الأداء الأسبوعي</div>
             </div>
-            <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-              <ResponsiveContainer width="100%" height={56}>
-                <BarChart data={[
-                  { name: "الأسبوع السابق", value: completedLastWeek },
-                  { name: "هذا الأسبوع",    value: completedThisWeek },
-                ]} margin={{ top: 2, right: 2, left: -22, bottom: 0 }}>
+            <div style={{ padding: "10px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+              <ResponsiveContainer width="100%" height={55}>
+                <AreaChart data={areaData} margin={{ top: 2, right: 4, left: -24, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="wkGr" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={GOLD_END}/>
-                      <stop offset="100%" stopColor={GOLD2}/>
+                    <linearGradient id="aGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={GREEN_L} stopOpacity={0.25}/>
+                      <stop offset="100%" stopColor={GREEN_L} stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="name" tick={{ fontSize: 8, fill: TX3, fontFamily: "'Cairo',sans-serif" }} axisLine={false} tickLine={false}/>
-                  <Bar dataKey="value" radius={[4, 4, 0, 0]} fill="url(#wkGr)" maxBarSize={38}/>
-                  <Tooltip formatter={(v: unknown) => [`${v} عقد`, ""]} contentStyle={{ fontFamily: "'Cairo',sans-serif", fontSize: "0.7rem", direction: "rtl", background: "#111", border: `1px solid ${BORD}`, borderRadius: 8, color: TX }}/>
-                </BarChart>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false}/>
+                  <XAxis dataKey="name" tick={{ fontSize: 8, fill: "#9CA3AF", fontFamily: "'Cairo',sans-serif" }} axisLine={false} tickLine={false}/>
+                  <Area type="monotone" dataKey="مكتملة" stroke={GREEN_L} strokeWidth={2} fill="url(#aGrad)" dot={{ r: 3, fill: GREEN, stroke: "#fff", strokeWidth: 2 }}/>
+                  <Tooltip formatter={(v: unknown) => [`${v} عقد`, ""]} contentStyle={{ fontFamily: "'Cairo',sans-serif", fontSize: "0.7rem", direction: "rtl", borderRadius: 10, border: "1px solid #E5E7EB" }}/>
+                </AreaChart>
               </ResponsiveContainer>
-              <div style={{ borderTop: `1px solid ${BORD}`, paddingTop: 9, display: "flex", flexDirection: "column", gap: 5 }}>
-                <div style={{ fontSize: "0.58rem", fontWeight: 800, color: TX3, marginBottom: 2 }}>🚦 توزيع الأولوية</div>
+              <div style={{ borderTop: "1px solid #F3F4F6", paddingTop: 8, display: "flex", flexDirection: "column", gap: 5 }}>
+                <div style={{ fontSize: "0.58rem", fontWeight: 700, color: "#9CA3AF", marginBottom: 2 }}>🚦 توزيع الأولوية</div>
                 {[
-                  { label: "عاجل ≥٧ أيام",    count: urgentCount, color: RED   },
-                  { label: "تحذير ٣–٧ أيام",   count: warnCount,   color: AMBER },
-                  { label: "طبيعي < ٣ أيام",   count: safeCount,   color: GREEN },
+                  { label: "عاجل ≥٧ أيام",   count: urgentCount, color: RED     },
+                  { label: "تحذير ٣–٧ أيام",  count: warnCount,   color: AMBER   },
+                  { label: "طبيعي < ٣ أيام",  count: safeCount,   color: GREEN_L },
                 ].map((item, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "0.57rem", color: TX3 }}>{item.label}</span>
-                    <span style={{ minWidth: 22, height: 20, borderRadius: 10, background: `${item.color}16`, color: item.color, fontSize: "0.6rem", fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 7px" }}>{item.count}</span>
+                    <span style={{ fontSize: "0.57rem", color: "#6B7280" }}>{item.label}</span>
+                    <span style={{
+                      minWidth: 24, height: 20, borderRadius: 10,
+                      background: item.color + "15", color: item.color,
+                      fontSize: "0.62rem", fontWeight: 800,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      padding: "0 7px",
+                    }}>{item.count}</span>
                   </div>
                 ))}
               </div>
@@ -719,15 +629,15 @@ export default function ContractDashboard({
 
         {/* ═══ VALUE STRIP ════════════════════════════════════════════ */}
         <div style={{
-          background: "linear-gradient(130deg, #0E0B06 0%, #1A1406 50%, #0E0B06 100%)",
-          borderRadius: 20, padding: "15px 26px",
+          background: "linear-gradient(130deg, #0E0B06 0%, #1C1508 50%, #0E0B06 100%)",
+          borderRadius: 18, padding: "14px 26px",
           display: "flex", alignItems: "center",
-          border: `1px solid ${GOLD_BOR}`,
-          boxShadow: `0 8px 36px rgba(0,0,0,0.35), inset 0 1px 0 ${GOLD_BOR}`,
+          border: "1px solid rgba(197,160,89,0.22)",
+          boxShadow: "0 6px 28px rgba(0,0,0,0.12), inset 0 1px 0 rgba(197,160,89,0.1)",
+          animation: "fadeUp 0.45s ease 0.15s both",
           position: "relative", overflow: "hidden",
-          animation: "fadeUp 0.5s ease 0.2s both",
         }}>
-          <div style={{ position: "absolute", top: -40, right: "30%", width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(197,160,89,0.05) 0%, transparent 70%)", pointerEvents: "none" }}/>
+          <div style={{ position: "absolute", top: -50, right: "35%", width: 160, height: 160, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(197,160,89,0.06) 0%, transparent 70%)", pointerEvents: "none" }}/>
           {[
             { label: "قيمة العقود النشطة", value: `${formatSAR(totalSAR)} ر.س`, icon: "💰" },
             { label: "الطلبات في المسار",  value: `${cActive} عقد`,             icon: "⚡" },
@@ -736,15 +646,14 @@ export default function ContractDashboard({
           ].map((item, i, arr) => (
             <div key={i} style={{
               flex: 1, textAlign: "center",
-              borderLeft: i < arr.length - 1 ? `1px solid rgba(197,160,89,0.14)` : "none",
+              borderLeft: i < arr.length - 1 ? "1px solid rgba(197,160,89,0.12)" : "none",
               padding: "0 8px",
             }}>
-              <div style={{ fontSize: "0.58rem", color: "rgba(226,194,117,0.5)", marginBottom: 4 }}>{item.icon} {item.label}</div>
+              <div style={{ fontSize: "0.57rem", color: "rgba(226,194,117,0.5)", marginBottom: 4 }}>{item.icon} {item.label}</div>
               <div style={{
-                fontSize: "1.1rem", fontWeight: 900, letterSpacing: "-0.02em",
+                fontSize: "1.05rem", fontWeight: 900, letterSpacing: "-0.02em",
                 background: `linear-gradient(135deg, ${GOLD_END}, ${GOLD})`,
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-                textShadow: "none",
               }}>{item.value}</div>
             </div>
           ))}
