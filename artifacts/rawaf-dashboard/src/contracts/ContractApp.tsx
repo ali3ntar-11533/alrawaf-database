@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Toaster } from "sonner";
 import ContractSidebar from "./ContractSidebar";
 import ContractDashboard from "./ContractDashboard";
 import ContractRequests from "./ContractRequests";
@@ -10,6 +11,7 @@ import { computePendingByRole } from "./RoleSelector";
 import { ROLES, type ContractTab } from "./types";
 import type { Contract } from "./types";
 import { listContracts } from "./api";
+import { useContractNotifications } from "./useContractNotifications";
 
 const ROLE_KEY = "rawaf_contracts_role";
 const NAME_KEY = "rawaf_contracts_name";
@@ -46,6 +48,12 @@ export default function ContractApp({ onExit }: Props) {
     onExit();
   }
 
+  const refreshContracts = useCallback(() => {
+    listContracts().then(setContracts).catch(() => {});
+  }, []);
+
+  useContractNotifications({ role, actorName, enabled: !!role, onNewActivity: refreshContracts });
+
   const myRoleInfo  = ROLES.find(r => r.name === role);
   const myPending   = contracts.filter(c =>
     c.status !== "completed" && myRoleInfo?.stage.includes(c.currentStage)
@@ -79,6 +87,19 @@ export default function ContractApp({ onExit }: Props) {
         onRoleChange={handleRoleChange}
         onNameChange={handleNameChange}
         pendingByRole={pendingByRole}
+      />
+
+      <Toaster
+        position="top-left"
+        richColors
+        dir="rtl"
+        toastOptions={{
+          style: {
+            fontFamily: "'Cairo', 'Tajawal', sans-serif",
+            direction: "rtl",
+            textAlign: "right",
+          },
+        }}
       />
 
       <div style={{ flex: 1, overflowY: "auto", minWidth: 0 }}>
