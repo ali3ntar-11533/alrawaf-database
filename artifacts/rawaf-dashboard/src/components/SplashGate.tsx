@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import logoImg from "@assets/logo_1776506524686.jpg";
+import ContractApp from "../contracts/ContractApp";
 /* ── Three new Alrawaf branded background images ── */
 import bg1 from "@assets/Image_jo77t3jo77t3jo1_1776495109728.png"; // equipment at golden sunset
 import bg2 from "@assets/Image_jo77t3jo77t3jo2_1776495109727.png"; // buildings at night — golden LED lines
 import bg3 from "@assets/Image_jo77t3jo77t3jo3_1776495109728.png"; // steel beam close-up — brand identity
 
-const GATE_KEY   = "rawaf_gate_auth";
-const DB_KEY     = "rawaf_db_auth";
-const IDLE_MS    = 5 * 60 * 1000; // 5 minutes — applies to whole-app session
+const GATE_KEY      = "rawaf_gate_auth";
+const DB_KEY        = "rawaf_db_auth";
+const CONTRACTS_KEY = "rawaf_contracts_gate";
+const IDLE_MS       = 5 * 60 * 1000; // 5 minutes — applies to whole-app session
 
 /* ─── CSS keyframes injected once ─────────────────────────────────────── */
 const KEYFRAMES = `
@@ -78,9 +80,11 @@ const SLIDES = [
 const SLIDE_DURATION = 7000;
 
 export default function SplashGate({ children }: { children: React.ReactNode }) {
-  const [phase, setPhase] = useState<"splash" | "app">(() =>
-    sessionStorage.getItem(GATE_KEY) === "1" ? "app" : "splash"
-  );
+  const [phase, setPhase] = useState<"splash" | "app" | "contracts">(() => {
+    if (sessionStorage.getItem(GATE_KEY) === "1") return "app";
+    if (sessionStorage.getItem(CONTRACTS_KEY) === "1") return "contracts";
+    return "splash";
+  });
   const [slideIdx, setSlideIdx]   = useState(0);
   const [showLogin, setShowLogin] = useState(false);
   const [username, setUsername]   = useState("");
@@ -89,6 +93,7 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
   const [busy, setBusy]           = useState(false);
   const [shake, setShake]         = useState(false);
   const [btnHover, setBtnHover]   = useState(false);
+  const [cBtnHover, setCBtnHover] = useState(false);
   const [lBtnHover, setLBtnHover] = useState(false);
   const userRef = useRef<HTMLInputElement>(null);
 
@@ -120,6 +125,16 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
     setSlideIdx(0);
     setUsername(""); setPassword(""); setError(""); setBusy(false);
   }, []);
+
+  /* ── Contracts phase ── */
+  if (phase === "contracts") {
+    return (
+      <ContractApp onExit={() => {
+        sessionStorage.removeItem(CONTRACTS_KEY);
+        setPhase("splash");
+      }} />
+    );
+  }
 
   /* ── App phase: listen for logo-click logout event from Header ── */
   if (phase === "app") {
@@ -314,30 +329,60 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
           ))}
         </div>
 
-        {/* CTA Button */}
-        <button
-          onClick={() => { setShowLogin(true); setError(""); setUsername(""); setPassword(""); }}
-          onMouseEnter={() => setBtnHover(true)}
-          onMouseLeave={() => setBtnHover(false)}
-          style={{
-            padding: "16px 52px",
-            backgroundImage: "linear-gradient(135deg, #c5a059 0%, #a88540 50%, #c5a059 100%)",
-            backgroundSize: "200% auto",
-            backgroundColor: "#c5a059",
-            color: "#fff", border: "none", borderRadius: 14,
-            fontSize: "0.95rem", fontWeight: 800, cursor: "pointer",
-            fontFamily: "Tajawal, sans-serif", letterSpacing: "0.04em",
-            animation: "sg-pulse-btn 2.8s ease-in-out infinite",
-            transition: "transform 0.22s ease, box-shadow 0.22s ease",
-            transform: btnHover ? "translateY(-4px) scale(1.04)" : "none",
-            boxShadow: btnHover ? "0 16px 48px rgba(197,160,89,0.5)" : undefined,
-            display: "flex", alignItems: "center", gap: 10,
-          }}
-        >
-          <span style={{ fontSize: "1.05rem" }}>🔐</span>
-          الدخول للنظام الآمن
-          <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: "rgba(255,255,255,0.22)", fontSize: "0.7rem", transition: "transform 0.2s", transform: btnHover ? "translateX(-3px)" : "none" }}>←</span>
-        </button>
+        {/* CTA Buttons */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, alignItems: "center", width: "100%" }}>
+          <button
+            onClick={() => { setShowLogin(true); setError(""); setUsername(""); setPassword(""); }}
+            onMouseEnter={() => setBtnHover(true)}
+            onMouseLeave={() => setBtnHover(false)}
+            style={{
+              padding: "16px 52px",
+              backgroundImage: "linear-gradient(135deg, #c5a059 0%, #a88540 50%, #c5a059 100%)",
+              backgroundSize: "200% auto",
+              backgroundColor: "#c5a059",
+              color: "#fff", border: "none", borderRadius: 14,
+              fontSize: "0.95rem", fontWeight: 800, cursor: "pointer",
+              fontFamily: "Tajawal, sans-serif", letterSpacing: "0.04em",
+              animation: "sg-pulse-btn 2.8s ease-in-out infinite",
+              transition: "transform 0.22s ease, box-shadow 0.22s ease",
+              transform: btnHover ? "translateY(-4px) scale(1.04)" : "none",
+              boxShadow: btnHover ? "0 16px 48px rgba(197,160,89,0.5)" : undefined,
+              display: "flex", alignItems: "center", gap: 10,
+              width: "100%", justifyContent: "center",
+            }}
+          >
+            <span style={{ fontSize: "1.05rem" }}>🔐</span>
+            الدخول للنظام الآمن
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: "rgba(255,255,255,0.22)", fontSize: "0.7rem", transition: "transform 0.2s", transform: btnHover ? "translateX(-3px)" : "none" }}>←</span>
+          </button>
+
+          <button
+            onClick={() => {
+              sessionStorage.setItem(CONTRACTS_KEY, "1");
+              setPhase("contracts");
+            }}
+            onMouseEnter={() => setCBtnHover(true)}
+            onMouseLeave={() => setCBtnHover(false)}
+            style={{
+              padding: "14px 40px",
+              border: "1.5px solid rgba(197,160,89,0.55)",
+              color: "#e8c96a", borderRadius: 14,
+              fontSize: "0.92rem", fontWeight: 800, cursor: "pointer",
+              fontFamily: "Tajawal, sans-serif", letterSpacing: "0.04em",
+              transition: "transform 0.22s ease, background 0.22s ease, box-shadow 0.22s ease",
+              transform: cBtnHover ? "translateY(-3px) scale(1.03)" : "none",
+              background: cBtnHover ? "rgba(197,160,89,0.18)" : "rgba(197,160,89,0.10)",
+              boxShadow: cBtnHover ? "0 10px 32px rgba(197,160,89,0.3)" : "0 4px 16px rgba(197,160,89,0.12)",
+              backdropFilter: "blur(8px)",
+              display: "flex", alignItems: "center", gap: 10,
+              width: "100%", justifyContent: "center",
+            }}
+          >
+            <span style={{ fontSize: "1.05rem" }}>🏛️</span>
+            نظام إدارة العقود
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: "rgba(197,160,89,0.22)", fontSize: "0.7rem", transition: "transform 0.2s", transform: cBtnHover ? "translateX(-3px)" : "none" }}>←</span>
+          </button>
+        </div>
 
         <div style={{ marginTop: 20, display: "flex", alignItems: "center", gap: 7, animation: "sg-fadein 1s ease 0.7s both" }}>
           <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#2baa74", boxShadow: "0 0 6px #2baa74" }} />
