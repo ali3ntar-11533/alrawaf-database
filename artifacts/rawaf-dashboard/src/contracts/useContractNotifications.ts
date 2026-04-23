@@ -51,20 +51,16 @@ export function useContractNotifications({ role, actorName, enabled, onNewActivi
         for (const entry of newEntries) {
           if (entry.actorName === actorName) continue;
 
-          const resultingStage =
-            entry.action === "reject" ? 1 : entry.stage + 1;
-
-          const isRelevant = myStages.includes(resultingStage);
-          if (!isRelevant) continue;
-
-          relevantActivity = true;
-
-          const stageLabel = STAGES[resultingStage - 1]?.label ?? `المرحلة ${resultingStage}`;
           const contractLabel = entry.contractNo
             ? `${entry.contractNo} — ${entry.title}`
             : entry.title;
 
           if (entry.action === "advance") {
+            const resultingStage = entry.stage + 1;
+            if (!myStages.includes(resultingStage)) continue;
+
+            relevantActivity = true;
+            const stageLabel = STAGES[resultingStage - 1]?.label ?? `المرحلة ${resultingStage}`;
             toast(`📋 عقد وصل إلى مرحلتك`, {
               description: `${contractLabel}\n${stageLabel}`,
               duration: 7000,
@@ -75,15 +71,36 @@ export function useContractNotifications({ role, actorName, enabled, onNewActivi
               },
             });
           } else if (entry.action === "reject") {
-            toast(`↩ عقد أُعيد إلى مرحلتك`, {
-              description: `${contractLabel}\nأعاده: ${entry.actorName}`,
-              duration: 7000,
-              style: {
-                fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                direction: "rtl",
-                textAlign: "right",
-              },
-            });
+            // Stage 1 gets the contract back — notify them directly
+            if (myStages.includes(1)) {
+              relevantActivity = true;
+              toast(`↩ عقد أُعيد إلى مرحلتك`, {
+                description: `${contractLabel}\nأعاده: ${entry.actorName}`,
+                duration: 7000,
+                style: {
+                  fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                  direction: "rtl",
+                  textAlign: "right",
+                },
+              });
+            }
+
+            // Intermediate stages (between 1 and the rejecting stage) previously
+            // approved this contract — notify them it was rejected at a later stage
+            const hadPreviouslyApproved = myStages.some(s => s > 1 && s < entry.stage);
+            if (hadPreviouslyApproved) {
+              relevantActivity = true;
+              const rejectStageLabel = STAGES[entry.stage - 1]?.label ?? `المرحلة ${entry.stage}`;
+              toast(`⚠️ عقد وافقت عليه تم رفضه`, {
+                description: `${contractLabel}\nرُفض في: ${rejectStageLabel} — بواسطة: ${entry.actorName}`,
+                duration: 9000,
+                style: {
+                  fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                  direction: "rtl",
+                  textAlign: "right",
+                },
+              });
+            }
           }
         }
 
