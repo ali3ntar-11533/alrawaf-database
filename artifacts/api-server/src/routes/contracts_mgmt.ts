@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, and, sql, gte, lte, like } from "drizzle-orm";
 import { z } from "zod/v4";
-import { db, contractsTable, contractStageLogTable, contractDocumentsTable } from "@workspace/db";
+import { db, contractsTable, contractStageLogTable, contractDocumentsTable, contractCommentsTable } from "@workspace/db";
 
 const router: IRouter = Router();
 
@@ -375,43 +375,178 @@ router.patch("/contracts/:id/stage", async (req, res): Promise<void> => {
   res.json(serializeContract(updated));
 });
 
-// ── Seed endpoint ──────────────────────────────────────────────────
-const SAMPLE_CONTRACTS = [
-  { title: "عقد إنشاء مبنى إداري متعدد الطوابق", vendorName: "شركة البناء المتطور", vendorContact: "0501234567", value: 4_500_000, contractType: "إنشاء", projectName: "مشروع المقر الرئيسي", createdBy: "أحمد الغامدي", startDate: "2025-01-15", endDate: "2026-01-15", targetStage: 4 },
-  { title: "عقد صيانة شبكة المياه - المنطقة الشمالية", vendorName: "مؤسسة الأمانة للمقاولات", vendorContact: "0559876543", value: 1_200_000, contractType: "صيانة", projectName: "مشروع تحديث البنية التحتية", createdBy: "سعد العتيبي", startDate: "2025-02-01", endDate: "2025-10-01", targetStage: 7 },
-  { title: "عقد توريد مواد البناء والتشطيبات", vendorName: "شركة الرافد التجارية", vendorContact: "0534567890", value: 850_000, contractType: "توريد", projectName: "مشروع التوسعة الغربية", createdBy: "محمد الشهري", startDate: "2025-03-01", endDate: "2025-09-01", targetStage: 2 },
-  { title: "عقد تأهيل المنشآت الرياضية والترفيهية", vendorName: "مجموعة ستار للإنشاءات", vendorContact: "0571234567", value: 2_300_000, contractType: "إنشاء", projectName: "مشروع الملاعب الرياضية", createdBy: "فهد الحربي", startDate: "2025-01-01", endDate: "2026-06-01", targetStage: 9 },
-  { title: "عقد إنشاء خزانات المياه الرئيسية", vendorName: "شركة الواحة الهندسية", vendorContact: "0509876543", value: 680_000, contractType: "إنشاء", projectName: "مشروع البنية التحتية للمياه", createdBy: "خالد السبيعي", startDate: "2025-04-01", endDate: "2025-12-01", targetStage: 5 },
-];
+// ── Comments endpoints ─────────────────────────────────────────────
+const AddCommentBody = z.object({
+  actorName: z.string().min(1),
+  actorRole: z.string().default(""),
+  message:   z.string().min(1),
+});
 
+router.get("/contracts/:id/comments", async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const rows = await db.select().from(contractCommentsTable)
+    .where(eq(contractCommentsTable.contractId, id))
+    .orderBy(contractCommentsTable.createdAt);
+
+  res.json(rows.map(r => ({ ...r, createdAt: r.createdAt.toISOString() })));
+});
+
+router.post("/contracts/:id/comments", async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const parsed = AddCommentBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const [row] = await db.insert(contractCommentsTable).values({
+    contractId: id,
+    ...parsed.data,
+  }).returning();
+
+  res.status(201).json({ ...row, createdAt: row.createdAt.toISOString() });
+});
+
+// ── Seed endpoint ──────────────────────────────────────────────────
 const STAGE_ACTOR_ROLES: Record<number, string> = {
   1: "مدير المشروع", 2: "مدير القطاع", 3: "مدير PMO",
   4: "أخصائي العقود", 5: "أدمن العقود", 6: "أدمن العقود",
   7: "مدير الإدارة", 8: "نائب الرئيس", 9: "الرئيس التنفيذي",
   10: "مسؤول التوقيعات", 11: "مسؤول التوقيعات",
 };
+const STAGE_ACTOR_NAMES: Record<number, string> = {
+  1: "أحمد المطيري", 2: "سعد العتيبي", 3: "منى الشهري", 4: "عبدالله الحربي",
+  5: "سارة القحطاني", 6: "سارة القحطاني", 7: "ناصر الدوسري", 8: "ريم العنزي",
+  9: "خالد المالكي", 10: "هند السبيعي", 11: "هند السبيعي",
+};
+
+// active contracts — one per stage 1→11
+const ACTIVE_CONTRACTS = [
+  { title: "عقد إنشاء مركز خدمات المواطن",             vendorName: "شركة الجودة الشاملة",         vendorContact: "0501112233", value:   450_000, contractType: "إنشاء",   projectName: "مشروع الخدمات البلدية",       createdBy: "أحمد المطيري",  startDate: "2026-01-05", endDate: "2026-08-05", targetStage: 1 },
+  { title: "عقد توريد معدات الحراسة الأمنية",           vendorName: "مؤسسة الأمان للأجهزة",        vendorContact: "0559990001", value:   780_000, contractType: "توريد",  projectName: "مشروع تأمين المنشآت",         createdBy: "سعد العتيبي",   startDate: "2025-11-01", endDate: "2026-05-01", targetStage: 2 },
+  { title: "عقد تطوير نظام الإشارات المرورية الذكية",   vendorName: "شركة التقنية المتقدمة",        vendorContact: "0534441122", value: 3_200_000, contractType: "خدمات",  projectName: "مشروع المدينة الذكية",        createdBy: "أحمد المطيري",  startDate: "2025-09-15", endDate: "2026-09-15", targetStage: 3 },
+  { title: "عقد صيانة المصاعد والرافعات",               vendorName: "شركة التقنيات الرفيعة",        vendorContact: "0571228833", value:   320_000, contractType: "صيانة",  projectName: "مشروع المباني الحكومية",      createdBy: "سعد العتيبي",   startDate: "2026-02-01", endDate: "2026-08-01", targetStage: 4 },
+  { title: "عقد تشييد مدرسة ابتدائية بنات",             vendorName: "مجموعة التعليم والبناء",       vendorContact: "0509887766", value: 8_500_000, contractType: "إنشاء",   projectName: "مشروع التعليم الحكومي",       createdBy: "أحمد المطيري",  startDate: "2025-06-01", endDate: "2026-12-01", targetStage: 5 },
+  { title: "عقد تطوير البنية التحتية الرقمية",           vendorName: "شركة البيانات الذكية",         vendorContact: "0551234567", value: 5_200_000, contractType: "خدمات",  projectName: "مشروع التحول الرقمي",         createdBy: "سعد العتيبي",   startDate: "2025-07-01", endDate: "2026-07-01", targetStage: 6 },
+  { title: "عقد إنشاء حديقة عامة ومنتزه ترفيهي",        vendorName: "شركة الخضراء للمقاولات",       vendorContact: "0561239876", value: 1_800_000, contractType: "إنشاء",   projectName: "مشروع التطوير الحضري",        createdBy: "أحمد المطيري",  startDate: "2025-08-01", endDate: "2026-06-01", targetStage: 7 },
+  { title: "عقد توريد وتجهيز سيارات خدمة ميدانية",      vendorName: "شركة الأسطول المتميز",         vendorContact: "0530001122", value: 2_600_000, contractType: "توريد",  projectName: "مشروع الأسطول الحكومي",       createdBy: "سعد العتيبي",   startDate: "2025-10-01", endDate: "2026-04-01", targetStage: 8 },
+  { title: "عقد بناء مستودع مركزي للتخزين",             vendorName: "مؤسسة البنية الصلبة",          vendorContact: "0540007788", value: 4_100_000, contractType: "إنشاء",   projectName: "مشروع اللوجستيات",            createdBy: "أحمد المطيري",  startDate: "2025-05-01", endDate: "2026-05-01", targetStage: 9 },
+  { title: "عقد إعادة تأهيل محطة المعالجة الرئيسية",    vendorName: "شركة الإنشاء الحديث",          vendorContact: "0529998877", value: 6_700_000, contractType: "صيانة",  projectName: "مشروع معالجة المياه",         createdBy: "سعد العتيبي",   startDate: "2025-04-01", endDate: "2026-10-01", targetStage: 10 },
+  { title: "عقد توسعة خطوط المياه الرئيسية والفرعية",   vendorName: "مجموعة المياه المتكاملة",      vendorContact: "0576543210", value: 3_900_000, contractType: "إنشاء",   projectName: "مشروع شبكة المياه الموسعة",   createdBy: "أحمد المطيري",  startDate: "2025-03-15", endDate: "2026-03-15", targetStage: 11 },
+];
+
+// completed contracts — fully approved through stage 11
+const COMPLETED_CONTRACTS = [
+  { title: "عقد إنشاء مبنى الإدارة العامة الجديد",        vendorName: "شركة الراسخ للإنشاء",         vendorContact: "0501000001", value:  9_500_000, contractType: "إنشاء",  projectName: "مشروع المقر المؤسسي",         createdBy: "فهد الحربي",    startDate: "2024-01-01", endDate: "2025-01-01" },
+  { title: "عقد صيانة شاملة لشبكة الصرف الصحي",          vendorName: "شركة الصرف المتكاملة",         vendorContact: "0559000002", value:  2_100_000, contractType: "صيانة",  projectName: "مشروع الصرف الصحي الحضري",    createdBy: "سعد العتيبي",   startDate: "2024-03-01", endDate: "2024-12-01" },
+  { title: "عقد توريد وتركيب كاميرات مراقبة متكاملة",    vendorName: "شركة الأمان الرقمي",           vendorContact: "0533000003", value:  1_450_000, contractType: "توريد",  projectName: "مشروع المراقبة الأمنية",      createdBy: "خالد السبيعي",  startDate: "2024-04-01", endDate: "2024-10-01" },
+  { title: "عقد تطوير وتجميل المنتزه الترفيهي الكبير",   vendorName: "مجموعة الترفيه والبيئة",       vendorContact: "0571000004", value:  4_300_000, contractType: "إنشاء",  projectName: "مشروع البيئة والترفيه",       createdBy: "أحمد المطيري",  startDate: "2024-02-01", endDate: "2025-02-01" },
+  { title: "عقد إنشاء مركز التدريب المهني والتقني",       vendorName: "شركة التعليم والتطوير",        vendorContact: "0509000005", value:  7_800_000, contractType: "إنشاء",  projectName: "مشروع التدريب الوطني",        createdBy: "محمد الشهري",   startDate: "2024-05-01", endDate: "2025-05-01" },
+  { title: "عقد إنشاء مبنى إداري متعدد الطوابق",         vendorName: "شركة البناء المتطور",          vendorContact: "0501234567", value:  4_500_000, contractType: "إنشاء",  projectName: "مشروع المقر الرئيسي",        createdBy: "أحمد الغامدي",  startDate: "2025-01-15", endDate: "2026-01-15" },
+];
+
+// rejected contracts — advanced then rejected
+const REJECTED_CONTRACTS = [
+  { title: "عقد صيانة مولدات الطوارئ والمحطات الفرعية",  vendorName: "شركة الطاقة الاحتياطية",       vendorContact: "0511000006", value:   580_000, contractType: "صيانة",  projectName: "مشروع الطوارئ الكهربائية",    createdBy: "سعد العتيبي",   startDate: "2025-08-01", endDate: "2026-02-01", rejectionStage: 3, rejectionReason: "العقد يحتاج مراجعة المواصفات الفنية وإعادة تسعير البنود" },
+  { title: "عقد توريد مستلزمات المكاتب والقرطاسية",      vendorName: "شركة اللوازم المكتبية الدولية", vendorContact: "0559000007", value:   420_000, contractType: "توريد",  projectName: "مشروع التجهيزات الإدارية",    createdBy: "أحمد المطيري",  startDate: "2025-09-01", endDate: "2026-01-01", rejectionStage: 5, rejectionReason: "الأسعار المقدمة تتجاوز حدود الميزانية المعتمدة بنسبة 35%" },
+  { title: "عقد تطوير نظام الأمان والتحكم المركزي",      vendorName: "شركة التحكم الآلي المتقدم",    vendorContact: "0533000008", value: 1_900_000, contractType: "خدمات",  projectName: "مشروع أتمتة المنشآت",        createdBy: "سعد العتيبي",   startDate: "2025-07-01", endDate: "2026-07-01", rejectionStage: 7, rejectionReason: "يجب مراجعة بنود الضمان والصيانة وتوضيح مستوى الخدمة المطلوب" },
+];
+
+// seed sample comments per first few contracts
+const SEED_COMMENTS: { contractIndex: number; comments: Array<{ actorName: string; actorRole: string; message: string }> }[] = [
+  { contractIndex: 0, comments: [
+    { actorName: "سعد العتيبي", actorRole: "مدير القطاع", message: "يرجى مراجعة الشروط الفنية قبل الرفع للمرحلة التالية" },
+    { actorName: "أحمد المطيري", actorRole: "مدير المشروع", message: "تم مراجعة الشروط والتحقق من توافقها مع المواصفات المعتمدة" },
+  ]},
+  { contractIndex: 2, comments: [
+    { actorName: "منى الشهري", actorRole: "مدير PMO", message: "هل تم الحصول على الموافقة المبدئية من الجهة المختصة؟" },
+    { actorName: "سعد العتيبي", actorRole: "مدير القطاع", message: "نعم، تم الحصول على الموافقة رقم 4455/2025 بتاريخ أمس" },
+    { actorName: "منى الشهري", actorRole: "مدير PMO", message: "ممتاز، سيتم إنهاء المراجعة خلال يومي عمل" },
+  ]},
+  { contractIndex: 5, comments: [
+    { actorName: "ناصر الدوسري", actorRole: "مدير الإدارة", message: "العقد جاهز للاعتماد، تأكدت من استيفاء جميع الشروط" },
+    { actorName: "ريم العنزي", actorRole: "نائب الرئيس", message: "شكراً، سأقوم بالمراجعة النهائية واتخاذ القرار غداً" },
+  ]},
+];
 
 router.post("/contracts/seed", async (_req, res): Promise<void> => {
-  const existing = await db.select({ id: contractsTable.id }).from(contractsTable).limit(1);
-  if (existing.length > 0) {
-    res.json({ skipped: true, message: "بيانات العقود موجودة بالفعل" });
+  const existing = await db.select({ id: contractsTable.id }).from(contractsTable);
+  if (existing.length >= 15) {
+    res.json({ skipped: true, message: "بيانات التهيئة الشاملة موجودة بالفعل" });
     return;
   }
+  // wipe and rebuild for a clean rich dataset
+  await db.delete(contractCommentsTable);
+  await db.delete(contractStageLogTable);
+  await db.delete(contractsTable);
 
-  for (const sample of SAMPLE_CONTRACTS) {
-    const { targetStage, ...fields } = sample;
+  const insertedIds: number[] = [];
+
+  // helper: insert + advance to stage
+  async function insertContract(
+    fields: Omit<typeof ACTIVE_CONTRACTS[0], "targetStage">,
+    targetStage: number,
+    finalStatus: "active" | "completed" = "active",
+    rejectionInfo?: { stage: number; reason: string },
+  ) {
     const [row] = await db.insert(contractsTable).values({ ...fields, currentStage: 1, status: "active" }).returning();
     const contractNo = generateContractNo(row.id);
     await db.update(contractsTable).set({ contractNo }).where(eq(contractsTable.id, row.id));
     await db.insert(contractStageLogTable).values({ contractId: row.id, stage: 1, action: "create", actorRole: "مدير المشروع", actorName: fields.createdBy, notes: "إنشاء العقد" });
 
-    for (let s = 1; s < targetStage; s++) {
-      await db.insert(contractStageLogTable).values({ contractId: row.id, stage: s, action: "advance", actorRole: STAGE_ACTOR_ROLES[s] ?? "مدير المشروع", actorName: fields.createdBy, notes: `اعتماد المرحلة ${s}` });
-      await db.update(contractsTable).set({ currentStage: s + 1, updatedAt: new Date() }).where(eq(contractsTable.id, row.id));
+    if (rejectionInfo) {
+      // advance up to rejection stage
+      for (let s = 1; s < rejectionInfo.stage; s++) {
+        await db.insert(contractStageLogTable).values({ contractId: row.id, stage: s, action: "advance", actorRole: STAGE_ACTOR_ROLES[s], actorName: STAGE_ACTOR_NAMES[s], notes: `اعتماد المرحلة ${s}` });
+        await db.update(contractsTable).set({ currentStage: s + 1, updatedAt: new Date() }).where(eq(contractsTable.id, row.id));
+      }
+      await db.insert(contractStageLogTable).values({ contractId: row.id, stage: rejectionInfo.stage, action: "reject", actorRole: STAGE_ACTOR_ROLES[rejectionInfo.stage], actorName: STAGE_ACTOR_NAMES[rejectionInfo.stage], notes: rejectionInfo.reason });
+      await db.update(contractsTable).set({ currentStage: 1, rejectionReason: rejectionInfo.reason, updatedAt: new Date() }).where(eq(contractsTable.id, row.id));
+    } else {
+      // advance to targetStage
+      for (let s = 1; s < targetStage; s++) {
+        await db.insert(contractStageLogTable).values({ contractId: row.id, stage: s, action: "advance", actorRole: STAGE_ACTOR_ROLES[s], actorName: STAGE_ACTOR_NAMES[s], notes: `اعتماد المرحلة ${s}` });
+        const nextStage = s + 1;
+        const isLast = nextStage > 11;
+        await db.update(contractsTable).set({
+          currentStage: isLast ? 11 : nextStage,
+          status: finalStatus === "completed" && isLast ? "completed" : "active",
+          updatedAt: new Date(),
+        }).where(eq(contractsTable.id, row.id));
+      }
+      if (finalStatus === "completed") {
+        await db.update(contractsTable).set({ status: "completed" }).where(eq(contractsTable.id, row.id));
+      }
+    }
+    return row.id;
+  }
+
+  for (const c of ACTIVE_CONTRACTS) {
+    const { targetStage, ...fields } = c;
+    const id = await insertContract(fields, targetStage);
+    insertedIds.push(id);
+  }
+  for (const c of COMPLETED_CONTRACTS) {
+    const id = await insertContract(c, 12, "completed");
+    insertedIds.push(id);
+  }
+  for (const c of REJECTED_CONTRACTS) {
+    const { rejectionStage, rejectionReason, ...fields } = c;
+    const id = await insertContract(fields, rejectionStage, "active", { stage: rejectionStage, reason: rejectionReason });
+    insertedIds.push(id);
+  }
+
+  // seed sample comments
+  for (const sc of SEED_COMMENTS) {
+    const contractId = insertedIds[sc.contractIndex];
+    if (!contractId) continue;
+    for (const comment of sc.comments) {
+      await db.insert(contractCommentsTable).values({ contractId, ...comment });
     }
   }
 
-  res.json({ seeded: true, count: SAMPLE_CONTRACTS.length });
+  res.json({ seeded: true, active: ACTIVE_CONTRACTS.length, completed: COMPLETED_CONTRACTS.length, rejected: REJECTED_CONTRACTS.length });
 });
 
 export default router;

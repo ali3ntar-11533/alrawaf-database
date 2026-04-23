@@ -66,6 +66,15 @@ export const ROLES: { name: string; icon: string; stage: number[] }[] = [
   { name: "مسؤول التوقيعات", icon: "📜", stage: [10, 11] },
 ];
 
+export interface ContractComment {
+  id: number;
+  contractId: number;
+  actorName: string;
+  actorRole: string;
+  message: string;
+  createdAt: string;
+}
+
 export const GOLD = "#C5A059";
 export const GOLD_LIGHT = "#e8c96a";
 export const GOLD_BG = "rgba(197,160,89,0.08)";

@@ -44,6 +44,15 @@ export const contractDocumentsTable = pgTable("contract_documents", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const contractCommentsTable = pgTable("contract_comments", {
+  id: serial("id").primaryKey(),
+  contractId: integer("contract_id").notNull(),
+  actorName: text("actor_name").notNull(),
+  actorRole: text("actor_role").notNull().default(""),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const insertContractSchema = createInsertSchema(contractsTable).omit({
   id: true,
   contractNo: true,

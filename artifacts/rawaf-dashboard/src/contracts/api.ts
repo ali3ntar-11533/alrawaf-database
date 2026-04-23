@@ -1,4 +1,4 @@
-import type { Contract, ContractStats, StageLog } from "./types";
+import type { Contract, ContractStats, StageLog, ContractComment } from "./types";
 
 const BASE = "/api";
 
@@ -140,6 +140,23 @@ export interface StageActionPayload {
 export async function advanceStage(id: number, payload: StageActionPayload): Promise<Contract> {
   return apiFetch<Contract>(`/contracts/${id}/stage`, {
     method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getContractComments(id: number): Promise<ContractComment[]> {
+  return apiFetch<ContractComment[]>(`/contracts/${id}/comments`);
+}
+
+export interface AddCommentPayload {
+  actorName: string;
+  actorRole: string;
+  message: string;
+}
+
+export async function addContractComment(id: number, payload: AddCommentPayload): Promise<ContractComment> {
+  return apiFetch<ContractComment>(`/contracts/${id}/comments`, {
+    method: "POST",
     body: JSON.stringify(payload),
   });
 }
