@@ -76,6 +76,7 @@ export default function ContractApp({ onExit }: Props) {
 
   return (
     <div
+      className="contract-app-wrapper"
       dir="rtl"
       style={{
         position: "fixed", inset: 0, zIndex: 9000,
@@ -90,38 +91,42 @@ export default function ContractApp({ onExit }: Props) {
         rel="stylesheet"
       />
 
-      <ContractSidebar
-        activeTab={activeTab}
-        onTabChange={(tab) => { setActiveTab(tab); setOpenContractId(null); if (tab !== "requests") setFilterStage(null); }}
-        pendingCount={pendingCount}
-        onExit={handleExit}
-        role={role}
-        actorName={actorName}
-        onRoleChange={handleRoleChange}
-        onNameChange={handleNameChange}
-        pendingByRole={pendingByRole}
-        notifications={notifications}
-        unreadCount={unreadCount}
-        onMarkAllRead={markAllRead}
-        onDismissOne={dismissOne}
-        onDismissAll={dismissAll}
-        onOpenContract={handleOpenContractFromNotification}
-      />
+      <div className="no-print">
+        <ContractSidebar
+          activeTab={activeTab}
+          onTabChange={(tab) => { setActiveTab(tab); setOpenContractId(null); if (tab !== "requests") setFilterStage(null); }}
+          pendingCount={pendingCount}
+          onExit={handleExit}
+          role={role}
+          actorName={actorName}
+          onRoleChange={handleRoleChange}
+          onNameChange={handleNameChange}
+          pendingByRole={pendingByRole}
+          notifications={notifications}
+          unreadCount={unreadCount}
+          onMarkAllRead={markAllRead}
+          onDismissOne={dismissOne}
+          onDismissAll={dismissAll}
+          onOpenContract={handleOpenContractFromNotification}
+        />
+      </div>
 
-      <Toaster
-        position="top-left"
-        richColors
-        dir="rtl"
-        toastOptions={{
-          style: {
-            fontFamily: "'Cairo', 'Tajawal', sans-serif",
-            direction: "rtl",
-            textAlign: "right",
-          },
-        }}
-      />
+      <div className="no-print">
+        <Toaster
+          position="top-left"
+          richColors
+          dir="rtl"
+          toastOptions={{
+            style: {
+              fontFamily: "'Cairo', 'Tajawal', sans-serif",
+              direction: "rtl",
+              textAlign: "right",
+            },
+          }}
+        />
+      </div>
 
-      <div style={{ flex: 1, overflowY: "auto", minWidth: 0 }}>
+      <div className="contract-main-content" style={{ flex: 1, overflowY: "auto", minWidth: 0 }}>
         {openContractId !== null ? (
           <ContractDetail
             contractId={openContractId}

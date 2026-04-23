@@ -5,6 +5,8 @@ import { getContract, getContractAudit, advanceStage, getContractComments, addCo
 import WorkflowWaterfall from "./WorkflowWaterfall";
 import { tafqit } from "./tafqit";
 
+const PRINT_STYLE_ID = "print-contract-detail-style";
+
 interface Props {
   contractId: number;
   role: string;
@@ -232,6 +234,49 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
   const [err, setErr] = useState("");
   const [success, setSuccess] = useState("");
 
+  function handlePrint() {
+    if (!contract) return;
+    const existingStyle = document.getElementById(PRINT_STYLE_ID);
+    if (existingStyle) existingStyle.remove();
+
+    const style = document.createElement("style");
+    style.id = PRINT_STYLE_ID;
+    style.textContent = `
+      @media print {
+        .no-print { display: none !important; }
+        .contract-app-wrapper {
+          position: static !important;
+          display: block !important;
+          height: auto !important;
+          overflow: visible !important;
+        }
+        .contract-main-content {
+          overflow: visible !important;
+          height: auto !important;
+        }
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    `;
+    document.head.appendChild(style);
+
+    const originalTitle = document.title;
+    document.title = `عقد — ${contract.contractNo} — ${contract.title}`;
+
+    let cleaned = false;
+    function cleanup() {
+      if (cleaned) return;
+      cleaned = true;
+      document.title = originalTitle;
+      const s = document.getElementById(PRINT_STYLE_ID);
+      if (s) s.remove();
+      window.removeEventListener("afterprint", cleanup);
+    }
+    window.addEventListener("afterprint", cleanup);
+    setTimeout(cleanup, 60000);
+    window.print();
+  }
+
   function reload() {
     setLoading(true);
     Promise.all([getContract(contractId), getContractAudit(contractId)])
@@ -285,23 +330,45 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
 
   return (
     <div dir="rtl" style={{ fontFamily: "'Cairo', 'Tajawal', sans-serif", height: "100%", display: "flex", flexDirection: "column" }}>
-      <WorkflowWaterfall currentStage={isCompleted ? 12 : contract.currentStage} />
+      <div className="no-print">
+        <WorkflowWaterfall currentStage={isCompleted ? 12 : contract.currentStage} />
+      </div>
 
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-        <ChatPanel contractId={contractId} actorName={actorName} actorRole={role} />
+        <div className="no-print">
+          <ChatPanel contractId={contractId} actorName={actorName} actorRole={role} />
+        </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
-          <button
-            onClick={onBack}
-            style={{
-              border: "none", background: "none", cursor: "pointer",
-              color: GOLD, fontSize: "0.82rem", fontWeight: 700,
-              marginBottom: 16, display: "flex", alignItems: "center", gap: 6,
-              fontFamily: "'Cairo', 'Tajawal', sans-serif",
-            }}
-          >
-            → رجوع للقائمة
-          </button>
+          <div className="no-print" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <button
+              onClick={onBack}
+              style={{
+                border: "none", background: "none", cursor: "pointer",
+                color: GOLD, fontSize: "0.82rem", fontWeight: 700,
+                display: "flex", alignItems: "center", gap: 6,
+                fontFamily: "'Cairo', 'Tajawal', sans-serif",
+              }}
+            >
+              → رجوع للقائمة
+            </button>
+            <button
+              onClick={handlePrint}
+              style={{
+                display: "flex", alignItems: "center", gap: 7,
+                padding: "9px 18px", borderRadius: 10,
+                background: `linear-gradient(135deg, ${GOLD}, #a88540)`,
+                color: "#fff", border: "none", cursor: "pointer",
+                fontSize: "0.82rem", fontWeight: 800,
+                fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                boxShadow: `0 3px 12px rgba(197,160,89,0.35)`,
+                transition: "opacity 0.2s",
+              }}
+              title="طباعة أو تصدير كـ PDF"
+            >
+              🖨️ طباعة / تصدير PDF
+            </button>
+          </div>
 
           <div style={{
             background: "#fff", borderRadius: 16, padding: "22px 24px", marginBottom: 20,
@@ -380,8 +447,72 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
             )}
           </div>
 
+          <div style={{
+            background: "#fff", borderRadius: 16, padding: "18px 24px", marginBottom: 20,
+            border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+          }}>
+            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "#4a3520", marginBottom: 14 }}>
+              📋 المرحلة الحالية والمستندات
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                background: isCompleted ? "rgba(39,174,96,0.1)" : GOLD_BG,
+                border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : GOLD_BORDER}`,
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem",
+              }}>
+                {isCompleted ? "✅" : stage?.icon ?? "📄"}
+              </div>
+              <div>
+                <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "#1a1206" }}>
+                  {isCompleted ? "مكتمل — جميع المراحل اجتازت بنجاح" : `المرحلة ${contract.currentStage}: ${stage?.label}`}
+                </div>
+                {!isCompleted && (
+                  <div style={{ fontSize: "0.68rem", color: "#9b8060", marginTop: 2 }}>
+                    المسؤول: {stage?.role}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {(contract.wordFilename || contract.signedFilename) ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {contract.wordFilename && (
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    background: GOLD_BG, borderRadius: 8, padding: "8px 12px",
+                    border: `1px solid ${GOLD_BORDER}`, fontSize: "0.76rem", color: "#8B6914",
+                  }}>
+                    <span>📄</span>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: "0.68rem", color: "#9b8060" }}>مسودة العقد (Word)</div>
+                      <div>{contract.wordFilename}</div>
+                    </div>
+                  </div>
+                )}
+                {contract.signedFilename && (
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    background: "rgba(39,174,96,0.06)", borderRadius: 8, padding: "8px 12px",
+                    border: "1px solid rgba(39,174,96,0.2)", fontSize: "0.76rem", color: "#27ae60",
+                  }}>
+                    <span>📜</span>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: "0.68rem", color: "#9b8060" }}>النسخة الموقّعة (PDF)</div>
+                      <div>{contract.signedFilename}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ fontSize: "0.72rem", color: "#ccc", fontStyle: "italic" }}>
+                لا توجد مستندات مرفقة حتى الآن
+              </div>
+            )}
+          </div>
+
           {!isCompleted && (
-            <div style={{
+            <div className="no-print" style={{
               background: "#fff", borderRadius: 16, padding: "22px 24px", marginBottom: 20,
               border: canAct ? `2px solid ${GOLD}` : "1px solid rgba(0,0,0,0.07)",
               boxShadow: canAct ? `0 0 0 4px rgba(197,160,89,0.1)` : "0 2px 10px rgba(0,0,0,0.05)",
@@ -622,6 +753,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
 
       {rejectModal && (
         <div
+          className="no-print"
           onClick={e => { if (e.target === e.currentTarget) setRejectModal(false); }}
           style={{
             position: "fixed", inset: 0, zIndex: 9999,
