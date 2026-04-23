@@ -443,7 +443,6 @@ const COMPLETED_CONTRACTS = [
   { title: "عقد توريد وتركيب كاميرات مراقبة متكاملة",    vendorName: "شركة الأمان الرقمي",           vendorContact: "0533000003", value:  1_450_000, contractType: "توريد",  projectName: "مشروع المراقبة الأمنية",      createdBy: "خالد السبيعي",  startDate: "2024-04-01", endDate: "2024-10-01" },
   { title: "عقد تطوير وتجميل المنتزه الترفيهي الكبير",   vendorName: "مجموعة الترفيه والبيئة",       vendorContact: "0571000004", value:  4_300_000, contractType: "إنشاء",  projectName: "مشروع البيئة والترفيه",       createdBy: "أحمد المطيري",  startDate: "2024-02-01", endDate: "2025-02-01" },
   { title: "عقد إنشاء مركز التدريب المهني والتقني",       vendorName: "شركة التعليم والتطوير",        vendorContact: "0509000005", value:  7_800_000, contractType: "إنشاء",  projectName: "مشروع التدريب الوطني",        createdBy: "محمد الشهري",   startDate: "2024-05-01", endDate: "2025-05-01" },
-  { title: "عقد إنشاء مبنى إداري متعدد الطوابق",         vendorName: "شركة البناء المتطور",          vendorContact: "0501234567", value:  4_500_000, contractType: "إنشاء",  projectName: "مشروع المقر الرئيسي",        createdBy: "أحمد الغامدي",  startDate: "2025-01-15", endDate: "2026-01-15" },
 ];
 
 // rejected contracts — advanced then rejected
@@ -471,12 +470,7 @@ const SEED_COMMENTS: { contractIndex: number; comments: Array<{ actorName: strin
 ];
 
 router.post("/contracts/seed", async (_req, res): Promise<void> => {
-  const existing = await db.select({ id: contractsTable.id }).from(contractsTable);
-  if (existing.length >= 15) {
-    res.json({ skipped: true, message: "بيانات التهيئة الشاملة موجودة بالفعل" });
-    return;
-  }
-  // wipe and rebuild for a clean rich dataset
+  // always wipe and rebuild for a canonical demo dataset
   await db.delete(contractCommentsTable);
   await db.delete(contractStageLogTable);
   await db.delete(contractsTable);

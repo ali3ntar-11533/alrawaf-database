@@ -48,7 +48,9 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendErr, setSendErr] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const canSend = !!actorName.trim() && !!msg.trim() && !sending;
 
   async function loadComments() {
     try {
@@ -66,12 +68,15 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
   }, [comments]);
 
   async function handleSend() {
-    if (!msg.trim() || sending) return;
-    setSending(true);
+    if (!canSend) return;
+    if (!actorName.trim()) { setSendErr("اختر دورك من القائمة الجانبية أولاً"); return; }
+    setSending(true); setSendErr("");
     try {
       const created = await addContractComment(contractId, { actorName, actorRole, message: msg.trim() });
       setComments(prev => [...prev, created]);
       setMsg("");
+    } catch (e: unknown) {
+      setSendErr(e instanceof Error ? e.message : "حدث خطأ");
     } finally {
       setSending(false);
     }
@@ -84,7 +89,7 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
   return (
     <div style={{
       width: 300, flexShrink: 0, display: "flex", flexDirection: "column",
-      background: "#fff", borderRight: "1px solid rgba(0,0,0,0.07)",
+      background: "#fff", borderLeft: "1px solid rgba(0,0,0,0.07)",
       borderTop: "none", height: "100%", overflow: "hidden",
     }}>
       <div style={{
@@ -186,20 +191,30 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
           />
           <button
             onClick={handleSend}
-            disabled={!msg.trim() || sending}
+            disabled={!canSend}
             style={{
               width: 36, height: 36, borderRadius: "50%", border: "none", flexShrink: 0,
-              background: msg.trim() && !sending ? `linear-gradient(135deg, ${GOLD}, #a88540)` : "#ddd",
-              color: "#fff", cursor: msg.trim() && !sending ? "pointer" : "not-allowed",
+              background: canSend ? `linear-gradient(135deg, ${GOLD}, #a88540)` : "#ddd",
+              color: "#fff", cursor: canSend ? "pointer" : "not-allowed",
               fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: msg.trim() ? `0 3px 10px rgba(197,160,89,0.4)` : "none",
+              boxShadow: canSend ? `0 3px 10px rgba(197,160,89,0.4)` : "none",
               transition: "all 0.2s",
             }}
           >➤</button>
         </div>
-        <div style={{ fontSize: "0.58rem", color: "#ccc", marginTop: 4, textAlign: "center" }}>
-          Enter للإرسال · Shift+Enter لسطر جديد
-        </div>
+        {sendErr && (
+          <div style={{ fontSize: "0.62rem", color: "#e74c3c", marginTop: 4 }}>⚠ {sendErr}</div>
+        )}
+        {!actorName.trim() && !sendErr && (
+          <div style={{ fontSize: "0.58rem", color: "#ccc", marginTop: 4, textAlign: "center" }}>
+            اختر دورك من القائمة الجانبية للمشاركة
+          </div>
+        )}
+        {actorName.trim() && !sendErr && (
+          <div style={{ fontSize: "0.58rem", color: "#ccc", marginTop: 4, textAlign: "center" }}>
+            Enter للإرسال · Shift+Enter لسطر جديد
+          </div>
+        )}
       </div>
     </div>
   );
@@ -273,6 +288,8 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
       <WorkflowWaterfall currentStage={isCompleted ? 12 : contract.currentStage} />
 
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+        <ChatPanel contractId={contractId} actorName={actorName} actorRole={role} />
+
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
           <button
             onClick={onBack}
@@ -601,8 +618,6 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
             </div>
           </div>
         </div>
-
-        <ChatPanel contractId={contractId} actorName={actorName} actorRole={role} />
       </div>
 
       {rejectModal && (
