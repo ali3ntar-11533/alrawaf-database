@@ -41,35 +41,6 @@ function numberToArabic(n: number): string {
   return String(n).split("").map(d => map[parseInt(d)] ?? d).join("");
 }
 
-const CustomBar = (props: Record<string, unknown>) => {
-  const { x, y, width, height } = props as { x:number; y:number; width:number; height:number };
-  return (
-    <defs>
-      <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor={GOLD_GRAD_START} />
-        <stop offset="100%" stopColor={GOLD_GRAD_END} />
-      </linearGradient>
-      <rect x={x} y={y} width={width} height={height} fill="url(#goldGrad)" rx={4} />
-    </defs>
-  );
-};
-
-const GoldBar = (props: Record<string, unknown>) => {
-  const { x, y, width, height } = props as { x:number; y:number; width:number; height:number };
-  if (!height || height < 0) return null;
-  return (
-    <g>
-      <defs>
-        <linearGradient id={`gb-${x}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={GOLD_GRAD_START} />
-          <stop offset="100%" stopColor={GOLD_GRAD_END} />
-        </linearGradient>
-      </defs>
-      <rect x={x} y={y} width={width} height={height} fill={`url(#gb-${x})`} rx={4} />
-    </g>
-  );
-};
-
 const PIE_COLORS = [GREEN, GOLD, RED, "#3498db"];
 
 export default function ContractAnalytics({ onNavigateStage }: Props) {
@@ -559,6 +530,3 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
     </div>
   );
 }
-
-void CustomBar;
-void GoldBar;
