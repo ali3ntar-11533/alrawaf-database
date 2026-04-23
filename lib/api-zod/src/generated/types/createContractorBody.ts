@@ -20,4 +20,10 @@ export interface CreateContractorBody {
   workDescription?: string | null;
   /** @nullable */
   workScopeText?: string | null;
+  /** @nullable */
+  workCategory?: string | null;
+  /** @nullable */
+  unit?: string | null;
+  /** @nullable */
+  businessProgram?: string | null;
 }

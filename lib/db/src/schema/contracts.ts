@@ -14,7 +14,7 @@ export const contractsTable = pgTable("contracts", {
   contractType: text("contract_type").notNull().default("خدمات"),
   projectName: text("project_name").notNull().default(""),
   currentStage: integer("current_stage").notNull().default(1),
-  status: text("status").notNull().default("draft"),
+  status: text("status").notNull().default("active"),
   createdBy: text("created_by").notNull().default(""),
   wordFilename: text("word_filename"),
   signedFilename: text("signed_filename"),
@@ -34,6 +34,16 @@ export const contractStageLogTable = pgTable("contract_stage_log", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const contractDocumentsTable = pgTable("contract_documents", {
+  id: serial("id").primaryKey(),
+  contractId: integer("contract_id").notNull(),
+  stage: integer("stage").notNull(),
+  filename: text("filename").notNull(),
+  fileType: text("file_type").notNull().default("pdf"),
+  uploadedBy: text("uploaded_by").notNull().default(""),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const insertContractSchema = createInsertSchema(contractsTable).omit({
   id: true,
   contractNo: true,
@@ -48,6 +58,12 @@ export const insertStageLogSchema = createInsertSchema(contractStageLogTable).om
   createdAt: true,
 });
 
+export const insertContractDocumentSchema = createInsertSchema(contractDocumentsTable).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertContract = z.infer<typeof insertContractSchema>;
 export type Contract = typeof contractsTable.$inferSelect;
 export type ContractStageLog = typeof contractStageLogTable.$inferSelect;
+export type ContractDocument = typeof contractDocumentsTable.$inferSelect;

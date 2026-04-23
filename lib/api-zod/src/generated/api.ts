@@ -42,10 +42,7 @@ export const ListContractorsResponseItem = zod.object({
   workScopeText: zod.string().nullish(),
   workCategory: zod.string().nullish(),
   unit: zod.string().nullish(),
-  mainActivity: zod.string().nullish(),
   businessProgram: zod.string().nullish(),
-  rating: zod.number().int().min(0).max(5).nullish(),
-  localContent: zod.string().nullish(),
   createdAt: zod.string(),
 });
 export const ListContractorsResponse = zod.array(ListContractorsResponseItem);
@@ -67,10 +64,7 @@ export const CreateContractorBody = zod.object({
   workScopeText: zod.string().nullish(),
   workCategory: zod.string().nullish(),
   unit: zod.string().nullish(),
-  mainActivity: zod.string().nullish(),
   businessProgram: zod.string().nullish(),
-  rating: zod.number().int().min(0).max(5).nullish(),
-  localContent: zod.string().nullish(),
 });
 
 /**
@@ -95,10 +89,50 @@ export const GetContractorResponse = zod.object({
   workScopeText: zod.string().nullish(),
   workCategory: zod.string().nullish(),
   unit: zod.string().nullish(),
-  mainActivity: zod.string().nullish(),
   businessProgram: zod.string().nullish(),
-  rating: zod.number().int().min(0).max(5).nullish(),
-  localContent: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Update a contractor
+ */
+export const UpdateContractorParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateContractorBody = zod.object({
+  contractNo: zod.string(),
+  contractor: zod.string(),
+  project: zod.string(),
+  portfolio: zod.string(),
+  technicalScope: zod.string(),
+  workType: zod.string(),
+  price: zod.number(),
+  phone: zod.string(),
+  email: zod.string(),
+  workDescription: zod.string().nullish(),
+  workScopeText: zod.string().nullish(),
+  workCategory: zod.string().nullish(),
+  unit: zod.string().nullish(),
+  businessProgram: zod.string().nullish(),
+});
+
+export const UpdateContractorResponse = zod.object({
+  id: zod.number(),
+  contractNo: zod.string(),
+  contractor: zod.string(),
+  project: zod.string(),
+  portfolio: zod.string(),
+  technicalScope: zod.string(),
+  workType: zod.string(),
+  price: zod.number(),
+  phone: zod.string(),
+  email: zod.string(),
+  workDescription: zod.string().nullish(),
+  workScopeText: zod.string().nullish(),
+  workCategory: zod.string().nullish(),
+  unit: zod.string().nullish(),
+  businessProgram: zod.string().nullish(),
   createdAt: zod.string(),
 });
 
@@ -110,8 +144,228 @@ export const DeleteContractorParams = zod.object({
 });
 
 /**
- * @summary Update a contractor
+ * @summary List all contracts
  */
-export const UpdateContractorParams = zod.object({
+export const ListContractsQueryParams = zod.object({
+  status: zod.coerce.string().optional(),
+  stage: zod.coerce.number().optional(),
+});
+
+export const ListContractsResponseItem = zod.object({
+  id: zod.number(),
+  contractNo: zod.string(),
+  title: zod.string(),
+  vendorName: zod.string(),
+  vendorContact: zod.string(),
+  value: zod.number(),
+  startDate: zod.string(),
+  endDate: zod.string(),
+  contractType: zod.string(),
+  projectName: zod.string(),
+  currentStage: zod.number(),
+  status: zod.string(),
+  createdBy: zod.string(),
+  wordFilename: zod.string().nullish(),
+  signedFilename: zod.string().nullish(),
+  rejectionReason: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListContractsResponse = zod.array(ListContractsResponseItem);
+
+/**
+ * @summary Create a new contract (stage 1)
+ */
+export const CreateContractBody = zod.object({
+  title: zod.string(),
+  vendorName: zod.string(),
+  vendorContact: zod.string().optional(),
+  value: zod.number().optional(),
+  startDate: zod.string().optional(),
+  endDate: zod.string().optional(),
+  contractType: zod.string().optional(),
+  projectName: zod.string().optional(),
+  createdBy: zod.string().optional(),
+});
+
+/**
+ * @summary Get contract KPI statistics
+ */
+export const GetContractStatsResponse = zod.object({
+  total: zod.number(),
+  draft: zod.number(),
+  inProgress: zod.number(),
+  approved: zod.number(),
+  completed: zod.number(),
+});
+
+/**
+ * @summary Get a single contract by ID
+ */
+export const GetContractParams = zod.object({
   id: zod.coerce.number(),
+});
+
+export const GetContractResponse = zod.object({
+  id: zod.number(),
+  contractNo: zod.string(),
+  title: zod.string(),
+  vendorName: zod.string(),
+  vendorContact: zod.string(),
+  value: zod.number(),
+  startDate: zod.string(),
+  endDate: zod.string(),
+  contractType: zod.string(),
+  projectName: zod.string(),
+  currentStage: zod.number(),
+  status: zod.string(),
+  createdBy: zod.string(),
+  wordFilename: zod.string().nullish(),
+  signedFilename: zod.string().nullish(),
+  rejectionReason: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Advance or reject a contract stage (role-gated)
+ */
+export const AdvanceContractStageParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdvanceContractStageBody = zod.object({
+  action: zod.enum(["advance", "reject"]),
+  actorRole: zod.string(),
+  actorName: zod.string(),
+  notes: zod.string().optional(),
+  wordFilename: zod.string().optional(),
+  signedFilename: zod.string().optional(),
+});
+
+export const AdvanceContractStageResponse = zod.object({
+  id: zod.number(),
+  contractNo: zod.string(),
+  title: zod.string(),
+  vendorName: zod.string(),
+  vendorContact: zod.string(),
+  value: zod.number(),
+  startDate: zod.string(),
+  endDate: zod.string(),
+  contractType: zod.string(),
+  projectName: zod.string(),
+  currentStage: zod.number(),
+  status: zod.string(),
+  createdBy: zod.string(),
+  wordFilename: zod.string().nullish(),
+  signedFilename: zod.string().nullish(),
+  rejectionReason: zod.string().nullish(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Get full audit trail for a contract
+ */
+export const GetContractAuditParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetContractAuditResponseItem = zod.object({
+  id: zod.number(),
+  contractId: zod.number(),
+  stage: zod.number(),
+  action: zod.string(),
+  actorRole: zod.string(),
+  actorName: zod.string(),
+  notes: zod.string(),
+  createdAt: zod.string(),
+});
+export const GetContractAuditResponse = zod.array(GetContractAuditResponseItem);
+
+/**
+ * @summary List documents attached to a contract
+ */
+export const GetContractDocumentsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetContractDocumentsResponseItem = zod.object({
+  id: zod.number(),
+  contractId: zod.number(),
+  stage: zod.number(),
+  filename: zod.string(),
+  fileType: zod.string(),
+  uploadedBy: zod.string(),
+  createdAt: zod.string(),
+});
+export const GetContractDocumentsResponse = zod.array(
+  GetContractDocumentsResponseItem,
+);
+
+/**
+ * @summary Attach a document record to a contract stage
+ */
+export const AddContractDocumentParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AddContractDocumentBody = zod.object({
+  stage: zod.number(),
+  filename: zod.string(),
+  fileType: zod.string().optional(),
+  uploadedBy: zod.string().optional(),
+});
+
+/**
+ * @summary Get full contract data for PDF generation (contract + audit + documents)
+ */
+export const GetContractPdfDataParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetContractPdfDataResponse = zod.object({
+  contract: zod.object({
+    id: zod.number(),
+    contractNo: zod.string(),
+    title: zod.string(),
+    vendorName: zod.string(),
+    vendorContact: zod.string(),
+    value: zod.number(),
+    startDate: zod.string(),
+    endDate: zod.string(),
+    contractType: zod.string(),
+    projectName: zod.string(),
+    currentStage: zod.number(),
+    status: zod.string(),
+    createdBy: zod.string(),
+    wordFilename: zod.string().nullish(),
+    signedFilename: zod.string().nullish(),
+    rejectionReason: zod.string().nullish(),
+    createdAt: zod.string(),
+    updatedAt: zod.string(),
+  }),
+  auditLog: zod.array(
+    zod.object({
+      id: zod.number(),
+      contractId: zod.number(),
+      stage: zod.number(),
+      action: zod.string(),
+      actorRole: zod.string(),
+      actorName: zod.string(),
+      notes: zod.string(),
+      createdAt: zod.string(),
+    }),
+  ),
+  documents: zod.array(
+    zod.object({
+      id: zod.number(),
+      contractId: zod.number(),
+      stage: zod.number(),
+      filename: zod.string(),
+      fileType: zod.string(),
+      uploadedBy: zod.string(),
+      createdAt: zod.string(),
+    }),
+  ),
 });

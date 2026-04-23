@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: contractors
     description: Contractor and supplier records
+  - name: contracts
+    description: Contract management lifecycle (11-stage workflow)
 
 paths:
   /healthz:
@@ -144,6 +146,198 @@ paths:
         "404":
           description: Not found
 
+  /contracts:
+    get:
+      operationId: listContracts
+      tags: [contracts]
+      summary: List all contracts
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: stage
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: List of contracts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contract"
+
+    post:
+      operationId: createContract
+      tags: [contracts]
+      summary: Create a new contract (stage 1)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContractBody"
+      responses:
+        "201":
+          description: Created contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+        "400":
+          description: Validation error
+
+  /contracts/stats:
+    get:
+      operationId: getContractStats
+      tags: [contracts]
+      summary: Get contract KPI statistics
+      responses:
+        "200":
+          description: Contract statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractStats"
+
+  /contracts/{id}:
+    get:
+      operationId: getContract
+      tags: [contracts]
+      summary: Get a single contract by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Contract detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+        "404":
+          description: Not found
+
+  /contracts/{id}/stage:
+    patch:
+      operationId: advanceContractStage
+      tags: [contracts]
+      summary: Advance or reject a contract stage (role-gated)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StageActionBody"
+      responses:
+        "200":
+          description: Updated contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+        "400":
+          description: Validation error
+        "403":
+          description: Role not authorized for this stage
+        "404":
+          description: Not found
+        "409":
+          description: Contract already completed
+
+  /contracts/{id}/audit:
+    get:
+      operationId: getContractAudit
+      tags: [contracts]
+      summary: Get full audit trail for a contract
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Audit log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContractStageLog"
+
+  /contracts/{id}/documents:
+    get:
+      operationId: getContractDocuments
+      tags: [contracts]
+      summary: List documents attached to a contract
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContractDocument"
+
+    post:
+      operationId: addContractDocument
+      tags: [contracts]
+      summary: Attach a document record to a contract stage
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddDocumentBody"
+      responses:
+        "201":
+          description: Document record created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractDocument"
+        "400":
+          description: Validation error
+
+  /contracts/{id}/pdf-data:
+    get:
+      operationId: getContractPdfData
+      tags: [contracts]
+      summary: Get full contract data for PDF generation (contract + audit + documents)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Full PDF data bundle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractPdfData"
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -243,3 +437,213 @@ components:
         - price
         - phone
         - email
+
+    Contract:
+      type: object
+      properties:
+        id:
+          type: integer
+        contractNo:
+          type: string
+        title:
+          type: string
+        vendorName:
+          type: string
+        vendorContact:
+          type: string
+        value:
+          type: integer
+        startDate:
+          type: string
+        endDate:
+          type: string
+        contractType:
+          type: string
+        projectName:
+          type: string
+        currentStage:
+          type: integer
+        status:
+          type: string
+        createdBy:
+          type: string
+        wordFilename:
+          type: ["string", "null"]
+        signedFilename:
+          type: ["string", "null"]
+        rejectionReason:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - contractNo
+        - title
+        - vendorName
+        - vendorContact
+        - value
+        - startDate
+        - endDate
+        - contractType
+        - projectName
+        - currentStage
+        - status
+        - createdBy
+        - createdAt
+        - updatedAt
+
+    CreateContractBody:
+      type: object
+      properties:
+        title:
+          type: string
+        vendorName:
+          type: string
+        vendorContact:
+          type: string
+        value:
+          type: integer
+        startDate:
+          type: string
+        endDate:
+          type: string
+        contractType:
+          type: string
+        projectName:
+          type: string
+        createdBy:
+          type: string
+      required:
+        - title
+        - vendorName
+
+    ContractStats:
+      type: object
+      properties:
+        total:
+          type: integer
+        draft:
+          type: integer
+        inProgress:
+          type: integer
+        approved:
+          type: integer
+        completed:
+          type: integer
+      required:
+        - total
+        - draft
+        - inProgress
+        - approved
+        - completed
+
+    ContractStageLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        contractId:
+          type: integer
+        stage:
+          type: integer
+        action:
+          type: string
+        actorRole:
+          type: string
+        actorName:
+          type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - contractId
+        - stage
+        - action
+        - actorRole
+        - actorName
+        - notes
+        - createdAt
+
+    ContractDocument:
+      type: object
+      properties:
+        id:
+          type: integer
+        contractId:
+          type: integer
+        stage:
+          type: integer
+        filename:
+          type: string
+        fileType:
+          type: string
+        uploadedBy:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - contractId
+        - stage
+        - filename
+        - fileType
+        - uploadedBy
+        - createdAt
+
+    AddDocumentBody:
+      type: object
+      properties:
+        stage:
+          type: integer
+        filename:
+          type: string
+        fileType:
+          type: string
+        uploadedBy:
+          type: string
+      required:
+        - stage
+        - filename
+
+    StageActionBody:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: [advance, reject]
+        actorRole:
+          type: string
+        actorName:
+          type: string
+        notes:
+          type: string
+        wordFilename:
+          type: string
+        signedFilename:
+          type: string
+      required:
+        - action
+        - actorRole
+        - actorName
+
+    ContractPdfData:
+      type: object
+      properties:
+        contract:
+          $ref: "#/components/schemas/Contract"
+        auditLog:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContractStageLog"
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContractDocument"
+      required:
+        - contract
+        - auditLog
+        - documents

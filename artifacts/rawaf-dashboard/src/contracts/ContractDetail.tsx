@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { GOLD, GOLD_BG, GOLD_BORDER, STAGES } from "./types";
 import type { Contract, StageLog } from "./types";
-import { getContract, getContractLog, advanceStage } from "./api";
+import { getContract, getContractAudit, advanceStage } from "./api";
 import WorkflowWaterfall from "./WorkflowWaterfall";
 import { tafqit } from "./tafqit";
 
@@ -40,7 +40,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
 
   function reload() {
     setLoading(true);
-    Promise.all([getContract(contractId), getContractLog(contractId)])
+    Promise.all([getContract(contractId), getContractAudit(contractId)])
       .then(([c, l]) => { setContract(c); setLog(l); })
       .finally(() => setLoading(false));
   }
@@ -60,7 +60,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
 
       const updated = await advanceStage(contractId, payload);
       setContract(updated);
-      const newLog = await getContractLog(contractId);
+      const newLog = await getContractAudit(contractId);
       setLog(newLog);
       setRejectModal(false);
       setNotes(""); setFilename(""); setRejectReason("");

@@ -29,11 +29,7 @@ export interface Contractor {
   /** @nullable */
   unit?: string | null;
   /** @nullable */
-  mainActivity?: string | null;
-  /** @nullable */
-  rating?: number | null;
-  /** @nullable */
-  localContent?: string | null;
+  businessProgram?: string | null;
   createdAt: string;
 }
 
@@ -56,11 +52,102 @@ export interface CreateContractorBody {
   /** @nullable */
   unit?: string | null;
   /** @nullable */
-  mainActivity?: string | null;
+  businessProgram?: string | null;
+}
+
+export interface Contract {
+  id: number;
+  contractNo: string;
+  title: string;
+  vendorName: string;
+  vendorContact: string;
+  value: number;
+  startDate: string;
+  endDate: string;
+  contractType: string;
+  projectName: string;
+  currentStage: number;
+  status: string;
+  createdBy: string;
   /** @nullable */
-  rating?: number | null;
+  wordFilename?: string | null;
   /** @nullable */
-  localContent?: string | null;
+  signedFilename?: string | null;
+  /** @nullable */
+  rejectionReason?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateContractBody {
+  title: string;
+  vendorName: string;
+  vendorContact?: string;
+  value?: number;
+  startDate?: string;
+  endDate?: string;
+  contractType?: string;
+  projectName?: string;
+  createdBy?: string;
+}
+
+export interface ContractStats {
+  total: number;
+  draft: number;
+  inProgress: number;
+  approved: number;
+  completed: number;
+}
+
+export interface ContractStageLog {
+  id: number;
+  contractId: number;
+  stage: number;
+  action: string;
+  actorRole: string;
+  actorName: string;
+  notes: string;
+  createdAt: string;
+}
+
+export interface ContractDocument {
+  id: number;
+  contractId: number;
+  stage: number;
+  filename: string;
+  fileType: string;
+  uploadedBy: string;
+  createdAt: string;
+}
+
+export interface AddDocumentBody {
+  stage: number;
+  filename: string;
+  fileType?: string;
+  uploadedBy?: string;
+}
+
+export type StageActionBodyAction =
+  (typeof StageActionBodyAction)[keyof typeof StageActionBodyAction];
+
+export const StageActionBodyAction = {
+  advance: "advance",
+  reject: "reject",
+} as const;
+
+export interface StageActionBody {
+  action: StageActionBodyAction;
+  actorRole: string;
+  actorName: string;
+  notes?: string;
+  wordFilename?: string;
+  signedFilename?: string;
+}
+
+export interface ContractPdfData {
+  contract: Contract;
+  auditLog: ContractStageLog[];
+  documents: ContractDocument[];
 }
 
 export type ListContractorsParams = {
@@ -70,4 +157,9 @@ export type ListContractorsParams = {
   workType?: string;
   project?: string;
   portfolio?: string;
+};
+
+export type ListContractsParams = {
+  status?: string;
+  stage?: number;
 };

@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { z } from "zod/v4";
-import { db, contractsTable, contractStageLogTable } from "@workspace/db";
+import { db, contractsTable, contractStageLogTable, contractDocumentsTable } from "@workspace/db";
 
 const router: IRouter = Router();
 
@@ -129,7 +129,7 @@ router.get("/contracts/:id", async (req, res): Promise<void> => {
   res.json(serializeContract(row));
 });
 
-router.get("/contracts/:id/log", async (req, res): Promise<void> => {
+router.get("/contracts/:id/audit", async (req, res): Promise<void> => {
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
@@ -138,6 +138,59 @@ router.get("/contracts/:id/log", async (req, res): Promise<void> => {
     .orderBy(contractStageLogTable.createdAt);
 
   res.json(logs.map(serializeLog));
+});
+
+router.get("/contracts/:id/documents", async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const docs = await db.select().from(contractDocumentsTable)
+    .where(eq(contractDocumentsTable.contractId, id))
+    .orderBy(contractDocumentsTable.createdAt);
+
+  res.json(docs.map(d => ({ ...d, createdAt: d.createdAt.toISOString() })));
+});
+
+router.post("/contracts/:id/documents", async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const parsed = z.object({
+    stage:      z.number().int().min(1).max(11),
+    filename:   z.string().min(1),
+    fileType:   z.string().default("pdf"),
+    uploadedBy: z.string().default(""),
+  }).safeParse(req.body);
+
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const [doc] = await db.insert(contractDocumentsTable)
+    .values({ contractId: id, ...parsed.data })
+    .returning();
+
+  res.status(201).json({ ...doc, createdAt: doc.createdAt.toISOString() });
+});
+
+router.get("/contracts/:id/pdf-data", async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const [contract] = await db.select().from(contractsTable).where(eq(contractsTable.id, id));
+  if (!contract) { res.status(404).json({ error: "Not found" }); return; }
+
+  const logs = await db.select().from(contractStageLogTable)
+    .where(eq(contractStageLogTable.contractId, id))
+    .orderBy(contractStageLogTable.createdAt);
+
+  const docs = await db.select().from(contractDocumentsTable)
+    .where(eq(contractDocumentsTable.contractId, id))
+    .orderBy(contractDocumentsTable.createdAt);
+
+  res.json({
+    contract: serializeContract(contract),
+    auditLog: logs.map(serializeLog),
+    documents: docs.map(d => ({ ...d, createdAt: d.createdAt.toISOString() })),
+  });
 });
 
 router.patch("/contracts/:id/stage", async (req, res): Promise<void> => {
@@ -200,16 +253,6 @@ router.patch("/contracts/:id/stage", async (req, res): Promise<void> => {
   await db.update(contractsTable).set(updates).where(eq(contractsTable.id, id));
   const [updated] = await db.select().from(contractsTable).where(eq(contractsTable.id, id));
   res.json(serializeContract(updated));
-});
-
-router.delete("/contracts/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
-
-  await db.delete(contractStageLogTable).where(eq(contractStageLogTable.contractId, id));
-  const [row] = await db.delete(contractsTable).where(eq(contractsTable.id, id)).returning();
-  if (!row) { res.status(404).json({ error: "Not found" }); return; }
-  res.sendStatus(204);
 });
 
 export default router;

@@ -31,8 +31,32 @@ export async function getContractStats(): Promise<ContractStats> {
   return apiFetch<ContractStats>("/contracts/stats");
 }
 
-export async function getContractLog(id: number): Promise<StageLog[]> {
-  return apiFetch<StageLog[]>(`/contracts/${id}/log`);
+export async function getContractAudit(id: number): Promise<StageLog[]> {
+  return apiFetch<StageLog[]>(`/contracts/${id}/audit`);
+}
+
+export interface ContractDocument {
+  id: number;
+  contractId: number;
+  stage: number;
+  filename: string;
+  fileType: string;
+  uploadedBy: string;
+  createdAt: string;
+}
+
+export async function getContractDocuments(id: number): Promise<ContractDocument[]> {
+  return apiFetch<ContractDocument[]>(`/contracts/${id}/documents`);
+}
+
+export interface ContractPdfData {
+  contract: Contract;
+  auditLog: StageLog[];
+  documents: ContractDocument[];
+}
+
+export async function getContractPdfData(id: number): Promise<ContractPdfData> {
+  return apiFetch<ContractPdfData>(`/contracts/${id}/pdf-data`);
 }
 
 export interface CreateContractPayload {
@@ -68,8 +92,4 @@ export async function advanceStage(id: number, payload: StageActionPayload): Pro
     method: "PATCH",
     body: JSON.stringify(payload),
   });
-}
-
-export async function deleteContract(id: number): Promise<void> {
-  return apiFetch<void>(`/contracts/${id}`, { method: "DELETE" });
 }

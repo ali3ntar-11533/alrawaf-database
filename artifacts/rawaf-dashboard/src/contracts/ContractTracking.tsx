@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { GOLD, GOLD_BG, GOLD_BORDER, STAGES } from "./types";
 import type { Contract, StageLog } from "./types";
-import { listContracts, getContractLog } from "./api";
+import { listContracts, getContractAudit } from "./api";
 
 interface Props {
   role: string;
@@ -20,7 +20,7 @@ export default function ContractTracking({ role, onOpenContract }: Props) {
         setContracts(cs);
         const logMap: Record<number, StageLog[]> = {};
         await Promise.all(cs.map(async c => {
-          logMap[c.id] = await getContractLog(c.id);
+          logMap[c.id] = await getContractAudit(c.id);
         }));
         setLogs(logMap);
       })

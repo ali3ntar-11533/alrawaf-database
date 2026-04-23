@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { GOLD, GOLD_BG, GOLD_BORDER, STAGES } from "./types";
 import type { Contract } from "./types";
-import { listContracts, createContract, deleteContract } from "./api";
+import { listContracts, createContract } from "./api";
 import { tafqit } from "./tafqit";
 
 interface Props {
@@ -72,12 +72,6 @@ export default function ContractRequests({ role, actorName, onOpenContract }: Pr
     } finally {
       setSaving(false);
     }
-  }
-
-  async function handleDelete(id: number) {
-    if (!confirm("هل أنت متأكد من حذف هذا العقد؟")) return;
-    await deleteContract(id);
-    loadContracts();
   }
 
   const amountVal = parseInt((form.value || "0").replace(/,/g, ""), 10);
@@ -208,16 +202,6 @@ export default function ContractRequests({ role, actorName, onOpenContract }: Pr
                       }}
                     >
                       فتح ←
-                    </button>
-                    <button
-                      onClick={() => handleDelete(c.id)}
-                      style={{
-                        padding: "7px 10px", borderRadius: 8, border: "1px solid rgba(231,76,60,0.25)",
-                        background: "rgba(231,76,60,0.06)", color: "#e74c3c",
-                        cursor: "pointer", fontSize: "0.75rem", fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                      }}
-                    >
-                      🗑
                     </button>
                   </div>
                 </div>
