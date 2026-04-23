@@ -43,6 +43,17 @@ function numberToArabic(n: number): string {
 
 const PIE_COLORS = [GREEN, GOLD, RED, "#3498db"];
 
+const CONTRACT_TYPE_LIST = ["إنشاء", "صيانة", "توريد", "خدمات", "مقاولات"] as const;
+const TYPE_COLORS = [GOLD, "#3498db", GREEN, "#9b59b6", "#e67e22"];
+
+function hexToRgb(hex: string): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `${r}, ${g}, ${b}`;
+}
+
 type DatePreset = "all" | "thisMonth" | "thisQuarter" | "thisYear" | "custom";
 
 function getPresetRange(preset: DatePreset, customFrom: string, customTo: string): { dateFrom?: string; dateTo?: string } {
@@ -132,6 +143,27 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
     { name: "مُعادة", value: rejected || 0 },
     { name: "جديدة", value: pending || 0 },
   ].filter(d => d.value > 0);
+
+  const typeData = (() => {
+    const knownOrder = CONTRACT_TYPE_LIST as readonly string[];
+    const allTypes = Array.from(new Set(contracts.map(c => c.contractType).filter(Boolean)));
+    const ordered = [
+      ...knownOrder.filter(t => allTypes.includes(t)),
+      ...allTypes.filter(t => !knownOrder.includes(t)),
+    ];
+    const fallbackColors = ["#e67e22", "#1abc9c", "#e74c3c", "#2ecc71", "#f39c12"];
+    return ordered.map(type => {
+      const knownIdx = knownOrder.indexOf(type);
+      const color = knownIdx >= 0 ? TYPE_COLORS[knownIdx] : fallbackColors[allTypes.indexOf(type) % fallbackColors.length];
+      const matches = contracts.filter(c => c.contractType === type);
+      return {
+        name: type,
+        count: matches.length,
+        totalValue: matches.reduce((sum, c) => sum + (c.value ?? 0), 0),
+        color,
+      };
+    }).filter(d => d.count > 0);
+  })();
 
   const senior = contracts.filter(c => c.status === "active" && (c.currentStage === 8 || c.currentStage === 9)).length;
   const review = contracts.filter(c => c.status === "active" && c.currentStage >= 1 && c.currentStage <= 7).length;
@@ -654,6 +686,130 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
             </div>
           )}
         </div>
+      </div>
+
+      {/* ── Contract Type Breakdown ── */}
+      <div style={{
+        background: "#fff", border: `1px solid ${GOLD_BORDER}`,
+        borderRadius: 14, padding: "22px 20px", marginBottom: 20,
+        boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+      }}>
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "#1a1206", marginBottom: 2 }}>
+            📋 توزيع العقود حسب النوع
+          </div>
+          <div style={{ fontSize: "0.7rem", color: "#9b8060" }}>
+            عدد العقود والقيمة الإجمالية لكل تصنيف
+          </div>
+        </div>
+
+        {typeData.length === 0 ? (
+          <div style={{ textAlign: "center", color: "#9b8060", fontSize: "0.82rem", padding: "32px 0" }}>
+            لا توجد عقود بعد
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "start" }}>
+            {/* Bar chart */}
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart
+                data={typeData}
+                margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
+                barCategoryGap="35%"
+              >
+                <defs>
+                  {typeData.map((d, i) => (
+                    <linearGradient key={i} id={`typeGrad-${i}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={d.color} stopOpacity={0.95} />
+                      <stop offset="100%" stopColor={d.color} stopOpacity={0.60} />
+                    </linearGradient>
+                  ))}
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 11, fill: "#4a3520", fontFamily: "'Cairo', sans-serif", fontWeight: 700 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: "#9b8060" }}
+                  allowDecimals={false}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload || payload.length === 0) return null;
+                    const d = payload[0].payload as typeof typeData[0];
+                    return (
+                      <div style={{
+                        background: "#fff",
+                        border: `1px solid ${GOLD_BORDER}`,
+                        borderRadius: 10,
+                        padding: "10px 14px",
+                        fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                        fontSize: "0.78rem",
+                        direction: "rtl",
+                        boxShadow: "0 4px 16px rgba(0,0,0,0.10)",
+                        minWidth: 160,
+                      }}>
+                        <div style={{ fontWeight: 800, color: "#1a1206", marginBottom: 6, borderBottom: `1px solid ${GOLD_BORDER}`, paddingBottom: 6 }}>
+                          {label}
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 16, marginBottom: 4 }}>
+                          <span style={{ color: "#9b8060" }}>عدد العقود</span>
+                          <span style={{ fontWeight: 700, color: d.color }}>{d.count}</span>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
+                          <span style={{ color: "#9b8060" }}>القيمة الإجمالية</span>
+                          <span style={{ fontWeight: 700, color: "#8B6914" }}>
+                            {d.totalValue.toLocaleString("ar-SA")} ر.س
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }}
+                  cursor={{ fill: "rgba(197,160,89,0.07)" }}
+                />
+                <Bar
+                  dataKey="count"
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={56}
+                >
+                  {typeData.map((d, i) => (
+                    <Cell key={i} fill={`url(#typeGrad-${i})`} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+
+            {/* Summary cards per type */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 200 }}>
+              {typeData.map((d, i) => (
+                <div key={i} style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "8px 12px", borderRadius: 9,
+                  background: `rgba(${hexToRgb(d.color)}, 0.07)`,
+                  border: `1px solid rgba(${hexToRgb(d.color)}, 0.20)`,
+                  gap: 12,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: d.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#1a1206" }}>{d.name}</span>
+                  </div>
+                  <div style={{ textAlign: "left", flexShrink: 0 }}>
+                    <div style={{ fontSize: "1rem", fontWeight: 900, color: d.color, lineHeight: 1 }}>
+                      {numberToArabic(d.count)}
+                    </div>
+                    <div style={{ fontSize: "0.62rem", color: "#9b8060", marginTop: 1 }}>
+                      {(d.totalValue / 1_000_000).toLocaleString("ar-SA", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} م ر.س
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Live Activity Feed ── */}
