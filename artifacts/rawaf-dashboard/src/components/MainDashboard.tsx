@@ -1,4 +1,4 @@
-import { useContractors } from "../contractors/api";
+import { useContractorsContext } from "../contractors/context";
 import Sidebar from "./Sidebar";
 import MainContent from "./MainContent";
 import WelcomeHero from "./WelcomeHero";
@@ -53,7 +53,7 @@ function contractorMatchesFilters(c: Contractor, filters: FilterState): boolean 
 }
 
 export default function MainDashboard({ search, filters, selectedId, onSelectId }: Props) {
-  const { data: allContractors = [], isLoading } = useContractors();
+  const { data: allContractors = [], isLoading } = useContractorsContext();
 
   const hasSearch       = search.trim().length > 0;
   const hasFilters      = Object.values(filters).some(Boolean);

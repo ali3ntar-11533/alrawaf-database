@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, X } from "lucide-react";
-import { useContractors } from "../contractors/api";
+import { useContractorsContext } from "../contractors/context";
 import type { Contractor } from "../contractors/types";
 import type { FilterState } from "./filterTypes";
 import { EMPTY_FILTERS } from "./filterTypes";
@@ -315,8 +315,7 @@ function FilterDropdown({
    FilterBar — main export
    ═══════════════════════════════════════════════════════════ */
 export default function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
-  /* Single shared API call — React Query caches it across the app */
-  const { data: contractors = [], isLoading } = useContractors();
+  const { data: contractors = [], isLoading } = useContractorsContext();
 
   /* Compute all unique-value lists up-front from cached data */
   const options = useMemo((): Record<keyof FilterState, string[]> => {

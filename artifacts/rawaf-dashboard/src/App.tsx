@@ -5,6 +5,7 @@ import MainDashboard from "./components/MainDashboard";
 import DatabasePage from "./components/DatabasePage";
 import SplashGate from "./components/SplashGate";
 import { EMPTY_FILTERS, type FilterState } from "./components/filterTypes";
+import { ContractorsProvider } from "./contractors/context";
 
 export type TabType = "main" | "database";
 
@@ -26,6 +27,7 @@ function App() {
 
   return (
     <SplashGate>
+      <ContractorsProvider>
       <div style={{ minHeight: "100vh", backgroundColor: "var(--body-bg)" }}>
         <Header
           activeTab={activeTab}
@@ -58,6 +60,7 @@ function App() {
           )}
         </div>
       </div>
+      </ContractorsProvider>
     </SplashGate>
   );
 }

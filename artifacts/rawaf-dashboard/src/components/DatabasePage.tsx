@@ -4,11 +4,11 @@ import type { FilterState } from "./filterTypes";
 import logoImg from "@assets/logo_1776506524686.jpg";
 import * as XLSX from "xlsx";
 import {
-  useContractors,
   createContractor,
   updateContractor,
   deleteContractor,
 } from "../contractors/api";
+import { useContractorsContext } from "../contractors/context";
 import type { Contractor } from "../contractors/types";
 
 const DB_PASSWORD = "maged@2026";
@@ -273,7 +273,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authenticated]);
 
-  const { data: contractors = [], isLoading, isError, refetch } = useContractors();
+  const { data: contractors = [], isLoading, isError, refetch } = useContractorsContext();
   const [isSaving, setIsSaving] = useState(false);
 
   /* Exact-match filter + sort by contractor name then ID */
