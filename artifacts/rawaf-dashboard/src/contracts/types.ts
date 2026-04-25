@@ -17,6 +17,20 @@ export interface Contract {
   rejectionReason: string | null;
   createdAt: string;
   updatedAt: string;
+  /* ── Extended project fields ── */
+  projectNo:           string | null;
+  workType:            string | null;
+  contractDuration:    string | null;
+  priceAnalysisStatus: string | null;
+  /* ── Second party (vendor) details ── */
+  vendorIban:          string | null;
+  vendorTaxNo:         string | null;
+  vendorDelegate:      string | null;
+  vendorDelegateTitle: string | null;
+  vendorDelegateId:    string | null;
+  vendorEmail:         string | null;
+  vendorAddress:       string | null;
+  vendorRegExpiry:     string | null;
 }
 
 export interface StageLog {

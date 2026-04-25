@@ -21,6 +21,20 @@ export const contractsTable = pgTable("contracts", {
   rejectionReason: text("rejection_reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  /* ── Extended project fields ── */
+  projectNo:            text("project_no"),
+  workType:             text("work_type"),
+  contractDuration:     text("contract_duration"),
+  priceAnalysisStatus:  text("price_analysis_status"),
+  /* ── Second party (vendor) details ── */
+  vendorIban:           text("vendor_iban"),
+  vendorTaxNo:          text("vendor_tax_no"),
+  vendorDelegate:       text("vendor_delegate"),
+  vendorDelegateTitle:  text("vendor_delegate_title"),
+  vendorDelegateId:     text("vendor_delegate_id"),
+  vendorEmail:          text("vendor_email"),
+  vendorAddress:        text("vendor_address"),
+  vendorRegExpiry:      text("vendor_reg_expiry"),
 });
 
 export const contractStageLogTable = pgTable("contract_stage_log", {

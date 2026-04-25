@@ -195,14 +195,13 @@ function FolderCard({ label, sub, count, icon, accent, onClick }: {
       {/* Label */}
       <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "#4B5563", marginTop: 4, paddingRight: 6 }}>{label}</div>
 
-      {/* Footer link */}
+      {/* Footer hint */}
       <div style={{
-        marginTop: 10, paddingRight: 6, display: "flex", alignItems: "center", gap: 4,
+        marginTop: 10, paddingRight: 6,
         color: hov ? accent : "#D1D5DB", fontSize: "0.54rem", fontWeight: 700,
-        transition: "color 0.2s",
+        transition: "color 0.2s", letterSpacing: "0.02em",
       }}>
-        <span style={{ fontSize: "0.7rem" }}>←</span>
-        <span>فتح الجدول</span>
+        ← عرض التفاصيل
       </div>
     </div>
   );

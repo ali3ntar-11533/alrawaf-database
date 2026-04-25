@@ -45,6 +45,24 @@ function getInitials(name: string) {
   return parts.length >= 2 ? parts[0][0] + parts[1][0] : name.slice(0, 2);
 }
 
+function Field({ label, value, wide }: { label: string; value: string | null | undefined; wide?: boolean }) {
+  return (
+    <div style={{ gridColumn: wide ? "span 2" : undefined }}>
+      <div style={{ fontSize: "0.6rem", color: "#b0a08a", marginBottom: 4, letterSpacing: "0.03em", fontWeight: 700, textTransform: "uppercase" }}>
+        {label}
+      </div>
+      <div style={{
+        fontSize: "0.84rem", fontWeight: 600, color: value ? "#1a1206" : "#ccc",
+        background: "rgba(0,0,0,0.025)", borderRadius: 8, padding: "8px 12px",
+        border: "1px solid rgba(0,0,0,0.06)", minHeight: 36, display: "flex", alignItems: "center",
+        wordBreak: "break-all",
+      }}>
+        {value || "—"}
+      </div>
+    </div>
+  );
+}
+
 function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; actorName: string; actorRole: string }) {
   const [comments, setComments] = useState<ContractComment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,10 +82,7 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
   }
 
   useEffect(() => { loadComments(); }, [contractId]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [comments]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [comments]);
 
   async function handleSend() {
     if (!canSend) return;
@@ -90,35 +105,28 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
 
   return (
     <div style={{
-      width: 300, flexShrink: 0, display: "flex", flexDirection: "column",
+      width: 290, flexShrink: 0, display: "flex", flexDirection: "column",
       background: "#fff", borderLeft: "1px solid rgba(0,0,0,0.07)",
-      borderTop: "none", height: "100%", overflow: "hidden",
+      height: "100%", overflow: "hidden",
     }}>
       <div style={{
-        padding: "14px 16px 10px",
-        borderBottom: `1.5px solid ${GOLD_BORDER}`,
-        background: GOLD_BG,
-        flexShrink: 0,
+        padding: "14px 16px 10px", borderBottom: `1.5px solid ${GOLD_BORDER}`,
+        background: GOLD_BG, flexShrink: 0,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{
             width: 32, height: 32, borderRadius: "50%",
             background: `linear-gradient(135deg, ${GOLD}, #a88540)`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "0.85rem",
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.85rem",
           }}>💬</div>
           <div>
             <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#4a3520" }}>المحادثة الداخلية</div>
             <div style={{ fontSize: "0.6rem", color: "#9b8060" }}>{comments.length} رسالة</div>
           </div>
-          <button
-            onClick={loadComments}
-            title="تحديث"
-            style={{
-              marginRight: "auto", border: "none", background: "transparent",
-              cursor: "pointer", color: GOLD, fontSize: "0.8rem", padding: 4,
-            }}
-          >↻</button>
+          <button onClick={loadComments} title="تحديث" style={{
+            marginRight: "auto", border: "none", background: "transparent",
+            cursor: "pointer", color: GOLD, fontSize: "0.8rem", padding: 4,
+          }}>↻</button>
         </div>
       </div>
 
@@ -126,10 +134,7 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
         {loading ? (
           <div style={{ textAlign: "center", color: "#bbb", fontSize: "0.75rem", paddingTop: 20 }}>جاري التحميل…</div>
         ) : comments.length === 0 ? (
-          <div style={{
-            flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-            justifyContent: "center", color: "#ccc", textAlign: "center", gap: 8,
-          }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#ccc", textAlign: "center", gap: 8 }}>
             <div style={{ fontSize: "2rem" }}>💬</div>
             <div style={{ fontSize: "0.72rem" }}>لا توجد رسائل بعد<br />ابدأ المحادثة!</div>
           </div>
@@ -157,9 +162,7 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
                     background: isMe ? `linear-gradient(135deg, ${GOLD}, #a88540)` : "rgba(0,0,0,0.04)",
                     color: isMe ? "#fff" : "#2d2416",
                     borderRadius: isMe ? "14px 14px 3px 14px" : "14px 14px 14px 3px",
-                    padding: "8px 11px",
-                    fontSize: "0.76rem",
-                    lineHeight: 1.5,
+                    padding: "8px 11px", fontSize: "0.76rem", lineHeight: 1.5,
                     border: isMe ? "none" : "1px solid rgba(0,0,0,0.07)",
                   }}>{c.message}</div>
                   <div style={{ fontSize: "0.55rem", color: "#ccc" }}>{dateStr} · {timeStr}</div>
@@ -171,56 +174,56 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
         <div ref={bottomRef} />
       </div>
 
-      <div style={{
-        padding: "10px",
-        borderTop: `1.5px solid ${GOLD_BORDER}`,
-        background: "#fafafa",
-        flexShrink: 0,
-      }}>
+      <div style={{ padding: "10px", borderTop: `1.5px solid ${GOLD_BORDER}`, background: "#fafafa", flexShrink: 0 }}>
         <div style={{ display: "flex", gap: 6, alignItems: "flex-end" }}>
           <textarea
-            value={msg}
-            onChange={e => setMsg(e.target.value)}
-            onKeyDown={handleKey}
-            placeholder="اكتب رسالتك…"
-            rows={2}
+            value={msg} onChange={e => setMsg(e.target.value)} onKeyDown={handleKey}
+            placeholder="اكتب رسالتك…" rows={2}
             style={{
               flex: 1, padding: "8px 10px", borderRadius: 10,
               border: `1.5px solid ${GOLD_BORDER}`, fontSize: "0.76rem",
-              fontFamily: "'Cairo', 'Tajawal', sans-serif", resize: "none",
-              outline: "none", lineHeight: 1.5,
+              fontFamily: "'Cairo', 'Tajawal', sans-serif", resize: "none", outline: "none", lineHeight: 1.5,
             }}
           />
-          <button
-            onClick={handleSend}
-            disabled={!canSend}
-            style={{
-              width: 36, height: 36, borderRadius: "50%", border: "none", flexShrink: 0,
-              background: canSend ? `linear-gradient(135deg, ${GOLD}, #a88540)` : "#ddd",
-              color: "#fff", cursor: canSend ? "pointer" : "not-allowed",
-              fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: canSend ? `0 3px 10px rgba(197,160,89,0.4)` : "none",
-              transition: "all 0.2s",
-            }}
-          >➤</button>
+          <button onClick={handleSend} disabled={!canSend} style={{
+            width: 36, height: 36, borderRadius: "50%", border: "none", flexShrink: 0,
+            background: canSend ? `linear-gradient(135deg, ${GOLD}, #a88540)` : "#ddd",
+            color: "#fff", cursor: canSend ? "pointer" : "not-allowed",
+            fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: canSend ? `0 3px 10px rgba(197,160,89,0.4)` : "none",
+            transition: "all 0.2s",
+          }}>➤</button>
         </div>
-        {sendErr && (
-          <div style={{ fontSize: "0.62rem", color: "#e74c3c", marginTop: 4 }}>⚠ {sendErr}</div>
-        )}
+        {sendErr && <div style={{ fontSize: "0.62rem", color: "#e74c3c", marginTop: 4 }}>⚠ {sendErr}</div>}
         {!actorName.trim() && !sendErr && (
-          <div style={{ fontSize: "0.58rem", color: "#ccc", marginTop: 4, textAlign: "center" }}>
-            اختر دورك من القائمة الجانبية للمشاركة
-          </div>
+          <div style={{ fontSize: "0.58rem", color: "#ccc", marginTop: 4, textAlign: "center" }}>اختر دورك للمشاركة</div>
         )}
         {actorName.trim() && !sendErr && (
-          <div style={{ fontSize: "0.58rem", color: "#ccc", marginTop: 4, textAlign: "center" }}>
-            Enter للإرسال · Shift+Enter لسطر جديد
-          </div>
+          <div style={{ fontSize: "0.58rem", color: "#ccc", marginTop: 4, textAlign: "center" }}>Enter للإرسال · Shift+Enter سطر جديد</div>
         )}
       </div>
     </div>
   );
 }
+
+const TABS = [
+  { id: "project",     label: "بيانات المشروع",   icon: "📋" },
+  { id: "party2",      label: "الطرف الثاني",      icon: "🏢" },
+  { id: "attachments", label: "المرفقات الذكية",   icon: "📎" },
+  { id: "log",         label: "سجل الإجراءات",     icon: "📅" },
+] as const;
+type TabId = typeof TABS[number]["id"];
+
+const SMART_DOCS = [
+  { icon: "📜", label: "السجل التجاري",         hint: "Commercial Registration" },
+  { icon: "🧾", label: "شهادة الزكاة والضريبة", hint: "VAT & Zakat Certificate" },
+  { icon: "📝", label: "خطاب التفويض",           hint: "Delegation Letter" },
+  { icon: "📑", label: "عقد التأسيس",            hint: "Articles of Association" },
+  { icon: "📁", label: "الملف التعريفي",          hint: "Company Profile" },
+  { icon: "📊", label: "جداول الكميات",          hint: "Bill of Quantities" },
+  { icon: "🗂️",label: "جداول الكميات (Excel)",   hint: "BoQ — Excel Format" },
+  { icon: "✒️", label: "نسخة العقد الموقعة",     hint: "Signed Contract Copy" },
+];
 
 export default function ContractDetail({ contractId, role, actorName, onBack }: Props) {
   const [contract, setContract] = useState<Contract | null>(null);
@@ -233,39 +236,29 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
   const [filename, setFilename] = useState("");
   const [err, setErr] = useState("");
   const [success, setSuccess] = useState("");
+  const [activeTab, setActiveTab] = useState<TabId>("project");
+
   function handlePrint() {
     if (!contract) return;
     const existingStyle = document.getElementById(PRINT_STYLE_ID);
     if (existingStyle) existingStyle.remove();
-
     const style = document.createElement("style");
     style.id = PRINT_STYLE_ID;
     style.textContent = `
       @media print {
         .no-print { display: none !important; }
-        .contract-app-wrapper {
-          position: static !important;
-          display: block !important;
-          height: auto !important;
-          overflow: visible !important;
-        }
-        .contract-main-content {
-          overflow: visible !important;
-          height: auto !important;
-        }
+        .contract-app-wrapper { position: static !important; display: block !important; height: auto !important; overflow: visible !important; }
+        .contract-main-content { overflow: visible !important; height: auto !important; }
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
     `;
     document.head.appendChild(style);
-
     const originalTitle = document.title;
     document.title = `عقد — ${contract.contractNo} — ${contract.title}`;
-
     let cleaned = false;
     function cleanup() {
-      if (cleaned) return;
-      cleaned = true;
+      if (cleaned) return; cleaned = true;
       document.title = originalTitle;
       const s = document.getElementById(PRINT_STYLE_ID);
       if (s) s.remove();
@@ -293,9 +286,8 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
         action, actorRole: role, actorName,
         notes: action === "reject" ? rejectReason : notes,
       };
-      if (filename && (contract.currentStage === 6)) payload.wordFilename = filename;
-      if (filename && (contract.currentStage === 10)) payload.signedFilename = filename;
-
+      if (filename && contract.currentStage === 6) payload.wordFilename = filename;
+      if (filename && contract.currentStage === 10) payload.signedFilename = filename;
       const updated = await advanceStage(contractId, payload);
       setContract(updated);
       const newLog = await getContractAudit(contractId);
@@ -329,51 +321,46 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
 
   return (
     <div dir="rtl" style={{ fontFamily: "'Cairo', 'Tajawal', sans-serif", height: "100%", display: "flex", flexDirection: "column" }}>
+      {/* Workflow waterfall */}
       <div className="no-print">
         <WorkflowWaterfall currentStage={isCompleted ? 12 : contract.currentStage} />
       </div>
 
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+        {/* Chat panel */}
         <div className="no-print">
           <ChatPanel contractId={contractId} actorName={actorName} actorRole={role} />
         </div>
 
+        {/* Main content */}
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
-          <div className="no-print" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <button
-              onClick={onBack}
-              style={{
-                border: "none", background: "none", cursor: "pointer",
-                color: GOLD, fontSize: "0.82rem", fontWeight: 700,
-                display: "flex", alignItems: "center", gap: 6,
-                fontFamily: "'Cairo', 'Tajawal', sans-serif",
-              }}
-            >
+
+          {/* Top bar */}
+          <div className="no-print" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+            <button onClick={onBack} style={{
+              border: "none", background: "none", cursor: "pointer",
+              color: GOLD, fontSize: "0.82rem", fontWeight: 700,
+              display: "flex", alignItems: "center", gap: 6,
+              fontFamily: "'Cairo', 'Tajawal', sans-serif",
+            }}>
               → رجوع للقائمة
             </button>
-            <button
-              onClick={handlePrint}
-              style={{
-                display: "flex", alignItems: "center", gap: 7,
-                padding: "9px 18px", borderRadius: 10,
-                background: `linear-gradient(135deg, ${GOLD}, #a88540)`,
-                color: "#fff", border: "none", cursor: "pointer",
-                fontSize: "0.82rem", fontWeight: 800,
-                fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                boxShadow: `0 3px 12px rgba(197,160,89,0.35)`,
-                transition: "opacity 0.2s",
-              }}
-              title="طباعة أو تصدير كـ PDF"
-            >
+            <button onClick={handlePrint} style={{
+              display: "flex", alignItems: "center", gap: 7,
+              padding: "9px 18px", borderRadius: 10,
+              background: `linear-gradient(135deg, ${GOLD}, #a88540)`,
+              color: "#fff", border: "none", cursor: "pointer",
+              fontSize: "0.82rem", fontWeight: 800,
+              fontFamily: "'Cairo', 'Tajawal', sans-serif",
+              boxShadow: `0 3px 12px rgba(197,160,89,0.35)`,
+            }}>
               🖨️ طباعة / تصدير PDF
             </button>
           </div>
 
-          {/* ── Workflow content ── */}
-          <>
-
+          {/* Contract header card */}
           <div style={{
-            background: "#fff", borderRadius: 16, padding: "22px 24px", marginBottom: 20,
+            background: "#fff", borderRadius: 16, padding: "20px 24px", marginBottom: 16,
             border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
           }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
@@ -385,13 +372,17 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
               }}>
                 {isCompleted ? "✅" : stage?.icon ?? "📄"}
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "#1a1206", marginBottom: 4 }}>{contract.title}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: "1rem", fontWeight: 900, color: "#1a1206", marginBottom: 3, lineHeight: 1.4 }}>
+                  {contract.title}
+                </div>
                 <div style={{ fontSize: "0.72rem", color: "#9b8060" }}>
-                  {contract.contractNo} · {contract.vendorName} · {contract.contractType}
+                  {contract.contractNo}
+                  {contract.projectNo && <span> · مشروع رقم {contract.projectNo}</span>}
+                  {" · "}{contract.contractType}
                 </div>
                 {contract.value > 0 && (
-                  <div style={{ fontSize: "0.78rem", color: "#8B6914", fontWeight: 700, marginTop: 4 }}>
+                  <div style={{ fontSize: "0.78rem", color: "#8B6914", fontWeight: 700, marginTop: 3 }}>
                     💰 {contract.value.toLocaleString("ar-SA")} ريال
                   </div>
                 )}
@@ -399,393 +390,430 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
               <div style={{
                 textAlign: "center", background: isCompleted ? "rgba(39,174,96,0.08)" : GOLD_BG,
                 border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : GOLD_BORDER}`,
-                borderRadius: 12, padding: "8px 16px",
+                borderRadius: 12, padding: "8px 16px", flexShrink: 0,
               }}>
                 <div style={{ fontSize: "1.5rem", fontWeight: 900, color: isCompleted ? "#27ae60" : GOLD }}>{pct}%</div>
                 <div style={{ fontSize: "0.58rem", color: "#9b8060" }}>إنجاز</div>
               </div>
             </div>
-
-            <div style={{ marginTop: 14, height: 8, borderRadius: 4, background: "rgba(0,0,0,0.06)", overflow: "hidden" }}>
+            <div style={{ marginTop: 12, height: 7, borderRadius: 4, background: "rgba(0,0,0,0.06)", overflow: "hidden" }}>
               <div style={{
                 height: "100%", width: `${pct}%`, borderRadius: 4,
                 background: isCompleted ? "#27ae60" : `linear-gradient(90deg, ${GOLD}, #a88540)`,
                 transition: "width 0.6s",
               }} />
             </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginTop: 16 }}>
-              {[
-                { label: "اسم المورد",    value: contract.vendorName },
-                { label: "بيانات التواصل", value: contract.vendorContact || "—" },
-                { label: "المشروع",       value: contract.projectName || "—" },
-                { label: "تاريخ البدء",   value: contract.startDate || "—" },
-                { label: "تاريخ الانتهاء",value: contract.endDate || "—" },
-                { label: "أُنشئ بواسطة", value: contract.createdBy },
-              ].map((info, i) => (
-                <div key={i}>
-                  <div style={{ fontSize: "0.62rem", color: "#bbb", marginBottom: 2 }}>{info.label}</div>
-                  <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "#1a1206" }}>{info.value}</div>
-                </div>
-              ))}
-            </div>
-
-            {contract.value > 0 && (
-              <div style={{
-                marginTop: 14, background: GOLD_BG, borderRadius: 10, padding: "10px 14px",
-                border: `1px solid ${GOLD_BORDER}`, fontSize: "0.72rem", color: "#8B6914", lineHeight: 1.7,
-              }}>
-                📝 <strong>التفقيط:</strong> {tafqit(contract.value)}
-              </div>
-            )}
-
-            {contract.rejectionReason && !isCompleted && (
-              <div style={{
-                marginTop: 14, background: "rgba(231,76,60,0.06)", borderRadius: 10, padding: "12px 14px",
-                border: "1px solid rgba(231,76,60,0.2)", fontSize: "0.78rem", color: "#e74c3c",
-              }}>
-                ↩ <strong>سبب الإعادة للمرحلة 1:</strong> {contract.rejectionReason}
-              </div>
-            )}
           </div>
 
-          <div style={{
-            background: "#fff", borderRadius: 16, padding: "18px 24px", marginBottom: 20,
-            border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+          {/* ── TAB BAR ── */}
+          <div className="no-print" style={{
+            display: "flex", borderRadius: 12, overflow: "hidden",
+            border: `1.5px solid ${GOLD_BORDER}`, marginBottom: 16,
+            background: "#fff", boxShadow: "0 1px 6px rgba(0,0,0,0.04)",
           }}>
-            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "#4a3520", marginBottom: 14 }}>
-              📋 المرحلة الحالية والمستندات
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-                background: isCompleted ? "rgba(39,174,96,0.1)" : GOLD_BG,
-                border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : GOLD_BORDER}`,
-                display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem",
-              }}>
-                {isCompleted ? "✅" : stage?.icon ?? "📄"}
-              </div>
-              <div>
-                <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "#1a1206" }}>
-                  {isCompleted ? "مكتمل — جميع المراحل اجتازت بنجاح" : `المرحلة ${contract.currentStage}: ${stage?.label}`}
-                </div>
-                {!isCompleted && (
-                  <div style={{ fontSize: "0.68rem", color: "#9b8060", marginTop: 2 }}>
-                    المسؤول: {stage?.role}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {(contract.wordFilename || contract.signedFilename) ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {contract.wordFilename && (
-                  <div style={{
-                    display: "flex", alignItems: "center", gap: 8,
-                    background: GOLD_BG, borderRadius: 8, padding: "8px 12px",
-                    border: `1px solid ${GOLD_BORDER}`, fontSize: "0.76rem", color: "#8B6914",
-                  }}>
-                    <span>📄</span>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: "0.68rem", color: "#9b8060" }}>مسودة العقد (Word)</div>
-                      <div>{contract.wordFilename}</div>
-                    </div>
-                  </div>
-                )}
-                {contract.signedFilename && (
-                  <div style={{
-                    display: "flex", alignItems: "center", gap: 8,
-                    background: "rgba(39,174,96,0.06)", borderRadius: 8, padding: "8px 12px",
-                    border: "1px solid rgba(39,174,96,0.2)", fontSize: "0.76rem", color: "#27ae60",
-                  }}>
-                    <span>📜</span>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: "0.68rem", color: "#9b8060" }}>النسخة الموقّعة (PDF)</div>
-                      <div>{contract.signedFilename}</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div style={{ fontSize: "0.72rem", color: "#ccc", fontStyle: "italic" }}>
-                لا توجد مستندات مرفقة حتى الآن
-              </div>
-            )}
+            {TABS.map((tab, idx) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={{
+                    flex: 1, padding: "11px 8px",
+                    border: "none",
+                    borderLeft: idx < TABS.length - 1 ? `1px solid ${GOLD_BORDER}` : "none",
+                    background: isActive ? `linear-gradient(135deg, ${GOLD}, #a88540)` : "transparent",
+                    color: isActive ? "#fff" : "#9b8060",
+                    cursor: "pointer", fontSize: "0.78rem", fontWeight: isActive ? 800 : 600,
+                    fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+                    transition: "all 0.18s",
+                  }}
+                >
+                  <span style={{ fontSize: "0.9rem" }}>{tab.icon}</span>
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
 
-          {!isCompleted && (
-            <div className="no-print" style={{
-              background: "#fff", borderRadius: 16, padding: "22px 24px", marginBottom: 20,
-              border: canAct ? `2px solid ${GOLD}` : "1px solid rgba(0,0,0,0.07)",
-              boxShadow: canAct ? `0 0 0 4px rgba(197,160,89,0.1)` : "0 2px 10px rgba(0,0,0,0.05)",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                <div style={{
-                  width: 38, height: 38, borderRadius: "50%", flexShrink: 0,
-                  background: canAct ? GOLD_BG : "rgba(0,0,0,0.06)",
-                  border: `2px solid ${canAct ? GOLD : "rgba(0,0,0,0.1)"}`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "1rem",
-                }}>{stage?.icon ?? "📄"}</div>
-                <div>
-                  <div style={{ fontSize: "0.92rem", fontWeight: 800, color: "#1a1206" }}>
-                    المرحلة {contract.currentStage}: {stage?.label}
-                  </div>
-                  <div style={{ fontSize: "0.68rem", color: "#9b8060" }}>
-                    المسؤول: {stage?.role} {canAct ? "· أنت مخوّل للتصرف" : "· دورك لا يتطابق مع هذه المرحلة"}
-                  </div>
+          {/* ── TAB: بيانات المشروع ── */}
+          {activeTab === "project" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{
+                background: "#fff", borderRadius: 16, padding: "20px 22px",
+                border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              }}>
+                <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#4a3520", marginBottom: 14, display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{
+                    width: 4, height: 16, background: GOLD, borderRadius: 2, display: "inline-block",
+                  }} />
+                  تفاصيل المشروع
                 </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+                  <Field label="اسم المشروع"      value={contract.projectName} wide />
+                  <Field label="رقم المشروع"       value={contract.projectNo} />
+                  <Field label="نوع العقد"          value={contract.contractType} />
+                  <Field label="نوع الأعمال"        value={contract.workType} wide />
+                  <Field label="قيمة العقد (ريال)"  value={contract.value > 0 ? contract.value.toLocaleString("ar-SA") : null} />
+                  <Field label="مدة العقد"          value={contract.contractDuration} />
+                  <Field label="تاريخ البدء"        value={contract.startDate} />
+                  <Field label="تاريخ الانتهاء"     value={contract.endDate} />
+                  <Field label="أُنشئ بواسطة"       value={contract.createdBy} />
+                  <Field label="تحليل السعر"        value={contract.priceAnalysisStatus} />
+                </div>
+
+                {contract.value > 0 && (
+                  <div style={{
+                    marginTop: 14, background: GOLD_BG, borderRadius: 10, padding: "11px 14px",
+                    border: `1px solid ${GOLD_BORDER}`, fontSize: "0.74rem", color: "#8B6914", lineHeight: 1.7,
+                  }}>
+                    📝 <strong>التفقيط:</strong> {tafqit(contract.value)}
+                  </div>
+                )}
+
+                {contract.rejectionReason && !isCompleted && (
+                  <div style={{
+                    marginTop: 14, background: "rgba(231,76,60,0.06)", borderRadius: 10, padding: "12px 14px",
+                    border: "1px solid rgba(231,76,60,0.2)", fontSize: "0.78rem", color: "#e74c3c",
+                  }}>
+                    ↩ <strong>سبب الإعادة للمرحلة 1:</strong> {contract.rejectionReason}
+                  </div>
+                )}
               </div>
 
-              {isExecutive && (
+              {/* Action panel */}
+              {!isCompleted && canAct && (
                 <div style={{
-                  background: "linear-gradient(135deg, rgba(197,160,89,0.12), rgba(197,160,89,0.04))",
-                  border: `1.5px solid ${GOLD_BORDER}`, borderRadius: 12, padding: "14px 16px", marginBottom: 16,
+                  background: "#fff", borderRadius: 16, padding: "20px 22px",
+                  border: `1.5px solid ${GOLD_BORDER}`,
+                  boxShadow: `0 2px 12px rgba(197,160,89,0.12)`,
                 }}>
-                  <div style={{ fontSize: "0.78rem", fontWeight: 800, color: "#8B6914", marginBottom: 10 }}>
-                    🏆 ملخص العقد للاعتماد العلوي
+                  <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#4a3520", marginBottom: 14, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ width: 4, height: 16, background: GOLD, borderRadius: 2, display: "inline-block" }} />
+                    اتخاذ إجراء — المرحلة {contract.currentStage}: {stage?.label}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    {[
-                      { label: "العقد", value: contract.contractNo },
-                      { label: "المورد", value: contract.vendorName },
-                      { label: "القيمة", value: contract.value > 0 ? contract.value.toLocaleString("ar-SA") + " ر.س" : "—" },
-                      { label: "النوع", value: contract.contractType },
-                    ].map((item, i) => (
-                      <div key={i} style={{ fontSize: "0.75rem" }}>
-                        <span style={{ color: "#bbb" }}>{item.label}: </span>
-                        <span style={{ fontWeight: 700, color: "#1a1206" }}>{item.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                  {contract.wordFilename && (
-                    <div style={{ marginTop: 8, fontSize: "0.72rem", color: "#8B6914" }}>
-                      📄 المسودة: {contract.wordFilename}
+
+                  {!isExecutive && (
+                    <div style={{ marginBottom: 12 }}>
+                      <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#4a3520", display: "block", marginBottom: 6 }}>
+                        ملاحظات الاعتماد
+                      </label>
+                      <textarea
+                        value={notes} onChange={e => setNotes(e.target.value)}
+                        placeholder="ملاحظات اختيارية..."
+                        rows={2}
+                        style={{
+                          width: "100%", padding: "8px 12px", borderRadius: 9,
+                          border: `1.5px solid ${GOLD_BORDER}`, fontSize: "0.82rem",
+                          fontFamily: "'Cairo', 'Tajawal', sans-serif", resize: "vertical",
+                          outline: "none", boxSizing: "border-box",
+                        }}
+                      />
                     </div>
                   )}
-                </div>
-              )}
 
-              {(contract.currentStage === 1 || contract.currentStage === 5) && canAct && (
-                <div style={{ marginBottom: 14 }}>
-                  <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: "#4a3520", marginBottom: 5 }}>
-                    ملاحظات {contract.currentStage === 1 ? "(اختياري)" : ""}
-                  </label>
-                  <textarea
-                    value={notes}
-                    onChange={e => setNotes(e.target.value)}
-                    placeholder="أضف ملاحظاتك..."
-                    rows={2}
-                    style={{
-                      width: "100%", padding: "10px 12px", borderRadius: 9,
-                      border: `1.5px solid ${GOLD_BORDER}`, fontSize: "0.82rem",
-                      fontFamily: "'Cairo', 'Tajawal', sans-serif", resize: "vertical",
-                      outline: "none", boxSizing: "border-box",
-                    }}
-                  />
-                </div>
-              )}
+                  {needsFile && (
+                    <div style={{ marginBottom: 12 }}>
+                      <label style={{ fontSize: "0.72rem", fontWeight: 700, color: "#4a3520", display: "block", marginBottom: 6 }}>
+                        {contract.currentStage === 6 ? "اسم ملف Word" : "اسم الملف الموقع"} *
+                      </label>
+                      <input
+                        value={filename} onChange={e => setFilename(e.target.value)}
+                        placeholder={contract.currentStage === 6 ? "عقد_الجودة_الشاملة.docx" : "عقد_موقع.pdf"}
+                        style={{
+                          width: "100%", padding: "8px 12px", borderRadius: 9,
+                          border: `1.5px solid ${GOLD_BORDER}`, fontSize: "0.82rem",
+                          fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                          outline: "none", boxSizing: "border-box",
+                        }}
+                      />
+                    </div>
+                  )}
 
-              {needsFile && canAct && (
-                <div style={{ marginBottom: 14 }}>
-                  <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: "#4a3520", marginBottom: 5 }}>
-                    {contract.currentStage === 6 ? "📄 اسم ملف العقد Word" : "📜 اسم ملف النسخة الموقعة PDF"}
-                  </label>
-                  <input
-                    value={filename}
-                    onChange={e => setFilename(e.target.value)}
-                    placeholder={contract.currentStage === 6 ? "contract_draft.docx" : "signed_contract.pdf"}
-                    style={{
-                      width: "100%", padding: "10px 12px", borderRadius: 9,
-                      border: `1.5px solid ${GOLD_BORDER}`, fontSize: "0.82rem",
-                      fontFamily: "'Cairo', 'Tajawal', sans-serif", outline: "none", boxSizing: "border-box",
-                    }}
-                  />
-                </div>
-              )}
-
-              {canAct && !isCompleted && (
-                <div style={{ display: "flex", gap: 10 }}>
-                  <button
-                    onClick={() => doAction("advance")}
-                    disabled={actionBusy}
-                    style={{
-                      flex: 1, padding: "12px 20px", borderRadius: 11, border: "none",
-                      background: actionBusy ? "#ccc" : `linear-gradient(135deg, ${GOLD}, #a88540)`,
-                      color: "#fff", cursor: actionBusy ? "not-allowed" : "pointer",
-                      fontSize: "0.88rem", fontWeight: 800,
-                      fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                      boxShadow: actionBusy ? "none" : `0 4px 14px rgba(197,160,89,0.4)`,
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    }}
-                  >
-                    {contract.currentStage === 9 ? "👑 الختم الذهبي — اعتماد نهائي" :
-                     contract.currentStage === 11 ? "🏦 أرشفة وإغلاق العقد" :
-                     "✅ اعتماد والانتقال للمرحلة التالية"}
-                  </button>
-                  {contract.currentStage !== 11 && (
+                  <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
                     <button
-                      onClick={() => { setRejectModal(true); setRejectReason(""); }}
+                      onClick={() => doAction("advance")}
+                      disabled={actionBusy || (needsFile && !filename.trim())}
+                      style={{
+                        flex: 1, padding: "12px", borderRadius: 10,
+                        background: actionBusy ? "#ccc" : `linear-gradient(135deg, ${GOLD}, #a88540)`,
+                        color: "#fff", border: "none",
+                        cursor: actionBusy ? "not-allowed" : "pointer",
+                        fontSize: "0.88rem", fontWeight: 800,
+                        fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                        boxShadow: actionBusy ? "none" : `0 3px 12px rgba(197,160,89,0.35)`,
+                        transition: "all 0.2s",
+                      }}
+                    >
+                      {actionBusy ? "جاري المعالجة..." : (contract.currentStage < 11 ? `✅ اعتماد والانتقال للمرحلة ${contract.currentStage + 1}` : "✅ اعتماد الختم والإنهاء")}
+                    </button>
+                    <button
+                      onClick={() => setRejectModal(true)}
                       disabled={actionBusy}
                       style={{
-                        padding: "12px 20px", borderRadius: 11,
-                        border: "1.5px solid rgba(231,76,60,0.35)",
-                        background: "rgba(231,76,60,0.06)", color: "#e74c3c",
+                        padding: "12px 20px", borderRadius: 10,
+                        background: "rgba(231,76,60,0.08)", color: "#e74c3c",
+                        border: "1.5px solid rgba(231,76,60,0.3)",
                         cursor: actionBusy ? "not-allowed" : "pointer",
                         fontSize: "0.88rem", fontWeight: 800,
                         fontFamily: "'Cairo', 'Tajawal', sans-serif",
                       }}
-                    >
-                      ↩ رفض وإعادة
-                    </button>
-                  )}
-                </div>
-              )}
+                    >↩ رفض وإعادة</button>
+                  </div>
 
-              {!canAct && !isCompleted && (
-                <div style={{
-                  background: "rgba(0,0,0,0.03)", borderRadius: 10, padding: "14px",
-                  textAlign: "center", fontSize: "0.8rem", color: "#bbb",
-                  border: "1px dashed rgba(0,0,0,0.1)",
-                }}>
-                  🔒 هذه المرحلة تتطلب دور "{stage?.role}" للتصرف
+                  {isCompleted && (
+                    <div style={{
+                      background: "rgba(39,174,96,0.08)", borderRadius: 10, padding: "14px",
+                      textAlign: "center", fontSize: "0.85rem", color: "#27ae60", fontWeight: 700,
+                      border: "1.5px solid rgba(39,174,96,0.25)", marginTop: 10,
+                    }}>
+                      ✅ العقد مكتمل ومُوقَّع — {contract.contractNo}
+                      {contract.signedFilename && <div style={{ fontSize: "0.72rem", marginTop: 4, opacity: 0.8 }}>📜 {contract.signedFilename}</div>}
+                    </div>
+                  )}
+
+                  {err && (
+                    <div style={{ marginTop: 12, background: "rgba(231,76,60,0.08)", borderRadius: 9, padding: "10px 14px", color: "#e74c3c", fontSize: "0.78rem" }}>
+                      ⚠ {err}
+                    </div>
+                  )}
+                  {success && (
+                    <div style={{ marginTop: 12, background: "rgba(39,174,96,0.08)", borderRadius: 9, padding: "10px 14px", color: "#27ae60", fontSize: "0.78rem" }}>
+                      {success}
+                    </div>
+                  )}
                 </div>
               )}
 
               {isCompleted && (
                 <div style={{
-                  background: "rgba(39,174,96,0.08)", borderRadius: 10, padding: "14px",
-                  textAlign: "center", fontSize: "0.85rem", color: "#27ae60", fontWeight: 700,
-                  border: "1.5px solid rgba(39,174,96,0.25)",
+                  background: "rgba(39,174,96,0.07)", borderRadius: 16, padding: "18px 22px",
+                  border: "1.5px solid rgba(39,174,96,0.25)", textAlign: "center",
+                  fontSize: "0.92rem", color: "#27ae60", fontWeight: 800,
                 }}>
-                  ✅ العقد مكتمل ومُوقَّع — الرقم: {contract.contractNo}
-                  {contract.signedFilename && <div style={{ fontSize: "0.72rem", marginTop: 4, opacity: 0.8 }}>📜 {contract.signedFilename}</div>}
+                  🏆 العقد مكتمل ومُوقَّع — {contract.contractNo}
+                  {contract.signedFilename && <div style={{ fontSize: "0.78rem", marginTop: 6, opacity: 0.8 }}>📜 {contract.signedFilename}</div>}
                 </div>
               )}
 
-              {err && (
-                <div style={{ marginTop: 12, background: "rgba(231,76,60,0.08)", borderRadius: 9, padding: "10px 14px", color: "#e74c3c", fontSize: "0.78rem" }}>
-                  ⚠ {err}
-                </div>
-              )}
-              {success && (
-                <div style={{ marginTop: 12, background: "rgba(39,174,96,0.08)", borderRadius: 9, padding: "10px 14px", color: "#27ae60", fontSize: "0.78rem" }}>
-                  {success}
+              {!isCompleted && !canAct && (
+                <div style={{
+                  background: "rgba(0,0,0,0.03)", borderRadius: 14, padding: "16px 18px",
+                  border: "1.5px dashed rgba(0,0,0,0.1)", textAlign: "center",
+                  fontSize: "0.8rem", color: "#bbb",
+                }}>
+                  المرحلة الحالية ({stage?.label}) مخصصة لدور <strong style={{ color: "#9b8060" }}>{STAGE_ALLOWED[contract.currentStage]?.join(" / ")}</strong>
                 </div>
               )}
             </div>
           )}
 
-          <div style={{
-            background: "#fff", borderRadius: 16, padding: "22px 24px",
-            border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-          }}>
-            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "#4a3520", marginBottom: 16 }}>
-              📅 الجدول الزمني وسجل العمليات
+          {/* ── TAB: الطرف الثاني ── */}
+          {activeTab === "party2" && (
+            <div style={{
+              background: "#fff", borderRadius: 16, padding: "20px 22px",
+              border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            }}>
+              <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#4a3520", marginBottom: 14, display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ width: 4, height: 16, background: GOLD, borderRadius: 2, display: "inline-block" }} />
+                بيانات الطرف الثاني (المورد / المقاول)
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+                <Field label="اسم الشركة / المورد"  value={contract.vendorName} wide />
+                <Field label="رقم التواصل"           value={contract.vendorContact} />
+                <Field label="البريد الإلكتروني"     value={contract.vendorEmail} />
+                <Field label="رقم الآيبان (IBAN)"   value={contract.vendorIban} wide />
+                <Field label="الرقم الضريبي"         value={contract.vendorTaxNo} />
+                <Field label="انتهاء السجل التجاري"  value={contract.vendorRegExpiry} />
+                <Field label="اسم المفوض"            value={contract.vendorDelegate} />
+                <Field label="صفة المفوض"            value={contract.vendorDelegateTitle} />
+                <Field label="رقم هوية المفوض"       value={contract.vendorDelegateId} />
+                <Field label="العنوان"               value={contract.vendorAddress} wide />
+              </div>
             </div>
+          )}
 
-            <div style={{ position: "relative" }}>
-              <div style={{
-                position: "absolute", right: 15, top: 0, bottom: 0,
-                width: 2, background: "rgba(197,160,89,0.2)",
-              }} />
+          {/* ── TAB: المرفقات الذكية ── */}
+          {activeTab === "attachments" && (
+            <div style={{
+              background: "#fff", borderRadius: 16, padding: "20px 22px",
+              border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            }}>
+              <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#4a3520", marginBottom: 16, display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ width: 4, height: 16, background: GOLD, borderRadius: 2, display: "inline-block" }} />
+                المرفقات الذكية
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+                {SMART_DOCS.map((doc, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      background: GOLD_BG, borderRadius: 12, padding: "18px 12px",
+                      border: `1.5px solid ${GOLD_BORDER}`, textAlign: "center",
+                      cursor: "pointer", transition: "all 0.18s",
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 16px rgba(197,160,89,0.25)`;
+                      (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+                      (e.currentTarget as HTMLDivElement).style.transform = "none";
+                    }}
+                  >
+                    <div style={{ fontSize: "2rem" }}>{doc.icon}</div>
+                    <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#4a3520", lineHeight: 1.4 }}>{doc.label}</div>
+                    <div style={{ fontSize: "0.58rem", color: "#b0a08a" }}>{doc.hint}</div>
+                    <div style={{
+                      marginTop: 4, padding: "4px 10px", borderRadius: 20,
+                      background: "rgba(197,160,89,0.15)", fontSize: "0.6rem",
+                      color: "#8B6914", fontWeight: 700,
+                    }}>غير مرفق بعد</div>
+                  </div>
+                ))}
+              </div>
 
-              {log.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "20px 0", color: "#bbb", fontSize: "0.82rem" }}>
-                  لا يوجد سجلات بعد
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {log.map((entry) => (
-                    <div key={entry.id} style={{ display: "flex", gap: 16, alignItems: "flex-start", paddingRight: 36 }}>
+              {(contract.wordFilename || contract.signedFilename) && (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ fontSize: "0.74rem", fontWeight: 700, color: "#4a3520", marginBottom: 10 }}>المرفقات المرفوعة</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {contract.wordFilename && (
                       <div style={{
-                        position: "absolute", right: 6, width: 20, height: 20, borderRadius: "50%",
-                        background: entry.action === "reject" ? "#e74c3c" : GOLD,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: "0.58rem", color: "#fff", fontWeight: 900,
-                        zIndex: 1, flexShrink: 0,
+                        display: "flex", alignItems: "center", gap: 10,
+                        background: "rgba(39,174,96,0.05)", borderRadius: 10, padding: "10px 14px",
+                        border: "1px solid rgba(39,174,96,0.2)",
                       }}>
-                        {entry.action === "reject" ? "✕" : "✓"}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                          <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#1a1206" }}>
-                            م{entry.stage}: {STAGES[entry.stage - 1]?.label}
-                          </span>
-                          <span style={{
-                            fontSize: "0.62rem", padding: "2px 8px", borderRadius: 20,
-                            background: entry.action === "reject" ? "rgba(231,76,60,0.1)" : "rgba(39,174,96,0.1)",
-                            color: entry.action === "reject" ? "#e74c3c" : "#27ae60",
-                            fontWeight: 700,
-                          }}>
-                            {entry.action === "reject" ? "رُفض" : "اعتُمد"}
-                          </span>
+                        <span style={{ fontSize: "1.2rem" }}>📄</span>
+                        <div>
+                          <div style={{ fontSize: "0.76rem", fontWeight: 700, color: "#1a1206" }}>نسخة Word</div>
+                          <div style={{ fontSize: "0.65rem", color: "#9b8060" }}>{contract.wordFilename}</div>
                         </div>
-                        <div style={{ fontSize: "0.68rem", color: "#9b8060", marginTop: 2 }}>
-                          {entry.actorName} ({entry.actorRole}) · {new Date(entry.createdAt).toLocaleString("ar-SA")}
-                        </div>
-                        {entry.notes && entry.notes !== `اعتماد المرحلة ${entry.stage}` && (
-                          <div style={{ fontSize: "0.7rem", color: "#6b5c3e", marginTop: 3 }}>
-                            💬 {entry.notes}
-                          </div>
-                        )}
+                        <div style={{ marginRight: "auto", fontSize: "0.6rem", color: "#27ae60", fontWeight: 700, background: "rgba(39,174,96,0.1)", padding: "3px 8px", borderRadius: 20 }}>مرفوع ✓</div>
                       </div>
-                    </div>
-                  ))}
-
-                  <div style={{
-                    background: `linear-gradient(135deg, rgba(197,160,89,0.08), transparent)`,
-                    borderRadius: 12, padding: "10px 14px",
-                    border: `1px solid ${GOLD_BORDER}`, textAlign: "center",
-                  }}>
-                    <div style={{ fontSize: "0.88rem", fontWeight: 900, color: GOLD }}>
-                      {isCompleted ? "🏆 " : "⚡ "}
-                      {pct}% مكتمل
-                    </div>
-                    <div style={{ fontSize: "0.66rem", color: "#9b8060" }}>
-                      {isCompleted ? "تم اكتمال جميع المراحل" : `المرحلة الحالية: ${stage?.label}`}
-                    </div>
+                    )}
+                    {contract.signedFilename && (
+                      <div style={{
+                        display: "flex", alignItems: "center", gap: 10,
+                        background: "rgba(197,160,89,0.06)", borderRadius: 10, padding: "10px 14px",
+                        border: `1px solid ${GOLD_BORDER}`,
+                      }}>
+                        <span style={{ fontSize: "1.2rem" }}>✒️</span>
+                        <div>
+                          <div style={{ fontSize: "0.76rem", fontWeight: 700, color: "#1a1206" }}>نسخة موقعة</div>
+                          <div style={{ fontSize: "0.65rem", color: "#9b8060" }}>{contract.signedFilename}</div>
+                        </div>
+                        <div style={{ marginRight: "auto", fontSize: "0.6rem", color: GOLD, fontWeight: 700, background: GOLD_BG, padding: "3px 8px", borderRadius: 20 }}>موقع ✓</div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
             </div>
-          </div>
+          )}
 
-          </>
+          {/* ── TAB: سجل الإجراءات ── */}
+          {activeTab === "log" && (
+            <div style={{
+              background: "#fff", borderRadius: 16, padding: "20px 22px",
+              border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            }}>
+              <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#4a3520", marginBottom: 16, display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ width: 4, height: 16, background: GOLD, borderRadius: 2, display: "inline-block" }} />
+                سجل الإجراءات والعمليات
+              </div>
+
+              <div style={{ position: "relative" }}>
+                <div style={{ position: "absolute", right: 15, top: 0, bottom: 0, width: 2, background: "rgba(197,160,89,0.2)" }} />
+
+                {log.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "30px 0", color: "#bbb", fontSize: "0.82rem" }}>
+                    لا يوجد سجلات بعد
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {log.map((entry) => (
+                      <div key={entry.id} style={{ display: "flex", gap: 16, alignItems: "flex-start", paddingRight: 36 }}>
+                        <div style={{
+                          position: "absolute", right: 6, width: 20, height: 20, borderRadius: "50%",
+                          background: entry.action === "reject" ? "#e74c3c" : GOLD,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "0.58rem", color: "#fff", fontWeight: 900, zIndex: 1, flexShrink: 0,
+                        }}>
+                          {entry.action === "reject" ? "✕" : "✓"}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#1a1206" }}>
+                              م{entry.stage}: {STAGES[entry.stage - 1]?.label}
+                            </span>
+                            <span style={{
+                              fontSize: "0.62rem", padding: "2px 8px", borderRadius: 20,
+                              background: entry.action === "reject" ? "rgba(231,76,60,0.1)" : "rgba(39,174,96,0.1)",
+                              color: entry.action === "reject" ? "#e74c3c" : "#27ae60", fontWeight: 700,
+                            }}>
+                              {entry.action === "reject" ? "رُفض" : entry.action === "create" ? "أُنشئ" : "اعتُمد"}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: "0.68rem", color: "#9b8060", marginTop: 2 }}>
+                            {entry.actorName} ({entry.actorRole}) · {new Date(entry.createdAt).toLocaleString("ar-SA")}
+                          </div>
+                          {entry.notes && entry.notes !== `اعتماد المرحلة ${entry.stage}` && entry.notes !== "إنشاء العقد" && (
+                            <div style={{ fontSize: "0.7rem", color: "#6b5c3e", marginTop: 3 }}>
+                              💬 {entry.notes}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    <div style={{
+                      background: `linear-gradient(135deg, rgba(197,160,89,0.08), transparent)`,
+                      borderRadius: 12, padding: "10px 14px",
+                      border: `1px solid ${GOLD_BORDER}`, textAlign: "center",
+                    }}>
+                      <div style={{ fontSize: "0.88rem", fontWeight: 900, color: GOLD }}>
+                        {isCompleted ? "🏆 " : "⚡ "}{pct}% مكتمل
+                      </div>
+                      <div style={{ fontSize: "0.66rem", color: "#9b8060" }}>
+                        {isCompleted ? "تم اكتمال جميع المراحل" : `المرحلة الحالية: ${stage?.label}`}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
         </div>
       </div>
 
+      {/* Reject modal — no popup style, inline modal */}
       {rejectModal && (
         <div
           className="no-print"
           onClick={e => { if (e.target === e.currentTarget) setRejectModal(false); }}
           style={{
             position: "fixed", inset: 0, zIndex: 9999,
-            background: "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)",
+            background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}
         >
           <div dir="rtl" style={{
             background: "#fff", borderRadius: 20, padding: "28px 26px",
-            width: "100%", maxWidth: 420,
-            boxShadow: "0 24px 80px rgba(0,0,0,0.2)",
+            width: "100%", maxWidth: 420, boxShadow: "0 24px 80px rgba(0,0,0,0.2)",
             fontFamily: "'Cairo', 'Tajawal', sans-serif",
           }}>
-            <h3 style={{ fontSize: "1rem", fontWeight: 900, color: "#e74c3c", marginBottom: 6 }}>
-              ↩ رفض وإعادة العقد
-            </h3>
+            <h3 style={{ fontSize: "1rem", fontWeight: 900, color: "#e74c3c", marginBottom: 6 }}>↩ رفض وإعادة العقد</h3>
             <p style={{ fontSize: "0.78rem", color: "#9b8060", marginBottom: 20 }}>
-              سيعود العقد فوراً للمرحلة الأولى. يُرجى تحديد سبب الإرجاع.
+              سيعود العقد للمرحلة الأولى. يُرجى تحديد سبب الإرجاع.
             </p>
             <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: "#4a3520", marginBottom: 6 }}>
               سبب الإرجاع *
             </label>
             <textarea
-              value={rejectReason}
-              onChange={e => setRejectReason(e.target.value)}
-              placeholder="اذكر السبب بالتفصيل..."
-              rows={3}
+              value={rejectReason} onChange={e => setRejectReason(e.target.value)}
+              placeholder="اذكر السبب بالتفصيل..." rows={3}
               style={{
                 width: "100%", padding: "10px 12px", borderRadius: 9,
                 border: "1.5px solid rgba(231,76,60,0.35)", fontSize: "0.85rem",
@@ -795,8 +823,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
             />
             <div style={{ display: "flex", gap: 10 }}>
               <button
-                onClick={() => doAction("reject")}
-                disabled={!rejectReason.trim() || actionBusy}
+                onClick={() => doAction("reject")} disabled={!rejectReason.trim() || actionBusy}
                 style={{
                   flex: 1, padding: "11px", borderRadius: 10,
                   background: rejectReason.trim() ? "rgba(231,76,60,0.9)" : "#ccc",
@@ -805,9 +832,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                   fontSize: "0.85rem", fontWeight: 800,
                   fontFamily: "'Cairo', 'Tajawal', sans-serif",
                 }}
-              >
-                تأكيد الرفض
-              </button>
+              >تأكيد الرفض</button>
               <button
                 onClick={() => setRejectModal(false)}
                 style={{
@@ -816,9 +841,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                   cursor: "pointer", fontSize: "0.85rem", color: "#6b5c3e",
                   fontFamily: "'Cairo', 'Tajawal', sans-serif",
                 }}
-              >
-                إلغاء
-              </button>
+              >إلغاء</button>
             </div>
           </div>
         </div>

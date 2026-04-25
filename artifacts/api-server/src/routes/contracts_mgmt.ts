@@ -110,6 +110,18 @@ const CreateContractBody = z.object({
   contractType: z.string().default("خدمات"),
   projectName:  z.string().default(""),
   createdBy:    z.string().default("مدير المشروع"),
+  projectNo:            z.string().optional(),
+  workType:             z.string().optional(),
+  contractDuration:     z.string().optional(),
+  priceAnalysisStatus:  z.string().optional(),
+  vendorIban:           z.string().optional(),
+  vendorTaxNo:          z.string().optional(),
+  vendorDelegate:       z.string().optional(),
+  vendorDelegateTitle:  z.string().optional(),
+  vendorDelegateId:     z.string().optional(),
+  vendorEmail:          z.string().optional(),
+  vendorAddress:        z.string().optional(),
+  vendorRegExpiry:      z.string().optional(),
 });
 
 const StageActionBody = z.object({
@@ -479,11 +491,43 @@ const STAGE_ACTOR_NAMES: Record<number, string> = {
 };
 
 // active contracts — one per stage 1→11
-const ACTIVE_CONTRACTS = [
+const ACTIVE_CONTRACTS: Array<{
+  title: string; vendorName: string; vendorContact: string; value: number;
+  contractType: string; projectName: string; createdBy: string;
+  startDate: string; endDate: string; targetStage: number;
+  contractNo?: string;
+  projectNo?: string; workType?: string; contractDuration?: string; priceAnalysisStatus?: string;
+  vendorIban?: string; vendorTaxNo?: string; vendorDelegate?: string; vendorDelegateTitle?: string;
+  vendorDelegateId?: string; vendorEmail?: string; vendorAddress?: string; vendorRegExpiry?: string;
+}> = [
   { title: "عقد إنشاء مركز خدمات المواطن",             vendorName: "شركة الجودة الشاملة",         vendorContact: "0501112233", value:   450_000, contractType: "إنشاء",   projectName: "مشروع الخدمات البلدية",       createdBy: "أحمد المطيري",  startDate: "2026-01-05", endDate: "2026-08-05", targetStage: 1 },
   { title: "عقد توريد معدات الحراسة الأمنية",           vendorName: "مؤسسة الأمان للأجهزة",        vendorContact: "0559990001", value:   780_000, contractType: "توريد",  projectName: "مشروع تأمين المنشآت",         createdBy: "سعد العتيبي",   startDate: "2025-11-01", endDate: "2026-05-01", targetStage: 2 },
   { title: "عقد تطوير نظام الإشارات المرورية الذكية",   vendorName: "شركة التقنية المتقدمة",        vendorContact: "0534441122", value: 3_200_000, contractType: "خدمات",  projectName: "مشروع المدينة الذكية",        createdBy: "أحمد المطيري",  startDate: "2025-09-15", endDate: "2026-09-15", targetStage: 3 },
-  { title: "عقد صيانة المصاعد والرافعات",               vendorName: "شركة التقنيات الرفيعة",        vendorContact: "0571228833", value:   320_000, contractType: "صيانة",  projectName: "مشروع المباني الحكومية",      createdBy: "سعد العتيبي",   startDate: "2026-02-01", endDate: "2026-08-01", targetStage: 4 },
+  {
+    title: "م - 194 تصميم وتنفيذ وتشغيل وصيانة محطة معالجة المياه لضاحية الفرسان",
+    vendorName: "شركة الاتحاد الهندسي السعودية للاستشارات الهندسية خطيب وعلمي",
+    vendorContact: "966112177700",
+    value: 1_544_000,
+    contractType: "استشارات هندسية",
+    projectName: "مشروع محطة معالجة الصرف الصحي بضاحية الفرسان",
+    createdBy: "أحمد المطيري",
+    startDate: "2026-01-15",
+    endDate: "2026-05-15",
+    targetStage: 4,
+    contractNo: "1718",
+    projectNo: "194",
+    workType: "تصميم أعمال المعالجة لمحطة معالجة الصرف الصحي بضاحية الفرسان",
+    contractDuration: "120 يوماً",
+    priceAnalysisStatus: "غير مطلوب",
+    vendorIban: "SA 6730 400 10 800 700 54 000",
+    vendorTaxNo: "300056957400003",
+    vendorDelegate: "ماهر عدنان كحيل",
+    vendorDelegateTitle: "مفوض",
+    vendorDelegateId: "2216446019",
+    vendorEmail: "Maher.Kahil@khatibalami.com",
+    vendorAddress: "7412، شارع صلاح الدين الأيوبي الفرعي، حي الملك عبد العزيز، 4399",
+    vendorRegExpiry: "10 مارس 2026",
+  },
   { title: "عقد تشييد مدرسة ابتدائية بنات",             vendorName: "مجموعة التعليم والبناء",       vendorContact: "0509887766", value: 8_500_000, contractType: "إنشاء",   projectName: "مشروع التعليم الحكومي",       createdBy: "أحمد المطيري",  startDate: "2025-06-01", endDate: "2026-12-01", targetStage: 5 },
   { title: "عقد تطوير البنية التحتية الرقمية",           vendorName: "شركة البيانات الذكية",         vendorContact: "0551234567", value: 5_200_000, contractType: "خدمات",  projectName: "مشروع التحول الرقمي",         createdBy: "سعد العتيبي",   startDate: "2025-07-01", endDate: "2026-07-01", targetStage: 6 },
   { title: "عقد إنشاء حديقة عامة ومنتزه ترفيهي",        vendorName: "شركة الخضراء للمقاولات",       vendorContact: "0561239876", value: 1_800_000, contractType: "إنشاء",   projectName: "مشروع التطوير الحضري",        createdBy: "أحمد المطيري",  startDate: "2025-08-01", endDate: "2026-06-01", targetStage: 7 },
@@ -542,9 +586,10 @@ router.post("/contracts/seed", async (_req, res): Promise<void> => {
     targetStage: number,
     finalStatus: "active" | "completed" = "active",
     rejectionInfo?: { stage: number; reason: string },
+    overrideContractNo?: string,
   ) {
     const [row] = await db.insert(contractsTable).values({ ...fields, currentStage: 1, status: "active" }).returning();
-    const contractNo = generateContractNo(row.id);
+    const contractNo = overrideContractNo ?? generateContractNo(row.id);
     await db.update(contractsTable).set({ contractNo }).where(eq(contractsTable.id, row.id));
     await db.insert(contractStageLogTable).values({ contractId: row.id, stage: 1, action: "create", actorRole: "مدير المشروع", actorName: fields.createdBy, notes: "إنشاء العقد" });
 
@@ -576,8 +621,8 @@ router.post("/contracts/seed", async (_req, res): Promise<void> => {
   }
 
   for (const c of ACTIVE_CONTRACTS) {
-    const { targetStage, ...fields } = c;
-    const id = await insertContract(fields, targetStage);
+    const { targetStage, contractNo: overrideNo, ...fields } = c;
+    const id = await insertContract(fields, targetStage, "active", undefined, overrideNo);
     insertedIds.push(id);
   }
   for (const c of COMPLETED_CONTRACTS) {

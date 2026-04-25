@@ -278,7 +278,7 @@ function ContractCard({
                   letterSpacing: "0.02em",
                 }}
               >
-                فتح العقد كاملاً ←
+                عرض العقد كاملاً ←
               </button>
             ) : (
               <div style={{
