@@ -3,7 +3,6 @@ import { GOLD, GOLD_BG, GOLD_BORDER, STAGES } from "./types";
 import type { Contract, ContractComment, StageLog } from "./types";
 import { getContract, getContractAudit, advanceStage, getContractComments, addContractComment } from "./api";
 import WorkflowWaterfall from "./WorkflowWaterfall";
-import ContractMonitor from "./ContractMonitor";
 import { tafqit } from "./tafqit";
 
 const PRINT_STYLE_ID = "print-contract-detail-style";
@@ -234,8 +233,6 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
   const [filename, setFilename] = useState("");
   const [err, setErr] = useState("");
   const [success, setSuccess] = useState("");
-  const [activeTab, setActiveTab] = useState<"workflow" | "monitor">("workflow");
-
   function handlePrint() {
     if (!contract) return;
     const existingStyle = document.getElementById(PRINT_STYLE_ID);
@@ -372,36 +369,8 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
             </button>
           </div>
 
-          {/* ── Tab bar ── */}
-          <div className="no-print" style={{
-            display: "flex", gap: 6, marginBottom: 20,
-            borderBottom: `2px solid ${GOLD_BORDER}`, paddingBottom: 0,
-          }}>
-            {([
-              { key: "workflow", label: "⚙️ مسار الموافقة" },
-              { key: "monitor",  label: "📊 لوحة المتابعة" },
-            ] as const).map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                style={{
-                  padding: "9px 20px", border: "none", cursor: "pointer",
-                  fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                  fontSize: "0.82rem", fontWeight: 800,
-                  background: "none",
-                  color: activeTab === tab.key ? GOLD : "#9b8060",
-                  borderBottom: activeTab === tab.key ? `3px solid ${GOLD}` : "3px solid transparent",
-                  marginBottom: -2, borderRadius: 0,
-                  transition: "color 0.2s",
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* ── Workflow tab ── */}
-          {activeTab === "workflow" && (<>
+          {/* ── Workflow content ── */}
+          <>
 
           <div style={{
             background: "#fff", borderRadius: 16, padding: "22px 24px", marginBottom: 20,
@@ -782,12 +751,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
             </div>
           </div>
 
-          </>)}
-
-          {/* ── Monitor tab ── */}
-          {activeTab === "monitor" && (
-            <ContractMonitor contract={contract} />
-          )}
+          </>
 
         </div>
       </div>

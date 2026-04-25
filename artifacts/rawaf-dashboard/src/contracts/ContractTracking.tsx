@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { GOLD, GOLD_BG, GOLD_BORDER, STAGES } from "./types";
 import type { Contract, StageLog } from "./types";
 import { listContracts, getContractAudit } from "./api";
+import ContractMonitor from "./ContractMonitor";
 
 interface Props {
   role: string;
@@ -13,6 +14,7 @@ export default function ContractTracking({ role, onOpenContract }: Props) {
   const [logs, setLogs] = useState<Record<number, StageLog[]>>({});
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [monitorContract, setMonitorContract] = useState<Contract | null>(null);
 
   useEffect(() => {
     listContracts({ status: "active" })
@@ -33,6 +35,51 @@ export default function ContractTracking({ role, onOpenContract }: Props) {
     </div>
   );
 
+  /* ── لوحة متابعة عقد مفرد ── */
+  if (monitorContract) {
+    return (
+      <div dir="rtl" style={{ fontFamily: "'Cairo', 'Tajawal', sans-serif" }}>
+        {/* شريط العودة */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 12,
+          padding: "14px 24px",
+          background: "#fff",
+          borderBottom: `2px solid ${GOLD_BORDER}`,
+          position: "sticky", top: 0, zIndex: 50,
+        }}>
+          <button
+            onClick={() => setMonitorContract(null)}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              padding: "8px 18px", borderRadius: 10,
+              border: `1.5px solid ${GOLD_BORDER}`,
+              background: GOLD_BG, color: "#8B6914",
+              cursor: "pointer", fontFamily: "'Cairo', 'Tajawal', sans-serif",
+              fontSize: "0.82rem", fontWeight: 800,
+              transition: "background 0.15s",
+            }}
+          >
+            ➤ رجوع إلى قائمة المتابعة
+          </button>
+          <div style={{ height: 22, width: 1, background: GOLD_BORDER }} />
+          <span style={{ fontSize: "0.78rem", color: "#9b8060", fontWeight: 600 }}>
+            📊 لوحة متابعة: {monitorContract.title}
+          </span>
+          <span style={{
+            marginRight: "auto", fontSize: "0.7rem", padding: "3px 10px",
+            borderRadius: 20, background: GOLD_BG, color: GOLD,
+            border: `1px solid ${GOLD_BORDER}`, fontWeight: 700,
+          }}>
+            {monitorContract.contractNo}
+          </span>
+        </div>
+
+        <ContractMonitor contract={monitorContract} />
+      </div>
+    );
+  }
+
+  /* ── قائمة العقود النشطة ── */
   return (
     <div dir="rtl" style={{ padding: "24px 28px", fontFamily: "'Cairo', 'Tajawal', sans-serif" }}>
       <div style={{ marginBottom: 24 }}>
@@ -40,7 +87,7 @@ export default function ContractTracking({ role, onOpenContract }: Props) {
           🛡️ نظام متابعة العقود
         </h2>
         <p style={{ color: "#9b8060", fontSize: "0.82rem" }}>
-          تتبع نسب الإنجاز والمراحل الحالية لجميع العقود النشطة
+          اضغط "فتح" لعرض لوحة المتابعة الكاملة لأي عقد نشط
         </p>
       </div>
 
@@ -104,14 +151,26 @@ export default function ContractTracking({ role, onOpenContract }: Props) {
 
                   <div style={{ display: "flex", gap: 8, flexShrink: 0, alignItems: "center" }}>
                     <button
-                      onClick={e => { e.stopPropagation(); onOpenContract(c.id); }}
+                      onClick={e => { e.stopPropagation(); setMonitorContract(c); }}
                       style={{
-                        padding: "7px 14px", borderRadius: 8, border: `1.5px solid ${GOLD_BORDER}`,
-                        background: GOLD_BG, color: "#8B6914", cursor: "pointer",
-                        fontSize: "0.72rem", fontWeight: 700, fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                        padding: "8px 18px", borderRadius: 9,
+                        border: `1.5px solid ${GOLD}`,
+                        background: GOLD, color: "#fff",
+                        cursor: "pointer",
+                        fontSize: "0.75rem", fontWeight: 800,
+                        fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                        boxShadow: "0 2px 8px rgba(197,160,89,0.35)",
+                        transition: "background 0.15s",
                       }}
-                    >فتح</button>
-                    <span style={{ color: "#bbb", fontSize: "0.9rem", transform: `rotate(${isExpanded ? "90deg" : "0"})`, transition: "transform 0.2s" }}>▶</span>
+                    >
+                      📊 فتح لوحة المتابعة
+                    </button>
+                    <span style={{
+                      color: "#bbb", fontSize: "0.9rem",
+                      display: "inline-block",
+                      transform: `rotate(${isExpanded ? "90deg" : "0"})`,
+                      transition: "transform 0.2s",
+                    }}>▶</span>
                   </div>
                 </div>
 
