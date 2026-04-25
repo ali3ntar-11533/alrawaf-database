@@ -52,17 +52,56 @@ function getInitials(name: string) {
 /* ── Attachment placeholder cell ── */
 function AttachCell() {
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 6,
-      color: "#bbb", fontSize: "0.78rem", cursor: "pointer",
-      padding: "2px 0",
-    }}>
-      <span style={{
-        fontSize: "1.1rem", background: "rgba(0,0,0,0.04)",
-        borderRadius: 6, padding: "2px 8px",
-        border: "1px solid rgba(0,0,0,0.08)",
-      }}>📎</span>
+    <div style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer" }}>
+      <div style={{
+        width: 28, height: 28, borderRadius: 7, flexShrink: 0,
+        background: GOLD_BG, border: `1px solid ${GOLD_BORDER}`,
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.85rem",
+      }}>📎</div>
+      <span style={{ fontSize: "0.65rem", color: GOLD, fontWeight: 700 }}>رفع ملف</span>
     </div>
+  );
+}
+
+/* ── Table cell types ── */
+type CellContent = string | null | undefined | "ATTACH" | "EMPTY";
+function renderCell(content: CellContent) {
+  if (content === "ATTACH") return <AttachCell />;
+  if (content === "EMPTY" || content === null || content === undefined || content === "")
+    return <span style={{ color: "#ccc" }}>—</span>;
+  return <>{content}</>;
+}
+
+/* ── 4-column data row ── */
+function DataRow({
+  rightLabel, rightContent,
+  leftLabel,  leftContent,
+  evenRow,
+}: {
+  rightLabel: string; rightContent: CellContent;
+  leftLabel:  string; leftContent:  CellContent;
+  evenRow: boolean;
+}) {
+  const valueBg = evenRow ? "#fff" : "#fdf9f3";
+  const labelStyle: React.CSSProperties = {
+    background: LABEL_BG, color: LABEL_COLOR,
+    padding: "9px 13px", fontSize: "0.73rem", fontWeight: 700,
+    borderBottom: `1px solid rgba(255,255,255,0.1)`,
+    lineHeight: 1.4, whiteSpace: "nowrap",
+  };
+  const valueStyle: React.CSSProperties = {
+    background: valueBg, color: "#2d2416",
+    padding: "9px 13px", fontSize: "0.79rem",
+    borderBottom: `1px solid rgba(197,160,89,0.14)`,
+    lineHeight: 1.4, wordBreak: "break-word",
+  };
+  return (
+    <>
+      <div style={labelStyle}>{rightLabel}</div>
+      <div style={valueStyle}>{renderCell(rightContent)}</div>
+      <div style={{ ...labelStyle, borderRight: `1px solid rgba(255,255,255,0.15)` }}>{leftLabel}</div>
+      <div style={{ ...valueStyle, borderRight: `1px solid rgba(197,160,89,0.18)` }}>{renderCell(leftContent)}</div>
+    </>
   );
 }
 
@@ -592,79 +631,89 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
         </div>
 
         {/* ── TAB: بيانات الطلب ── */}
-        {activeTab === "request" && (
-          <div>
-            {/* Section 1: بيانات المشروع */}
-            <SectionCard title="بيانات المشروع" icon="🏗️">
-              <InfoRow label="جهة إصدار الطلب"     value={contract.issuerEntity}    even={true}  />
-              <InfoRow label="اسم المشروع"           value={contract.projectName}     even={false} />
-              <InfoRow label="رقم المشروع"           value={contract.projectNo}       even={true}  />
-              <InfoRow label="نوع الأعمال"           value={contract.workType}        even={false} />
-              <InfoRow label="نوع العقد"             value={contract.contractType}    even={true}  />
-              <InfoRow
-                label="قيمة العقد"
-                value={contract.value > 0 ? (
-                  <span>
-                    <strong style={{ color: "#8B6914" }}>{contract.value.toLocaleString("ar-SA")} ريال</strong>
-                    <span style={{ fontSize: "0.72rem", color: "#9b8060", marginRight: 6 }}>— {tafqit(contract.value)}</span>
-                  </span>
-                ) : null}
-                even={false}
-              />
-              <InfoRow label="مدة العقد"   value={contract.contractDuration ? `${contract.contractDuration} يوماً` : null} even={true} />
-              <InfoRow label="تاريخ الطلب" value={formattedDate} even={false} />
-            </SectionCard>
-
-            {/* Section 2: التحليل الفني والتوثيق */}
-            <SectionCard title="التحليل الفني والتوثيق" icon="📊">
-              <InfoRow label="قسم تقدير التكاليف" value={contract.costEstimationDept}   even={true}  />
-              <InfoRow label="حالة تحليل السعر"   value={contract.priceAnalysisStatus}  even={false} />
-              <InfoRow label="تحليل السعر"         value={<FileIcon fileType="excel"   label="تحليل السعر" />}          even={true}  />
-              <InfoRow label="مقارنة مالية فنية"   value={<FileIcon fileType="excel"   label="مقارنة فنية مالية" />}   even={false} />
-              <InfoRow label="عرض سعر - 1"         value={<FileIcon fileType="pdf"     label="عرض السعر الأول" />}     even={true}  />
-              <InfoRow label="عرض سعر - 2"         value={<FileIcon fileType="pdf"     label="عرض السعر الثاني" />}    even={false} />
-              <InfoRow label="عرض سعر - 3"         value={<FileIcon fileType="pdf"     label="عرض السعر الثالث" />}   even={true}  />
-              <InfoRow label="عقد مماثل"            value={<FileIcon fileType="pdf"     label="عقد مماثل" />}           even={false} />
-              <InfoRow label="مخططات"              value={<FileIcon fileType="image"   label="مخططات المشروع" />}     even={true}  />
-              <InfoRow label="توصيفات"             value={<FileIcon fileType="word"    label="توصيفات المشروع" />}    even={false} />
-            </SectionCard>
-
-            {/* Section 3: بيانات الطرف الثاني */}
-            <SectionCard title="بيانات الطرف الثاني" icon="🏢">
-              <InfoRow label="اسم الطرف الثاني"                         value={contract.vendorName}       even={true}  />
-              <InfoRow label="مؤسسة / شركة"                             value={contract.vendorEntityType} even={false} />
-              <InfoRow label="رقم الآيبان"                              value={contract.vendorIban}       even={true}  />
-              <InfoRow label="الرقم الضريبي"                            value={contract.vendorTaxNo}      even={false} />
-              <InfoRow label="شهادة ضريبة القيمة المضافة / الزكاة"     value={<FileIcon fileType="pdf"   label="شهادة الزكاة والضريبة" />}  even={true}  />
-              <InfoRow label="تفويض التوقيع"                            value={<FileIcon fileType="pdf"   label="خطاب التفويض" />}           even={false} />
-              <InfoRow label="السجل التجاري"                            value={<FileIcon fileType="pdf"   label="السجل التجاري" />}          even={true}  />
-              <InfoRow label="تاريخ انتهاء السجل التجاري"               value={contract.vendorRegExpiry}  even={false} />
-              <InfoRow label="الهوية / الإقامة للمفوض"                 value={<FileIcon fileType="image" label="صورة الهوية" />}            even={true}  />
-            </SectionCard>
-
-            {/* Section 4: بيانات التواصل */}
-            <SectionCard title="بيانات التواصل" icon="📞">
-              <InfoRow label="اسم المفوض"                value={contract.vendorDelegate}      even={true}  />
-              <InfoRow label="المسمى الوظيفي للمفوض"    value={contract.vendorDelegateTitle} even={false} />
-              <InfoRow label="رقم الهوية / الإقامة"    value={contract.vendorDelegateId}    even={true}  />
-              <InfoRow label="رقم التواصل"               value={contract.vendorContact}       even={false} />
-              <InfoRow label="البريد الإلكتروني"         value={contract.vendorEmail}         even={true}  />
-              <InfoRow label="الرمز البريدي"             value={contract.vendorPostalCode}    even={false} />
-              <InfoRow label="العنوان"                   value={contract.vendorAddress}       even={true}  />
-            </SectionCard>
-
-            {isCompleted && (
+        {activeTab === "request" && (() => {
+          const rows: { r: string; rv: CellContent; l: string; lv: CellContent }[] = [
+            { r: "الطرف الثاني",                              rv: contract.vendorName,          l: "تاريخ الطلب",              lv: formattedDate },
+            { r: "رقم الآيبان",                               rv: contract.vendorIban,          l: "جهة إصدار الطلب",          lv: contract.issuerEntity },
+            { r: "الرقم الضريبي",                             rv: contract.vendorTaxNo,         l: "اسم المشروع",              lv: contract.projectName },
+            { r: "شهادة ضريبة القيمة المضافة / الزكاة",      rv: "ATTACH",                     l: "رقم المشروع",              lv: contract.projectNo },
+            { r: "تفويض التوقيع",                             rv: "ATTACH",                     l: "نوع الأعمال",              lv: contract.workType },
+            { r: "اسم المفوض",                                rv: contract.vendorDelegate,      l: "نوع العقد",                lv: contract.contractType },
+            { r: "المسمى الوظيفي للمفوض",                     rv: contract.vendorDelegateTitle, l: "قيمة العقد",               lv: contract.value > 0 ? `${contract.value.toLocaleString("ar-SA")} ريال` : null },
+            { r: "رقم الهوية / الإقامة للمفوض",               rv: contract.vendorDelegateId,    l: "مدة العقد",                lv: contract.contractDuration ? `${contract.contractDuration} يوماً` : null },
+            { r: "الهوية / الإقامة (صورة)",                   rv: "ATTACH",                     l: "قسم تقدير التكاليف",       lv: contract.costEstimationDept },
+            { r: "رقم التواصل",                               rv: contract.vendorContact,       l: "حالة تحليل السعر",         lv: contract.priceAnalysisStatus },
+            { r: "البريد الإلكتروني",                         rv: contract.vendorEmail,         l: "تحليل السعر",              lv: "ATTACH" },
+            { r: "الرمز البريدي",                             rv: contract.vendorPostalCode,    l: "مقارنة مالية فنية",        lv: "ATTACH" },
+            { r: "العنوان",                                   rv: contract.vendorAddress,       l: "عرض سعر - 1",              lv: "ATTACH" },
+            { r: "السجل التجاري",                             rv: "ATTACH",                     l: "عرض سعر - 2",              lv: "ATTACH" },
+            { r: "تاريخ انتهاء السجل التجاري",                rv: contract.vendorRegExpiry,     l: "عرض سعر - 3",              lv: "ATTACH" },
+            { r: "مؤسسة / شركة",                             rv: contract.vendorEntityType,    l: "عقد مماثل",                lv: "ATTACH" },
+            { r: "EMPTY",                                     rv: "EMPTY",                      l: "مخططات",                   lv: "ATTACH" },
+            { r: "EMPTY",                                     rv: "EMPTY",                      l: "توصيفات",                  lv: "ATTACH" },
+          ];
+          return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {/* 4-column data table */}
               <div style={{
-                background: "rgba(39,174,96,0.07)", borderRadius: 14, padding: "18px 22px",
-                border: "1.5px solid rgba(39,174,96,0.25)", textAlign: "center",
-                fontSize: "0.92rem", color: "#27ae60", fontWeight: 800,
+                borderRadius: 14, overflow: "hidden",
+                border: `1.5px solid rgba(197,160,89,0.28)`,
+                boxShadow: "0 4px 20px rgba(197,160,89,0.1)",
               }}>
-                🏆 العقد مكتمل ومُوقَّع — {contract.contractNo}
-                {contract.signedFilename && <div style={{ fontSize: "0.78rem", marginTop: 6, opacity: 0.8 }}>📜 {contract.signedFilename}</div>}
+                {/* Table title */}
+                <div style={{
+                  background: `linear-gradient(135deg, ${GOLD} 0%, #b8923a 50%, #a07c2e 100%)`,
+                  color: "#fff", textAlign: "center",
+                  padding: "13px 20px", fontSize: "0.9rem", fontWeight: 900,
+                  letterSpacing: "0.04em",
+                }}>بيانات الطلب</div>
+
+                {/* Column sub-headers */}
+                <div style={{ display: "grid", gridTemplateColumns: "170px 1fr 170px 1fr" }}>
+                  {[
+                    { label: "بيانات الطرف الثاني", borderLeft: "1px solid rgba(255,255,255,0.18)" },
+                    { label: "",                     borderLeft: "none" },
+                    { label: "بيانات المشروع",       borderLeft: "1px solid rgba(255,255,255,0.18)", borderRight: `1px solid rgba(197,160,89,0.3)` },
+                    { label: "",                     borderLeft: "none",                             borderRight: `1px solid rgba(197,160,89,0.3)` },
+                  ].map((col, i) => (
+                    <div key={i} style={{
+                      background: "#7d622a",
+                      color: col.label ? "#fff" : "transparent",
+                      padding: "7px 13px", fontSize: "0.69rem", fontWeight: 800,
+                      textAlign: "center", borderLeft: col.borderLeft,
+                      borderRight: (col as { borderRight?: string }).borderRight,
+                    }}>{col.label || "‎"}</div>
+                  ))}
+                </div>
+
+                {/* Data rows */}
+                <div style={{ display: "grid", gridTemplateColumns: "170px 1fr 170px 1fr" }}>
+                  {rows.map((row, i) => (
+                    <DataRow
+                      key={i}
+                      rightLabel={row.r === "EMPTY" ? "" : row.r}
+                      rightContent={row.r === "EMPTY" ? "EMPTY" : row.rv}
+                      leftLabel={row.l}
+                      leftContent={row.lv}
+                      evenRow={i % 2 === 0}
+                    />
+                  ))}
+                </div>
               </div>
-            )}
-          </div>
-        )}
+
+              {isCompleted && (
+                <div style={{
+                  background: "rgba(39,174,96,0.07)", borderRadius: 14, padding: "16px 20px",
+                  border: "1.5px solid rgba(39,174,96,0.25)", textAlign: "center",
+                  fontSize: "0.9rem", color: "#27ae60", fontWeight: 800,
+                }}>
+                  🏆 العقد مكتمل ومُوقَّع — {contract.contractNo}
+                  {contract.signedFilename && <div style={{ fontSize: "0.75rem", marginTop: 5, opacity: 0.8 }}>📜 {contract.signedFilename}</div>}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* ── TAB: المرفقات الذكية ── */}
         {activeTab === "attachments" && (
