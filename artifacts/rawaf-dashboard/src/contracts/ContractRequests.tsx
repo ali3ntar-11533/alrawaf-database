@@ -223,25 +223,48 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
                   maxHeight: 220, overflowY: "auto",
                 }}
               >
-                {matches.length > 0 ? matches.map(v => (
-                  <div
-                    key={v}
-                    onMouseDown={e => { e.preventDefault(); setSearch(v); setShowSearchDrop(false); }}
-                    style={{
-                      padding: "9px 14px", cursor: "pointer", fontSize: "0.82rem",
-                      color: "#1a1206", borderBottom: "1px solid #F5F0E8",
-                      background: search === v ? GOLD_BG : "#fff",
-                      fontWeight: search === v ? 700 : 400,
-                      display: "flex", alignItems: "center", gap: 8,
-                      transition: "background 0.12s",
-                    }}
-                    onMouseEnter={e => { if (search !== v) (e.currentTarget as HTMLDivElement).style.background = "#FEFAF3"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = search === v ? GOLD_BG : "#fff"; }}
-                  >
-                    <span style={{ fontSize: "0.7rem" }}>🏢</span>
-                    <span>{v}</span>
-                  </div>
-                )) : (
+                {matches.length > 0 ? (() => {
+                  const vendorCountMap = allContracts.reduce<Record<string, number>>((acc, c) => {
+                    if (c.vendorName) acc[c.vendorName] = (acc[c.vendorName] || 0) + 1;
+                    return acc;
+                  }, {});
+                  return matches.map(v => {
+                    const count = vendorCountMap[v] || 0;
+                    const badgeLabel = count === 1 ? "عقد سابق واحد" : `${count} عقود سابقة`;
+                    return (
+                      <div
+                        key={v}
+                        onMouseDown={e => { e.preventDefault(); setSearch(v); setShowSearchDrop(false); }}
+                        style={{
+                          padding: "9px 14px", cursor: "pointer", fontSize: "0.82rem",
+                          color: "#1a1206", borderBottom: "1px solid #F5F0E8",
+                          background: search === v ? GOLD_BG : "#fff",
+                          fontWeight: search === v ? 700 : 400,
+                          display: "flex", alignItems: "center", gap: 8,
+                          transition: "background 0.12s",
+                        }}
+                        onMouseEnter={e => { if (search !== v) (e.currentTarget as HTMLDivElement).style.background = "#FEFAF3"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = search === v ? GOLD_BG : "#fff"; }}
+                      >
+                        <span style={{ fontSize: "0.7rem" }}>🏢</span>
+                        <span style={{ flex: 1 }}>{v}</span>
+                        {count > 0 && (
+                          <span style={{
+                            fontSize: "0.68rem",
+                            background: GOLD_BG,
+                            color: "#8B6914",
+                            border: `1px solid ${GOLD_BORDER}`,
+                            borderRadius: 12,
+                            padding: "1px 7px",
+                            fontWeight: 700,
+                            whiteSpace: "nowrap",
+                            flexShrink: 0,
+                          }}>{badgeLabel}</span>
+                        )}
+                      </div>
+                    );
+                  });
+                })() : (
                   <div style={{ padding: "10px 14px", fontSize: "0.78rem", color: "#999", textAlign: "center" }}>لا نتائج مطابقة</div>
                 )}
               </div>
