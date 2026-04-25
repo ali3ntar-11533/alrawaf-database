@@ -451,7 +451,9 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
                               if (c.vendorName) acc[c.vendorName] = (acc[c.vendorName] || 0) + 1;
                               return acc;
                             }, {});
-                            return filteredVendors.slice(0, 12).map(v => {
+                            return [...filteredVendors]
+                              .sort((a, b) => (vendorCountMap[b] || 0) - (vendorCountMap[a] || 0))
+                              .slice(0, 12).map(v => {
                               const count = vendorCountMap[v] || 0;
                               const badgeLabel = count === 1 ? "عقد سابق واحد" : `${count} عقود سابقة`;
                               return (
