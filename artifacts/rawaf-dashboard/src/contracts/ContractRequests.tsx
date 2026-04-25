@@ -328,7 +328,8 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
                         onChange={e => {
                           const v = e.target.value;
                           setVendorQuery(v);
-                          setForm(p => ({ ...p, vendorName: v }));
+                          // Clear contact on manual edit — selection from dropdown will re-fill it
+                          setForm(p => ({ ...p, vendorName: v, vendorContact: "" }));
                           setShowVendorDrop(true);
                         }}
                         onFocus={() => setShowVendorDrop(true)}
