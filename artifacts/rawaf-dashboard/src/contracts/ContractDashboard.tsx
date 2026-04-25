@@ -19,17 +19,16 @@ const DARK2    = "#1A1208";
 
 /* ── Stage display labels (elite org hierarchy) ────────────── */
 const DASH_STAGES = [
-  { label: "مدير المشروع",          icon: "👷", sub: "القاعدة الوظيفية",    stageNum: 1  },
-  { label: "مدير المحفظة",          icon: "🏢", sub: "Portfolio Manager",   stageNum: 2  },
-  { label: "مدير التكاليف - PMO",   icon: "📊", sub: "Cost Management",     stageNum: 3  },
-  { label: "مراجعة البيانات",       icon: "⚖️", sub: "Legal & Data Review", stageNum: 4  },
-  { label: "ناسخ العقد",            icon: "✍️", sub: "Contract Drafting",   stageNum: 5  },
-  { label: "المراجعة الفنية",       icon: "📤", sub: "Technical Review",    stageNum: 6  },
-  { label: "اعتماد الإجراءات",      icon: "✅", sub: "Procedure Approval",  stageNum: 7  },
-  { label: "نائب الرئيس التنفيذي", icon: "🔑", sub: "Deputy CEO",          stageNum: 8  },
-  { label: "الرئيس التنفيذي",       icon: "👑", sub: "CEO — Final Stamp",   stageNum: 9  },
-  { label: "التوقيعات",             icon: "📜", sub: "Signatures",          stageNum: 10 },
-  { label: "الأرشفة والإغلاق",     icon: "🏦", sub: "Archive & Close",     stageNum: 11 },
+  { label: "مدير المشروع",                 icon: "👷",   sub: "القاعدة الوظيفية",       stageNums: [1]      },
+  { label: "مدير المحفظة",                 icon: "🏢",   sub: "Portfolio Manager",      stageNums: [2]      },
+  { label: "مدير التكاليف - PMO",          icon: "📊",   sub: "Cost Management",        stageNums: [3]      },
+  { label: "مراجعة البيانات",              icon: "⚖️",   sub: "Legal & Data Review",    stageNums: [4]      },
+  { label: "ناسخ العقد",                   icon: "✍️",   sub: "Contract Drafting",      stageNums: [5]      },
+  { label: "المراجعة الفنية",              icon: "📤",   sub: "Technical Review",       stageNums: [6]      },
+  { label: "اعتماد الإجراءات",             icon: "✅",   sub: "Procedure Approval",     stageNums: [7]      },
+  { label: "نائب الرئيس التنفيذي",        icon: "🔑",   sub: "Deputy CEO",             stageNums: [8]      },
+  { label: "الرئيس التنفيذي",              icon: "👑",   sub: "CEO — Final Stamp",      stageNums: [9]      },
+  { label: "التوقيعات النهائية والأرشفة", icon: "📜",   sub: "Signatures & Archive",   stageNums: [10, 11] },
 ];
 
 /* ── Helpers ───────────────────────────────────────────────── */
@@ -93,8 +92,8 @@ function PulseWave({ pct, active, done, total }: { pct: number; active: number; 
       boxShadow: "0 10px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(197,160,89,0.12)",
       position: "relative", overflow: "hidden",
     }}>
-      {/* Ambient glow */}
-      <div style={{ position:"absolute", top:-40, left:"30%", width:200, height:120, borderRadius:"50%", background:"radial-gradient(ellipse,rgba(197,160,89,0.07) 0%,transparent 70%)", pointerEvents:"none" }}/>
+      {/* Ambient glow — whisper light */}
+      <div style={{ position:"absolute", top:-40, left:"30%", width:200, height:120, borderRadius:"50%", background:"radial-gradient(ellipse,rgba(197,160,89,0.03) 0%,transparent 70%)", pointerEvents:"none" }}/>
 
       {/* Wave display */}
       <div style={{ position:"relative", width:W, height:H, overflow:"hidden", flexShrink:0 }}>
@@ -102,29 +101,29 @@ function PulseWave({ pct, active, done, total }: { pct: number; active: number; 
           style={{ position:"absolute", left:0, animation:`pulseWaveScroll 2.8s linear infinite` }}>
           <defs>
             <filter id="pulseGlow">
-              <feGaussianBlur stdDeviation="1.8" result="blur"/>
+              <feGaussianBlur stdDeviation="1" result="blur"/>
               <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
             <linearGradient id="wGrad" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%"   stopColor={GOLD} stopOpacity="0"/>
-              <stop offset="25%"  stopColor={GOLD} stopOpacity="1"/>
-              <stop offset="75%"  stopColor={GOLD_END} stopOpacity="1"/>
+              <stop offset="25%"  stopColor={GOLD} stopOpacity="0.22"/>
+              <stop offset="75%"  stopColor={GOLD_END} stopOpacity="0.22"/>
               <stop offset="100%" stopColor={GOLD} stopOpacity="0"/>
             </linearGradient>
           </defs>
           {/* Grid */}
           {[H/4, H/2, 3*H/4].map(y => (
-            <line key={y} x1="0" y1={y} x2={W*2} y2={y} stroke="rgba(197,160,89,0.07)" strokeWidth="1"/>
+            <line key={y} x1="0" y1={y} x2={W*2} y2={y} stroke="rgba(197,160,89,0.04)" strokeWidth="1"/>
           ))}
-          {/* Shadow wave (glow) */}
-          <path d={pts} fill="none" stroke={GOLD} strokeWidth="4" strokeOpacity="0.15" filter="url(#pulseGlow)"/>
-          {/* Main wave */}
-          <path d={pts} fill="none" stroke="url(#wGrad)" strokeWidth="2" filter="url(#pulseGlow)"/>
+          {/* Soft glow halo */}
+          <path d={pts} fill="none" stroke={GOLD} strokeWidth="3" strokeOpacity="0.05" filter="url(#pulseGlow)"/>
+          {/* Main wave — faded minimalist */}
+          <path d={pts} fill="none" stroke="url(#wGrad)" strokeWidth="1.5" filter="url(#pulseGlow)"/>
         </svg>
         {/* Edge fade */}
         <div style={{ position:"absolute", inset:0, background:`linear-gradient(90deg,${DARK} 0%,transparent 22%,transparent 78%,${DARK} 100%)`, pointerEvents:"none" }}/>
-        {/* Scanning dot */}
-        <div style={{ position:"absolute", top:"50%", right:8, transform:"translateY(-50%)", width:5, height:5, borderRadius:"50%", background:GOLD_END, boxShadow:`0 0 10px ${GOLD_END}, 0 0 24px ${GOLD}`, animation:"pulseDot 1.4s ease-in-out infinite" }}/>
+        {/* Scanning dot — subtle */}
+        <div style={{ position:"absolute", top:"50%", right:8, transform:"translateY(-50%)", width:4, height:4, borderRadius:"50%", background:GOLD_END, opacity:0.45, boxShadow:`0 0 6px rgba(226,194,117,0.3)`, animation:"pulseDot 2s ease-in-out infinite" }}/>
       </div>
 
       {/* Digital counter */}
@@ -236,17 +235,18 @@ function FolderCard({ label, sub, count, icon, accent, onClick }: {
 }
 
 /* ── Elite Stage Row ───────────────────────────────────────── */
-function EliteStageRow({ stageNum, contracts, maxCount, isMine, onEnter, idx }: {
-  stageNum: number; contracts: Contract[]; maxCount: number;
+type DashStage = typeof DASH_STAGES[number];
+
+function EliteStageRow({ stage, contracts, maxCount, isMine, onEnter, idx }: {
+  stage: DashStage; contracts: Contract[]; maxCount: number;
   isMine: boolean; onEnter: () => void; idx: number;
 }) {
   const [hov, setHov] = useState(false);
-  const stage = DASH_STAGES[stageNum - 1];
 
-  const active  = contracts.filter(c => c.currentStage === stageNum && c.status === "active").length;
-  const done    = contracts.filter(c => c.currentStage === stageNum && c.status === "completed").length;
-  const urgent  = contracts.filter(c => c.currentStage === stageNum && c.status === "active" && daysSince(c.updatedAt) >= 7).length;
-  const warn    = contracts.filter(c => c.currentStage === stageNum && c.status === "active" && daysSince(c.updatedAt) >= 3 && daysSince(c.updatedAt) < 7).length;
+  const active  = contracts.filter(c => stage.stageNums.includes(c.currentStage) && c.status === "active").length;
+  const done    = contracts.filter(c => stage.stageNums.includes(c.currentStage) && c.status === "completed").length;
+  const urgent  = contracts.filter(c => stage.stageNums.includes(c.currentStage) && c.status === "active" && daysSince(c.updatedAt) >= 7).length;
+  const warn    = contracts.filter(c => stage.stageNums.includes(c.currentStage) && c.status === "active" && daysSince(c.updatedAt) >= 3 && daysSince(c.updatedAt) < 7).length;
 
   const pct = maxCount > 0 ? (active / maxCount) * 100 : 0;
   const isEmpty = active === 0;
@@ -254,8 +254,8 @@ function EliteStageRow({ stageNum, contracts, maxCount, isMine, onEnter, idx }: 
   const barColor = urgent > 0 ? RED : warn > 0 ? AMBER : pct >= 60 ? GREEN_L : pct >= 25 ? BLUE_L : active > 0 ? GOLD : "#E5E7EB";
   const numColor = isEmpty ? "#D1D5DB" : urgent > 0 ? RED : warn > 0 ? AMBER : BLUE;
 
-  const isTopLevel = stageNum >= 9;
-  const isFinalStage = stageNum >= 10;
+  const isTopLevel   = stage.stageNums.some(n => n >= 9);
+  const isFinalStage = stage.stageNums.some(n => n >= 10);
 
   return (
     <div
@@ -324,10 +324,10 @@ function EliteStageRow({ stageNum, contracts, maxCount, isMine, onEnter, idx }: 
       <div style={{ width:195, flexShrink:0, textAlign:"right", paddingRight:8 }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", gap:5 }}>
           {isMine && <span style={{ fontSize:"0.44rem", fontWeight:900, color:GOLD2, background:"rgba(197,160,89,0.12)", border:"1px solid rgba(197,160,89,0.3)", borderRadius:20, padding:"1px 6px", whiteSpace:"nowrap" }}>مرحلتك ⭐</span>}
-          <span style={{ fontSize:"0.8rem", fontWeight:800, color: isEmpty ? "#C9CDD4" : isFinalStage ? GOLD2 : "#1F2937" }}>{stage?.label}</span>
-          <span style={{ fontSize:"0.85rem" }}>{stage?.icon}</span>
+          <span style={{ fontSize:"0.8rem", fontWeight:800, color: isEmpty ? "#C9CDD4" : isFinalStage ? GOLD2 : "#1F2937" }}>{stage.label}</span>
+          <span style={{ fontSize:"0.85rem" }}>{stage.icon}</span>
         </div>
-        <div style={{ fontSize:"0.52rem", color:"#B0B8C4", marginTop:1 }}>{stage?.sub}</div>
+        <div style={{ fontSize:"0.52rem", color:"#B0B8C4", marginTop:1 }}>{stage.sub}</div>
       </div>
 
       {/* Hover action */}
@@ -352,7 +352,7 @@ function EliteStageRow({ stageNum, contracts, maxCount, isMine, onEnter, idx }: 
       {/* Hover tooltip */}
       {hov && !isEmpty && (
         <div style={{
-          position:"absolute", right:0, top:"100%", zIndex:100,
+          position:"absolute", right:0, top:"100%", zIndex:9999,
           background:"rgba(20,14,4,0.95)", backdropFilter:"blur(14px)",
           border:"1px solid rgba(197,160,89,0.25)",
           borderRadius:12, padding:"10px 14px",
@@ -360,7 +360,7 @@ function EliteStageRow({ stageNum, contracts, maxCount, isMine, onEnter, idx }: 
           minWidth:180, animation:"tooltipIn 0.15s ease both",
           pointerEvents:"none",
         }}>
-          <div style={{ fontSize:"0.7rem", fontWeight:900, color:GOLD_END, marginBottom:8 }}>{stage?.label}</div>
+          <div style={{ fontSize:"0.7rem", fontWeight:900, color:GOLD_END, marginBottom:8 }}>{stage.label}</div>
           <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
             {[
               { l:"نشطة",    v:active, c:GOLD     },
@@ -584,7 +584,7 @@ export default function ContractDashboard({ role, actorName, contracts, pendingC
   }, [contracts]);
 
   const myRoleInfo = ROLES.find(r => r.name===role);
-  const maxCount = Math.max(...DASH_STAGES.map(s => contracts.filter(c => c.currentStage===s.stageNum && c.status==="active").length), 1);
+  const maxCount = Math.max(...DASH_STAGES.map(s => contracts.filter(c => s.stageNums.includes(c.currentStage) && c.status==="active").length), 1);
 
   const pieData = [
     { name:"نشطة",   value:cActive, color:GOLD    },
@@ -672,9 +672,9 @@ export default function ContractDashboard({ role, actorName, contracts, pendingC
             <div style={{
               background:"rgba(255,255,255,0.88)", backdropFilter:"blur(12px)",
               border:"1px solid rgba(220,220,220,0.6)", borderRadius:24,
-              overflow:"hidden",
               boxShadow:"0 6px 32px rgba(0,0,0,0.07)",
               animation:"fadeUp 0.4s ease 0.06s both",
+              position:"relative",
             }}>
               {/* Header */}
               <div style={{ padding:"16px 24px 13px", borderBottom:"1px solid rgba(0,0,0,0.05)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -698,12 +698,12 @@ export default function ContractDashboard({ role, actorName, contracts, pendingC
               <div style={{ padding:"8px 22px 14px" }}>
                 {reversedStages.map((stage, idx) => (
                   <EliteStageRow
-                    key={stage.stageNum}
-                    stageNum={stage.stageNum}
+                    key={stage.stageNums[0]}
+                    stage={stage}
                     contracts={contracts}
                     maxCount={maxCount}
-                    isMine={myRoleInfo?.stage.includes(stage.stageNum) ?? false}
-                    onEnter={()=>onOpenStage(stage.stageNum)}
+                    isMine={stage.stageNums.some(n => myRoleInfo?.stage.includes(n) ?? false)}
+                    onEnter={()=>onOpenStage(stage.stageNums[0])}
                     idx={idx}
                   />
                 ))}
