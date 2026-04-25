@@ -13,6 +13,7 @@ interface Props {
 }
 
 const CONTRACT_TYPES = ["خدمات", "مستلزمات", "إنشاءات", "استشارات", "أخرى"];
+const EMPTY_FORM = { title: "", vendorName: "", vendorContact: "", value: "", startDate: "", endDate: "", contractType: "خدمات", projectName: "" };
 
 export default function ContractRequests({ role, actorName, onOpenContract, filterStage, onClearFilter }: Props) {
   const [contracts, setContracts] = useState<Contract[]>([]);
@@ -22,19 +23,28 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
   const [filterStatus, setFilterStatus] = useState("");
   const [search, setSearch] = useState("");
 
-  const [form, setForm] = useState({
-    title: "", vendorName: "", vendorContact: "",
-    value: "", startDate: "", endDate: "",
-    contractType: "خدمات", projectName: "",
-  });
+  const [form, setForm] = useState({ ...EMPTY_FORM });
   const [formErr, setFormErr] = useState("");
 
   // Vendor autocomplete
-  const [vendors, setVendors]             = useState<string[]>([]);
-  const [vendorQuery, setVendorQuery]     = useState("");
+  const [vendors, setVendors]               = useState<string[]>([]);
+  const [allContracts, setAllContracts]     = useState<Contract[]>([]); // unfiltered, for contact lookup
+  const [vendorQuery, setVendorQuery]       = useState("");
   const [showVendorDrop, setShowVendorDrop] = useState(false);
   const vendorInputRef = useRef<HTMLInputElement>(null);
   const vendorDropRef  = useRef<HTMLDivElement>(null);
+
+  function resetForm() {
+    setForm(EMPTY_FORM);
+    setVendorQuery("");
+    setShowVendorDrop(false);
+    setFormErr("");
+  }
+
+  function closeForm() {
+    setShowForm(false);
+    resetForm();
+  }
 
   function loadContracts() {
     setLoading(true);
@@ -47,6 +57,8 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
 
   useEffect(() => {
     getVendors().then(setVendors).catch(() => {});
+    // Load all contracts once (unfiltered) so vendor contact lookup is reliable
+    listContracts().then(setAllContracts).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -92,10 +104,7 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
         projectName: form.projectName,
         createdBy: actorName,
       });
-      setShowForm(false);
-      setForm({ title: "", vendorName: "", vendorContact: "", value: "", startDate: "", endDate: "", contractType: "خدمات", projectName: "" });
-      setVendorQuery("");
-      setShowVendorDrop(false);
+      closeForm();
       loadContracts();
     } catch (err: unknown) {
       setFormErr(err instanceof Error ? err.message : "حدث خطأ");
@@ -263,7 +272,7 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
 
       {showForm && (
         <div
-          onClick={e => { if (e.target === e.currentTarget) setShowForm(false); }}
+          onClick={e => { if (e.target === e.currentTarget) closeForm(); }}
           style={{
             position: "fixed", inset: 0, zIndex: 9500,
             background: "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)",
@@ -281,29 +290,24 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
                 <h3 style={{ fontSize: "1.1rem", fontWeight: 900, color: "#1a1206" }}>📝 عقد جديد</h3>
                 <p style={{ fontSize: "0.72rem", color: "#9b8060" }}>تعبئة بيانات العقد وإرساله للمراجعة</p>
               </div>
-              <button onClick={() => { setShowForm(false); setVendorQuery(""); setShowVendorDrop(false); }} style={{ border: "none", background: "none", fontSize: "1.2rem", cursor: "pointer", color: "#999" }}>×</button>
+              <button onClick={closeForm} style={{ border: "none", background: "none", fontSize: "1.2rem", cursor: "pointer", color: "#999" }}>×</button>
             </div>
 
             <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {/* اسم العقد */}
-              {[
-                { key: "title",       label: "اسم العقد *",    placeholder: "عقد توريد مواد البناء..." },
-                { key: "projectName", label: "اسم المشروع",     placeholder: "مشروع الرياض الشمالي" },
-              ].slice(0, 1).map(f => (
-                <div key={f.key}>
-                  <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: "#4a3520", marginBottom: 5 }}>{f.label}</label>
-                  <input
-                    value={(form as Record<string, string>)[f.key]}
-                    onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
-                    placeholder={f.placeholder}
-                    style={{
-                      width: "100%", padding: "10px 12px", borderRadius: 9,
-                      border: `1.5px solid ${GOLD_BORDER}`, fontSize: "0.85rem",
-                      fontFamily: "'Cairo', 'Tajawal', sans-serif", outline: "none", boxSizing: "border-box",
-                    }}
-                  />
-                </div>
-              ))}
+              <div>
+                <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: "#4a3520", marginBottom: 5 }}>اسم العقد *</label>
+                <input
+                  value={form.title}
+                  onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
+                  placeholder="عقد توريد مواد البناء..."
+                  style={{
+                    width: "100%", padding: "10px 12px", borderRadius: 9,
+                    border: `1.5px solid ${GOLD_BORDER}`, fontSize: "0.85rem",
+                    fontFamily: "'Cairo', 'Tajawal', sans-serif", outline: "none", boxSizing: "border-box",
+                  }}
+                />
+              </div>
 
               {/* اسم المورد — autocomplete */}
               {(() => {
@@ -372,8 +376,8 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
                               onMouseDown={e => {
                                 e.preventDefault();
                                 setVendorQuery(v);
-                                // Pre-fill contact from existing contracts if available
-                                const match = contracts.find(c => c.vendorName === v && c.vendorContact);
+                                // Pre-fill contact from all contracts (unfiltered) for reliability
+                                const match = allContracts.find(c => c.vendorName === v && c.vendorContact);
                                 setForm(p => ({
                                   ...p,
                                   vendorName: v,
