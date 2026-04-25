@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ROLES, type ContractTab } from "./types";
 import NotificationBell from "./NotificationBell";
 import type { StoredNotification } from "./useContractNotifications";
+import logoImg from "@assets/logo_1776506524686.jpg";
 
 const GOLD       = "#C5A059";
 const GOLD2      = "#a88540";
@@ -64,10 +65,13 @@ export default function ContractSidebar({
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
           <div style={{
             width: 42, height: 42, borderRadius: 12,
-            background: `linear-gradient(135deg, ${GOLD}, ${GOLD2})`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "1.2rem", boxShadow: `0 4px 14px rgba(197,160,89,0.4)`, flexShrink: 0,
-          }}>🏛️</div>
+            overflow: "hidden", flexShrink: 0,
+            boxShadow: `0 0 0 2px rgba(197,160,89,0.4), 0 4px 16px rgba(197,160,89,0.2)`,
+            animation: "glowSideLogo 4s ease infinite",
+          }}>
+            <img src={logoImg} alt="الرواف" style={{ width: "100%", height: "100%", objectFit: "cover" }}/>
+          </div>
+          <style>{`@keyframes glowSideLogo{0%,100%{box-shadow:0 0 0 2px rgba(197,160,89,0.35),0 4px 16px rgba(197,160,89,0.15)}50%{box-shadow:0 0 0 3px rgba(197,160,89,0.65),0 6px 22px rgba(197,160,89,0.28)}}`}</style>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: "0.7rem", fontWeight: 900, color: "#1A1A1A", lineHeight: 1.2 }}>
               نظام إدارة العقود
