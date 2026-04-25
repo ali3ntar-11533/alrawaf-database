@@ -75,6 +75,7 @@ export default function ContractSidebar({
             <div style={{ fontSize: "0.58rem", color: "#9b8060" }}>الرواف للمقاولات</div>
           </div>
           <NotificationBell
+            actorName={actorName}
             notifications={notifications}
             unreadCount={unreadCount}
             onMarkAllRead={onMarkAllRead}

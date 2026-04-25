@@ -183,6 +183,48 @@ router.get("/contracts/vendors", async (req, res): Promise<void> => {
   res.json(names);
 });
 
+router.get("/contracts/my-approved", async (req, res): Promise<void> => {
+  const actorName = (req.query.actorName as string | undefined)?.trim();
+  if (!actorName) {
+    res.status(400).json({ error: "actorName مطلوب" });
+    return;
+  }
+
+  const rows = await db
+    .select({
+      contractId:      contractsTable.id,
+      contractNo:      contractsTable.contractNo,
+      title:           contractsTable.title,
+      vendorName:      contractsTable.vendorName,
+      currentStage:    contractsTable.currentStage,
+      status:          contractsTable.status,
+      rejectionReason: contractsTable.rejectionReason,
+      approvedAt:      contractStageLogTable.createdAt,
+      approvedStage:   contractStageLogTable.stage,
+    })
+    .from(contractStageLogTable)
+    .innerJoin(contractsTable, eq(contractStageLogTable.contractId, contractsTable.id))
+    .where(
+      and(
+        eq(contractStageLogTable.actorName, actorName),
+        eq(contractStageLogTable.action, "advance"),
+      )
+    )
+    .orderBy(desc(contractStageLogTable.createdAt));
+
+  const seen = new Set<number>();
+  const unique = rows.filter(r => {
+    if (seen.has(r.contractId)) return false;
+    seen.add(r.contractId);
+    return true;
+  });
+
+  res.json(unique.map(r => ({
+    ...r,
+    approvedAt: r.approvedAt.toISOString(),
+  })));
+});
+
 router.get("/contracts/activity", async (req, res): Promise<void> => {
   const { dateFrom, dateTo, contractType, vendorName } = req.query as { dateFrom?: string; dateTo?: string; contractType?: string; vendorName?: string };
   const fp = parseFilterParams({ dateFrom, dateTo, contractType, vendorName }, res);

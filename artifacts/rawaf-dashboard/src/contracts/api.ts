@@ -164,3 +164,20 @@ export async function addContractComment(id: number, payload: AddCommentPayload)
 export async function getVendors(): Promise<string[]> {
   return apiFetch<string[]>("/contracts/vendors");
 }
+
+export interface MyApprovedContract {
+  contractId: number;
+  contractNo: string;
+  title: string;
+  vendorName: string;
+  currentStage: number;
+  status: string;
+  rejectionReason: string | null;
+  approvedAt: string;
+  approvedStage: number;
+}
+
+export async function getMyApprovedContracts(actorName: string): Promise<MyApprovedContract[]> {
+  const qs = new URLSearchParams({ actorName });
+  return apiFetch<MyApprovedContract[]>(`/contracts/my-approved?${qs}`);
+}
