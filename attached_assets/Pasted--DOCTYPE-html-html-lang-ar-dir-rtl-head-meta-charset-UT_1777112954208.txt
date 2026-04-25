@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة متابعة العقد</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #040d1a;
+            color: #ffffff;
+            margin: 0;
+            padding: 10px;
+        }
+
+        .dashboard-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #040d1a;
+        }
+
+        .card {
+            background-color: #0a192f;
+            border: 1px solid #1a2a44;
+            border-radius: 4px;
+            padding: 10px;
+        }
+
+        .header-box {
+            background-color: #0d1e36;
+            border: 1px solid #1e3a5f;
+            border-radius: 4px;
+            padding: 8px;
+            text-align: right;
+            height: 65px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .section-title {
+            background-color: #0d1e36;
+            text-align: center;
+            padding: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* Stepper Styles */
+        .stepper {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            padding: 20px 0;
+            margin: 0 40px;
+            flex-direction: row-reverse; /* Ensure right to left flow */
+        }
+
+        .stepper::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #1e3a5f;
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 50%;
+            right: 0;
+            height: 2px;
+            background-color: #3b82f6;
+            z-index: 2;
+            transform: translateY(-50%);
+            width: 45%; 
+        }
+
+        .step {
+            position: relative;
+            z-index: 3;
+            text-align: center;
+            width: 80px;
+        }
+
+        .step-circle {
+            width: 20px;
+            height: 20px;
+            background-color: #0a192f;
+            border: 2px solid #1e3a5f;
+            border-radius: 50%;
+            margin: 0 auto 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .step.completed .step-circle {
+            background-color: #22c55e;
+            border-color: #22c55e;
+            color: white;
+        }
+
+        .step.active .step-circle {
+            border-color: #3b82f6;
+            box-shadow: 0 0 8px #3b82f6;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        th {
+            background-color: #0d1e36;
+            color: #94a3b8;
+            padding: 8px;
+            border-bottom: 1px solid #1e3a5f;
+            text-align: center;
+        }
+
+        td {
+            padding: 6px;
+            border-bottom: 1px solid #162e4f;
+            text-align: center;
+        }
+
+        .total-row {
+            background-color: #0d1e36;
+            font-weight: bold;
+        }
+
+        /* Circle Chart */
+        .circle-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+        }
+
+        .circle-svg {
+            transform: rotate(-90deg);
+        }
+
+        .circle-bg { fill: none; stroke: #1e3a5f; stroke-width: 3; }
+        .circle-val { fill: none; stroke: #3b82f6; stroke-width: 3; stroke-dasharray: 65, 100; stroke-linecap: round; }
+
+    </style>
+</head>
+<body>
+
+<div class="dashboard-wrapper">
+    
+    <!-- Header Title -->
+    <div class="flex justify-start items-center mb-4 gap-2 flex-row-reverse">
+        <h1 class="text-xl font-bold">لوحة متابعة العقد</h1>
+        <div class="bg-blue-600 p-1.5 rounded">
+            <i class="fas fa-chart-line text-white"></i>
+        </div>
+    </div>
+
+    <!-- Main Header Stats -->
+    <div class="grid grid-cols-7 gap-2 mb-4">
+        <div class="header-box">
+            <span class="text-blue-400 text-[10px]">اسم المشروع</span>
+            <span class="text-[11px] font-bold">مشروع إنشاء مبنى إداري</span>
+        </div>
+        <div class="header-box">
+            <span class="text-blue-400 text-[10px]">اسم المقاول</span>
+            <span class="text-[11px] font-bold">شركة التميز للمقاولات</span>
+        </div>
+        <div class="header-box">
+            <span class="text-blue-400 text-[10px]">رقم العقد</span>
+            <span class="text-[11px] font-bold">CTR-2024-0456</span>
+        </div>
+        <div class="header-box">
+            <span class="text-blue-400 text-[10px]">نوع الأعمال</span>
+            <span class="text-[11px] font-bold">إنشائية</span>
+        </div>
+        <div class="header-box">
+            <span class="text-blue-400 text-[10px]">تاريخ بداية المشروع</span>
+            <span class="text-[11px] font-bold">31-01-2024</span>
+        </div>
+        <div class="header-box">
+            <span class="text-blue-400 text-[10px]">تاريخ نهاية المشروع</span>
+            <span class="text-[11px] font-bold">31-12-2024</span>
+        </div>
+        <div class="header-box">
+            <span class="text-blue-400 text-[10px]">حالة العقد</span>
+            <span class="text-[11px] font-bold text-green-500">نشط <i class="fas fa-circle text-[8px]"></i></span>
+        </div>
+    </div>
+
+    <!-- Timeline and Countdown -->
+    <div class="grid grid-cols-12 gap-2 mb-4">
+        <div class="col-span-10 card">
+            <div class="section-title">مسار تنفيذ العقد</div>
+            <div class="stepper">
+                <div class="progress-line"></div>
+                <div class="step">
+                    <span class="text-[10px] block mb-1">6. التسليم النهائي</span>
+                    <div class="step-circle"></div>
+                    <span class="text-[10px] text-slate-500">0%</span>
+                </div>
+                <div class="step">
+                    <span class="text-[10px] block mb-1">5. الاختبارات</span>
+                    <div class="step-circle"></div>
+                    <span class="text-[10px] text-slate-500">0%</span>
+                </div>
+                <div class="step">
+                    <span class="text-[10px] block mb-1">4. التشطيبات</span>
+                    <div class="step-circle"></div>
+                    <span class="text-[10px] text-slate-500">0%</span>
+                </div>
+                <div class="step active">
+                    <span class="text-[10px] block mb-1">3. الأعمال الإنشائية</span>
+                    <div class="step-circle"></div>
+                    <span class="text-[10px] text-blue-400">65%</span>
+                </div>
+                <div class="step completed">
+                    <span class="text-[10px] block mb-1">2. توريد المواد</span>
+                    <div class="step-circle"><i class="fas fa-check"></i></div>
+                    <span class="text-[10px]">100%</span>
+                </div>
+                <div class="step completed">
+                    <span class="text-[10px] block mb-1">1. التصميم</span>
+                    <div class="step-circle"><i class="fas fa-check"></i></div>
+                    <span class="text-[10px]">100%</span>
+                </div>
+            </div>
+            <div class="flex justify-center gap-4 mt-2 text-[10px]">
+                <div class="flex items-center gap-1"><span class="w-2 h-2 bg-slate-700"></span> لم يبدأ</div>
+                <div class="flex items-center gap-1"><span class="w-2 h-2 bg-blue-500"></span> قيد التنفيذ</div>
+                <div class="flex items-center gap-1"><span class="w-2 h-2 bg-green-500"></span> مكتمل</div>
+            </div>
+        </div>
+        <div class="col-span-2 card flex flex-col items-center justify-center">
+            <span class="text-[10px] text-slate-400">المدة المتبقية</span>
+            <span class="text-3xl font-bold text-blue-400">120</span>
+            <span class="text-[10px]">يوم</span>
+        </div>
+    </div>
+
+    <!-- BOQ Table -->
+    <div class="card mb-4">
+        <div class="section-title">نطاق العمل (جدول الكميات)</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>رقم البند</th>
+                    <th class="text-right px-4">وصف البند</th>
+                    <th>الوحدة</th>
+                    <th>الكمية</th>
+                    <th>سعر الوحدة (ر.س)</th>
+                    <th>الإجمالي (ر.س)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>01</td><td class="text-right px-4">أعمال الحفر</td><td>م³</td><td>1,000</td><td>25.00</td><td>25,000.00</td></tr>
+                <tr><td>02</td><td class="text-right px-4">الخرسانة العادية</td><td>م³</td><td>500</td><td>300.00</td><td>150,000.00</td></tr>
+                <tr><td>03</td><td class="text-right px-4">حديد تسليح</td><td>طن</td><td>50</td><td>3,500.00</td><td>175,000.00</td></tr>
+                <tr><td>04</td><td class="text-right px-4">مباني بلوك</td><td>م²</td><td>2,000</td><td>65.00</td><td>130,000.00</td></tr>
+                <tr><td>05</td><td class="text-right px-4">أعمال كهرباء</td><td>نقطة</td><td>300</td><td>150.00</td><td>45,000.00</td></tr>
+                <tr class="total-row">
+                    <td colspan="5" class="text-left px-4">الإجمالي الكلي</td>
+                    <td class="text-blue-400">525,000.00</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Footer Stats -->
+    <div class="grid grid-cols-2 gap-2">
+        <!-- Payments -->
+        <div class="card">
+            <div class="section-title">الدفعات والمستخلصات</div>
+            <div class="flex gap-4">
+                <div class="w-1/3 flex flex-col items-center">
+                    <div class="circle-container">
+                        <svg viewBox="0 0 36 36" class="circle-svg">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle-val" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="text-lg font-bold">65%</span>
+                            <span class="text-[8px]">تم صرفه</span>
+                        </div>
+                    </div>
+                    <div class="text-[9px] mt-2 space-y-1 w-full text-right">
+                        <div class="flex justify-between"><span>قيمة العقد الإجمالية</span> <span>525,000.00</span></div>
+                        <div class="flex justify-between text-green-500"><span>إجمالي ما تم صرفه</span> <span>341,250.00</span></div>
+                        <div class="flex justify-between text-yellow-500"><span>المتبقي</span> <span>183,750.00</span></div>
+                    </div>
+                </div>
+                <div class="w-2/3">
+                    <table class="text-[9px]">
+                        <thead>
+                            <tr><th>رقم</th><th>تاريخ الصرف</th><th>قيمة المستخلص</th><th>الحالة</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>5</td><td>01-05-2024</td><td>78,750.00</td><td class="text-green-500">تم الصرف</td></tr>
+                            <tr><td>4</td><td>01-04-2024</td><td>78,750.00</td><td class="text-green-500">تم الصرف</td></tr>
+                            <tr><td>3</td><td>01-03-2024</td><td>73,500.00</td><td class="text-green-500">تم الصرف</td></tr>
+                            <tr><td>2</td><td>01-02-2024</td><td>63,000.00</td><td class="text-green-500">تم الصرف</td></tr>
+                            <tr><td>1</td><td>01-01-2024</td><td>47,250.00</td><td class="text-green-500">تم الصرف</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="text-center bg-blue-900/30 text-[10px] mt-1 p-1">إجمالي ما تم صرفه: 341,250.00 ر.س</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="card">
+            <div class="section-title">مؤشرات الأداء</div>
+            <div class="flex gap-4">
+                <div class="w-2/5 flex flex-col items-center justify-center">
+                    <div class="circle-container">
+                        <svg viewBox="0 0 36 36" class="circle-svg">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle-val" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-lg font-bold">65%</span>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-bold mt-1">نسبة الإنجاز الكلي</span>
+                </div>
+                <div class="w-3/5">
+                    <div class="space-y-1.5 mb-2">
+                        <div class="flex justify-between text-[9px]"><span>1. التصميم</span> <span>100%</span></div>
+                        <div class="w-full bg-slate-800 h-1"><div class="bg-green-500 h-full" style="width: 100%"></div></div>
+                        <div class="flex justify-between text-[9px]"><span>2. توريد المواد</span> <span>100%</span></div>
+                        <div class="w-full bg-slate-800 h-1"><div class="bg-green-500 h-full" style="width: 100%"></div></div>
+                        <div class="flex justify-between text-[9px]"><span>3. الأعمال الإنشائية</span> <span>65%</span></div>
+                        <div class="w-full bg-slate-800 h-1"><div class="bg-blue-500 h-full" style="width: 65%"></div></div>
+                        <div class="flex justify-between text-[9px]"><span>4. التشطيبات</span> <span>0%</span></div>
+                        <div class="w-full bg-slate-800 h-1"><div class="bg-slate-700 h-full" style="width: 0%"></div></div>
+                    </div>
+                    <div class="space-y-1 border-t border-slate-700 pt-1 text-[10px] text-right">
+                        <div class="flex justify-between"><span><i class="far fa-calendar-alt"></i> المدة المخططة</span> <span>365 يوم</span></div>
+                        <div class="flex justify-between"><span><i class="far fa-clock"></i> المدة المنقضية</span> <span>245 يوم</span></div>
+                        <div class="flex justify-between text-red-500"><span><i class="fas fa-exclamation-triangle"></i> التأخير المتوقع</span> <span>15 يوم</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
