@@ -185,7 +185,9 @@ export function useContractNotifications({
             if (myStages.includes(1)) {
               relevantActivity = true;
               const headline = "↩ عقد أُعيد إلى مرحلتك";
-              const description = `${contractLabel}\nأعاده: ${entry.actorName}`;
+              const description = entry.notes
+                ? `${contractLabel}\nأعاده: ${entry.actorName}\nالسبب: ${entry.notes}`
+                : `${contractLabel}\nأعاده: ${entry.actorName}`;
 
               toast(headline, {
                 description,
@@ -214,7 +216,9 @@ export function useContractNotifications({
               const rejectStageLabel =
                 STAGES[entry.stage - 1]?.label ?? `المرحلة ${entry.stage}`;
               const headline = "⚠️ عقد وافقت عليه تم رفضه";
-              const description = `${contractLabel}\nرُفض في: ${rejectStageLabel} — بواسطة: ${entry.actorName}`;
+              const description = entry.notes
+                ? `${contractLabel}\nرُفض في: ${rejectStageLabel} — بواسطة: ${entry.actorName}\nالسبب: ${entry.notes}`
+                : `${contractLabel}\nرُفض في: ${rejectStageLabel} — بواسطة: ${entry.actorName}`;
 
               toast(headline, {
                 description,
