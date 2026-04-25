@@ -106,6 +106,8 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
       });
       closeForm();
       loadContracts();
+      // Keep allContracts fresh so contact prefill works for the newly added vendor
+      listContracts().then(setAllContracts).catch(() => {});
     } catch (err: unknown) {
       setFormErr(err instanceof Error ? err.message : "حدث خطأ");
     } finally {
@@ -358,7 +360,7 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
                         <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: "0.8rem", color: "#ccc", pointerEvents: "none" }}>🔍</span>
                       )}
                       {/* Dropdown */}
-                      {showVendorDrop && filteredVendors.length > 0 && (
+                      {showVendorDrop && (filteredVendors.length > 0 || vendorQuery) && (
                         <div
                           ref={vendorDropRef}
                           style={{
