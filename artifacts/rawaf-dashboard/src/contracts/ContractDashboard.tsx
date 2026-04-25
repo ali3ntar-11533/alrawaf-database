@@ -318,22 +318,15 @@ function EliteStageRow({ stage, contracts, maxCount, isMine, onEnter, idx }: {
         <div style={{ fontSize:"0.52rem", color:"#B0B8C4", marginTop:1 }}>{stage.sub}</div>
       </div>
 
-      {/* Hover action */}
-      <div style={{ width: hov && !isEmpty ? 70 : 0, overflow:"hidden", transition:"width 0.22s ease", flexShrink:0, paddingLeft: hov && !isEmpty ? 8 : 0 }}>
+      {/* Arrow indicator — replaces "دخول" button, row itself is clickable */}
+      <div style={{ width:28, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
         {!isEmpty && (
-          <button
-            onClick={e => { e.stopPropagation(); onEnter(); }}
-            style={{
-              background: isMine || isFinalStage
-                ? `linear-gradient(135deg,${GOLD},${GOLD_END})`
-                : `linear-gradient(135deg,${BLUE},${BLUE_L})`,
-              color:"#fff", border:"none", borderRadius:9,
-              padding:"6px 10px", fontSize:"0.6rem", fontWeight:900,
-              cursor:"pointer", whiteSpace:"nowrap",
-              fontFamily:"'Cairo','Tajawal',sans-serif",
-              boxShadow: isMine || isFinalStage ? `0 4px 14px rgba(197,160,89,0.45)` : `0 4px 14px rgba(37,99,235,0.35)`,
-            }}
-          >دخول ←</button>
+          <span style={{
+            fontSize:"0.85rem", color: isMine || isFinalStage ? GOLD : hov ? BLUE_L : "#D1D5DB",
+            opacity: hov ? 1 : 0.4, transition:"all 0.2s",
+            transform: hov ? "translateX(-3px)" : "translateX(0)",
+            display:"inline-block",
+          }}>←</span>
         )}
       </div>
 
