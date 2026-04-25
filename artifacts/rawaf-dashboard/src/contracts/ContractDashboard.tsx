@@ -82,13 +82,16 @@ function PulseWave({ pct, active, done, total }: { pct: number; active: number; 
     return `${i === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
   }).join(" ");
 
+  const CARD_BG   = "#FFFDF8";
+  const EDGE_FADE = "#FFFDF8";
+
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 10,
-      background: `linear-gradient(120deg,${DARK} 0%,${DARK2} 60%,${DARK} 100%)`,
-      border: "1px solid rgba(197,160,89,0.18)",
+      background: `linear-gradient(120deg,${CARD_BG} 0%,#FBF6EC 60%,${CARD_BG} 100%)`,
+      border: "1px solid rgba(197,160,89,0.22)",
       borderRadius: 14, padding: "7px 14px 7px 10px",
-      boxShadow: "0 4px 18px rgba(0,0,0,0.2)",
+      boxShadow: "0 2px 12px rgba(197,160,89,0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
       position: "relative", overflow: "hidden",
     }}>
       {/* Wave display */}
@@ -98,46 +101,41 @@ function PulseWave({ pct, active, done, total }: { pct: number; active: number; 
           <defs>
             <linearGradient id="wGrad" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%"   stopColor={GOLD} stopOpacity="0"/>
-              <stop offset="30%"  stopColor={GOLD} stopOpacity="0.18"/>
-              <stop offset="70%"  stopColor={GOLD_END} stopOpacity="0.18"/>
+              <stop offset="30%"  stopColor={GOLD} stopOpacity="0.28"/>
+              <stop offset="70%"  stopColor={GOLD_END} stopOpacity="0.28"/>
               <stop offset="100%" stopColor={GOLD} stopOpacity="0"/>
             </linearGradient>
           </defs>
-          {/* Centre baseline */}
-          <line x1="0" y1={H/2} x2={W*2} y2={H/2} stroke="rgba(197,160,89,0.06)" strokeWidth="1"/>
-          {/* Main wave — whisper */}
-          <path d={pts} fill="none" stroke="url(#wGrad)" strokeWidth="1.2"/>
+          <line x1="0" y1={H/2} x2={W*2} y2={H/2} stroke="rgba(197,160,89,0.1)" strokeWidth="1"/>
+          <path d={pts} fill="none" stroke="url(#wGrad)" strokeWidth="1.4"/>
         </svg>
-        {/* Edge fade */}
-        <div style={{ position:"absolute", inset:0, background:`linear-gradient(90deg,${DARK} 0%,transparent 20%,transparent 80%,${DARK} 100%)`, pointerEvents:"none" }}/>
-        {/* Subtle dot */}
-        <div style={{ position:"absolute", top:"50%", right:6, transform:"translateY(-50%)", width:3, height:3, borderRadius:"50%", background:GOLD_END, opacity:0.35, animation:"pulseDot 2.2s ease-in-out infinite" }}/>
+        <div style={{ position:"absolute", inset:0, background:`linear-gradient(90deg,${EDGE_FADE} 0%,transparent 22%,transparent 78%,${EDGE_FADE} 100%)`, pointerEvents:"none" }}/>
+        <div style={{ position:"absolute", top:"50%", right:6, transform:"translateY(-50%)", width:3, height:3, borderRadius:"50%", background:GOLD, opacity:0.4, animation:"pulseDot 2.2s ease-in-out infinite" }}/>
       </div>
 
       {/* Completion % */}
       <div style={{ display:"flex", flexDirection:"column", gap:0, alignItems:"center" }}>
-        <div style={{ fontSize:"0.38rem", color:"rgba(226,194,117,0.4)", letterSpacing:"0.1em", fontWeight:700 }}>COMPLETION</div>
+        <div style={{ fontSize:"0.38rem", color:"rgba(139,105,20,0.45)", letterSpacing:"0.1em", fontWeight:700 }}>COMPLETION</div>
         <div style={{
           fontSize:"1.45rem", fontWeight:900, letterSpacing:"-0.04em", lineHeight:1,
           fontVariantNumeric:"tabular-nums",
-          color: GOLD_END,
-          opacity: 0.82,
+          color: GOLD2,
         }}>
           <AnimCount value={pct}/><span style={{ fontSize:"0.7rem" }}>%</span>
         </div>
-        <div style={{ fontSize:"0.4rem", color:"rgba(197,160,89,0.35)" }}>{done}/{total}</div>
+        <div style={{ fontSize:"0.4rem", color:"rgba(139,105,20,0.38)" }}>{done}/{total}</div>
       </div>
 
       {/* Divider */}
-      <div style={{ width:1, height:26, background:"rgba(197,160,89,0.14)", flexShrink:0 }}/>
+      <div style={{ width:1, height:26, background:"rgba(197,160,89,0.18)", flexShrink:0 }}/>
 
       {/* Active count */}
       <div style={{ display:"flex", flexDirection:"column", gap:0, alignItems:"center" }}>
-        <div style={{ fontSize:"0.38rem", color:"rgba(226,194,117,0.4)", letterSpacing:"0.1em", fontWeight:700 }}>ACTIVE</div>
-        <div style={{ fontSize:"1.1rem", fontWeight:900, color:GOLD_END, letterSpacing:"-0.03em", lineHeight:1, opacity:0.75, fontVariantNumeric:"tabular-nums" }}>
+        <div style={{ fontSize:"0.38rem", color:"rgba(139,105,20,0.45)", letterSpacing:"0.1em", fontWeight:700 }}>ACTIVE</div>
+        <div style={{ fontSize:"1.1rem", fontWeight:900, color: GOLD2, letterSpacing:"-0.03em", lineHeight:1, fontVariantNumeric:"tabular-nums" }}>
           <AnimCount value={active}/>
         </div>
-        <div style={{ fontSize:"0.4rem", color:"rgba(197,160,89,0.35)" }}>نشط</div>
+        <div style={{ fontSize:"0.4rem", color:"rgba(139,105,20,0.38)" }}>نشط</div>
       </div>
     </div>
   );
