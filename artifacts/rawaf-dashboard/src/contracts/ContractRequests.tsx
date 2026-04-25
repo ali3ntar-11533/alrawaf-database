@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GOLD, GOLD_BG, GOLD_BORDER, STAGES } from "./types";
 import type { Contract } from "./types";
-import { listContracts, createContract } from "./api";
+import { listContracts, createContract, getVendors } from "./api";
 import { tafqit } from "./tafqit";
 
 interface Props {
@@ -29,6 +29,13 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
   });
   const [formErr, setFormErr] = useState("");
 
+  // Vendor autocomplete
+  const [vendors, setVendors]             = useState<string[]>([]);
+  const [vendorQuery, setVendorQuery]     = useState("");
+  const [showVendorDrop, setShowVendorDrop] = useState(false);
+  const vendorInputRef = useRef<HTMLInputElement>(null);
+  const vendorDropRef  = useRef<HTMLDivElement>(null);
+
   function loadContracts() {
     setLoading(true);
     listContracts(filterStatus ? { status: filterStatus } : undefined)
@@ -37,6 +44,23 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
   }
 
   useEffect(() => { loadContracts(); }, [filterStatus]);
+
+  useEffect(() => {
+    getVendors().then(setVendors).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    function handle(e: MouseEvent) {
+      if (
+        vendorInputRef.current && !vendorInputRef.current.contains(e.target as Node) &&
+        vendorDropRef.current  && !vendorDropRef.current.contains(e.target as Node)
+      ) {
+        setShowVendorDrop(false);
+      }
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, []);
 
   const filtered = contracts.filter(c => {
     const matchSearch = !search || c.title.includes(search) || c.vendorName.includes(search) || c.contractNo.includes(search);
@@ -70,6 +94,8 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
       });
       setShowForm(false);
       setForm({ title: "", vendorName: "", vendorContact: "", value: "", startDate: "", endDate: "", contractType: "خدمات", projectName: "" });
+      setVendorQuery("");
+      setShowVendorDrop(false);
       loadContracts();
     } catch (err: unknown) {
       setFormErr(err instanceof Error ? err.message : "حدث خطأ");
@@ -255,15 +281,143 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
                 <h3 style={{ fontSize: "1.1rem", fontWeight: 900, color: "#1a1206" }}>📝 عقد جديد</h3>
                 <p style={{ fontSize: "0.72rem", color: "#9b8060" }}>تعبئة بيانات العقد وإرساله للمراجعة</p>
               </div>
-              <button onClick={() => setShowForm(false)} style={{ border: "none", background: "none", fontSize: "1.2rem", cursor: "pointer", color: "#999" }}>×</button>
+              <button onClick={() => { setShowForm(false); setVendorQuery(""); setShowVendorDrop(false); }} style={{ border: "none", background: "none", fontSize: "1.2rem", cursor: "pointer", color: "#999" }}>×</button>
             </div>
 
             <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {/* اسم العقد */}
               {[
-                { key: "title",         label: "اسم العقد *",          placeholder: "عقد توريد مواد البناء..." },
-                { key: "vendorName",    label: "اسم المورد / المقاول *", placeholder: "شركة الخير للتجارة" },
-                { key: "vendorContact", label: "بيانات التواصل",         placeholder: "0500000000 / email@..." },
-                { key: "projectName",   label: "اسم المشروع",            placeholder: "مشروع الرياض الشمالي" },
+                { key: "title",       label: "اسم العقد *",    placeholder: "عقد توريد مواد البناء..." },
+                { key: "projectName", label: "اسم المشروع",     placeholder: "مشروع الرياض الشمالي" },
+              ].slice(0, 1).map(f => (
+                <div key={f.key}>
+                  <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: "#4a3520", marginBottom: 5 }}>{f.label}</label>
+                  <input
+                    value={(form as Record<string, string>)[f.key]}
+                    onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
+                    placeholder={f.placeholder}
+                    style={{
+                      width: "100%", padding: "10px 12px", borderRadius: 9,
+                      border: `1.5px solid ${GOLD_BORDER}`, fontSize: "0.85rem",
+                      fontFamily: "'Cairo', 'Tajawal', sans-serif", outline: "none", boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+              ))}
+
+              {/* اسم المورد — autocomplete */}
+              {(() => {
+                const filteredVendors = vendors.filter(v =>
+                  !vendorQuery || v.includes(vendorQuery) || v.toLowerCase().includes(vendorQuery.toLowerCase())
+                );
+                return (
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: "#4a3520", marginBottom: 5 }}>
+                      اسم المورد / المقاول *
+                    </label>
+                    <div style={{ position: "relative" }}>
+                      <input
+                        ref={vendorInputRef}
+                        value={vendorQuery}
+                        onChange={e => {
+                          const v = e.target.value;
+                          setVendorQuery(v);
+                          setForm(p => ({ ...p, vendorName: v }));
+                          setShowVendorDrop(true);
+                        }}
+                        onFocus={() => setShowVendorDrop(true)}
+                        placeholder="شركة الخير للتجارة..."
+                        autoComplete="off"
+                        style={{
+                          width: "100%", padding: "10px 12px", paddingLeft: 36, borderRadius: 9,
+                          border: `1.5px solid ${form.vendorName ? GOLD : GOLD_BORDER}`,
+                          fontSize: "0.85rem", fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                          outline: "none", boxSizing: "border-box",
+                          background: form.vendorName ? "rgba(197,160,89,0.03)" : "#fff",
+                          transition: "border-color 0.2s",
+                        }}
+                      />
+                      {/* Clear button */}
+                      {form.vendorName && (
+                        <button
+                          type="button"
+                          onClick={() => { setVendorQuery(""); setForm(p => ({ ...p, vendorName: "", vendorContact: "" })); }}
+                          style={{
+                            position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
+                            background: "none", border: "none", cursor: "pointer",
+                            color: "#aaa", fontSize: "1rem", lineHeight: 1, padding: "2px 4px",
+                          }}
+                        >×</button>
+                      )}
+                      {/* Search icon */}
+                      {!form.vendorName && (
+                        <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: "0.8rem", color: "#ccc", pointerEvents: "none" }}>🔍</span>
+                      )}
+                      {/* Dropdown */}
+                      {showVendorDrop && filteredVendors.length > 0 && (
+                        <div
+                          ref={vendorDropRef}
+                          style={{
+                            position: "absolute", top: "calc(100% + 4px)", right: 0, left: 0, zIndex: 200,
+                            background: "#fff",
+                            border: `1px solid ${GOLD_BORDER}`,
+                            borderRadius: 10,
+                            boxShadow: "0 8px 28px rgba(0,0,0,0.14)",
+                            maxHeight: 200, overflowY: "auto",
+                          }}
+                        >
+                          {filteredVendors.slice(0, 12).map(v => (
+                            <div
+                              key={v}
+                              onMouseDown={e => {
+                                e.preventDefault();
+                                setVendorQuery(v);
+                                // Pre-fill contact from existing contracts if available
+                                const match = contracts.find(c => c.vendorName === v && c.vendorContact);
+                                setForm(p => ({
+                                  ...p,
+                                  vendorName: v,
+                                  vendorContact: match?.vendorContact || p.vendorContact,
+                                }));
+                                setShowVendorDrop(false);
+                              }}
+                              style={{
+                                padding: "9px 14px",
+                                cursor: "pointer",
+                                fontSize: "0.82rem",
+                                color: "#1a1206",
+                                borderBottom: "1px solid #F5F0E8",
+                                background: form.vendorName === v ? GOLD_BG : "#fff",
+                                fontWeight: form.vendorName === v ? 700 : 400,
+                                display: "flex", alignItems: "center", gap: 8,
+                                transition: "background 0.12s",
+                              }}
+                              onMouseEnter={e => { if (form.vendorName !== v) (e.currentTarget as HTMLDivElement).style.background = "#FEFAF3"; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = form.vendorName === v ? GOLD_BG : "#fff"; }}
+                            >
+                              <span style={{ fontSize: "0.7rem" }}>🏢</span>
+                              <span>{v}</span>
+                            </div>
+                          ))}
+                          {filteredVendors.length === 0 && (
+                            <div style={{ padding: "10px 14px", fontSize: "0.78rem", color: "#999", textAlign: "center" }}>لا نتائج</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {vendors.length > 0 && !form.vendorName && (
+                      <div style={{ fontSize: "0.6rem", color: "#b09060", marginTop: 4 }}>
+                        💡 يمكنك الاختيار من {vendors.length} مورد سابق أو كتابة اسم جديد
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* بيانات التواصل + اسم المشروع */}
+              {[
+                { key: "vendorContact", label: "بيانات التواصل",  placeholder: "0500000000 / email@..." },
+                { key: "projectName",   label: "اسم المشروع",     placeholder: "مشروع الرياض الشمالي" },
               ].map(f => (
                 <div key={f.key}>
                   <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: "#4a3520", marginBottom: 5 }}>{f.label}</label>
