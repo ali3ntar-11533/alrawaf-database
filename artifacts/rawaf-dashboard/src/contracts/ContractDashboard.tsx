@@ -153,66 +153,55 @@ function FolderCard({ label, sub, count, icon, accent, onClick }: {
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        borderRadius: 22, padding: "20px 20px 16px",
-        background: hov
-          ? `linear-gradient(145deg,rgba(255,255,255,0.98),rgba(255,255,255,0.93))`
-          : "rgba(255,255,255,0.82)",
-        backdropFilter: "blur(12px)",
-        border: `1.5px solid ${hov ? accent + "45" : "rgba(230,230,230,0.6)"}`,
+        borderRadius: 16, padding: "14px 16px 12px",
+        background: "#fff",
+        border: `1px solid ${hov ? accent + "50" : "rgba(0,0,0,0.07)"}`,
         boxShadow: hov
-          ? `0 16px 48px ${accent}20, 0 4px 16px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)`
-          : "0 4px 16px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8)",
-        cursor: "pointer", position:"relative", overflow:"hidden",
-        transform: hov ? "translateY(-6px) scale(1.015)" : "translateY(0) scale(1)",
-        transition: "all 0.28s cubic-bezier(0.34,1.56,0.64,1)",
+          ? `0 8px 28px ${accent}18, 0 2px 8px rgba(0,0,0,0.06)`
+          : "0 1px 4px rgba(0,0,0,0.04)",
+        cursor: "pointer", position: "relative", overflow: "hidden",
+        transform: hov ? "translateY(-3px)" : "translateY(0)",
+        transition: "all 0.22s cubic-bezier(0.34,1.56,0.64,1)",
       }}
     >
-      {/* Folder tab */}
+      {/* Left accent bar */}
       <div style={{
-        position:"absolute", top:0, right:16, width:32, height:11,
-        background: hov ? accent + "30" : "rgba(0,0,0,0.05)",
-        borderRadius:"0 0 8px 8px",
-        transition:"background 0.2s",
+        position: "absolute", top: 0, right: 0, width: 3, height: "100%",
+        background: hov ? accent : accent + "30",
+        borderRadius: "0 16px 16px 0",
+        transition: "background 0.22s",
       }}/>
-      {/* Top color strip */}
-      <div style={{
-        position:"absolute", top:0, left:0, right:0, height:3,
-        background: hov ? `linear-gradient(90deg,${accent}80,${accent})` : "transparent",
-        borderRadius:"22px 22px 0 0",
-        transition:"background 0.25s",
-      }}/>
-      {/* Ambient glow */}
-      {hov && <div style={{ position:"absolute", top:-20, right:-20, width:80, height:80, borderRadius:"50%", background:`radial-gradient(circle,${accent}15 0%,transparent 70%)`, pointerEvents:"none" }}/>}
 
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14, marginTop:4 }}>
-        <span style={{ fontSize:"0.6rem", fontWeight:700, color: hov ? accent : "#9CA3AF", letterSpacing:"0.02em", transition:"color 0.2s" }}>{sub}</span>
+      {/* Top row: sub-label + icon */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, paddingRight: 6 }}>
+        <span style={{ fontSize: "0.56rem", fontWeight: 700, color: hov ? accent : "#9CA3AF", letterSpacing: "0.03em", transition: "color 0.2s" }}>
+          {sub}
+        </span>
         <div style={{
-          width:40, height:40, borderRadius:13,
-          background: hov ? accent+"18" : "#F3F4F6",
-          border:`1px solid ${hov ? accent+"30" : "#EBEBEB"}`,
-          display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.1rem",
-          boxShadow: hov ? `0 4px 16px ${accent}22` : "none",
-          transition:"all 0.25s", transform: hov ? "scale(1.08) rotate(-4deg)" : "none",
+          width: 32, height: 32, borderRadius: 10,
+          background: hov ? accent + "18" : "#F8F8F8",
+          border: `1px solid ${hov ? accent + "28" : "#EFEFEF"}`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "0.9rem",
+          transition: "all 0.2s",
         }}>{icon}</div>
       </div>
 
-      <div style={{ fontSize:"2.5rem", fontWeight:900, letterSpacing:"-0.04em", lineHeight:1, color: hov ? accent : "#111827", transition:"color 0.2s" }}>
+      {/* Count */}
+      <div style={{ fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, color: hov ? accent : "#111827", transition: "color 0.2s", paddingRight: 6 }}>
         <AnimCount value={count}/>
       </div>
-      <div style={{ fontSize:"0.74rem", fontWeight:700, color: hov ? accent+"CC" : "#374151", marginTop:5, transition:"color 0.2s" }}>{label}</div>
 
+      {/* Label */}
+      <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "#4B5563", marginTop: 4, paddingRight: 6 }}>{label}</div>
+
+      {/* Footer link */}
       <div style={{
-        marginTop:12, display:"flex", alignItems:"center", gap:5,
-        color: hov ? accent : "#C8CDD6", fontSize:"0.58rem", fontWeight:700,
-        transition:"all 0.2s",
-        transform: hov ? "translateX(-4px)" : "translateX(0)",
+        marginTop: 10, paddingRight: 6, display: "flex", alignItems: "center", gap: 4,
+        color: hov ? accent : "#D1D5DB", fontSize: "0.54rem", fontWeight: 700,
+        transition: "color 0.2s",
       }}>
-        <span style={{
-          display:"flex", alignItems:"center", justifyContent:"center",
-          width:18, height:18, borderRadius:6,
-          background: hov ? accent+"18" : "#F3F4F6",
-          fontSize:"0.55rem", transition:"background 0.2s",
-        }}>←</span>
+        <span style={{ fontSize: "0.7rem" }}>←</span>
         <span>فتح الجدول</span>
       </div>
     </div>
@@ -637,7 +626,7 @@ export default function ContractDashboard({ role, actorName, contracts, pendingC
         ) : (
           <>
             {/* ── Smart Folder Cards ── */}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, animation:"fadeUp 0.38s ease both" }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, animation:"fadeUp 0.38s ease both" }}>
               {FOLDERS.map(f => (
                 <FolderCard key={f.key} label={f.label} sub={f.sub} count={f.count} icon={f.icon} accent={f.accent} onClick={()=>setViewMode(f.key)}/>
               ))}
