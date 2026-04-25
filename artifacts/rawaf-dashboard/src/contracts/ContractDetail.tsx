@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { GOLD, GOLD_BG, GOLD_BORDER, STAGES } from "./types";
 import type { Contract, ContractComment, StageLog } from "./types";
 import { getContract, getContractAudit, advanceStage, getContractComments, addContractComment } from "./api";
-import WorkflowWaterfall from "./WorkflowWaterfall";
 import { tafqit } from "./tafqit";
 
 const PRINT_STYLE_ID = "print-contract-detail-style";
@@ -328,6 +327,30 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
     } finally { setActionBusy(false); }
   }
 
+  /* ── Stage durations from audit log ── */
+  const stageDurations = useMemo(() => {
+    const durations: Record<number, string> = {};
+    const sorted = [...log].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    for (let i = 0; i < sorted.length; i++) {
+      const entry = sorted[i];
+      if (entry.action !== "advance" && entry.action !== "reject") continue;
+      const prevTime = i > 0
+        ? new Date(sorted[i - 1].createdAt).getTime()
+        : new Date(entry.createdAt).getTime();
+      const currTime = new Date(entry.createdAt).getTime();
+      const ms = currTime - prevTime;
+      if (ms <= 0) { durations[entry.stage] = "< د"; continue; }
+      const days  = Math.floor(ms / 86400000);
+      const hours = Math.floor((ms % 86400000) / 3600000);
+      const mins  = Math.floor((ms % 3600000) / 60000);
+      if (days >= 1)       durations[entry.stage] = `${days} يوم`;
+      else if (hours >= 1) durations[entry.stage] = `${hours} ساعة`;
+      else if (mins >= 1)  durations[entry.stage] = `${mins} دقيقة`;
+      else                 durations[entry.stage] = "< دقيقة";
+    }
+    return durations;
+  }, [log]);
+
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, color: "#bbb" }}>
       جاري التحميل...
@@ -371,11 +394,6 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
 
   return (
     <div dir="rtl" style={{ fontFamily: "'Cairo', 'Tajawal', sans-serif", height: "100%", display: "flex", flexDirection: "column" }}>
-      {/* Waterfall */}
-      <div className="no-print">
-        <WorkflowWaterfall currentStage={isCompleted ? 12 : contract.currentStage} />
-      </div>
-
       {/* Main scroll area */}
       <div style={{ flex: 1, overflowY: "auto", padding: "18px 24px" }}>
 
@@ -436,13 +454,91 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
               <div style={{ fontSize: "0.56rem", color: "#9b8060" }}>إنجاز</div>
             </div>
           </div>
-          <div style={{ marginTop: 10, height: 6, borderRadius: 3, background: "rgba(0,0,0,0.06)", overflow: "hidden" }}>
+          {/* ── Stage timeline (replaces thin progress bar) ── */}
+          <div className="no-print" style={{ marginTop: 14, overflowX: "auto", paddingBottom: 4 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", minWidth: "max-content", direction: "rtl" }}>
+              {STAGES.map((stg, idx) => {
+                const sNum    = idx + 1;
+                const isDone  = isCompleted ? true : sNum < contract.currentStage;
+                const isCur   = !isCompleted && sNum === contract.currentStage;
+                const dur     = stageDurations[sNum];
+                return (
+                  <div key={sNum} style={{ display: "flex", alignItems: "flex-start" }}>
+                    <div style={{
+                      display: "flex", flexDirection: "column", alignItems: "center",
+                      minWidth: 62, padding: "0 3px",
+                    }}>
+                      {/* Circle */}
+                      <div style={{
+                        width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: isDone ? "0.85rem" : "0.7rem", fontWeight: 900,
+                        background: isDone
+                          ? `linear-gradient(135deg, ${GOLD}, #a88540)`
+                          : isCur
+                            ? "rgba(197,160,89,0.15)"
+                            : "rgba(0,0,0,0.06)",
+                        color: isDone ? "#fff" : isCur ? GOLD : "#ccc",
+                        border: isCur ? `2px solid ${GOLD}` : "2px solid transparent",
+                        boxShadow: isCur ? `0 0 0 3px rgba(197,160,89,0.18)` : "none",
+                        animation: isCur ? "stg-pulse 2s ease-in-out infinite" : "none",
+                        transition: "all 0.3s",
+                      }}>
+                        {isDone ? "✓" : sNum}
+                      </div>
+                      {/* Stage label */}
+                      <div style={{
+                        fontSize: "0.48rem", marginTop: 5, textAlign: "center",
+                        color: isDone ? "#8B6914" : isCur ? GOLD : "#bbb",
+                        fontWeight: isCur ? 800 : 500,
+                        lineHeight: 1.35, maxWidth: 60,
+                      }}>
+                        {stg.label}
+                      </div>
+                      {/* Duration or status */}
+                      {isDone && dur && (
+                        <div style={{
+                          fontSize: "0.42rem", color: "#b8a57c", marginTop: 3,
+                          background: "rgba(197,160,89,0.1)", borderRadius: 8,
+                          padding: "1px 5px", fontWeight: 600,
+                        }}>{dur}</div>
+                      )}
+                      {isCur && (
+                        <div style={{
+                          fontSize: "0.42rem", color: GOLD, marginTop: 3, fontWeight: 800,
+                          background: "rgba(197,160,89,0.1)", borderRadius: 8, padding: "1px 5px",
+                        }}>جارٍ</div>
+                      )}
+                    </div>
+                    {/* Connector line */}
+                    {idx < STAGES.length - 1 && (
+                      <div style={{
+                        width: 16, height: 2, marginTop: 14, flexShrink: 0,
+                        background: isDone
+                          ? `linear-gradient(90deg, #a88540, ${GOLD})`
+                          : "rgba(0,0,0,0.08)",
+                        transition: "background 0.4s",
+                      }} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {/* Print-only thin bar */}
+          <div className="print-only-bar" style={{ marginTop: 8, height: 5, borderRadius: 3, background: "rgba(0,0,0,0.06)", overflow: "hidden" }}>
             <div style={{
               height: "100%", width: `${pct}%`, borderRadius: 3,
               background: isCompleted ? "#27ae60" : `linear-gradient(90deg, ${GOLD}, #a88540)`,
-              transition: "width 0.6s",
             }} />
           </div>
+          <style>{`
+            @keyframes stg-pulse {
+              0%, 100% { box-shadow: 0 0 0 3px rgba(197,160,89,0.18); }
+              50%       { box-shadow: 0 0 0 6px rgba(197,160,89,0); }
+            }
+            @media print { .print-only-bar { display: block !important; } }
+          `}</style>
           {contract.rejectionReason && !isCompleted && (
             <div style={{
               marginTop: 10, background: "rgba(231,76,60,0.06)", borderRadius: 9, padding: "10px 14px",
