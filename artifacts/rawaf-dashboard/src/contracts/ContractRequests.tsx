@@ -29,10 +29,15 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
   // Vendor autocomplete
   const [vendors, setVendors]               = useState<string[]>([]);
   const [allContracts, setAllContracts]     = useState<Contract[]>([]); // unfiltered, for contact lookup
-  const [vendorQuery, setVendorQuery]       = useState("");
-  const [showVendorDrop, setShowVendorDrop] = useState(false);
+  const [vendorQuery, setVendorQuery]         = useState("");
+  const [showVendorDrop, setShowVendorDrop]   = useState(false);
   const vendorInputRef = useRef<HTMLInputElement>(null);
   const vendorDropRef  = useRef<HTMLDivElement>(null);
+
+  // Search-bar vendor autocomplete
+  const [showSearchDrop, setShowSearchDrop]   = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchDropRef  = useRef<HTMLDivElement>(null);
 
   function resetForm() {
     setForm(EMPTY_FORM);
@@ -63,11 +68,18 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
 
   useEffect(() => {
     function handle(e: MouseEvent) {
+      const t = e.target as Node;
       if (
-        vendorInputRef.current && !vendorInputRef.current.contains(e.target as Node) &&
-        vendorDropRef.current  && !vendorDropRef.current.contains(e.target as Node)
+        vendorInputRef.current && !vendorInputRef.current.contains(t) &&
+        vendorDropRef.current  && !vendorDropRef.current.contains(t)
       ) {
         setShowVendorDrop(false);
+      }
+      if (
+        searchInputRef.current && !searchInputRef.current.contains(t) &&
+        searchDropRef.current  && !searchDropRef.current.contains(t)
+      ) {
+        setShowSearchDrop(false);
       }
     }
     document.addEventListener("mousedown", handle);
@@ -165,16 +177,77 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
       )}
 
       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="🔍 بحث بالاسم أو رقم العقد..."
-          style={{
-            flex: 1, minWidth: 200, padding: "9px 14px", borderRadius: 9,
-            border: `1.5px solid ${GOLD_BORDER}`, fontSize: "0.82rem",
-            fontFamily: "'Cairo', 'Tajawal', sans-serif", outline: "none",
-          }}
-        />
+        {/* Search input with vendor autocomplete */}
+        <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
+          <input
+            ref={searchInputRef}
+            value={search}
+            onChange={e => { setSearch(e.target.value); setShowSearchDrop(true); }}
+            onFocus={() => setShowSearchDrop(true)}
+            placeholder="🔍 بحث بالاسم أو رقم العقد..."
+            autoComplete="off"
+            style={{
+              width: "100%", padding: "9px 14px", paddingLeft: search ? 34 : 14,
+              borderRadius: 9, border: `1.5px solid ${search ? GOLD : GOLD_BORDER}`,
+              fontSize: "0.82rem", fontFamily: "'Cairo', 'Tajawal', sans-serif",
+              outline: "none", boxSizing: "border-box",
+              transition: "border-color 0.2s",
+            }}
+          />
+          {/* Clear button */}
+          {search && (
+            <button
+              type="button"
+              onClick={() => { setSearch(""); setShowSearchDrop(false); }}
+              style={{
+                position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
+                background: "none", border: "none", cursor: "pointer",
+                color: "#aaa", fontSize: "1rem", lineHeight: 1, padding: "2px 4px",
+              }}
+            >×</button>
+          )}
+          {/* Vendor suggestions dropdown */}
+          {showSearchDrop && vendors.length > 0 && (() => {
+            const q = search.toLowerCase();
+            const matches = vendors.filter(v =>
+              !q || v.includes(search) || v.toLowerCase().includes(q)
+            ).slice(0, 10);
+            if (!q && matches.length === 0) return null;
+            return (
+              <div
+                ref={searchDropRef}
+                style={{
+                  position: "absolute", top: "calc(100% + 4px)", right: 0, left: 0, zIndex: 300,
+                  background: "#fff", border: `1px solid ${GOLD_BORDER}`,
+                  borderRadius: 10, boxShadow: "0 8px 28px rgba(0,0,0,0.13)",
+                  maxHeight: 220, overflowY: "auto",
+                }}
+              >
+                {matches.length > 0 ? matches.map(v => (
+                  <div
+                    key={v}
+                    onMouseDown={e => { e.preventDefault(); setSearch(v); setShowSearchDrop(false); }}
+                    style={{
+                      padding: "9px 14px", cursor: "pointer", fontSize: "0.82rem",
+                      color: "#1a1206", borderBottom: "1px solid #F5F0E8",
+                      background: search === v ? GOLD_BG : "#fff",
+                      fontWeight: search === v ? 700 : 400,
+                      display: "flex", alignItems: "center", gap: 8,
+                      transition: "background 0.12s",
+                    }}
+                    onMouseEnter={e => { if (search !== v) (e.currentTarget as HTMLDivElement).style.background = "#FEFAF3"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = search === v ? GOLD_BG : "#fff"; }}
+                  >
+                    <span style={{ fontSize: "0.7rem" }}>🏢</span>
+                    <span>{v}</span>
+                  </div>
+                )) : (
+                  <div style={{ padding: "10px 14px", fontSize: "0.78rem", color: "#999", textAlign: "center" }}>لا نتائج مطابقة</div>
+                )}
+              </div>
+            );
+          })()}
+        </div>
         {["", "active", "completed"].map(s => (
           <button
             key={s}
