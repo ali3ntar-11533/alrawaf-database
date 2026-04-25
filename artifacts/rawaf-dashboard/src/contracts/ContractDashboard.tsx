@@ -504,8 +504,9 @@ function ContractDataTable({ contracts, mode, onOpenContract, onBack }: {
               const sl = isDone?"مكتملة":isRej?"مرفوضة":"نشطة";
               return (
                 <tr key={c.id}
-                  style={{ borderBottom:"1px solid #F3F4F6", background:i%2===0?"rgba(255,255,255,0.8)":"rgba(249,250,251,0.5)", transition:"background 0.15s" }}
-                  onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background=meta.accent+"09";}}
+                  onClick={()=>onOpenContract(c.id)}
+                  style={{ borderBottom:"1px solid #F3F4F6", background:i%2===0?"rgba(255,255,255,0.8)":"rgba(249,250,251,0.5)", transition:"background 0.15s", cursor:"pointer" }}
+                  onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background=meta.accent+"14";}}
                   onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background=i%2===0?"rgba(255,255,255,0.8)":"rgba(249,250,251,0.5)";}}
                 >
                   <td style={{ padding:"10px 14px", fontWeight:800, color:"#374151", whiteSpace:"nowrap" }}>{c.contractNo}</td>
@@ -525,12 +526,7 @@ function ContractDataTable({ contracts, mode, onOpenContract, onBack }: {
                   <td style={{ padding:"10px 14px", fontWeight:700, color:"#1F2937", whiteSpace:"nowrap" }}>{c.value?`${formatSAR(c.value)} ر.س`:"—"}</td>
                   <td style={{ padding:"10px 14px", color:"#9CA3AF", fontSize:"0.66rem", whiteSpace:"nowrap" }}>{new Date(c.createdAt).toLocaleDateString("ar-SA")}</td>
                   <td style={{ padding:"10px 14px" }}>
-                    <button
-                      onClick={()=>onOpenContract(c.id)}
-                      style={{ padding:"6px 14px", borderRadius:9, border:`1.5px solid ${meta.accent}45`, background:`${meta.accent}12`, color:meta.accent, cursor:"pointer", fontSize:"0.63rem", fontWeight:800, fontFamily:"'Cairo','Tajawal',sans-serif", whiteSpace:"nowrap", transition:"all 0.15s" }}
-                      onMouseEnter={e=>{const el=e.currentTarget as HTMLElement;el.style.background=meta.accent;el.style.color="#fff";}}
-                      onMouseLeave={e=>{const el=e.currentTarget as HTMLElement;el.style.background=`${meta.accent}12`;el.style.color=meta.accent;}}
-                    >فتح ←</button>
+                    <span style={{ fontSize:"0.82rem", color:meta.accent, opacity:0.7 }}>←</span>
                   </td>
                 </tr>
               );

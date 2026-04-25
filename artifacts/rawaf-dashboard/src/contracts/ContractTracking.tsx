@@ -87,7 +87,7 @@ export default function ContractTracking({ role, onOpenContract }: Props) {
           🛡️ نظام متابعة العقود
         </h2>
         <p style={{ color: "#9b8060", fontSize: "0.82rem" }}>
-          اضغط "فتح" لعرض لوحة المتابعة الكاملة لأي عقد نشط
+          انقر على أي عقد لفتح لوحة المتابعة التفصيلية مباشرةً
         </p>
       </div>
 
@@ -111,8 +111,10 @@ export default function ContractTracking({ role, onOpenContract }: Props) {
                 overflow: "hidden",
               }}>
                 <div
-                  onClick={() => setExpanded(isExpanded ? null : c.id)}
-                  style={{ padding: "18px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14 }}
+                  onClick={() => setMonitorContract(c)}
+                  style={{ padding: "18px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, transition: "background 0.15s" }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(197,160,89,0.04)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                 >
                   <div style={{
                     width: 46, height: 46, borderRadius: 12, flexShrink: 0,
@@ -150,27 +152,17 @@ export default function ContractTracking({ role, onOpenContract }: Props) {
                   </div>
 
                   <div style={{ display: "flex", gap: 8, flexShrink: 0, alignItems: "center" }}>
-                    <button
-                      onClick={e => { e.stopPropagation(); setMonitorContract(c); }}
+                    <span style={{ fontSize: "0.78rem", color: "rgba(197,160,89,0.6)", fontWeight: 700 }}>←</span>
+                    <span
+                      onClick={e => { e.stopPropagation(); setExpanded(isExpanded ? null : c.id); }}
+                      title="عرض سجل الأحداث"
                       style={{
-                        padding: "8px 18px", borderRadius: 9,
-                        border: `1.5px solid ${GOLD}`,
-                        background: GOLD, color: "#fff",
-                        cursor: "pointer",
-                        fontSize: "0.75rem", fontWeight: 800,
-                        fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                        boxShadow: "0 2px 8px rgba(197,160,89,0.35)",
-                        transition: "background 0.15s",
-                      }}
-                    >
-                      📊 فتح لوحة المتابعة
-                    </button>
-                    <span style={{
-                      color: "#bbb", fontSize: "0.9rem",
-                      display: "inline-block",
-                      transform: `rotate(${isExpanded ? "90deg" : "0"})`,
-                      transition: "transform 0.2s",
-                    }}>▶</span>
+                        color: isExpanded ? GOLD : "#ccc", fontSize: "0.85rem",
+                        display: "inline-block",
+                        transform: `rotate(${isExpanded ? "90deg" : "0"})`,
+                        transition: "transform 0.2s, color 0.15s",
+                        cursor: "pointer", padding: "4px 2px",
+                      }}>▶</span>
                   </div>
                 </div>
 

@@ -231,7 +231,6 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
                   { label: "القيمة",       width: 120 },
                   { label: "⏳ زمن المرحلة", width: 120, note: "منذ آخر تحديث" },
                   { label: "🕐 عمر الطلب",  width: 110, note: "منذ الإنشاء" },
-                  { label: "الإجراء",      width: 120 },
                 ].map((col, i) => (
                   <th
                     key={i}
@@ -260,11 +259,16 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
                   <tr
                     key={c.id}
                     className="detail-row"
+                    onClick={() => onOpenContract(c.id)}
                     style={{
                       borderBottom: "1px solid #F8F8F8",
                       background: isUrgent ? "rgba(239,68,68,0.02)" : "transparent",
                       animation: `fade-in 0.25s ease ${Math.min(idx * 0.04, 0.4)}s both`,
+                      cursor: "pointer",
+                      transition: "background 0.15s",
                     }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(197,160,89,0.06)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = isUrgent ? "rgba(239,68,68,0.02)" : "transparent"; }}
                   >
                     {/* # */}
                     <td style={{ padding: "13px 14px", fontSize: "0.62rem", color: "#BBBBBB", fontWeight: 700 }}>
@@ -343,22 +347,6 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
                       </div>
                     </td>
 
-                    {/* الإجراء */}
-                    <td style={{ padding: "13px 14px" }}>
-                      <button
-                        onClick={() => onOpenContract(c.id)}
-                        style={{
-                          background: `linear-gradient(135deg, ${GOLD}, ${GOLD_END})`,
-                          color: "#fff", border: "none", borderRadius: 9,
-                          padding: "8px 16px",
-                          fontFamily: "'Cairo','Tajawal',sans-serif",
-                          fontSize: "0.68rem", fontWeight: 800, cursor: "pointer",
-                          boxShadow: `0 3px 12px ${GOLD_GLOW}`,
-                          whiteSpace: "nowrap",
-                          transition: "opacity 0.15s",
-                        }}
-                      >فتح العقد ←</button>
-                    </td>
                   </tr>
                 );
               })}

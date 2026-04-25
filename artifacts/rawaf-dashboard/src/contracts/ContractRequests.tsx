@@ -302,11 +302,16 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
             const isRejected = !!c.rejectionReason && !isCompleted;
             const stage = STAGES[c.currentStage - 1];
             return (
-              <div key={c.id} style={{
-                background: "#fff", borderRadius: 14, padding: "16px 18px",
-                border: isRejected ? "1.5px solid rgba(231,76,60,0.35)" : isCompleted ? "1.5px solid rgba(39,174,96,0.3)" : "1px solid rgba(0,0,0,0.07)",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-              }}>
+              <div key={c.id}
+                onClick={() => onOpenContract(c.id)}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 18px rgba(197,160,89,0.18)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(197,160,89,0.38)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 8px rgba(0,0,0,0.05)"; (e.currentTarget as HTMLElement).style.borderColor = isRejected ? "rgba(231,76,60,0.35)" : isCompleted ? "rgba(39,174,96,0.3)" : "rgba(0,0,0,0.07)"; }}
+                style={{
+                  background: "#fff", borderRadius: 14, padding: "16px 18px",
+                  border: isRejected ? "1.5px solid rgba(231,76,60,0.35)" : isCompleted ? "1.5px solid rgba(39,174,96,0.3)" : "1px solid rgba(0,0,0,0.07)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                  cursor: "pointer", transition: "box-shadow 0.18s, border-color 0.18s",
+                }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
                   <div style={{
                     width: 42, height: 42, borderRadius: 12, flexShrink: 0,
@@ -349,17 +354,8 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
                       </span>
                     </div>
                   </div>
-                  <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                    <button
-                      onClick={() => onOpenContract(c.id)}
-                      style={{
-                        padding: "7px 14px", borderRadius: 8, border: `1.5px solid ${GOLD_BORDER}`,
-                        background: GOLD_BG, color: "#8B6914", cursor: "pointer",
-                        fontSize: "0.75rem", fontWeight: 700, fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                      }}
-                    >
-                      فتح ←
-                    </button>
+                  <div style={{ display: "flex", alignItems: "center", flexShrink: 0, paddingRight: 4 }}>
+                    <span style={{ fontSize: "1rem", color: "rgba(197,160,89,0.55)" }}>←</span>
                   </div>
                 </div>
               </div>
