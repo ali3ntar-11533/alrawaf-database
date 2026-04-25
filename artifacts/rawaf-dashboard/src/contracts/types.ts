@@ -22,6 +22,8 @@ export interface Contract {
   workType:            string | null;
   contractDuration:    string | null;
   priceAnalysisStatus: string | null;
+  issuerEntity:        string | null;
+  costEstimationDept:  string | null;
   /* ── Second party (vendor) details ── */
   vendorIban:          string | null;
   vendorTaxNo:         string | null;
@@ -30,7 +32,9 @@ export interface Contract {
   vendorDelegateId:    string | null;
   vendorEmail:         string | null;
   vendorAddress:       string | null;
+  vendorPostalCode:    string | null;
   vendorRegExpiry:     string | null;
+  vendorEntityType:    string | null;
 }
 
 export interface StageLog {

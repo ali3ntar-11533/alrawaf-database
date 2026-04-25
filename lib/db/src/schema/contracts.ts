@@ -26,6 +26,8 @@ export const contractsTable = pgTable("contracts", {
   workType:             text("work_type"),
   contractDuration:     text("contract_duration"),
   priceAnalysisStatus:  text("price_analysis_status"),
+  issuerEntity:         text("issuer_entity"),
+  costEstimationDept:   text("cost_estimation_dept"),
   /* ── Second party (vendor) details ── */
   vendorIban:           text("vendor_iban"),
   vendorTaxNo:          text("vendor_tax_no"),
@@ -34,7 +36,9 @@ export const contractsTable = pgTable("contracts", {
   vendorDelegateId:     text("vendor_delegate_id"),
   vendorEmail:          text("vendor_email"),
   vendorAddress:        text("vendor_address"),
+  vendorPostalCode:     text("vendor_postal_code"),
   vendorRegExpiry:      text("vendor_reg_expiry"),
+  vendorEntityType:     text("vendor_entity_type"),
 });
 
 export const contractStageLogTable = pgTable("contract_stage_log", {

@@ -114,6 +114,8 @@ const CreateContractBody = z.object({
   workType:             z.string().optional(),
   contractDuration:     z.string().optional(),
   priceAnalysisStatus:  z.string().optional(),
+  issuerEntity:         z.string().optional(),
+  costEstimationDept:   z.string().optional(),
   vendorIban:           z.string().optional(),
   vendorTaxNo:          z.string().optional(),
   vendorDelegate:       z.string().optional(),
@@ -121,7 +123,9 @@ const CreateContractBody = z.object({
   vendorDelegateId:     z.string().optional(),
   vendorEmail:          z.string().optional(),
   vendorAddress:        z.string().optional(),
+  vendorPostalCode:     z.string().optional(),
   vendorRegExpiry:      z.string().optional(),
+  vendorEntityType:     z.string().optional(),
 });
 
 const StageActionBody = z.object({
@@ -497,8 +501,10 @@ const ACTIVE_CONTRACTS: Array<{
   startDate: string; endDate: string; targetStage: number;
   contractNo?: string;
   projectNo?: string; workType?: string; contractDuration?: string; priceAnalysisStatus?: string;
+  issuerEntity?: string; costEstimationDept?: string;
   vendorIban?: string; vendorTaxNo?: string; vendorDelegate?: string; vendorDelegateTitle?: string;
-  vendorDelegateId?: string; vendorEmail?: string; vendorAddress?: string; vendorRegExpiry?: string;
+  vendorDelegateId?: string; vendorEmail?: string; vendorAddress?: string;
+  vendorPostalCode?: string; vendorRegExpiry?: string; vendorEntityType?: string;
 }> = [
   { title: "عقد إنشاء مركز خدمات المواطن",             vendorName: "شركة الجودة الشاملة",         vendorContact: "0501112233", value:   450_000, contractType: "إنشاء",   projectName: "مشروع الخدمات البلدية",       createdBy: "أحمد المطيري",  startDate: "2026-01-05", endDate: "2026-08-05", targetStage: 1 },
   { title: "عقد توريد معدات الحراسة الأمنية",           vendorName: "مؤسسة الأمان للأجهزة",        vendorContact: "0559990001", value:   780_000, contractType: "توريد",  projectName: "مشروع تأمين المنشآت",         createdBy: "سعد العتيبي",   startDate: "2025-11-01", endDate: "2026-05-01", targetStage: 2 },
@@ -517,8 +523,10 @@ const ACTIVE_CONTRACTS: Array<{
     contractNo: "1718",
     projectNo: "194",
     workType: "تصميم أعمال المعالجة لمحطة معالجة الصرف الصحي بضاحية الفرسان",
-    contractDuration: "120 يوماً",
+    contractDuration: "120",
     priceAnalysisStatus: "غير مطلوب",
+    issuerEntity: "محافظة مشاريع المياه والنقل",
+    costEstimationDept: "None",
     vendorIban: "SA 6730 400 10 800 700 54 000",
     vendorTaxNo: "300056957400003",
     vendorDelegate: "ماهر عدنان كحيل",
@@ -526,7 +534,9 @@ const ACTIVE_CONTRACTS: Array<{
     vendorDelegateId: "2216446019",
     vendorEmail: "Maher.Kahil@khatibalami.com",
     vendorAddress: "7412، شارع صلاح الدين الأيوبي الفرعي، حي الملك عبد العزيز، 4399",
+    vendorPostalCode: "12233",
     vendorRegExpiry: "10 مارس 2026",
+    vendorEntityType: "شركة",
   },
   { title: "عقد تشييد مدرسة ابتدائية بنات",             vendorName: "مجموعة التعليم والبناء",       vendorContact: "0509887766", value: 8_500_000, contractType: "إنشاء",   projectName: "مشروع التعليم الحكومي",       createdBy: "أحمد المطيري",  startDate: "2025-06-01", endDate: "2026-12-01", targetStage: 5 },
   { title: "عقد تطوير البنية التحتية الرقمية",           vendorName: "شركة البيانات الذكية",         vendorContact: "0551234567", value: 5_200_000, contractType: "خدمات",  projectName: "مشروع التحول الرقمي",         createdBy: "سعد العتيبي",   startDate: "2025-07-01", endDate: "2026-07-01", targetStage: 6 },
