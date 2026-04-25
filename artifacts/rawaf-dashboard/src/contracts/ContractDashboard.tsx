@@ -28,7 +28,7 @@ const DASH_STAGES = [
   { label: "اعتماد الإجراءات",             icon: "✅",   sub: "Procedure Approval",     stageNums: [7]      },
   { label: "نائب الرئيس التنفيذي",        icon: "🔑",   sub: "Deputy CEO",             stageNums: [8]      },
   { label: "الرئيس التنفيذي",              icon: "👑",   sub: "CEO — Final Stamp",      stageNums: [9]      },
-  { label: "التوقيعات النهائية والأرشفة", icon: "📜",   sub: "Signatures & Archive",   stageNums: [10, 11] },
+  { label: "التوقيعات والأرشفة",          icon: "📜",   sub: "Signatures & Archive",   stageNums: [10, 11] },
 ];
 
 /* ── Helpers ───────────────────────────────────────────────── */
@@ -73,84 +73,71 @@ function AnimCount({ value }: { value: number }) {
   return <>{v}</>;
 }
 
-/* ── Pulse Wave (Operational Pulse Engine) ─────────────────── */
+/* ── Pulse Wave (Operational Pulse Engine) — compact faded ─── */
 function PulseWave({ pct, active, done, total }: { pct: number; active: number; done: number; total: number }) {
-  const W = 220, H = 52, amp = 10, λ = 44;
-  const pts = Array.from({ length: 200 }, (_, i) => {
-    const x = (i * (W * 2)) / 199;
+  const W = 150, H = 36, amp = 7, λ = 40;
+  const pts = Array.from({ length: 160 }, (_, i) => {
+    const x = (i * (W * 2)) / 159;
     const y = H / 2 - amp * Math.sin((2 * Math.PI * x) / λ);
     return `${i === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
   }).join(" ");
 
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 14,
+      display: "flex", alignItems: "center", gap: 10,
       background: `linear-gradient(120deg,${DARK} 0%,${DARK2} 60%,${DARK} 100%)`,
-      backdropFilter: "blur(20px)",
-      border: "1px solid rgba(197,160,89,0.28)",
-      borderRadius: 20, padding: "11px 20px 11px 14px",
-      boxShadow: "0 10px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(197,160,89,0.12)",
+      border: "1px solid rgba(197,160,89,0.18)",
+      borderRadius: 14, padding: "7px 14px 7px 10px",
+      boxShadow: "0 4px 18px rgba(0,0,0,0.2)",
       position: "relative", overflow: "hidden",
     }}>
-      {/* Ambient glow — whisper light */}
-      <div style={{ position:"absolute", top:-40, left:"30%", width:200, height:120, borderRadius:"50%", background:"radial-gradient(ellipse,rgba(197,160,89,0.03) 0%,transparent 70%)", pointerEvents:"none" }}/>
-
       {/* Wave display */}
       <div style={{ position:"relative", width:W, height:H, overflow:"hidden", flexShrink:0 }}>
         <svg width={W * 2} height={H}
-          style={{ position:"absolute", left:0, animation:`pulseWaveScroll 2.8s linear infinite` }}>
+          style={{ position:"absolute", left:0, animation:`pulseWaveScroll 3.2s linear infinite` }}>
           <defs>
-            <filter id="pulseGlow">
-              <feGaussianBlur stdDeviation="1" result="blur"/>
-              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
             <linearGradient id="wGrad" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%"   stopColor={GOLD} stopOpacity="0"/>
-              <stop offset="25%"  stopColor={GOLD} stopOpacity="0.22"/>
-              <stop offset="75%"  stopColor={GOLD_END} stopOpacity="0.22"/>
+              <stop offset="30%"  stopColor={GOLD} stopOpacity="0.18"/>
+              <stop offset="70%"  stopColor={GOLD_END} stopOpacity="0.18"/>
               <stop offset="100%" stopColor={GOLD} stopOpacity="0"/>
             </linearGradient>
           </defs>
-          {/* Grid */}
-          {[H/4, H/2, 3*H/4].map(y => (
-            <line key={y} x1="0" y1={y} x2={W*2} y2={y} stroke="rgba(197,160,89,0.04)" strokeWidth="1"/>
-          ))}
-          {/* Soft glow halo */}
-          <path d={pts} fill="none" stroke={GOLD} strokeWidth="3" strokeOpacity="0.05" filter="url(#pulseGlow)"/>
-          {/* Main wave — faded minimalist */}
-          <path d={pts} fill="none" stroke="url(#wGrad)" strokeWidth="1.5" filter="url(#pulseGlow)"/>
+          {/* Centre baseline */}
+          <line x1="0" y1={H/2} x2={W*2} y2={H/2} stroke="rgba(197,160,89,0.06)" strokeWidth="1"/>
+          {/* Main wave — whisper */}
+          <path d={pts} fill="none" stroke="url(#wGrad)" strokeWidth="1.2"/>
         </svg>
         {/* Edge fade */}
-        <div style={{ position:"absolute", inset:0, background:`linear-gradient(90deg,${DARK} 0%,transparent 22%,transparent 78%,${DARK} 100%)`, pointerEvents:"none" }}/>
-        {/* Scanning dot — subtle */}
-        <div style={{ position:"absolute", top:"50%", right:8, transform:"translateY(-50%)", width:4, height:4, borderRadius:"50%", background:GOLD_END, opacity:0.45, boxShadow:`0 0 6px rgba(226,194,117,0.3)`, animation:"pulseDot 2s ease-in-out infinite" }}/>
+        <div style={{ position:"absolute", inset:0, background:`linear-gradient(90deg,${DARK} 0%,transparent 20%,transparent 80%,${DARK} 100%)`, pointerEvents:"none" }}/>
+        {/* Subtle dot */}
+        <div style={{ position:"absolute", top:"50%", right:6, transform:"translateY(-50%)", width:3, height:3, borderRadius:"50%", background:GOLD_END, opacity:0.35, animation:"pulseDot 2.2s ease-in-out infinite" }}/>
       </div>
 
-      {/* Digital counter */}
-      <div style={{ display:"flex", flexDirection:"column", gap:1, alignItems:"center" }}>
-        <div style={{ fontSize:"0.42rem", color:"rgba(226,194,117,0.5)", letterSpacing:"0.12em", fontWeight:700 }}>COMPLETION</div>
+      {/* Completion % */}
+      <div style={{ display:"flex", flexDirection:"column", gap:0, alignItems:"center" }}>
+        <div style={{ fontSize:"0.38rem", color:"rgba(226,194,117,0.4)", letterSpacing:"0.1em", fontWeight:700 }}>COMPLETION</div>
         <div style={{
-          fontSize:"2rem", fontWeight:900, letterSpacing:"-0.04em", lineHeight:1,
+          fontSize:"1.45rem", fontWeight:900, letterSpacing:"-0.04em", lineHeight:1,
           fontVariantNumeric:"tabular-nums",
-          background:`linear-gradient(135deg,${GOLD_END},${GOLD})`,
-          WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
-          filter:`drop-shadow(0 0 8px rgba(197,160,89,0.45))`,
+          color: GOLD_END,
+          opacity: 0.82,
         }}>
-          <AnimCount value={pct}/><span style={{ fontSize:"0.85rem" }}>%</span>
+          <AnimCount value={pct}/><span style={{ fontSize:"0.7rem" }}>%</span>
         </div>
-        <div style={{ fontSize:"0.48rem", color:"rgba(197,160,89,0.45)" }}>{done}/{total} منجز</div>
+        <div style={{ fontSize:"0.4rem", color:"rgba(197,160,89,0.35)" }}>{done}/{total}</div>
       </div>
 
       {/* Divider */}
-      <div style={{ width:1, height:34, background:"rgba(197,160,89,0.2)", flexShrink:0 }}/>
+      <div style={{ width:1, height:26, background:"rgba(197,160,89,0.14)", flexShrink:0 }}/>
 
       {/* Active count */}
-      <div style={{ display:"flex", flexDirection:"column", gap:1, alignItems:"center" }}>
-        <div style={{ fontSize:"0.42rem", color:"rgba(226,194,117,0.5)", letterSpacing:"0.1em", fontWeight:700 }}>ACTIVE</div>
-        <div style={{ fontSize:"1.55rem", fontWeight:900, color:GOLD_END, letterSpacing:"-0.03em", lineHeight:1, animation:"breatheNum 3s ease infinite", fontVariantNumeric:"tabular-nums" }}>
+      <div style={{ display:"flex", flexDirection:"column", gap:0, alignItems:"center" }}>
+        <div style={{ fontSize:"0.38rem", color:"rgba(226,194,117,0.4)", letterSpacing:"0.1em", fontWeight:700 }}>ACTIVE</div>
+        <div style={{ fontSize:"1.1rem", fontWeight:900, color:GOLD_END, letterSpacing:"-0.03em", lineHeight:1, opacity:0.75, fontVariantNumeric:"tabular-nums" }}>
           <AnimCount value={active}/>
         </div>
-        <div style={{ fontSize:"0.48rem", color:"rgba(197,160,89,0.4)" }}>في المسار</div>
+        <div style={{ fontSize:"0.4rem", color:"rgba(197,160,89,0.35)" }}>نشط</div>
       </div>
     </div>
   );
@@ -271,10 +258,11 @@ function EliteStageRow({ stage, contracts, maxCount, isMine, onEnter, idx }: {
           ? (isMine ? "rgba(197,160,89,0.06)" : isTopLevel ? "rgba(37,99,235,0.04)" : "#FAFAFA")
           : "transparent",
         borderRadius:10,
-        transition:"background 0.15s, transform 0.15s",
+        transition:"background 0.15s",
         animation:`rowFadeIn 0.4s ease ${idx * 0.022}s both`,
         opacity: isEmpty ? 0.38 : 1,
         position:"relative",
+        zIndex: hov ? 50 : "auto",
       }}
     >
       {/* Left rank indicator (top → final stage has gold glow) */}
@@ -349,33 +337,33 @@ function EliteStageRow({ stage, contracts, maxCount, isMine, onEnter, idx }: {
         )}
       </div>
 
-      {/* Hover tooltip */}
+      {/* Hover tooltip — floats above all siblings via row zIndex:50 */}
       {hov && !isEmpty && (
         <div style={{
-          position:"absolute", right:0, top:"100%", zIndex:9999,
-          background:"rgba(20,14,4,0.95)", backdropFilter:"blur(14px)",
-          border:"1px solid rgba(197,160,89,0.25)",
+          position:"absolute", right:4, top:"calc(100% + 4px)", zIndex:9999,
+          background:"rgba(255,255,255,0.96)", backdropFilter:"blur(12px)",
+          border:"1px solid rgba(197,160,89,0.22)",
           borderRadius:12, padding:"10px 14px",
-          boxShadow:"0 12px 36px rgba(0,0,0,0.4)",
-          minWidth:180, animation:"tooltipIn 0.15s ease both",
+          boxShadow:"0 8px 28px rgba(0,0,0,0.14)",
+          minWidth:170, animation:"tooltipIn 0.15s ease both",
           pointerEvents:"none",
         }}>
-          <div style={{ fontSize:"0.7rem", fontWeight:900, color:GOLD_END, marginBottom:8 }}>{stage.label}</div>
+          <div style={{ fontSize:"0.68rem", fontWeight:900, color:GOLD2, marginBottom:8, borderBottom:"1px solid rgba(197,160,89,0.12)", paddingBottom:6 }}>{stage.label}</div>
           <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
             {[
-              { l:"نشطة",    v:active, c:GOLD     },
-              { l:"مكتملة",  v:done,   c:GREEN_L  },
-              { l:"عاجل",    v:urgent, c:RED       },
-              { l:"تحذير",   v:warn,   c:AMBER     },
+              { l:"نشطة",   v:active, c:BLUE     },
+              { l:"مكتملة", v:done,   c:GREEN    },
+              { l:"عاجل",   v:urgent, c:RED      },
+              { l:"تحذير",  v:warn,   c:AMBER    },
             ].map(({l,v,c}) => (
-              <div key={l} style={{ display:"flex", justifyContent:"space-between", gap:12 }}>
-                <span style={{ fontSize:"0.58rem", color:"rgba(197,160,89,0.55)" }}>{l}</span>
+              <div key={l} style={{ display:"flex", justifyContent:"space-between", gap:14 }}>
+                <span style={{ fontSize:"0.58rem", color:"#9CA3AF" }}>{l}</span>
                 <span style={{ fontSize:"0.65rem", fontWeight:900, color:c }}>{v}</span>
               </div>
             ))}
           </div>
           {/* Triangle */}
-          <div style={{ position:"absolute", top:-5, right:20, width:10, height:10, transform:"rotate(45deg)", background:"rgba(20,14,4,0.95)", borderTop:"1px solid rgba(197,160,89,0.25)", borderRight:"1px solid rgba(197,160,89,0.25)" }}/>
+          <div style={{ position:"absolute", top:-5, right:18, width:9, height:9, transform:"rotate(45deg)", background:"rgba(255,255,255,0.96)", borderTop:"1px solid rgba(197,160,89,0.22)", borderRight:"1px solid rgba(197,160,89,0.22)" }}/>
         </div>
       )}
     </div>
