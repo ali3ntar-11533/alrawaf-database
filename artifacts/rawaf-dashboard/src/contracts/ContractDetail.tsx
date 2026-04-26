@@ -184,11 +184,96 @@ interface CommentExtended extends ContractComment {
 }
 
 const MSG_ROLES = Object.keys(ROLE_COLORS);
-const selectStyle: React.CSSProperties = {
-  padding: "6px 10px", borderRadius: 8, border: "1.5px solid rgba(25,118,210,0.18)",
-  fontSize: "0.73rem", fontFamily: "'Cairo','Tajawal',sans-serif",
-  background: "#fff", color: "#1a2535", outline: "none", cursor: "pointer", minWidth: 130,
-};
+
+function RoleSearch({
+  value, onChange, placeholder, accentColor,
+}: { value: string; onChange: (v: string) => void; placeholder: string; accentColor?: string }) {
+  const [query, setQuery] = useState(value);
+  const [open,  setOpen]  = useState(false);
+  const wrapRef           = useRef<HTMLDivElement>(null);
+  const accent = accentColor ?? BLUE_M;
+
+  const filtered = query.trim()
+    ? MSG_ROLES.filter(r => r.includes(query.trim()))
+    : MSG_ROLES;
+
+  useEffect(() => { setQuery(value); }, [value]);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative", flex: 1, minWidth: 170 }}>
+      <div style={{
+        display: "flex", alignItems: "center", gap: 6,
+        border: `1.5px solid ${open ? accent : "rgba(25,118,210,0.18)"}`,
+        borderRadius: 9, background: "#fff",
+        padding: "0 8px", height: 36,
+        boxShadow: open ? `0 0 0 3px ${accent}22` : "none",
+        transition: "box-shadow 0.15s, border-color 0.15s",
+      }}>
+        {value && !open
+          ? (
+            <>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: ROLE_COLORS[value] ?? "#ccc", flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: "0.73rem", color: "#1a2535", fontFamily: "'Cairo','Tajawal',sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{value}</span>
+              <button onClick={() => { onChange(""); setQuery(""); }} style={{ border: "none", background: "transparent", color: "#94a3b8", cursor: "pointer", fontSize: "0.7rem", padding: "0 2px", flexShrink: 0 }}>✕</button>
+            </>
+          ) : (
+            <>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input
+                value={query}
+                onChange={e => { setQuery(e.target.value); setOpen(true); }}
+                onFocus={() => setOpen(true)}
+                placeholder={placeholder}
+                style={{
+                  flex: 1, border: "none", outline: "none", fontSize: "0.73rem",
+                  fontFamily: "'Cairo','Tajawal',sans-serif", background: "transparent",
+                  color: "#1a2535", minWidth: 0,
+                }}
+              />
+            </>
+          )}
+      </div>
+      {open && filtered.length > 0 && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 4px)", right: 0, left: 0, zIndex: 999,
+          background: "#fff", borderRadius: 10,
+          border: "1.5px solid rgba(25,118,210,0.15)",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+          maxHeight: 200, overflowY: "auto",
+        }}>
+          {filtered.map(r => (
+            <div key={r} onMouseDown={() => { onChange(r); setQuery(r); setOpen(false); }} style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "8px 12px", cursor: "pointer", fontSize: "0.73rem",
+              fontFamily: "'Cairo','Tajawal',sans-serif",
+              background: r === value ? "rgba(25,118,210,0.07)" : "transparent",
+              color: "#1a2535",
+              transition: "background 0.1s",
+            }}
+            onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(25,118,210,0.06)"}
+            onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = r === value ? "rgba(25,118,210,0.07)" : "transparent"}
+            >
+              <div style={{ width: 9, height: 9, borderRadius: "50%", background: ROLE_COLORS[r] ?? "#ccc", flexShrink: 0 }} />
+              {r}
+              {r === value && <svg style={{ marginRight: "auto" }} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
+            </div>
+          ))}
+          {filtered.length === 0 && (
+            <div style={{ padding: "10px 14px", fontSize: "0.7rem", color: "#94a3b8" }}>لا نتائج</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; actorName: string; actorRole: string }) {
   const [comments, setComments]       = useState<CommentExtended[]>([]);
@@ -200,7 +285,8 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
   const [sending, setSending]         = useState(false);
   const [sendErr, setSendErr]         = useState("");
   const fileInputRef                  = useRef<HTMLInputElement>(null);
-  const canSend = !!actorName.trim() && !!msg.trim() && !sending;
+  const senderLabel = actorName.trim() || actorRole || "مستخدم النظام";
+  const canSend = !!msg.trim() && !sending;
 
   async function loadComments() {
     try { setComments(await getContractComments(contractId) as CommentExtended[]); }
@@ -214,7 +300,7 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
     setSending(true); setSendErr("");
     try {
       const created = await addContractComment(contractId, {
-        actorName, actorRole, message: msg.trim(),
+        actorName: senderLabel, actorRole, message: msg.trim(),
         toRole, ccRole,
         attachmentName: attachFile?.name ?? "",
       }) as CommentExtended;
@@ -363,24 +449,18 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
 
       {/* Compose area */}
       <div style={{ padding: "14px 16px", borderTop: `1.5px solid rgba(0,0,0,0.06)`, background: "rgba(248,250,255,0.95)", backdropFilter: BLUR_SM }}>
-        {/* To / CC row */}
+        {/* To / CC / Sender row */}
         <div style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, minWidth: 200 }}>
             <span style={{ fontSize: "0.7rem", fontWeight: 700, color: BLUE, whiteSpace: "nowrap" }}>إلى:</span>
-            <select value={toRole} onChange={e => setToRole(e.target.value)} style={selectStyle}>
-              <option value="">— اختر المستلم —</option>
-              {MSG_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
+            <RoleSearch value={toRole} onChange={setToRole} placeholder="ابحث عن مستلم…" accentColor={BLUE_M} />
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, minWidth: 200 }}>
             <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#64748B", whiteSpace: "nowrap" }}>نسخة:</span>
-            <select value={ccRole} onChange={e => setCcRole(e.target.value)} style={selectStyle}>
-              <option value="">— نسخة لـ —</option>
-              {MSG_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
+            <RoleSearch value={ccRole} onChange={setCcRole} placeholder="ابحث عن نسخة…" accentColor="#64748B" />
           </div>
-          <div style={{ fontSize: "0.65rem", color: "#94a3b8", marginRight: "auto" }}>
-            المرسِل: <strong style={{ color: BLUE_M }}>{actorName || "—"}</strong>
+          <div style={{ fontSize: "0.65rem", color: "#94a3b8" }}>
+            المرسِل: <strong style={{ color: BLUE_M }}>{senderLabel}</strong>
             {actorRole && <span style={{ color: "#64748B" }}> · {actorRole}</span>}
           </div>
         </div>
