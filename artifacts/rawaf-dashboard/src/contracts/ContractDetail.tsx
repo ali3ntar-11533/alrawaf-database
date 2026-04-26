@@ -744,126 +744,145 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
           boxShadow: `${SHADOW_MD}, ${SHADOW_GOLD}`,
           animation: "fadeSlideUp 0.32s ease both",
         }}>
-          {/* ── Row 1: icon + title + stage timeline + pct% ── */}
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+          {/* ── Header row: right = icon+title  |  left = pct% + stage timeline ── */}
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
 
-            {/* Icon */}
-            <div style={{
-              width: 52, height: 52, borderRadius: 14, flexShrink: 0,
-              background: isCompleted
-                ? "rgba(39,174,96,0.12)"
-                : `linear-gradient(135deg, rgba(25,118,210,0.15), rgba(25,118,210,0.06))`,
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem",
-              border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : "rgba(25,118,210,0.18)"}`,
-              boxShadow: isCompleted ? "0 4px 16px rgba(39,174,96,0.15)" : "0 4px 16px rgba(25,118,210,0.12)",
-            }}>
-              {stage?.icon ?? "📄"}
-            </div>
-
-            {/* Title + badge */}
-            <div style={{ flexShrink: 0, maxWidth: 280 }}>
-              <div style={{ fontSize: "1rem", fontWeight: 900, color: "#0C1427", marginBottom: 4, lineHeight: 1.4 }}>
-                {contract.title}
-              </div>
-              {(contract.projectName || contract.projectNo) && (
-                <div style={{ fontSize: "0.72rem", color: "#64748B", marginBottom: 5, display: "flex", flexWrap: "wrap", gap: "0 8px" }}>
-                  {contract.projectName && <span>م/ {contract.projectName}</span>}
-                  {contract.projectNo  && <span>· {contract.projectNo}</span>}
-                </div>
-              )}
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6,
-                background: isCompleted ? "rgba(39,174,96,0.1)" : "rgba(25,118,210,0.08)",
-                border: `1px solid ${isCompleted ? "rgba(39,174,96,0.25)" : "rgba(25,118,210,0.2)"}`,
-                borderRadius: 20, padding: "4px 12px",
+            {/* ── RIGHT: Icon + title + stage badge ── */}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, flex: 1, minWidth: 0 }}>
+              <div style={{
+                width: 52, height: 52, borderRadius: 14, flexShrink: 0,
+                background: isCompleted
+                  ? "rgba(39,174,96,0.12)"
+                  : `linear-gradient(135deg, rgba(25,118,210,0.15), rgba(25,118,210,0.06))`,
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem",
+                border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : "rgba(25,118,210,0.18)"}`,
+                boxShadow: isCompleted ? "0 4px 16px rgba(39,174,96,0.15)" : "0 4px 16px rgba(25,118,210,0.12)",
               }}>
-                <span style={{ fontSize: "0.78rem" }}>{stage?.icon ?? "📄"}</span>
-                <span style={{ fontSize: "0.68rem", fontWeight: 800, color: isCompleted ? "#27ae60" : BLUE_M }}>
-                  {isCompleted ? "مكتمل" : stage?.label ?? "—"}
-                </span>
-                {!isCompleted && (
-                  <span style={{ fontSize: "0.6rem", color: "#64748B" }}>· {stage?.role}</span>
+                {stage?.icon ?? "📄"}
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: "1rem", fontWeight: 900, color: "#0C1427", marginBottom: 4, lineHeight: 1.4 }}>
+                  {contract.title}
+                </div>
+                {(contract.projectName || contract.projectNo) && (
+                  <div style={{ fontSize: "0.72rem", color: "#64748B", marginBottom: 5, display: "flex", flexWrap: "wrap", gap: "0 8px" }}>
+                    {contract.projectName && <span>م/ {contract.projectName}</span>}
+                    {contract.projectNo  && <span>· {contract.projectNo}</span>}
+                  </div>
                 )}
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6,
+                  background: isCompleted ? "rgba(39,174,96,0.1)" : "rgba(25,118,210,0.08)",
+                  border: `1px solid ${isCompleted ? "rgba(39,174,96,0.25)" : "rgba(25,118,210,0.2)"}`,
+                  borderRadius: 20, padding: "4px 12px",
+                }}>
+                  <span style={{ fontSize: "0.78rem" }}>{stage?.icon ?? "📄"}</span>
+                  <span style={{ fontSize: "0.68rem", fontWeight: 800, color: isCompleted ? "#27ae60" : BLUE_M }}>
+                    {isCompleted ? "مكتمل" : stage?.label ?? "—"}
+                  </span>
+                  {!isCompleted && (
+                    <span style={{ fontSize: "0.6rem", color: "#64748B" }}>· {stage?.role}</span>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* ── Stage timeline (between title and pct box) ── */}
-            <div className="no-print" style={{ flex: 1, overflowX: "auto", paddingBottom: 4, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "flex-start", minWidth: "max-content", direction: "rtl" }}>
-                {STAGES.map((stg, idx) => {
-                  const sNum   = idx + 1;
-                  const isDone = isCompleted ? true : sNum < contract.currentStage;
-                  const isCur  = !isCompleted && sNum === contract.currentStage;
-                  const dur    = stageDurations[sNum];
-                  return (
-                    <div key={sNum} style={{ display: "flex", alignItems: "flex-start" }}>
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 54, padding: "0 2px" }}>
-                        <div style={{
-                          width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: isDone ? "0.85rem" : "0.68rem", fontWeight: 900,
-                          background: isDone
-                            ? `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`
-                            : isCur ? GLASS_BG2 : "rgba(0,0,0,0.05)",
-                          color: isDone ? "#fff" : isCur ? BLUE_M : "#ccc",
-                          border: isCur ? `2px solid ${BLUE_M}` : isDone ? "2px solid transparent" : "2px solid rgba(0,0,0,0.08)",
-                          boxShadow: isDone ? SHADOW_GOLD : isCur ? `0 0 0 4px rgba(25,118,210,0.18)` : "none",
-                          animation: isCur ? "stg-pulse 2s ease-in-out infinite" : "none",
-                          transition: "all 0.3s",
-                        }}>
-                          {isDone ? "✓" : sNum}
-                        </div>
-                        <div style={{
-                          fontSize: "0.44rem", marginTop: 4, textAlign: "center",
-                          color: isDone ? BLUE : isCur ? BLUE_M : "#bbb",
-                          fontWeight: isCur ? 800 : 500,
-                          lineHeight: 1.35, maxWidth: 54,
-                        }}>
-                          {stg.label}
-                        </div>
-                        {isDone && dur && (
+            {/* ── LEFT: pct% box  +  stage timeline below it ── */}
+            <div className="no-print" style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
+
+              {/* Completion % */}
+              <div style={{
+                textAlign: "center",
+                background: isCompleted
+                  ? "rgba(39,174,96,0.1)"
+                  : `linear-gradient(135deg, rgba(25,118,210,0.12), rgba(25,118,210,0.05))`,
+                backdropFilter: BLUR_SM,
+                border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : "rgba(25,118,210,0.18)"}`,
+                borderRadius: 12, padding: "10px 18px",
+                boxShadow: isCompleted ? "0 4px 16px rgba(39,174,96,0.12)" : "0 4px 16px rgba(25,118,210,0.12)",
+              }}>
+                <div style={{ fontSize: "1.5rem", fontWeight: 900, color: isCompleted ? "#27ae60" : BLUE_M }}>{pct}%</div>
+                <div style={{ fontSize: "0.56rem", color: "#64748B", marginTop: 2 }}>إنجاز</div>
+              </div>
+
+              {/* Stage timeline — bigger circles, impressive */}
+              <div style={{
+                background: isCompleted ? "rgba(39,174,96,0.05)" : "rgba(25,118,210,0.04)",
+                border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.15)" : "rgba(25,118,210,0.12)"}`,
+                borderRadius: 14, padding: "10px 14px",
+                boxShadow: "0 2px 12px rgba(25,118,210,0.08)",
+                overflowX: "auto", maxWidth: "min(820px, 60vw)",
+              }}>
+                <div style={{ display: "flex", alignItems: "flex-start", minWidth: "max-content", direction: "rtl", gap: 0 }}>
+                  {STAGES.map((stg, idx) => {
+                    const sNum   = idx + 1;
+                    const isDone = isCompleted ? true : sNum < contract.currentStage;
+                    const isCur  = !isCompleted && sNum === contract.currentStage;
+                    const dur    = stageDurations[sNum];
+                    return (
+                      <div key={sNum} style={{ display: "flex", alignItems: "flex-start" }}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 58, padding: "0 2px" }}>
+                          {/* Circle — larger for visual impact */}
                           <div style={{
-                            fontSize: "0.38rem", color: BLUE, marginTop: 2,
-                            background: "rgba(25,118,210,0.08)", borderRadius: 6,
-                            padding: "1px 4px", fontWeight: 600,
-                            border: "1px solid rgba(25,118,210,0.18)",
-                          }}>{dur}</div>
-                        )}
-                        {isCur && (
+                            width: 38, height: 38, borderRadius: "50%", flexShrink: 0,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: isDone ? "1rem" : "0.78rem", fontWeight: 900,
+                            background: isDone
+                              ? `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`
+                              : isCur ? GLASS_BG2 : "rgba(0,0,0,0.05)",
+                            color: isDone ? "#fff" : isCur ? BLUE_M : "#ccc",
+                            border: isCur ? `2.5px solid ${BLUE_M}` : isDone ? "2px solid transparent" : "2px solid rgba(0,0,0,0.08)",
+                            boxShadow: isDone
+                              ? `0 3px 10px rgba(25,118,210,0.35), inset 0 1px 0 rgba(255,255,255,0.2)`
+                              : isCur ? `0 0 0 5px rgba(25,118,210,0.2), 0 2px 8px rgba(25,118,210,0.25)` : "none",
+                            animation: isCur ? "stg-pulse 2s ease-in-out infinite" : "none",
+                            transition: "all 0.3s",
+                          }}>
+                            {isDone ? "✓" : sNum}
+                          </div>
+                          {/* Label */}
                           <div style={{
-                            fontSize: "0.38rem", color: BLUE_M, marginTop: 2, fontWeight: 800,
-                            background: "rgba(25,118,210,0.1)", borderRadius: 6, padding: "1px 4px",
-                            border: `1px solid rgba(25,118,210,0.25)`,
-                            animation: "stg-pulse 2s ease-in-out infinite",
-                          }}>جارٍ</div>
+                            fontSize: "0.48rem", marginTop: 5, textAlign: "center",
+                            color: isDone ? BLUE : isCur ? BLUE_M : "#bbb",
+                            fontWeight: isCur ? 800 : 500,
+                            lineHeight: 1.35, maxWidth: 56,
+                          }}>
+                            {stg.label}
+                          </div>
+                          {/* Duration / current badge */}
+                          {isDone && dur && (
+                            <div style={{
+                              fontSize: "0.4rem", color: BLUE, marginTop: 3,
+                              background: "rgba(25,118,210,0.09)", borderRadius: 6,
+                              padding: "2px 5px", fontWeight: 700,
+                              border: "1px solid rgba(25,118,210,0.2)",
+                            }}>{dur}</div>
+                          )}
+                          {isCur && (
+                            <div style={{
+                              fontSize: "0.4rem", color: BLUE_M, marginTop: 3, fontWeight: 900,
+                              background: "rgba(25,118,210,0.12)", borderRadius: 6, padding: "2px 5px",
+                              border: `1.5px solid rgba(25,118,210,0.3)`,
+                              animation: "stg-pulse 2s ease-in-out infinite",
+                            }}>جارٍ</div>
+                          )}
+                        </div>
+                        {/* Connector */}
+                        {idx < STAGES.length - 1 && (
+                          <div style={{
+                            width: 14, height: 3, marginTop: 18, flexShrink: 0,
+                            background: isDone
+                              ? `linear-gradient(90deg, ${BLUE}, ${BLUE_L})`
+                              : "rgba(0,0,0,0.07)",
+                            borderRadius: 2, transition: "background 0.4s",
+                          }} />
                         )}
                       </div>
-                      {idx < STAGES.length - 1 && (
-                        <div style={{
-                          width: 12, height: 2, marginTop: 14, flexShrink: 0,
-                          background: isDone ? `linear-gradient(90deg, ${BLUE}, ${BLUE_L})` : "rgba(0,0,0,0.07)",
-                          borderRadius: 2, transition: "background 0.4s",
-                        }} />
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
-            {/* Completion % box */}
-            <div style={{
-              textAlign: "center",
-              background: isCompleted
-                ? "rgba(39,174,96,0.1)"
-                : `linear-gradient(135deg, rgba(25,118,210,0.12), rgba(25,118,210,0.05))`,
-              backdropFilter: BLUR_SM,
-              border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : "rgba(25,118,210,0.18)"}`,
-              borderRadius: 12, padding: "10px 18px", flexShrink: 0,
-              boxShadow: isCompleted ? "0 4px 16px rgba(39,174,96,0.12)" : "0 4px 16px rgba(25,118,210,0.12)",
-            }}>
-              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: isCompleted ? "#27ae60" : BLUE_M }}>{pct}%</div>
-              <div style={{ fontSize: "0.56rem", color: "#64748B", marginTop: 2 }}>إنجاز</div>
-            </div>
+            </div>{/* end LEFT column */}
 
           </div>
 
