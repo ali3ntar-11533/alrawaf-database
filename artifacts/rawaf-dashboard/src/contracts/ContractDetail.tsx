@@ -747,42 +747,35 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
           {/* ── Header row: right = icon+title (fixed)  |  left = timeline+pct% (fills space) ── */}
           <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
 
-            {/* ── RIGHT: Icon + title + stage badge — fixed width ── */}
+            {/* ── RIGHT: contract no box + vendor name ── */}
             <div style={{ display: "flex", alignItems: "flex-start", gap: 14, flexShrink: 0, maxWidth: 300 }}>
+              {/* Contract number box */}
               <div style={{
-                width: 52, height: 52, borderRadius: 14, flexShrink: 0,
+                minWidth: 52, height: 52, borderRadius: 14, flexShrink: 0, padding: "0 8px",
                 background: isCompleted
                   ? "rgba(39,174,96,0.12)"
                   : `linear-gradient(135deg, rgba(25,118,210,0.15), rgba(25,118,210,0.06))`,
-                display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexDirection: "column", gap: 1,
                 border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : "rgba(25,118,210,0.18)"}`,
                 boxShadow: isCompleted ? "0 4px 16px rgba(39,174,96,0.15)" : "0 4px 16px rgba(25,118,210,0.12)",
               }}>
-                {stage?.icon ?? "📄"}
+                <span style={{ fontSize: "0.42rem", color: "#64748B", fontWeight: 600 }}>رقم العقد</span>
+                <span style={{ fontSize: "0.78rem", fontWeight: 900, color: isCompleted ? "#27ae60" : BLUE_M, whiteSpace: "nowrap" }}>
+                  {contract.contractNo || "—"}
+                </span>
               </div>
+              {/* Vendor name + project info */}
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: "1rem", fontWeight: 900, color: "#0C1427", marginBottom: 4, lineHeight: 1.4 }}>
-                  {contract.title}
+                  {contract.vendorName || contract.title}
                 </div>
                 {(contract.projectName || contract.projectNo) && (
-                  <div style={{ fontSize: "0.72rem", color: "#64748B", marginBottom: 5, display: "flex", flexWrap: "wrap", gap: "0 8px" }}>
+                  <div style={{ fontSize: "0.72rem", color: "#64748B", display: "flex", flexWrap: "wrap", gap: "0 8px" }}>
                     {contract.projectName && <span>م/ {contract.projectName}</span>}
                     {contract.projectNo  && <span>· {contract.projectNo}</span>}
                   </div>
                 )}
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 6,
-                  background: isCompleted ? "rgba(39,174,96,0.1)" : "rgba(25,118,210,0.08)",
-                  border: `1px solid ${isCompleted ? "rgba(39,174,96,0.25)" : "rgba(25,118,210,0.2)"}`,
-                  borderRadius: 20, padding: "4px 12px",
-                }}>
-                  <span style={{ fontSize: "0.78rem" }}>{stage?.icon ?? "📄"}</span>
-                  <span style={{ fontSize: "0.68rem", fontWeight: 800, color: isCompleted ? "#27ae60" : BLUE_M }}>
-                    {isCompleted ? "مكتمل" : stage?.label ?? "—"}
-                  </span>
-                  {!isCompleted && (
-                    <span style={{ fontSize: "0.6rem", color: "#64748B" }}>· {stage?.role}</span>
-                  )}
-                </div>
               </div>
             </div>
 
