@@ -24,7 +24,7 @@ const SHADOW_GOLD = "0 4px 20px rgba(25,118,210,0.14)";
 const BLUR        = "blur(18px)";
 const BLUR_SM     = "blur(10px)";
 
-const LABEL_BG    = "linear-gradient(135deg, #1565C0, #0D47A1)";
+const LABEL_BG    = "rgba(25,118,210,0.09)";
 const VALUE_BG_E  = "rgba(255,255,255,0.97)";
 const VALUE_BG_O  = "rgba(248,250,255,0.97)";
 
@@ -82,14 +82,14 @@ function AttachCell() {
 
 function Attach3Cell() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+    <div style={{ display: "flex", flexDirection: "row", gap: 10, flexWrap: "nowrap" }}>
       {[1,2,3].map(n => (
-        <div key={n} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-          <div style={{
-            width: 24, height: 24, borderRadius: 6, flexShrink: 0,
-            background: "rgba(25,118,210,0.07)", border: "1px solid rgba(25,118,210,0.16)",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem",
-          }}>📎</div>
+        <div key={n} style={{
+          display: "flex", alignItems: "center", gap: 5, cursor: "pointer",
+          background: "rgba(25,118,210,0.06)", borderRadius: 8,
+          padding: "4px 9px", border: "1px solid rgba(25,118,210,0.14)",
+        }}>
+          <span style={{ fontSize: "0.72rem" }}>📎</span>
           <span style={{ fontSize: "0.6rem", color: BLUE_M, fontWeight: 700 }}>عرض {n}</span>
         </div>
       ))}
@@ -130,9 +130,9 @@ function DataRow({
 }) {
   const valueBg = evenRow ? VALUE_BG_E : VALUE_BG_O;
   const labelStyle: React.CSSProperties = {
-    background: LABEL_BG, color: "#fff",
+    background: LABEL_BG, color: BLUE,
     padding: "9px 13px", fontSize: "0.73rem", fontWeight: 700,
-    borderBottom: "1px solid rgba(255,255,255,0.08)",
+    borderBottom: "1px solid rgba(25,118,210,0.08)",
     lineHeight: 1.4, whiteSpace: "nowrap",
   };
   const valueStyle: React.CSSProperties = {
@@ -145,7 +145,7 @@ function DataRow({
     <>
       <div style={labelStyle}>{rightLabel}</div>
       <div style={valueStyle}>{renderCell(rightContent)}</div>
-      <div style={{ ...labelStyle, borderRight: "1px solid rgba(255,255,255,0.12)" }}>{leftLabel}</div>
+      <div style={{ ...labelStyle, borderRight: "1px solid rgba(25,118,210,0.1)" }}>{leftLabel}</div>
       <div style={{ ...valueStyle, borderRight: "1px solid rgba(25,118,210,0.1)" }}>{renderCell(leftContent)}</div>
     </>
   );
@@ -883,9 +883,16 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
               border: `1.5px solid ${GLASS_BORDER}`,
               boxShadow: SHADOW_MD,
             }}>
-              <div style={{ fontSize: "0.8rem", fontWeight: 800, color: BLUE, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ width: 4, height: 16, background: `linear-gradient(180deg,${BLUE_M},${BLUE_L})`, borderRadius: 2, display: "inline-block" }} />
-                مرفقات العقد
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <div style={{ fontSize: "0.8rem", fontWeight: 800, color: BLUE, display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ width: 4, height: 16, background: `linear-gradient(180deg,${BLUE_M},${BLUE_L})`, borderRadius: 2, display: "inline-block" }} />
+                  ملاحق العقد
+                </div>
+                <span style={{
+                  fontSize: "0.6rem", color: "#94a3b8", fontStyle: "italic",
+                  background: "rgba(148,163,184,0.08)", borderRadius: 20,
+                  padding: "3px 10px", border: "1px solid rgba(148,163,184,0.2)",
+                }}>سيتم ربطها بملاحق رقم العقد تلقائياً</span>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
                 {SMART_DOCS.map((doc, i) => (
