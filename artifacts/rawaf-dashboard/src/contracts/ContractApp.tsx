@@ -43,8 +43,8 @@ export default function ContractApp({ onExit }: Props) {
   /* ── Derive a unique key for current view (drives CSS animation) */
   const viewKey = openContractId !== null
     ? `contract-${openContractId}`
-    : stageDetailNum !== null
-    ? `stage-${stageDetailNum}`
+    : activeTab === "requests"
+    ? `requests-${filterStage ?? "mine"}`
     : `tab-${activeTab}`;
 
   useEffect(() => {
@@ -93,22 +93,27 @@ export default function ContractApp({ onExit }: Props) {
   }
   function openStage(n: number) {
     navSeq.current += 1;
-    fromStageRef.current = null;
+    fromStageRef.current = n;   // remember which stage we came from
     setOpenContractId(null);
-    setStageDetailNum(n);
+    setStageDetailNum(null);    // no overlay — use tab
+    setFilterStage(n);
+    setActiveTab("requests");
   }
   function closeDetail() {
     navSeq.current += 1;
-    const prevStage = fromStageRef.current;
     fromStageRef.current = null;
     setOpenContractId(null);
-    setStageDetailNum(prevStage); // go back to previous stage, or null (main list)
+    setStageDetailNum(null);
+    // stay in requests tab with whatever filterStage is already set
   }
   function switchTab(tab: ContractTab) {
     navSeq.current += 1;
     setActiveTab(tab);
     setOpenContractId(null);
-    if (tab !== "requests") setFilterStage(null);
+    setStageDetailNum(null);
+    // clicking "requests" in the sidebar → reset to role's own stages
+    if (tab === "requests") setFilterStage(null);
+    else setFilterStage(null);
   }
 
   const myRoleInfo  = ROLES.find(r => r.name === role);
@@ -193,14 +198,6 @@ export default function ContractApp({ onExit }: Props) {
               actorName={actorName}
               onBack={closeDetail}
             />
-          ) : stageDetailNum !== null ? (
-            <StageDetailPage
-              stageNum={stageDetailNum}
-              role={role}
-              actorName={actorName}
-              onBack={closeDetail}
-              onOpenContract={(id) => openContract(id)}
-            />
           ) : activeTab === "dashboard" ? (
             <ContractDashboard
               role={role}
@@ -214,6 +211,20 @@ export default function ContractApp({ onExit }: Props) {
             (() => {
               const roleInfo = ROLES.find(r => r.name === role);
               const myStages = roleInfo?.stage ?? [];
+              // If a specific stage was selected (from dashboard), show it;
+              // otherwise fall back to all stages for the current role
+              if (filterStage != null) {
+                return (
+                  <StageDetailPage
+                    stageNum={filterStage}
+                    hideBack={true}
+                    role={role}
+                    actorName={actorName}
+                    onBack={() => {}}
+                    onOpenContract={(id) => openContract(id)}
+                  />
+                );
+              }
               return (
                 <StageDetailPage
                   stageNums={myStages.length > 0 ? myStages : undefined}
