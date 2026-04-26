@@ -131,7 +131,6 @@ function FileIcon({ fileType = "generic", label }: { fileType?: FileType; label:
           display: "inline-block", marginTop: 2,
         }}>{c.abbr}</div>
       </div>
-      <div style={{ marginRight: "auto", fontSize: "0.62rem", color: "#ccc", paddingLeft: 6 }}>↑ رفع</div>
     </div>
   );
 }
@@ -454,7 +453,6 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
             color: GOLD, fontSize: "0.82rem", fontWeight: 700,
             display: "flex", alignItems: "center", gap: 6,
             fontFamily: "'Cairo', 'Tajawal', sans-serif",
-          }}>→ رجوع للقائمة</button>
           <button onClick={handlePrint} style={{
             display: "flex", alignItems: "center", gap: 7,
             padding: "9px 18px", borderRadius: 10,
@@ -463,7 +461,6 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
             fontSize: "0.82rem", fontWeight: 800,
             fontFamily: "'Cairo', 'Tajawal', sans-serif",
             boxShadow: `0 3px 12px rgba(197,160,89,0.35)`,
-          }}>🖨️ طباعة / تصدير PDF</button>
         </div>
 
         {/* Contract header card */}
@@ -594,7 +591,6 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
               marginTop: 10, background: "rgba(231,76,60,0.06)", borderRadius: 9, padding: "10px 14px",
               border: "1px solid rgba(231,76,60,0.2)", fontSize: "0.76rem", color: "#e74c3c",
             }}>
-              ↩ <strong>سبب الإعادة:</strong> {contract.rejectionReason}
             </div>
           )}
         </div>
@@ -908,7 +904,6 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                     boxShadow: rejectReason.trim() ? "0 3px 10px rgba(231,76,60,0.3)" : "none",
                     transition: "all 0.2s",
                   }}
-                >↩ إرسال وإعادة للمرحلة الأولى</button>
                 {err && <div style={{ fontSize: "0.72rem", color: "#e74c3c", display: "flex", alignItems: "center" }}>⚠ {err}</div>}
               </div>
             </div>
@@ -965,7 +960,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                     transition: "all 0.22s", whiteSpace: "nowrap",
                   }}
                 >
-                  {notesExpanded ? "✕ إلغاء" : "📝 إضافة ملاحظات / إعادة"}
+                  {notesExpanded ? "إلغاء" : "إضافة ملاحظات / إعادة"}
                 </button>
               </>
             ) : (
