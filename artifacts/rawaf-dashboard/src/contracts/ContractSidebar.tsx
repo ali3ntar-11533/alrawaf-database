@@ -82,8 +82,8 @@ export default function ContractSidebar({
     }}>
       <style>{`
         @keyframes glowSideLogo {
-          0%,100% { box-shadow: 0 0 0 2px rgba(197,160,89,0.35), 0 0 24px rgba(197,160,89,0.15); }
-          50%      { box-shadow: 0 0 0 3px rgba(197,160,89,0.65), 0 0 36px rgba(197,160,89,0.30); }
+          0%,100% { box-shadow: 0 0 0 2px rgba(25,118,210,0.35), 0 0 24px rgba(25,118,210,0.15); }
+          50%      { box-shadow: 0 0 0 3px rgba(25,118,210,0.65), 0 0 36px rgba(25,118,210,0.30); }
         }
         @keyframes goldPulse {
           0%,100% { opacity: 0.6; }
@@ -117,7 +117,7 @@ export default function ContractSidebar({
             <div style={{ fontSize: "0.74rem", fontWeight: 900, color: "#F0F0F0", lineHeight: 1.2 }}>
               نظام إدارة العقود
             </div>
-            <div style={{ fontSize: "0.58rem", color: GOLD, marginTop: 2, fontWeight: 700, letterSpacing: "0.02em" }}>
+            <div style={{ fontSize: "0.58rem", color: BLUE_L, marginTop: 2, fontWeight: 700, letterSpacing: "0.02em" }}>
               الرواف للمقاولات
             </div>
           </div>
@@ -144,9 +144,9 @@ export default function ContractSidebar({
               style={{
                 width: "100%", padding: "9px 32px 9px 10px",
                 borderRadius: 9,
-                border: role ? `1.5px solid ${GOLD_BOR}` : `1.5px solid rgba(255,255,255,0.1)`,
-                background: role ? "rgba(197,160,89,0.12)" : "rgba(255,255,255,0.05)",
-                color: role ? GOLD2 : TEXT_MUT,
+                border: role ? `1.5px solid rgba(25,118,210,0.4)` : `1.5px solid rgba(255,255,255,0.1)`,
+                background: role ? "rgba(25,118,210,0.12)" : "rgba(255,255,255,0.05)",
+                color: role ? BLUE_L : TEXT_MUT,
                 fontSize: "0.72rem", fontWeight: 700,
                 fontFamily: "'Cairo', 'Tajawal', sans-serif",
                 appearance: "none", cursor: "pointer", outline: "none",
@@ -164,7 +164,7 @@ export default function ContractSidebar({
             </select>
             <span style={{
               position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)",
-              color: GOLD, fontSize: "0.6rem", pointerEvents: "none",
+              color: BLUE_L, fontSize: "0.6rem", pointerEvents: "none",
             }}>▾</span>
           </div>
 
@@ -179,7 +179,7 @@ export default function ContractSidebar({
                   placeholder="اسمك الكامل للسجلات"
                   style={{
                     width: "100%", padding: "8px 10px",
-                    borderRadius: 8, border: `1.5px solid ${GOLD_BOR}`,
+                    borderRadius: 8, border: `1.5px solid rgba(25,118,210,0.4)`,
                     background: "rgba(255,255,255,0.07)", color: TEXT_MAIN,
                     fontSize: "0.7rem", fontFamily: "'Cairo', 'Tajawal', sans-serif",
                     outline: "none", boxSizing: "border-box",
@@ -198,7 +198,7 @@ export default function ContractSidebar({
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = DARK_CARD; }}
                 >
                   <span style={{ fontSize: "0.7rem", color: TEXT_MAIN, flex: 1 }}>{actorName}</span>
-                  <span style={{ fontSize: "0.56rem", color: GOLD, fontWeight: 700 }}>تعديل</span>
+                  <span style={{ fontSize: "0.56rem", color: BLUE_L, fontWeight: 700 }}>تعديل</span>
                 </div>
               )}
 
@@ -206,10 +206,10 @@ export default function ContractSidebar({
                 <div style={{
                   marginTop: 7,
                   padding: "8px 10px", borderRadius: 9,
-                  background: "rgba(197,160,89,0.08)",
-                  border: `1px solid ${GOLD_DIM}`,
+                  background: "rgba(25,118,210,0.08)",
+                  border: `1px solid rgba(25,118,210,0.22)`,
                 }}>
-                  <div style={{ fontSize: "0.62rem", color: GOLD2, fontWeight: 800, marginBottom: 4 }}>
+                  <div style={{ fontSize: "0.62rem", color: BLUE_L, fontWeight: 800, marginBottom: 4 }}>
                     {myRoleInfo.name}
                   </div>
                   {myStageLabels.map((s, i) => (
@@ -293,7 +293,7 @@ export default function ContractSidebar({
       {/* ── Footer ── */}
       <div style={{
         padding: "12px 10px 16px",
-        borderTop: `1px solid rgba(197,160,89,0.10)`,
+        borderTop: `1px solid rgba(255,255,255,0.07)`,
         background: DARK_HDR,
       }}>
         {role && (
@@ -316,15 +316,15 @@ export default function ContractSidebar({
           onClick={onExit}
           style={{
             width: "100%", padding: "10px", borderRadius: 9,
-            border: `1px solid ${GOLD_BOR}`,
-            background: "rgba(197,160,89,0.08)",
-            cursor: "pointer", fontSize: "0.76rem", color: GOLD,
+            border: `1px solid rgba(25,118,210,0.3)`,
+            background: "rgba(25,118,210,0.09)",
+            cursor: "pointer", fontSize: "0.76rem", color: BLUE_L,
             fontFamily: "'Cairo', 'Tajawal', sans-serif",
             fontWeight: 700,
             transition: "all 0.15s",
           }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(197,160,89,0.16)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(197,160,89,0.08)"; }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(25,118,210,0.18)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(25,118,210,0.09)"; }}
         >
           الرجوع للصفحة الرئيسية
         </button>

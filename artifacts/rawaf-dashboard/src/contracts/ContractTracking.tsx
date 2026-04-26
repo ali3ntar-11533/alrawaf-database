@@ -1,8 +1,16 @@
 import { useEffect, useState } from "react";
-import { GOLD, GOLD_BG, GOLD_BORDER, STAGES } from "./types";
+import { STAGES } from "./types";
 import type { Contract, StageLog } from "./types";
 import { listContracts, getContractAudit } from "./api";
 import ContractMonitor from "./ContractMonitor";
+
+const BLUE_M = "#1976D2";
+const BLUE   = "#1565C0";
+const BLUE_L = "#4A90D9";
+const AMBER  = "#F5A623";
+const GOLD   = BLUE_M;
+const GOLD_BG     = "rgba(25,118,210,0.07)";
+const GOLD_BORDER = "rgba(25,118,210,0.18)";
 
 interface Props {
   role: string;
@@ -86,7 +94,7 @@ export default function ContractTracking({ role, onOpenContract }: Props) {
         <h2 style={{ fontSize: "1.3rem", fontWeight: 900, color: "#0C1427", marginBottom: 4 }}>
           نظام متابعة العقود
         </h2>
-        <p style={{ color: "#9b8060", fontSize: "0.82rem" }}>
+        <p style={{ color: "#64748B", fontSize: "0.82rem" }}>
           انقر على أي عقد لفتح لوحة المتابعة التفصيلية مباشرةً
         </p>
       </div>
@@ -113,7 +121,7 @@ export default function ContractTracking({ role, onOpenContract }: Props) {
                 <div
                   onClick={() => setMonitorContract(c)}
                   style={{ padding: "18px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, transition: "background 0.15s" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(197,160,89,0.04)"; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(25,118,210,0.04)"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                 >
                   <div style={{
@@ -142,12 +150,12 @@ export default function ContractTracking({ role, onOpenContract }: Props) {
                       <div style={{ flex: 1, height: 6, borderRadius: 3, background: "rgba(0,0,0,0.07)", overflow: "hidden" }}>
                         <div style={{
                           height: "100%", width: `${pct}%`,
-                          background: `linear-gradient(90deg, ${GOLD}, #a88540)`,
+                          background: `linear-gradient(90deg, ${BLUE}, ${BLUE_M})`,
                           borderRadius: 3, transition: "width 0.6s",
-                          boxShadow: `0 0 6px rgba(197,160,89,0.4)`,
+                          boxShadow: `0 0 6px rgba(25,118,210,0.4)`,
                         }} />
                       </div>
-                      <span style={{ fontSize: "0.72rem", fontWeight: 900, color: GOLD, flexShrink: 0 }}>{pct}%</span>
+                      <span style={{ fontSize: "0.72rem", fontWeight: 900, color: BLUE_M, flexShrink: 0 }}>{pct}%</span>
                     </div>
                   </div>
 
@@ -157,8 +165,8 @@ export default function ContractTracking({ role, onOpenContract }: Props) {
                       style={{
                         display: "inline-flex", alignItems: "center", justifyContent: "center",
                         width: 26, height: 26, borderRadius: 8,
-                        background: isExpanded ? "rgba(197,160,89,0.12)" : "rgba(0,0,0,0.04)",
-                        border: `1px solid ${isExpanded ? "rgba(197,160,89,0.3)" : "rgba(0,0,0,0.08)"}`,
+                        background: isExpanded ? "rgba(25,118,210,0.12)" : "rgba(0,0,0,0.04)",
+                        border: `1px solid ${isExpanded ? "rgba(25,118,210,0.3)" : "rgba(0,0,0,0.08)"}`,
                         color: isExpanded ? GOLD : "#bbb",
                         fontSize: "0.6rem", fontWeight: 800,
                         transition: "all 0.2s", cursor: "pointer",
@@ -171,10 +179,10 @@ export default function ContractTracking({ role, onOpenContract }: Props) {
                   <div style={{
                     borderTop: `1px solid ${GOLD_BORDER}`,
                     padding: "16px 20px",
-                    background: "rgba(197,160,89,0.03)",
+                    background: "rgba(25,118,210,0.03)",
                   }}>
-                    <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "#4a3520", marginBottom: 12 }}>
-                      📅 تسلسل المراحل
+                    <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "#0C1427", marginBottom: 12 }}>
+                      تسلسل المراحل
                     </div>
 
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>

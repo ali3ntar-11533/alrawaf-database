@@ -1,8 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { GOLD, GOLD_BG, GOLD_BORDER, STAGES } from "./types";
+import { STAGES } from "./types";
 import type { Contract } from "./types";
 import { listContracts, createContract, getVendors } from "./api";
 import { tafqit } from "./tafqit";
+
+const BLUE_M = "#1976D2";
+const BLUE   = "#1565C0";
+const BLUE_L = "#4A90D9";
+const AMBER  = "#F5A623";
+const GOLD        = BLUE_M;
+const GOLD_BG     = "rgba(25,118,210,0.07)";
+const GOLD_BORDER = "rgba(25,118,210,0.18)";
 
 interface Props {
   role: string;
@@ -320,7 +328,7 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
             return (
               <div key={c.id}
                 onClick={() => onOpenContract(c.id)}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 18px rgba(197,160,89,0.18)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(197,160,89,0.38)"; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 18px rgba(25,118,210,0.14)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(25,118,210,0.28)"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 8px rgba(0,0,0,0.05)"; (e.currentTarget as HTMLElement).style.borderColor = isRejected ? "rgba(231,76,60,0.35)" : isCompleted ? "rgba(39,174,96,0.3)" : "rgba(0,0,0,0.07)"; }}
                 style={{
                   background: "#fff", borderRadius: 14, padding: "16px 18px",
@@ -334,7 +342,7 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
                     background: isCompleted ? "rgba(39,174,96,0.1)" : isRejected ? "rgba(231,76,60,0.1)" : GOLD_BG,
                     display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem",
                   }}>
-                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: isCompleted ? "#27ae60" : isRejected ? "#e74c3c" : "#C5A059" }}/>
+                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: isCompleted ? "#27ae60" : isRejected ? "#e74c3c" : BLUE_M }}/>
 
                   </div>
                   <div style={{ flex: 1 }}>
@@ -361,7 +369,7 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
                       <div style={{ flex: 1, height: 5, borderRadius: 3, background: "rgba(0,0,0,0.07)", overflow: "hidden" }}>
                         <div style={{
                           height: "100%", width: `${isCompleted ? 100 : pct}%`,
-                          background: isCompleted ? "#27ae60" : `linear-gradient(90deg, ${GOLD}, #a88540)`,
+                          background: isCompleted ? "#27ae60" : `linear-gradient(90deg, ${BLUE}, ${BLUE_M})`,
                           transition: "width 0.6s",
                           borderRadius: 3,
                         }} />

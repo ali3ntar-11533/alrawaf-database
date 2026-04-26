@@ -8,18 +8,22 @@ const PRINT_STYLE_ID = "print-contract-detail-style";
 
 /* ── Design tokens ── */
 const GOLD2       = "#a88540";
-const GLASS_BG    = "rgba(255,255,255,0.82)";
-const GLASS_BG2   = "rgba(255,255,255,0.65)";
-const GLASS_BORDER= "rgba(197,160,89,0.22)";
-const SHADOW_SM   = "0 2px 10px rgba(0,0,0,0.06)";
-const SHADOW_MD   = "0 6px 28px rgba(0,0,0,0.09)";
-const SHADOW_GOLD = "0 4px 20px rgba(197,160,89,0.18)";
+const BLUE_M      = "#1976D2";
+const BLUE        = "#1565C0";
+const BLUE_L      = "#4A90D9";
+const AMBER       = "#F5A623";
+const GLASS_BG    = "rgba(255,255,255,0.97)";
+const GLASS_BG2   = "rgba(255,255,255,0.85)";
+const GLASS_BORDER= "rgba(0,0,0,0.07)";
+const SHADOW_SM   = "0 2px 10px rgba(0,0,0,0.05)";
+const SHADOW_MD   = "0 6px 28px rgba(0,0,0,0.08)";
+const SHADOW_GOLD = "0 4px 20px rgba(25,118,210,0.14)";
 const BLUR        = "blur(18px)";
 const BLUR_SM     = "blur(10px)";
 
-const LABEL_BG    = "linear-gradient(135deg, #8B6914, #6b4f0e)";
-const VALUE_BG_E  = "rgba(255,255,255,0.9)";
-const VALUE_BG_O  = "rgba(253,249,243,0.95)";
+const LABEL_BG    = "linear-gradient(135deg, #1565C0, #0D47A1)";
+const VALUE_BG_E  = "rgba(255,255,255,0.97)";
+const VALUE_BG_O  = "rgba(248,250,255,0.97)";
 
 interface Props {
   contractId: number;
@@ -100,9 +104,9 @@ function DataRow({
     lineHeight: 1.4, whiteSpace: "nowrap",
   };
   const valueStyle: React.CSSProperties = {
-    background: valueBg, color: "#2d2416",
+    background: valueBg, color: "#1a2535",
     padding: "9px 13px", fontSize: "0.79rem",
-    borderBottom: "1px solid rgba(197,160,89,0.12)",
+    borderBottom: "1px solid rgba(0,0,0,0.06)",
     lineHeight: 1.4, wordBreak: "break-word",
   };
   return (
@@ -122,16 +126,18 @@ function SectionCard({ title, icon, children }: { title: string; icon: string; c
       background: GLASS_BG, backdropFilter: BLUR_SM,
       borderRadius: 16, overflow: "hidden",
       border: `1.5px solid ${GLASS_BORDER}`,
-      boxShadow: SHADOW_GOLD,
+      boxShadow: SHADOW_MD,
       marginBottom: 14,
     }}>
+      {/* Top color band */}
+      <div style={{ height: 4, background: `linear-gradient(90deg, ${BLUE_M}, ${BLUE_L}, ${AMBER})` }}/>
       <div style={{
-        background: `linear-gradient(135deg, ${GOLD}, ${GOLD2})`,
+        background: `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`,
         padding: "12px 18px", color: "#fff",
         display: "flex", alignItems: "center", gap: 9,
         fontSize: "0.88rem", fontWeight: 800,
       }}>
-        <span style={{ fontSize: "1rem" }}>{icon}</span>{title}
+        <span style={{ fontSize: "0.92rem" }}>{icon}</span>{title}
       </div>
       {children}
     </div>
@@ -177,24 +183,26 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
       display: "flex", flexDirection: "column", minHeight: 480,
     }}>
       <div style={{
-        padding: "14px 20px", borderBottom: `1.5px solid ${GOLD_BORDER}`,
-        background: `linear-gradient(135deg, rgba(197,160,89,0.12), rgba(197,160,89,0.04))`,
+        padding: "14px 20px", borderBottom: `1.5px solid rgba(0,0,0,0.06)`,
+        background: `linear-gradient(135deg, rgba(25,118,210,0.08), rgba(25,118,210,0.02))`,
         backdropFilter: BLUR_SM,
         display: "flex", alignItems: "center", gap: 10,
       }}>
         <div style={{
           width: 38, height: 38, borderRadius: "50%",
-          background: `linear-gradient(135deg, ${GOLD}, ${GOLD2})`,
+          background: `linear-gradient(135deg, ${BLUE_M}, ${BLUE})`,
           display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem",
-          boxShadow: SHADOW_GOLD,
-        }}>💬</div>
+          boxShadow: "0 4px 12px rgba(25,118,210,0.25)",
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
         <div>
-          <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "#4a3520" }}>المحادثة الداخلية</div>
-          <div style={{ fontSize: "0.62rem", color: "#9b8060" }}>{comments.length} رسالة</div>
+          <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "#0C1427" }}>المحادثة الداخلية</div>
+          <div style={{ fontSize: "0.62rem", color: "#64748B" }}>{comments.length} رسالة</div>
         </div>
         <button onClick={loadComments} title="تحديث" style={{
           marginRight: "auto", border: "none", background: "transparent",
-          cursor: "pointer", color: GOLD, fontSize: "0.9rem", padding: 4,
+          cursor: "pointer", color: BLUE_M, fontSize: "0.9rem", padding: 4,
         }}>↻</button>
       </div>
 
@@ -224,9 +232,9 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
                     <span>·</span><span>{c.actorRole}</span>
                   </div>
                   <div style={{
-                    background: isMe ? `linear-gradient(135deg, ${GOLD}, ${GOLD2})` : GLASS_BG,
+                    background: isMe ? `linear-gradient(135deg, ${BLUE_M}, ${BLUE})` : GLASS_BG,
                     backdropFilter: BLUR_SM,
-                    color: isMe ? "#fff" : "#2d2416",
+                    color: isMe ? "#fff" : "#1a2535",
                     borderRadius: isMe ? "14px 14px 3px 14px" : "14px 14px 14px 3px",
                     padding: "9px 13px", fontSize: "0.8rem", lineHeight: 1.55,
                     border: isMe ? "none" : `1px solid ${GLASS_BORDER}`,
@@ -243,7 +251,7 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
         <div ref={bottomRef} />
       </div>
 
-      <div style={{ padding: "12px 16px", borderTop: `1.5px solid ${GOLD_BORDER}`, background: "rgba(253,249,243,0.8)", backdropFilter: BLUR_SM }}>
+      <div style={{ padding: "12px 16px", borderTop: `1.5px solid rgba(0,0,0,0.06)`, background: "rgba(248,250,255,0.9)", backdropFilter: BLUR_SM }}>
         <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
           <textarea
             value={msg} onChange={e => setMsg(e.target.value)}
@@ -252,18 +260,20 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
             rows={2}
             style={{
               flex: 1, padding: "9px 12px", borderRadius: 10,
-              border: `1.5px solid ${GOLD_BORDER}`, fontSize: "0.82rem",
+              border: `1.5px solid rgba(0,0,0,0.12)`, fontSize: "0.82rem",
               fontFamily: "'Cairo', 'Tajawal', sans-serif", resize: "none", outline: "none", lineHeight: 1.5,
-              background: "rgba(255,255,255,0.9)",
+              background: "rgba(255,255,255,0.97)",
             }}
           />
           <button onClick={handleSend} disabled={!canSend} style={{
             width: 42, height: 42, borderRadius: "50%", border: "none", flexShrink: 0,
-            background: canSend ? `linear-gradient(135deg, ${GOLD}, ${GOLD2})` : "#ddd",
+            background: canSend ? `linear-gradient(135deg, ${BLUE}, ${BLUE_M})` : "#ddd",
             color: "#fff", cursor: canSend ? "pointer" : "not-allowed",
             fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: canSend ? SHADOW_GOLD : "none", transition: "all 0.2s",
-          }}>➤</button>
+            boxShadow: canSend ? "0 4px 12px rgba(25,118,210,0.35)" : "none", transition: "all 0.2s",
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
         </div>
         {sendErr && <div style={{ fontSize: "0.64rem", color: "#e74c3c", marginTop: 5 }}>⚠ {sendErr}</div>}
         {!actorName.trim() && <div style={{ fontSize: "0.6rem", color: "#ccc", marginTop: 5, textAlign: "center" }}>اختر دورك من القائمة الجانبية للمشاركة</div>}
@@ -390,7 +400,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
 
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, flexDirection: "column", gap: 14, color: "#bbb" }}>
-      <div style={{ width: 44, height: 44, borderRadius: "50%", border: `3px solid ${GOLD_BORDER}`, borderTopColor: GOLD, animation: "spin 0.9s linear infinite" }} />
+      <div style={{ width: 44, height: 44, borderRadius: "50%", border: `3px solid rgba(25,118,210,0.2)`, borderTopColor: BLUE_M, animation: "spin 0.9s linear infinite" }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <span style={{ fontSize: "0.82rem" }}>جاري تحميل بيانات العقد…</span>
     </div>
@@ -409,12 +419,12 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
     : null;
 
   return (
-    <div dir="rtl" style={{ fontFamily: "'Cairo', 'Tajawal', sans-serif", height: "100%", display: "flex", flexDirection: "column", background: "linear-gradient(160deg,#F7F4EE 0%,#F0EDE4 100%)" }}>
+    <div dir="rtl" style={{ fontFamily: "'Cairo', 'Tajawal', sans-serif", height: "100%", display: "flex", flexDirection: "column", background: "#FFFFFF" }}>
 
       <style>{`
         @keyframes stg-pulse {
-          0%, 100% { box-shadow: 0 0 0 3px rgba(197,160,89,0.22); }
-          50%       { box-shadow: 0 0 0 7px rgba(197,160,89,0); }
+          0%, 100% { box-shadow: 0 0 0 3px rgba(25,118,210,0.22); }
+          50%       { box-shadow: 0 0 0 7px rgba(25,118,210,0); }
         }
         @keyframes fadeSlideUp {
           from { opacity: 0; transform: translateY(10px); }
@@ -467,15 +477,15 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
             style={{
               display: "flex", alignItems: "center", gap: 7,
               padding: "9px 18px", borderRadius: 10,
-              background: `linear-gradient(135deg, ${GOLD}, ${GOLD2})`,
+              background: `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`,
               color: "#fff", border: "none", cursor: "pointer",
               fontSize: "0.82rem", fontWeight: 800,
               fontFamily: "'Cairo', 'Tajawal', sans-serif",
-              boxShadow: `0 3px 14px rgba(197,160,89,0.45)`,
+              boxShadow: `0 3px 14px rgba(25,118,210,0.35)`,
               transition: "all 0.18s",
             }}
           >
-            🖨️ طباعة
+            طباعة
           </button>
         </div>
 
@@ -495,30 +505,30 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
               width: 52, height: 52, borderRadius: 14, flexShrink: 0,
               background: isCompleted
                 ? "rgba(39,174,96,0.12)"
-                : `linear-gradient(135deg, rgba(197,160,89,0.18), rgba(197,160,89,0.08))`,
+                : `linear-gradient(135deg, rgba(25,118,210,0.15), rgba(25,118,210,0.06))`,
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem",
-              border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : GLASS_BORDER}`,
-              boxShadow: isCompleted ? "0 4px 16px rgba(39,174,96,0.15)" : SHADOW_GOLD,
+              border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : "rgba(25,118,210,0.18)"}`,
+              boxShadow: isCompleted ? "0 4px 16px rgba(39,174,96,0.15)" : "0 4px 16px rgba(25,118,210,0.12)",
             }}>
-              {isCompleted ? "✅" : stage?.icon ?? "📄"}
+              {stage?.icon ?? "📄"}
             </div>
 
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: "1rem", fontWeight: 900, color: "#1a1206", marginBottom: 3, lineHeight: 1.4 }}>
+              <div style={{ fontSize: "1rem", fontWeight: 900, color: "#0C1427", marginBottom: 3, lineHeight: 1.4 }}>
                 {contract.title}
               </div>
-              <div style={{ fontSize: "0.7rem", color: "#9b8060", display: "flex", flexWrap: "wrap", gap: "0 8px" }}>
+              <div style={{ fontSize: "0.7rem", color: "#64748B", display: "flex", flexWrap: "wrap", gap: "0 8px" }}>
                 <span>{contract.contractNo}</span>
                 {contract.projectNo && <span>· م {contract.projectNo}</span>}
                 <span>· {contract.contractType}</span>
               </div>
               {contract.value > 0 && (
                 <div style={{
-                  fontSize: "0.76rem", color: "#7d622a", fontWeight: 700, marginTop: 4,
-                  background: "rgba(197,160,89,0.1)", borderRadius: 8, padding: "3px 10px",
-                  display: "inline-block", border: `1px solid rgba(197,160,89,0.2)`,
+                  fontSize: "0.76rem", color: BLUE, fontWeight: 700, marginTop: 4,
+                  background: "rgba(25,118,210,0.08)", borderRadius: 8, padding: "3px 10px",
+                  display: "inline-block", border: `1px solid rgba(25,118,210,0.18)`,
                 }}>
-                  💰 {contract.value.toLocaleString("ar-SA")} ريال — {tafqit(contract.value)}
+                  {contract.value.toLocaleString("ar-SA")} ريال — {tafqit(contract.value)}
                 </div>
               )}
             </div>
@@ -527,14 +537,14 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
               textAlign: "center",
               background: isCompleted
                 ? "rgba(39,174,96,0.1)"
-                : `linear-gradient(135deg, rgba(197,160,89,0.14), rgba(197,160,89,0.06))`,
+                : `linear-gradient(135deg, rgba(25,118,210,0.12), rgba(25,118,210,0.05))`,
               backdropFilter: BLUR_SM,
-              border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : GLASS_BORDER}`,
+              border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : "rgba(25,118,210,0.18)"}`,
               borderRadius: 12, padding: "10px 18px", flexShrink: 0,
-              boxShadow: isCompleted ? "0 4px 16px rgba(39,174,96,0.12)" : SHADOW_GOLD,
+              boxShadow: isCompleted ? "0 4px 16px rgba(39,174,96,0.12)" : "0 4px 16px rgba(25,118,210,0.12)",
             }}>
-              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: isCompleted ? "#27ae60" : GOLD }}>{pct}%</div>
-              <div style={{ fontSize: "0.56rem", color: "#9b8060", marginTop: 2 }}>إنجاز</div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: isCompleted ? "#27ae60" : BLUE_M }}>{pct}%</div>
+              <div style={{ fontSize: "0.56rem", color: "#64748B", marginTop: 2 }}>إنجاز</div>
             </div>
           </div>
 
@@ -555,13 +565,13 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: isDone ? "0.88rem" : "0.72rem", fontWeight: 900,
                         background: isDone
-                          ? `linear-gradient(135deg, ${GOLD}, ${GOLD2})`
+                          ? `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`
                           : isCur
                             ? GLASS_BG2
                             : "rgba(0,0,0,0.05)",
-                        color: isDone ? "#fff" : isCur ? GOLD : "#ccc",
-                        border: isCur ? `2px solid ${GOLD}` : isDone ? "2px solid transparent" : "2px solid rgba(0,0,0,0.08)",
-                        boxShadow: isDone ? SHADOW_GOLD : isCur ? `0 0 0 4px rgba(197,160,89,0.18)` : "none",
+                        color: isDone ? "#fff" : isCur ? BLUE_M : "#ccc",
+                        border: isCur ? `2px solid ${BLUE_M}` : isDone ? "2px solid transparent" : "2px solid rgba(0,0,0,0.08)",
+                        boxShadow: isDone ? SHADOW_GOLD : isCur ? `0 0 0 4px rgba(25,118,210,0.18)` : "none",
                         animation: isCur ? "stg-pulse 2s ease-in-out infinite" : "none",
                         transition: "all 0.3s",
                       }}>
@@ -570,7 +580,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                       {/* Label */}
                       <div style={{
                         fontSize: "0.47rem", marginTop: 5, textAlign: "center",
-                        color: isDone ? "#8B6914" : isCur ? GOLD : "#bbb",
+                        color: isDone ? BLUE : isCur ? BLUE_M : "#bbb",
                         fontWeight: isCur ? 800 : 500,
                         lineHeight: 1.35, maxWidth: 58,
                       }}>
@@ -579,17 +589,17 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                       {/* Duration badge */}
                       {isDone && dur && (
                         <div style={{
-                          fontSize: "0.41rem", color: "#b8a57c", marginTop: 3,
-                          background: "rgba(197,160,89,0.12)", borderRadius: 8,
+                          fontSize: "0.41rem", color: BLUE, marginTop: 3,
+                          background: "rgba(25,118,210,0.08)", borderRadius: 8,
                           padding: "1px 5px", fontWeight: 600,
-                          border: "1px solid rgba(197,160,89,0.18)",
+                          border: "1px solid rgba(25,118,210,0.18)",
                         }}>{dur}</div>
                       )}
                       {isCur && (
                         <div style={{
-                          fontSize: "0.41rem", color: GOLD, marginTop: 3, fontWeight: 800,
-                          background: "rgba(197,160,89,0.12)", borderRadius: 8, padding: "1px 5px",
-                          border: `1px solid ${GOLD_BORDER}`,
+                          fontSize: "0.41rem", color: BLUE_M, marginTop: 3, fontWeight: 800,
+                          background: "rgba(25,118,210,0.1)", borderRadius: 8, padding: "1px 5px",
+                          border: `1px solid rgba(25,118,210,0.25)`,
                           animation: "stg-pulse 2s ease-in-out infinite",
                         }}>جارٍ</div>
                       )}
@@ -599,7 +609,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                       <div style={{
                         width: 14, height: 2, marginTop: 15, flexShrink: 0,
                         background: isDone
-                          ? `linear-gradient(90deg, ${GOLD2}, ${GOLD})`
+                          ? `linear-gradient(90deg, ${BLUE}, ${BLUE_L})`
                           : "rgba(0,0,0,0.07)",
                         borderRadius: 2,
                         transition: "background 0.4s",
@@ -613,7 +623,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
 
           {/* Print-only bar */}
           <div className="print-only-bar" style={{ display: "none", marginTop: 8, height: 5, borderRadius: 3, background: "rgba(0,0,0,0.06)", overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${pct}%`, borderRadius: 3, background: isCompleted ? "#27ae60" : `linear-gradient(90deg, ${GOLD}, ${GOLD2})` }} />
+            <div style={{ height: "100%", width: `${pct}%`, borderRadius: 3, background: isCompleted ? "#27ae60" : `linear-gradient(90deg, ${BLUE}, ${BLUE_M})` }} />
           </div>
 
           {/* Rejection reason */}
@@ -647,13 +657,13 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                   flex: 1, padding: "11px 6px",
                   border: "none",
                   borderLeft: idx < TABS.length - 1 ? `1px solid ${GLASS_BORDER}` : "none",
-                  background: isActive ? `linear-gradient(135deg, ${GOLD}, ${GOLD2})` : "transparent",
-                  color: isActive ? "#fff" : "#9b8060",
+                  background: isActive ? `linear-gradient(135deg, ${BLUE}, ${BLUE_M})` : "transparent",
+                  color: isActive ? "#fff" : "#64748B",
                   cursor: "pointer", fontSize: "0.76rem", fontWeight: isActive ? 800 : 600,
                   fontFamily: "'Cairo', 'Tajawal', sans-serif",
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
                   transition: "all 0.2s",
-                  boxShadow: isActive ? "inset 0 1px 0 rgba(255,255,255,0.2)" : "none",
+                  boxShadow: isActive ? "inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 8px rgba(25,118,210,0.3)" : "none",
                 }}
               >
                 <span style={{ fontSize: "0.9rem" }}>{tab.icon}</span>
@@ -690,14 +700,16 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
               {/* 4-column data table */}
               <div style={{
                 borderRadius: 16, overflow: "hidden",
-                border: `1.5px solid rgba(197,160,89,0.3)`,
-                boxShadow: `${SHADOW_MD}, ${SHADOW_GOLD}`,
+                border: `1.5px solid rgba(25,118,210,0.15)`,
+                boxShadow: SHADOW_MD,
                 background: GLASS_BG,
                 backdropFilter: BLUR_SM,
               }}>
+                {/* Top color band */}
+                <div style={{ height: 4, background: `linear-gradient(90deg, ${BLUE_M}, ${BLUE_L}, ${AMBER})` }}/>
                 {/* Table title */}
                 <div style={{
-                  background: `linear-gradient(135deg, ${GOLD} 0%, #b8923a 55%, #9a7628 100%)`,
+                  background: `linear-gradient(135deg, ${BLUE} 0%, ${BLUE_M} 55%, ${BLUE_L} 100%)`,
                   color: "#fff", textAlign: "center",
                   padding: "13px 20px", fontSize: "0.9rem", fontWeight: 900,
                   letterSpacing: "0.04em",
@@ -713,12 +725,12 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                     { label: "",                borderRight: true },
                   ].map((col, i) => (
                     <div key={i} style={{
-                      background: "linear-gradient(135deg, #6b4f0e, #5a3f08)",
+                      background: "linear-gradient(135deg, #0D47A1, #1565C0)",
                       color: col.label ? "rgba(255,255,255,0.92)" : "transparent",
                       padding: "7px 13px", fontSize: "0.69rem", fontWeight: 800,
                       textAlign: "center",
                       borderLeft: i === 2 ? "1px solid rgba(255,255,255,0.12)" : undefined,
-                      borderRight: col.borderRight ? "1px solid rgba(197,160,89,0.25)" : undefined,
+                      borderRight: col.borderRight ? "1px solid rgba(255,255,255,0.12)" : undefined,
                     }}>{col.label || "‎"}</div>
                   ))}
                 </div>
@@ -863,10 +875,10 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                         position: "absolute", right: 5, width: 22, height: 22, borderRadius: "50%",
                         background: entry.action === "reject"
                           ? "linear-gradient(135deg,#e74c3c,#c0392b)"
-                          : `linear-gradient(135deg,${GOLD},${GOLD2})`,
+                          : `linear-gradient(135deg,${BLUE},${BLUE_M})`,
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: "0.6rem", color: "#fff", fontWeight: 900, zIndex: 1,
-                        boxShadow: entry.action === "reject" ? "0 2px 8px rgba(231,76,60,0.35)" : SHADOW_GOLD,
+                        boxShadow: entry.action === "reject" ? "0 2px 8px rgba(231,76,60,0.35)" : "0 2px 8px rgba(25,118,210,0.3)",
                       }}>
                         {entry.action === "reject" ? "✕" : "✓"}
                       </div>
@@ -904,16 +916,16 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                   ))}
 
                   <div style={{
-                    background: `linear-gradient(135deg, rgba(197,160,89,0.1), rgba(197,160,89,0.04))`,
+                    background: `linear-gradient(135deg, rgba(25,118,210,0.08), rgba(25,118,210,0.03))`,
                     backdropFilter: BLUR_SM,
                     borderRadius: 14, padding: "14px 18px",
-                    border: `1.5px solid ${GLASS_BORDER}`, textAlign: "center",
-                    boxShadow: SHADOW_GOLD,
+                    border: `1.5px solid rgba(25,118,210,0.18)`, textAlign: "center",
+                    boxShadow: "0 4px 16px rgba(25,118,210,0.1)",
                   }}>
-                    <div style={{ fontSize: "0.88rem", fontWeight: 900, color: GOLD }}>
-                      {isCompleted ? "🏆 " : "⚡ "}{pct}% مكتمل
+                    <div style={{ fontSize: "0.88rem", fontWeight: 900, color: BLUE_M }}>
+                      {pct}% مكتمل
                     </div>
-                    <div style={{ fontSize: "0.66rem", color: "#9b8060", marginTop: 3 }}>
+                    <div style={{ fontSize: "0.66rem", color: "#64748B", marginTop: 3 }}>
                       {isCompleted ? "تم اكتمال جميع المراحل بنجاح" : `المرحلة الحالية: ${stage?.label}`}
                     </div>
                   </div>

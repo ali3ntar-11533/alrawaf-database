@@ -6,14 +6,22 @@ import {
 import { listContracts, getContractStats, getRecentActivity, getVendors } from "./api";
 import type { ActivityEntry, AnalyticsFilters } from "./api";
 import type { Contract, ContractStats } from "./types";
-import { STAGES, GOLD, GOLD_BG, GOLD_BORDER } from "./types";
+import { STAGES } from "./types";
 
-const GOLD2 = "#a88540";
-const GOLD_GRAD_START = "#C5A059";
-const GOLD_GRAD_END   = "#8B6914";
+const BLUE_M = "#1976D2";
+const BLUE   = "#1565C0";
+const BLUE_L = "#4A90D9";
+const AMBER  = "#F5A623";
 const GREEN  = "#27ae60";
 const YELLOW = "#f39c12";
 const RED    = "#c0392b";
+
+/* Override legacy gold variables */
+const GOLD            = BLUE_M;
+const GOLD_BG         = "rgba(25,118,210,0.07)";
+const GOLD_BORDER     = "rgba(25,118,210,0.15)";
+const GOLD_GRAD_START = BLUE_M;
+const GOLD_GRAD_END   = BLUE;
 
 const STAGE_SHORT = [
   "إنشاء", "اعتماد قطاع", "PMO", "قانوني",
@@ -41,10 +49,10 @@ function numberToArabic(n: number): string {
   return String(n).split("").map(d => map[parseInt(d)] ?? d).join("");
 }
 
-const PIE_COLORS = [GREEN, GOLD, RED, "#3498db"];
+const PIE_COLORS = [GREEN, BLUE_M, RED, AMBER];
 
 const CONTRACT_TYPE_LIST = ["إنشاء", "صيانة", "توريد", "خدمات", "مقاولات"] as const;
-const TYPE_COLORS = [GOLD, "#3498db", GREEN, "#9b59b6", "#e67e22"];
+const TYPE_COLORS = [BLUE_M, AMBER, GREEN, "#9b59b6", "#e67e22"];
 
 function hexToRgb(hex: string): string {
   const h = hex.replace("#", "");
@@ -253,8 +261,8 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
       value: stats?.total ?? contracts.length,
       icon: "📁",
       sub: "جميع العقود في النظام",
-      color: GOLD,
-      bg: "linear-gradient(135deg, rgba(197,160,89,0.12), rgba(197,160,89,0.04))",
+      color: BLUE_M,
+      bg: "linear-gradient(135deg, rgba(25,118,210,0.09), rgba(25,118,210,0.03))",
       arrow: true,
     },
     {
@@ -322,10 +330,10 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
           style={{
             display: "flex", alignItems: "center", gap: 8,
             padding: "10px 20px", borderRadius: 10, border: "none",
-            background: `linear-gradient(135deg, ${GOLD}, ${GOLD2})`,
+            background: `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`,
             color: "#fff", fontWeight: 800, fontSize: "0.82rem",
             fontFamily: "'Cairo', 'Tajawal', sans-serif",
-            cursor: "pointer", boxShadow: "0 4px 16px rgba(197,160,89,0.4)",
+            cursor: "pointer", boxShadow: "0 4px 16px rgba(25,118,210,0.35)",
             transition: "all 0.2s",
           }}
         >
@@ -356,13 +364,13 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
                 key={preset}
                 onClick={() => setDatePreset(preset)}
                 style={{
-                  padding: "5px 12px", borderRadius: 7, border: `1px solid ${active ? GOLD : GOLD_BORDER}`,
-                  background: active ? `linear-gradient(135deg, ${GOLD}, ${GOLD2})` : GOLD_BG,
-                  color: active ? "#fff" : "#8B6914",
+                  padding: "5px 12px", borderRadius: 7, border: `1px solid ${active ? BLUE_M : GOLD_BORDER}`,
+                  background: active ? `linear-gradient(135deg, ${BLUE}, ${BLUE_M})` : GOLD_BG,
+                  color: active ? "#fff" : "#64748B",
                   fontSize: "0.72rem", fontWeight: 700,
                   fontFamily: "'Cairo', 'Tajawal', sans-serif",
                   cursor: "pointer", transition: "all 0.15s",
-                  boxShadow: active ? "0 2px 8px rgba(197,160,89,0.35)" : "none",
+                  boxShadow: active ? "0 2px 8px rgba(25,118,210,0.3)" : "none",
                 }}
               >
                 {labels[preset]}
@@ -629,9 +637,9 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
               }}
             >
               <defs>
-                <linearGradient id="goldGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={GOLD_GRAD_START} stopOpacity={1} />
-                  <stop offset="100%" stopColor={GOLD_GRAD_END} stopOpacity={0.85} />
+                <linearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={BLUE_M} stopOpacity={1} />
+                  <stop offset="100%" stopColor={BLUE} stopOpacity={0.85} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
@@ -664,7 +672,7 @@ export default function ContractAnalytics({ onNavigateStage }: Props) {
               />
               <Bar
                 dataKey="count"
-                fill="url(#goldGradient)"
+                fill="url(#blueGradient)"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={38}
                 className="analytics-bar"
