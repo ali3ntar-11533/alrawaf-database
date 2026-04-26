@@ -1,15 +1,16 @@
 import { useState } from "react";
-import { ROLES, type ContractTab } from "./types";
+import { ROLES, STAGES, type ContractTab } from "./types";
 import NotificationBell from "./NotificationBell";
 import type { StoredNotification } from "./useContractNotifications";
 import logoImg from "@assets/logo_1776506524686.jpg";
 
-const GOLD       = "#C5A059";
-const GOLD2      = "#a88540";
-const GOLD_BG    = "rgba(197,160,89,0.08)";
-const GOLD_BOR   = "rgba(197,160,89,0.22)";
-const CREAM      = "#FBF9F4";
-const SHADOW_G   = "0 4px 20px rgba(197,160,89,0.12)";
+const GOLD      = "#C5A059";
+const GOLD2     = "#a88540";
+const GOLD_BG   = "rgba(197,160,89,0.08)";
+const GOLD_BOR  = "rgba(197,160,89,0.22)";
+const GLASS     = "rgba(255,255,255,0.80)";
+const GLASS_HDR = "rgba(251,249,244,0.92)";
+const SHADOW_G  = "0 4px 20px rgba(197,160,89,0.12)";
 
 interface Props {
   activeTab: ContractTab;
@@ -29,12 +30,12 @@ interface Props {
   onOpenContract: (id: number) => void;
 }
 
-const TABS: { id: ContractTab; label: string; icon: string }[] = [
-  { id: "dashboard",  label: "لوحة القيادة",               icon: "🏠" },
-  { id: "requests",   label: "طلبات العقود",               icon: "📋" },
-  { id: "tracking",   label: "متابعة العقود",              icon: "🛡️" },
-  { id: "analytics",  label: "التحليلات والتقارير",        icon: "📊" },
-  { id: "archive",    label: "قاعدة البيانات",             icon: "💾" },
+const TABS: { id: ContractTab; label: string }[] = [
+  { id: "dashboard",  label: "لوحة القيادة"         },
+  { id: "requests",   label: "طلبات العقود"          },
+  { id: "tracking",   label: "متابعة العقود"         },
+  { id: "analytics",  label: "التحليلات والتقارير"   },
+  { id: "archive",    label: "قاعدة البيانات"        },
 ];
 
 export default function ContractSidebar({
@@ -45,22 +46,30 @@ export default function ContractSidebar({
   const [nameEditing, setNameEditing] = useState(false);
   const myRoleInfo = ROLES.find(r => r.name === role);
 
+  /* Stage labels for current role */
+  const myStageLabels = myRoleInfo?.stage.map(n => {
+    const st = STAGES[n - 1];
+    return st ? `م${n}: ${st.label}` : `م${n}`;
+  }) ?? [];
+
   return (
     <div dir="rtl" style={{
       width: 232, flexShrink: 0,
-      background: "#fff",
+      background: GLASS,
+      backdropFilter: "blur(20px)",
       borderLeft: `1px solid ${GOLD_BOR}`,
       display: "flex", flexDirection: "column",
       height: "100%",
       fontFamily: "'Cairo', 'Tajawal', sans-serif",
-      boxShadow: "2px 0 16px rgba(0,0,0,0.04)",
+      boxShadow: "2px 0 20px rgba(0,0,0,0.06)",
     }}>
 
       {/* ── Header / Logo ── */}
       <div style={{
         padding: "18px 14px 14px",
         borderBottom: `1px solid ${GOLD_BOR}`,
-        background: `linear-gradient(135deg, ${CREAM} 0%, #F2EAD3 100%)`,
+        background: GLASS_HDR,
+        backdropFilter: "blur(16px)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
           <div style={{
@@ -71,9 +80,9 @@ export default function ContractSidebar({
           }}>
             <img src={logoImg} alt="الرواف" style={{ width: "100%", height: "100%", objectFit: "cover" }}/>
           </div>
-          <style>{`@keyframes glowSideLogo{0%,100%{box-shadow:0 0 0 2px rgba(197,160,89,0.35),0 4px 16px rgba(197,160,89,0.15)}50%{box-shadow:0 0 0 3px rgba(197,160,89,0.65),0 6px 22px rgba(197,160,89,0.28)}}`}</style>
+          <style>{`@keyframes glowSideLogo{0%,100%{box-shadow:0 0 0 2px rgba(197,160,89,0.35),0 4px 16px rgba(197,160,89,0.12)}50%{box-shadow:0 0 0 3px rgba(197,160,89,0.6),0 6px 22px rgba(197,160,89,0.24)}}`}</style>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: "0.7rem", fontWeight: 900, color: "#1A1A1A", lineHeight: 1.2 }}>
+            <div style={{ fontSize: "0.72rem", fontWeight: 900, color: "#1A1A1A", lineHeight: 1.2 }}>
               نظام إدارة العقود
             </div>
             <div style={{ fontSize: "0.58rem", color: "#9b8060" }}>الرواف للمقاولات</div>
@@ -103,13 +112,11 @@ export default function ContractSidebar({
                 width: "100%", padding: "9px 32px 9px 10px",
                 borderRadius: 9,
                 border: role ? `1.5px solid rgba(197,160,89,0.45)` : `1.5px solid rgba(0,0,0,0.12)`,
-                background: role ? GOLD_BG : "#f8f8f8",
+                background: role ? GOLD_BG : "rgba(248,248,248,0.9)",
                 color: role ? "#8B6914" : "#999",
                 fontSize: "0.72rem", fontWeight: 700,
                 fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                appearance: "none", cursor: "pointer",
-                outline: "none",
-                boxShadow: role ? `inset 0 0 0 1px rgba(197,160,89,0.15)` : "none",
+                appearance: "none", cursor: "pointer", outline: "none",
               }}
             >
               <option value="" style={{ color: "#bbb" }}>— اختر دورك الوظيفي —</option>
@@ -117,7 +124,7 @@ export default function ContractSidebar({
                 const pending = pendingByRole[r.name] ?? 0;
                 return (
                   <option key={r.name} value={r.name}>
-                    {r.icon} {r.name}{pending > 0 ? ` (${pending})` : ""}
+                    {r.name}{pending > 0 ? ` (${pending})` : ""}
                   </option>
                 );
               })}
@@ -140,10 +147,9 @@ export default function ContractSidebar({
                   style={{
                     width: "100%", padding: "8px 10px",
                     borderRadius: 8, border: `1.5px solid ${GOLD_BOR}`,
-                    background: "#fff", color: "#1A1A1A",
+                    background: "rgba(255,255,255,0.9)", color: "#1A1A1A",
                     fontSize: "0.7rem", fontFamily: "'Cairo', 'Tajawal', sans-serif",
                     outline: "none", boxSizing: "border-box",
-                    boxShadow: `0 0 0 3px rgba(197,160,89,0.08)`,
                   }}
                 />
               ) : (
@@ -152,35 +158,35 @@ export default function ContractSidebar({
                   style={{
                     display: "flex", alignItems: "center", gap: 7,
                     padding: "7px 10px", borderRadius: 8,
-                    background: "#f8f8f8", border: "1px solid #eee",
+                    background: "rgba(248,248,248,0.9)", border: `1px solid rgba(0,0,0,0.06)`,
                     cursor: "pointer", transition: "background 0.15s",
                   }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = GOLD_BG; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "#f8f8f8"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(248,248,248,0.9)"; }}
                 >
-                  <span style={{ fontSize: "0.7rem", color: "#aaa" }}>👤</span>
                   <span style={{ fontSize: "0.7rem", color: "#4a3520", flex: 1 }}>{actorName}</span>
-                  <span style={{ fontSize: "0.6rem", color: "#ccc" }}>✏️</span>
+                  <span style={{ fontSize: "0.6rem", color: "#ccc" }}>تعديل</span>
                 </div>
               )}
 
               {myRoleInfo && (
                 <div style={{
-                  marginTop: 6, display: "flex", alignItems: "center", gap: 6,
-                  padding: "5px 9px", borderRadius: 7,
+                  marginTop: 6, display: "flex", flexDirection: "column", gap: 2,
+                  padding: "7px 10px", borderRadius: 8,
                   background: GOLD_BG, border: `1px solid ${GOLD_BOR}`,
                 }}>
-                  <span style={{ fontSize: "0.72rem" }}>{myRoleInfo.icon}</span>
-                  <span style={{ fontSize: "0.6rem", color: "#8B6914", fontWeight: 700, flex: 1 }}>
-                    مرحلة {myRoleInfo.stage.join("، ")}
-                  </span>
+                  <div style={{ fontSize: "0.62rem", color: "#8B6914", fontWeight: 700 }}>
+                    {myRoleInfo.name}
+                  </div>
+                  {myStageLabels.map((s, i) => (
+                    <div key={i} style={{ fontSize: "0.57rem", color: "#9b8060" }}>{s}</div>
+                  ))}
                   {pendingCount > 0 && (
-                    <span style={{
-                      background: "#e74c3c", color: "#fff",
-                      borderRadius: "50%", width: 18, height: 18,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: "0.55rem", fontWeight: 900,
-                    }}>{pendingCount}</span>
+                    <div style={{
+                      marginTop: 4, background: "#e74c3c", color: "#fff",
+                      borderRadius: 20, padding: "2px 8px",
+                      fontSize: "0.58rem", fontWeight: 900, display: "inline-block", alignSelf: "flex-start",
+                    }}>{pendingCount} عقد بانتظارك</div>
                   )}
                 </div>
               )}
@@ -192,8 +198,8 @@ export default function ContractSidebar({
       {/* ── Navigation ── */}
       <nav style={{ flex: 1, padding: "12px 10px", display: "flex", flexDirection: "column", gap: 3, overflowY: "auto" }}>
         {TABS.map(tab => {
-          const isActive = activeTab === tab.id;
-          const showBadge = tab.id === "requests" && pendingCount > 0;
+          const isActive    = activeTab === tab.id;
+          const showBadge   = tab.id === "requests" && pendingCount > 0;
           return (
             <button
               key={tab.id}
@@ -202,23 +208,28 @@ export default function ContractSidebar({
                 display: "flex", alignItems: "center", gap: 10,
                 padding: "10px 14px", borderRadius: 10, border: "none",
                 background: isActive ? GOLD_BG : "transparent",
+                backdropFilter: isActive ? "blur(8px)" : "none",
                 cursor: "pointer", width: "100%", textAlign: "right",
                 fontFamily: "'Cairo', 'Tajawal', sans-serif",
                 fontSize: "0.82rem", fontWeight: isActive ? 800 : 500,
                 color: isActive ? "#8B6914" : "#4a3520",
                 borderRight: isActive ? `3px solid ${GOLD}` : "3px solid transparent",
                 transition: "all 0.15s",
-                position: "relative",
                 boxShadow: isActive ? SHADOW_G : "none",
               }}
               onMouseEnter={e => {
-                if (!isActive) (e.currentTarget as HTMLElement).style.background = "#f8f8f8";
+                if (!isActive) (e.currentTarget as HTMLElement).style.background = "rgba(248,248,248,0.9)";
               }}
               onMouseLeave={e => {
                 if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent";
               }}
             >
-              <span style={{ fontSize: "1rem" }}>{tab.icon}</span>
+              {/* Active indicator dot */}
+              <div style={{
+                width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                background: isActive ? GOLD : "rgba(0,0,0,0.12)",
+                transition: "background 0.15s",
+              }}/>
               <span style={{ flex: 1 }}>{tab.label}</span>
               {showBadge && (
                 <span style={{
@@ -241,31 +252,33 @@ export default function ContractSidebar({
             style={{
               width: "100%", padding: "7px", borderRadius: 8,
               border: "1px solid rgba(231,76,60,0.2)", background: "rgba(231,76,60,0.04)",
+              backdropFilter: "blur(8px)",
               cursor: "pointer", fontSize: "0.68rem", color: "#c0392b",
               fontFamily: "'Cairo', 'Tajawal', sans-serif", marginBottom: 7,
               display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
               transition: "background 0.15s",
             }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(231,76,60,0.09)"; }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(231,76,60,0.08)"; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(231,76,60,0.04)"; }}
           >
-            🔄 تغيير الدور
+            تغيير الدور
           </button>
         )}
         <button
           onClick={onExit}
           style={{
             width: "100%", padding: "9px", borderRadius: 9,
-            border: `1px solid ${GOLD_BOR}`, background: "transparent",
+            border: `1px solid ${GOLD_BOR}`,
+            background: "rgba(255,255,255,0.6)", backdropFilter: "blur(8px)",
             cursor: "pointer", fontSize: "0.76rem", color: "#9b8060",
             fontFamily: "'Cairo', 'Tajawal', sans-serif",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
             transition: "all 0.15s",
           }}
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = GOLD_BG; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.6)"; }}
         >
-          ← الرجوع للصفحة الرئيسية
+          الرجوع للصفحة الرئيسية
         </button>
       </div>
     </div>

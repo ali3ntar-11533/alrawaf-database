@@ -134,7 +134,7 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
           <h2 style={{ fontSize: "1.3rem", fontWeight: 900, color: "#1a1206", marginBottom: 4 }}>
-            📋 طلبات العقود
+            طلبات العقود
           </h2>
           <p style={{ color: "#9b8060", fontSize: "0.82rem" }}>إدارة جميع طلبات وعقود الشركة</p>
         </div>
@@ -151,7 +151,7 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
               animation: "req-glow 2.4s ease-in-out infinite",
             }}
           >
-            <span>✨</span> إرسال طلب عقد جديد
+            إرسال طلب عقد جديد
           </button>
         )}
       </div>
@@ -163,7 +163,7 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
           borderRadius: 9, padding: "8px 14px", marginBottom: 14,
         }}>
           <span style={{ fontSize: "0.78rem", color: "#8B6914", fontWeight: 700 }}>
-            📊 فلتر من لوحة التحليلات: المرحلة {filterStage} — {STAGES[filterStage - 1]?.label}
+            فلتر: المرحلة {filterStage} — {STAGES[filterStage - 1]?.label}
           </span>
           <button
             onClick={() => onClearFilter?.()}
@@ -184,7 +184,7 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
             value={search}
             onChange={e => { setSearch(e.target.value); setShowSearchDrop(true); }}
             onFocus={() => setShowSearchDrop(true)}
-            placeholder="🔍 بحث بالاسم أو رقم العقد..."
+            placeholder="بحث بالاسم أو رقم العقد..."
             autoComplete="off"
             style={{
               width: "100%", padding: "9px 14px", paddingLeft: search ? 34 : 14,
@@ -246,7 +246,6 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
                         onMouseEnter={e => { if (search !== v) (e.currentTarget as HTMLDivElement).style.background = "#FEFAF3"; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = search === v ? GOLD_BG : "#fff"; }}
                       >
-                        <span style={{ fontSize: "0.7rem" }}>🏢</span>
                         <span style={{ flex: 1 }}>{v}</span>
                         {count > 0 && (
                           <span style={{
@@ -318,7 +317,8 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
                     background: isCompleted ? "rgba(39,174,96,0.1)" : isRejected ? "rgba(231,76,60,0.1)" : GOLD_BG,
                     display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem",
                   }}>
-                    {isCompleted ? "✅" : isRejected ? "🔄" : stage?.icon ?? "📄"}
+                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: isCompleted ? "#27ae60" : isRejected ? "#e74c3c" : "#C5A059" }}/>
+
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -337,7 +337,7 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
                     </div>
                     {isRejected && (
                       <div style={{ fontSize: "0.7rem", color: "#e74c3c", marginTop: 4 }}>
-                        ↩ سبب الإعادة: {c.rejectionReason}
+                        سبب الإعادة: {c.rejectionReason}
                       </div>
                     )}
                     <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
@@ -355,7 +355,8 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", flexShrink: 0, paddingRight: 4 }}>
-                    <span style={{ fontSize: "1rem", color: "rgba(197,160,89,0.55)" }}>←</span>
+                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: "rgba(197,160,89,0.45)" }}/>
+
                   </div>
                 </div>
               </div>
@@ -448,10 +449,6 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
                           }}
                         >×</button>
                       )}
-                      {/* Search icon */}
-                      {!form.vendorName && (
-                        <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: "0.8rem", color: "#ccc", pointerEvents: "none" }}>🔍</span>
-                      )}
                       {/* Dropdown */}
                       {showVendorDrop && (filteredVendors.length > 0 || vendorQuery) && (
                         <div
@@ -503,7 +500,6 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
                                   onMouseEnter={e => { if (form.vendorName !== v) (e.currentTarget as HTMLDivElement).style.background = "#FEFAF3"; }}
                                   onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = form.vendorName === v ? GOLD_BG : "#fff"; }}
                                 >
-                                  <span style={{ fontSize: "0.7rem" }}>🏢</span>
                                   <span style={{ flex: 1 }}>{v}</span>
                                   {count > 0 && (
                                     <span style={{
@@ -633,7 +629,7 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
                   animation: saving ? "none" : "req-glow 2.4s ease-in-out infinite",
                 }}
               >
-                {saving ? "جاري الإرسال..." : "✨ إرسال الطلب"}
+                {saving ? "جاري الإرسال..." : "إرسال الطلب"}
               </button>
             </form>
           </div>

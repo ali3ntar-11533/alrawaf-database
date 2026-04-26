@@ -110,7 +110,7 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
             display: "flex", alignItems: "center", justifyContent: "center",
             transition: "background 0.15s",
           }}
-        >←</button>
+        >رجوع</button>
 
         {/* Logo */}
         <div style={{
@@ -123,7 +123,7 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
         {/* Stage info */}
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: "0.52rem", fontWeight: 900, letterSpacing: "0.12em", color: "rgba(197,160,89,0.65)", marginBottom: 2 }}>
-            {stage?.icon} المرحلة {stageNum} من {STAGES.length}
+            المرحلة {stageNum} من {STAGES.length}
           </div>
           <div style={{
             fontSize: "1.15rem", fontWeight: 900,
@@ -139,16 +139,16 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
         {/* Quick stats strip */}
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           {[
-            { label: "إجمالي الطلبات", value: contracts.length, icon: "📋", color: GOLD_END },
-            { label: "متوسط الانتظار", value: `${avgStageWait} يوم`, icon: "⏱️", color: avgStageWait >= 7 ? "#FCA5A5" : avgStageWait >= 3 ? "#FCD34D" : "#86EFAC" },
-            { label: "عاجل", value: urgent, icon: "⚠️", color: "#FCA5A5" },
-            { label: "إجمالي القيمة", value: formatSAR(totalVal), icon: "💰", color: GOLD_END },
+            { label: "إجمالي الطلبات", value: contracts.length, color: GOLD_END },
+            { label: "متوسط الانتظار", value: `${avgStageWait} يوم`, color: avgStageWait >= 7 ? "#FCA5A5" : avgStageWait >= 3 ? "#FCD34D" : "#86EFAC" },
+            { label: "عاجل", value: urgent, color: "#FCA5A5" },
+            { label: "إجمالي القيمة", value: formatSAR(totalVal), color: GOLD_END },
           ].map((s, i) => (
             <div key={i} style={{
               background: "rgba(255,255,255,0.07)", border: "1px solid rgba(197,160,89,0.18)",
               borderRadius: 11, padding: "7px 14px", textAlign: "center",
             }}>
-              <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.45)", marginBottom: 2 }}>{s.icon} {s.label}</div>
+              <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.45)", marginBottom: 2 }}>{s.label}</div>
               <div style={{ fontSize: "0.82rem", fontWeight: 900, color: s.color }}>{s.value}</div>
             </div>
           ))}
@@ -165,7 +165,6 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
       }}>
         {/* Search */}
         <div style={{ position: "relative", flex: 1, maxWidth: 340 }}>
-          <span style={{ position: "absolute", top: "50%", right: 12, transform: "translateY(-50%)", fontSize: "0.85rem", pointerEvents: "none" }}>🔍</span>
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -211,12 +210,10 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
       <div style={{ flex: 1, overflowY: "auto", padding: "0 0 30px" }}>
         {loading ? (
           <div style={{ textAlign: "center", padding: "60px 0", color: "#CCC" }}>
-            <div style={{ fontSize: "2rem", marginBottom: 10 }}>⏳</div>
             <div style={{ fontSize: "0.8rem" }}>جاري تحميل البيانات…</div>
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "60px 0", color: "#CCC", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: "2.8rem" }}>📭</span>
+          <div style={{ textAlign: "center", padding: "60px 0", color: "#CCC" }}>
             <span style={{ fontSize: "0.85rem" }}>لا طلبات في هذه المرحلة</span>
           </div>
         ) : (
@@ -229,15 +226,15 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
                   { label: "العنوان",      width: undefined },
                   { label: "المورد",       width: 130 },
                   { label: "القيمة",       width: 120 },
-                  { label: "⏳ زمن المرحلة", width: 120, note: "منذ آخر تحديث" },
-                  { label: "🕐 عمر الطلب",  width: 110, note: "منذ الإنشاء" },
+                  { label: "زمن المرحلة", width: 120, note: "منذ آخر تحديث" },
+                  { label: "عمر الطلب",  width: 110, note: "منذ الإنشاء" },
                 ].map((col, i) => (
                   <th
                     key={i}
                     style={{
                       padding: "11px 14px", textAlign: "right",
                       fontSize: "0.62rem", fontWeight: 900,
-                      color: col.label.includes("⏳") || col.label.includes("🕐") ? GOLD2 : "#777",
+                      color: col.label.includes("زمن") || col.label.includes("عمر") ? GOLD2 : "#777",
                       background: "transparent", borderBottom: "2px solid #F0F0F0",
                       width: col.width, whiteSpace: "nowrap",
                     }}
@@ -294,7 +291,7 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
                       </div>
                       {c.rejectionReason && (
                         <div style={{ fontSize: "0.58rem", color: RED, display: "flex", gap: 4 }}>
-                          <span>↩</span><span>{c.rejectionReason}</span>
+                          <span style={{ fontWeight: 700 }}>سبب الإعادة:</span><span style={{ marginRight: 4 }}>{c.rejectionReason}</span>
                         </div>
                       )}
                       {c.projectName && (
@@ -329,8 +326,8 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
                         <span style={{ fontSize: "0.7rem", fontWeight: 900, color: stageWait.color }}>
                           {stageWait.label}
                         </span>
-                        {isUrgent && <span style={{ fontSize: "0.55rem", color: RED, fontWeight: 800 }}>⚠️</span>}
-                        {isWarn && !isUrgent && <span style={{ fontSize: "0.55rem", color: AMBER, fontWeight: 800 }}>🔔</span>}
+                        {isUrgent && <span style={{ fontSize: "0.46rem", color: RED, fontWeight: 800, background: "rgba(220,38,38,0.1)", borderRadius: 4, padding: "1px 4px" }}>عاجل</span>}
+                        {isWarn && !isUrgent && <span style={{ fontSize: "0.46rem", color: AMBER, fontWeight: 800, background: "rgba(217,119,6,0.1)", borderRadius: 4, padding: "1px 4px" }}>تنبيه</span>}
                       </div>
                     </td>
 

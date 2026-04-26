@@ -231,14 +231,13 @@ function ContractCard({
           borderRadius: 20, padding: "4px 10px",
           border: `1px solid ${urgColor}25`,
         }}>
-          <span style={{ fontSize: "0.65rem" }}>⏳</span>
           <span style={{ fontSize: "0.6rem", color: "#666" }}>في المرحلة:</span>
           <span style={{ fontSize: "0.65rem", fontWeight: 900, color: urgColor }}>
             {stageFmt.value} {stageFmt.unit}
           </span>
           {stageAge >= 5 && (
-            <span style={{ fontSize: "0.55rem", color: urgColor, fontWeight: 800 }}>
-              {stageAge >= 7 ? "⚠️ عاجل" : "🔔 انتبه"}
+            <span style={{ fontSize: "0.48rem", color: urgColor, fontWeight: 800, background: stageAge >= 7 ? "rgba(220,38,38,0.1)" : "rgba(217,119,6,0.1)", borderRadius: 4, padding: "1px 5px" }}>
+              {stageAge >= 7 ? "عاجل" : "تنبيه"}
             </span>
           )}
         </div>
@@ -252,7 +251,7 @@ function ContractCard({
             fontSize: "0.6rem", color: RED,
             display: "flex", gap: 5, alignItems: "flex-start",
           }}>
-            <span>↩</span>
+            <span style={{ fontWeight: 700 }}>سبب الإعادة:</span>
             <span>{contract.rejectionReason}</span>
           </div>
         )}
@@ -278,14 +277,14 @@ function ContractCard({
                   letterSpacing: "0.02em",
                 }}
               >
-                عرض العقد كاملاً ←
+                عرض العقد كاملاً
               </button>
             ) : (
               <div style={{
                 textAlign: "center", fontSize: "0.7rem", color: "#CCC",
                 background: "#F8F8F8", borderRadius: 12, padding: "10px",
               }}>
-                🔒 ليس لديك صلاحية الوصول لهذه المرحلة
+                ليس لديك صلاحية الوصول لهذه المرحلة
               </div>
             )}
           </div>
@@ -449,10 +448,6 @@ export default function StageSlideOver({ stageNum, contracts, role, onClose, onO
           <div style={{
             marginTop: 10, position: "relative",
           }}>
-            <span style={{
-              position: "absolute", top: "50%", right: 12, transform: "translateY(-50%)",
-              fontSize: "0.8rem", pointerEvents: "none",
-            }}>🔍</span>
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}

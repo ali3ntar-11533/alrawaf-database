@@ -152,17 +152,18 @@ export default function ContractTracking({ role, onOpenContract }: Props) {
                   </div>
 
                   <div style={{ display: "flex", gap: 8, flexShrink: 0, alignItems: "center" }}>
-                    <span style={{ fontSize: "0.78rem", color: "rgba(197,160,89,0.6)", fontWeight: 700 }}>←</span>
                     <span
                       onClick={e => { e.stopPropagation(); setExpanded(isExpanded ? null : c.id); }}
-                      title="عرض سجل الأحداث"
                       style={{
-                        color: isExpanded ? GOLD : "#ccc", fontSize: "0.85rem",
-                        display: "inline-block",
-                        transform: `rotate(${isExpanded ? "90deg" : "0"})`,
-                        transition: "transform 0.2s, color 0.15s",
-                        cursor: "pointer", padding: "4px 2px",
-                      }}>▶</span>
+                        display: "inline-flex", alignItems: "center", justifyContent: "center",
+                        width: 26, height: 26, borderRadius: 8,
+                        background: isExpanded ? "rgba(197,160,89,0.12)" : "rgba(0,0,0,0.04)",
+                        border: `1px solid ${isExpanded ? "rgba(197,160,89,0.3)" : "rgba(0,0,0,0.08)"}`,
+                        color: isExpanded ? GOLD : "#bbb",
+                        fontSize: "0.6rem", fontWeight: 800,
+                        transition: "all 0.2s", cursor: "pointer",
+                      }}
+                    >{isExpanded ? "أغلق" : "عرض"}</span>
                   </div>
                 </div>
 
@@ -194,7 +195,7 @@ export default function ContractTracking({ role, onOpenContract }: Props) {
                               fontSize: "0.65rem", fontWeight: 800,
                               color: isDone ? "#27ae60" : isCur ? GOLD : "#bbb",
                             }}>
-                              {isDone ? "✓" : isCur ? "▶" : sNum}
+                              {isDone ? "✓" : isCur ? "●" : sNum}
                             </div>
                             <div style={{ fontSize: "0.52rem", color: isDone ? "#6b8060" : isCur ? "#8B6914" : "#bbb", textAlign: "center", lineHeight: 1.3, maxWidth: 58 }}>
                               {s.label}

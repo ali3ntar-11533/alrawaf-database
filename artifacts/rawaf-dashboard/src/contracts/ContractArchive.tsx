@@ -132,7 +132,7 @@ export default function ContractArchive({ onOpenContract }: Props) {
                   whiteSpace: "nowrap",
                 }}
               >
-                عرض ←
+                عرض
               </button>
             </div>
           ))}

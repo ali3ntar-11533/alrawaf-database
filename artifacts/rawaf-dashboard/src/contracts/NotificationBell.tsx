@@ -127,7 +127,6 @@ export default function NotificationBell({
       <button
         ref={btnRef}
         onClick={() => setOpen(v => !v)}
-        title="الإشعارات"
         style={{
           position: "relative",
           background: open ? GOLD_BG : "transparent",
@@ -453,7 +452,6 @@ export default function NotificationBell({
                           e.stopPropagation();
                           onDismissOne(n.id);
                         }}
-                        title="إزالة"
                         style={{
                           background: "none",
                           border: "none",

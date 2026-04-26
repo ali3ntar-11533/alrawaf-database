@@ -351,9 +351,7 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
               width: "100%", justifyContent: "center",
             }}
           >
-            <span style={{ fontSize: "1.05rem" }}>🔐</span>
             الدخول للنظام الآمن
-            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: "rgba(255,255,255,0.22)", fontSize: "0.7rem", transition: "transform 0.2s", transform: btnHover ? "translateX(-3px)" : "none" }}>←</span>
           </button>
 
           <button
@@ -378,9 +376,7 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
               width: "100%", justifyContent: "center",
             }}
           >
-            <span style={{ fontSize: "1.05rem" }}>🏛️</span>
             نظام إدارة العقود
-            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: "rgba(197,160,89,0.22)", fontSize: "0.7rem", transition: "transform 0.2s", transform: cBtnHover ? "translateX(-3px)" : "none" }}>←</span>
           </button>
         </div>
 
