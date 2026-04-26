@@ -35,12 +35,66 @@ function formatSAR(n: number) {
   return `${n} ر.س`;
 }
 
+const inputSt: React.CSSProperties = {
+  width: "100%", padding: "8px 10px", borderRadius: 8,
+  border: "1.5px solid #E2E8F0", fontSize: "0.76rem",
+  fontFamily: "'Cairo','Tajawal',sans-serif",
+  background: "#FAFBFF", outline: "none",
+  boxSizing: "border-box",
+};
+
+const labelSt: React.CSSProperties = {
+  fontSize: "0.64rem", fontWeight: 700, color: "#555",
+  display: "block", marginBottom: 4,
+};
+
+interface NewMonitorDraft {
+  title: string;
+  contractNo: string;
+  vendorName: string;
+  projectName: string;
+  startDate: string;
+  endDate: string;
+  value: string;
+}
+
+const EMPTY_DRAFT: NewMonitorDraft = {
+  title: "", contractNo: "", vendorName: "",
+  projectName: "", startDate: "", endDate: "", value: "",
+};
+
+let _tempId = -1;
+function makeTempContract(d: NewMonitorDraft): Contract {
+  return {
+    id: _tempId--,
+    title: d.title || "متابعة جديدة",
+    contractNo: d.contractNo,
+    vendorName: d.vendorName,
+    projectName: d.projectName,
+    startDate: d.startDate,
+    endDate: d.endDate,
+    value: parseFloat(d.value) || 0,
+    status: "completed",
+    currentStage: 10,
+    contractType: "",
+    notes: "",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    signedFilename: null,
+    actorName: "",
+  } as unknown as Contract;
+}
+
 export default function ContractTracking({ role, actorName, onOpenContract }: Props) {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading]     = useState(true);
   const [monitorContract, setMonitorContract] = useState<Contract | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [draft, setDraft] = useState<NewMonitorDraft>(EMPTY_DRAFT);
+  const [draftError, setDraftError] = useState("");
 
   const isManager = role === TRACKING_ROLE;
 
@@ -63,6 +117,14 @@ export default function ContractTracking({ role, actorName, onOpenContract }: Pr
       setDeletingId(null);
       setConfirmDeleteId(null);
     }
+  }
+
+  function handleOpenNewMonitor() {
+    if (!draft.title.trim()) { setDraftError("يرجى إدخال اسم العقد على الأقل"); return; }
+    setDraftError("");
+    setMonitorContract(makeTempContract(draft));
+    setShowNewForm(false);
+    setDraft(EMPTY_DRAFT);
   }
 
   /* ── Monitor detail view ─────────────────────────────────── */
@@ -165,26 +227,132 @@ export default function ContractTracking({ role, actorName, onOpenContract }: Pr
               {isManager && ` · ${actorName || TRACKING_ROLE} — صلاحيات التعديل مفعّلة`}
             </div>
           </div>
-          {/* Stats strip */}
-          <div style={{ display: "flex", gap: 8 }}>
-            {[
-              { label: "عقود نشطة", value: contracts.length, color: "#86EFAC" },
-              { label: "إجمالي القيمة", value: formatSAR(contracts.reduce((s, c) => s + (c.value || 0), 0)), color: AMBER },
-            ].map((s, i) => (
-              <div key={i} style={{
-                background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 10, padding: "7px 14px", textAlign: "center", backdropFilter: "blur(8px)",
-              }}>
-                <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.38)", marginBottom: 2 }}>{s.label}</div>
-                <div style={{ fontSize: "0.86rem", fontWeight: 900, color: s.color }}>{s.value}</div>
-              </div>
-            ))}
+
+          {/* Stats strip + New button */}
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {/* عقود نشطة chip */}
+            <div style={{
+              background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 10, padding: "7px 14px", textAlign: "center", backdropFilter: "blur(8px)",
+            }}>
+              <div style={{ fontSize: "0.52rem", color: "rgba(255,255,255,0.38)", marginBottom: 2 }}>عقود نشطة</div>
+              <div style={{ fontSize: "0.86rem", fontWeight: 900, color: "#86EFAC" }}>{contracts.length}</div>
+            </div>
+
+            {/* إنشاء متابعة جديدة — hidden for مسؤول المتابعة */}
+            {!isManager && (
+              <button
+                onClick={() => { setDraft(EMPTY_DRAFT); setDraftError(""); setShowNewForm(true); }}
+                style={{
+                  padding: "8px 16px", borderRadius: 10,
+                  background: `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`,
+                  border: "none", color: "#fff",
+                  fontSize: "0.72rem", fontWeight: 800,
+                  cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif",
+                  boxShadow: "0 2px 10px rgba(25,118,210,0.35)",
+                  transition: "opacity 0.15s",
+                  whiteSpace: "nowrap",
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.85"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+              >+ إنشاء متابعة جديدة</button>
+            )}
           </div>
         </div>
       </div>
 
+      {/* ── New Monitor Form ─────────────────────────────── */}
+      {showNewForm && (
+        <div style={{
+          margin: "20px 28px 0", background: "#fff", borderRadius: 16,
+          border: `1.5px solid ${BLUE_BR}`,
+          boxShadow: "0 4px 24px rgba(25,118,210,0.10)",
+          overflow: "hidden",
+        }}>
+          {/* Form header */}
+          <div style={{
+            background: `linear-gradient(135deg, ${BLUE} 0%, ${BLUE_M} 100%)`,
+            padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}>
+            <div>
+              <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#fff" }}>إنشاء متابعة جديدة</div>
+              <div style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.55)", marginTop: 2 }}>
+                أدخل بيانات العقد لفتح لوحة المتابعة التنفيذية
+              </div>
+            </div>
+            <button
+              onClick={() => setShowNewForm(false)}
+              style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 8, color: "#fff", width: 28, height: 28, cursor: "pointer", fontSize: "0.8rem", display: "flex", alignItems: "center", justifyContent: "center" }}
+            >✕</button>
+          </div>
+
+          {/* Form body */}
+          <div style={{ padding: "20px 20px 16px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px 16px" }}>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={labelSt}>اسم العقد <span style={{ color: RED }}>*</span></label>
+              <input
+                style={inputSt}
+                value={draft.title}
+                onChange={e => setDraft(d => ({ ...d, title: e.target.value }))}
+                placeholder="مثال: عقد إنشاء مبنى الإدارة الجديد"
+              />
+            </div>
+            <div>
+              <label style={labelSt}>رقم العقد</label>
+              <input style={inputSt} value={draft.contractNo} onChange={e => setDraft(d => ({ ...d, contractNo: e.target.value }))} placeholder="CON-2026-XXXX" />
+            </div>
+            <div>
+              <label style={labelSt}>الطرف الثاني (المقاول)</label>
+              <input style={inputSt} value={draft.vendorName} onChange={e => setDraft(d => ({ ...d, vendorName: e.target.value }))} placeholder="اسم الشركة أو المقاول" />
+            </div>
+            <div>
+              <label style={labelSt}>المشروع</label>
+              <input style={inputSt} value={draft.projectName} onChange={e => setDraft(d => ({ ...d, projectName: e.target.value }))} placeholder="اسم المشروع" />
+            </div>
+            <div>
+              <label style={labelSt}>تاريخ البداية</label>
+              <input type="date" style={inputSt} value={draft.startDate} onChange={e => setDraft(d => ({ ...d, startDate: e.target.value }))} />
+            </div>
+            <div>
+              <label style={labelSt}>تاريخ الانتهاء</label>
+              <input type="date" style={inputSt} value={draft.endDate} onChange={e => setDraft(d => ({ ...d, endDate: e.target.value }))} />
+            </div>
+            <div>
+              <label style={labelSt}>قيمة العقد (ر.س)</label>
+              <input type="number" style={inputSt} value={draft.value} onChange={e => setDraft(d => ({ ...d, value: e.target.value }))} placeholder="0" />
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div style={{ padding: "0 20px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+            {draftError && (
+              <span style={{ flex: 1, fontSize: "0.65rem", color: RED, fontWeight: 700 }}>{draftError}</span>
+            )}
+            <div style={{ flex: draftError ? undefined : 1 }} />
+            <button
+              onClick={() => { setShowNewForm(false); setDraft(EMPTY_DRAFT); }}
+              style={{
+                padding: "9px 20px", borderRadius: 9, border: "1.5px solid #E8E8E8",
+                background: "#fff", color: "#666", fontSize: "0.74rem", cursor: "pointer",
+                fontFamily: "'Cairo','Tajawal',sans-serif",
+              }}
+            >إلغاء</button>
+            <button
+              onClick={handleOpenNewMonitor}
+              style={{
+                padding: "9px 24px", borderRadius: 9, border: "none",
+                background: `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`,
+                color: "#fff", fontSize: "0.76rem", fontWeight: 800,
+                cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif",
+                boxShadow: "0 2px 8px rgba(25,118,210,0.28)",
+              }}
+            >فتح لوحة المتابعة</button>
+          </div>
+        </div>
+      )}
+
       {/* List */}
-      <div style={{ padding: "20px 28px" }}>
+      <div style={{ padding: showNewForm ? "16px 28px 20px" : "20px 28px" }}>
         {contracts.length === 0 ? (
           <div style={{
             background: "#fff", borderRadius: 16, padding: "60px 40px",
