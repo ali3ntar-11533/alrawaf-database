@@ -756,8 +756,15 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
               }}>
                 {contract.vendorName || contract.title}
               </div>
-              {/* Contract number chip + project info on same row */}
-              <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
+              {/* Project name */}
+              {(contract.projectName || contract.projectNo) && (
+                <div style={{ fontSize: "0.68rem", color: "#64748B", marginBottom: 6 }}>
+                  {contract.projectName && <>م/ {contract.projectName}</>}
+                  {contract.projectNo  && <> · {contract.projectNo}</>}
+                </div>
+              )}
+              {/* Contract number chip — centered below project name */}
+              <div style={{ display: "flex", justifyContent: "center" }}>
                 <div style={{
                   display: "inline-flex", alignItems: "center", gap: 4,
                   background: isCompleted
@@ -778,12 +785,6 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                     {contract.contractNo || "—"}
                   </span>
                 </div>
-                {(contract.projectName || contract.projectNo) && (
-                  <span style={{ fontSize: "0.68rem", color: "#64748B" }}>
-                    {contract.projectName && <>م/ {contract.projectName}</>}
-                    {contract.projectNo  && <> · {contract.projectNo}</>}
-                  </span>
-                )}
               </div>
             </div>
 
