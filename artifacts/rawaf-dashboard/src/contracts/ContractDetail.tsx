@@ -744,11 +744,11 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
           boxShadow: `${SHADOW_MD}, ${SHADOW_GOLD}`,
           animation: "fadeSlideUp 0.32s ease both",
         }}>
-          {/* ── Header row: right = icon+title  |  left = pct% + stage timeline ── */}
+          {/* ── Header row: right = icon+title (fixed)  |  left = timeline+pct% (fills space) ── */}
           <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
 
-            {/* ── RIGHT: Icon + title + stage badge ── */}
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, flex: 1, minWidth: 0 }}>
+            {/* ── RIGHT: Icon + title + stage badge — fixed width ── */}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, flexShrink: 0, maxWidth: 300 }}>
               <div style={{
                 width: 52, height: 52, borderRadius: 14, flexShrink: 0,
                 background: isCompleted
@@ -786,8 +786,8 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
               </div>
             </div>
 
-            {/* ── LEFT: stage timeline + pct% (pct% leftmost in RTL) ── */}
-            <div className="no-print" style={{ flexShrink: 0, display: "flex", flexDirection: "row", alignItems: "stretch", gap: 10 }}>
+            {/* ── LEFT: stage timeline (flex:1) + pct% (fixed) ── */}
+            <div className="no-print" style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "row", alignItems: "stretch", gap: 10 }}>
 
               {/* Stage timeline — beside pct%, last two merged — FIRST in markup = right in RTL */}
               {(() => {
@@ -805,49 +805,86 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                   { label: mergedLabel, role: lastTwo[0].role, icon: mergedIcon, sNum: 10, merged: true },
                 ];
                 return (
-                  /* compact card — height matches pct% box */
+                  /* expanded card — fills available width, shows role + duration */
                   <div style={{
-                    background: isCompleted ? "rgba(39,174,96,0.05)" : "rgba(25,118,210,0.04)",
-                    border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.15)" : "rgba(25,118,210,0.12)"}`,
-                    borderRadius: 12, padding: "0 14px",
-                    boxShadow: "0 2px 12px rgba(25,118,210,0.08)",
+                    flex: 1, minWidth: 0,
+                    background: isCompleted ? "rgba(39,174,96,0.04)" : "rgba(25,118,210,0.04)",
+                    border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.14)" : "rgba(25,118,210,0.12)"}`,
+                    borderRadius: 12, padding: "8px 14px",
+                    boxShadow: "0 2px 12px rgba(25,118,210,0.07)",
                     overflowX: "auto", display: "flex", alignItems: "center",
                   }}>
-                    <div style={{ display: "flex", alignItems: "center", minWidth: "max-content", direction: "rtl", gap: 0 }}>
+                    <div style={{
+                      display: "flex", alignItems: "flex-start",
+                      justifyContent: "space-between",
+                      width: "100%", minWidth: "max-content",
+                      direction: "rtl", gap: 0,
+                    }}>
                       {displayStages.map((stg, idx) => {
                         const sNum   = stg.sNum;
                         const isDone = stg.merged ? mDone  : (isCompleted ? true : sNum < contract.currentStage);
                         const isCur  = stg.merged ? mCur   : (!isCompleted && sNum === contract.currentStage);
+                        const dur    = stageDurations[sNum];
                         const isLast = idx === displayStages.length - 1;
-                        const cSize  = stg.merged ? 34 : 28;
                         return (
-                          <div key={sNum} style={{ display: "flex", alignItems: "center" }}>
-                            {/* Circle only — tooltip shows label */}
-                            <div
-                              title={stg.label}
-                              style={{
-                                width: cSize, height: cSize,
-                                borderRadius: "50%", flexShrink: 0,
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                                fontSize: isDone ? (stg.merged ? "0.85rem" : "0.72rem") : "0.6rem",
-                                fontWeight: 900, cursor: "default",
+                          <div key={sNum} style={{ display: "flex", alignItems: "flex-start" }}>
+                            {/* Stage node column: pill + role */}
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: stg.merged ? 66 : 52 }}>
+                              {/* Pill node: number/✓ + duration */}
+                              <div style={{
+                                width: stg.merged ? 62 : 48, minHeight: 44,
+                                borderRadius: 10, flexShrink: 0,
+                                display: "flex", flexDirection: "column",
+                                alignItems: "center", justifyContent: "center",
+                                gap: 1, padding: "4px 2px",
                                 background: isDone
                                   ? `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`
-                                  : isCur ? GLASS_BG2 : "rgba(0,0,0,0.05)",
-                                color: isDone ? "#fff" : isCur ? BLUE_M : "#ccc",
+                                  : isCur ? GLASS_BG2 : "rgba(0,0,0,0.04)",
+                                color: isDone ? "#fff" : isCur ? BLUE_M : "#bbb",
                                 border: isCur ? `2px solid ${BLUE_M}` : isDone ? "2px solid transparent" : "1.5px solid rgba(0,0,0,0.08)",
                                 boxShadow: isDone
-                                  ? `0 2px 8px rgba(25,118,210,0.35), inset 0 1px 0 rgba(255,255,255,0.2)`
-                                  : isCur ? `0 0 0 4px rgba(25,118,210,0.18), 0 2px 6px rgba(25,118,210,0.2)` : "none",
+                                  ? `0 3px 10px rgba(25,118,210,0.35), inset 0 1px 0 rgba(255,255,255,0.15)`
+                                  : isCur ? `0 0 0 4px rgba(25,118,210,0.18), 0 2px 8px rgba(25,118,210,0.2)` : "none",
                                 animation: isCur ? "stg-pulse 2s ease-in-out infinite" : "none",
-                                transition: "all 0.3s",
+                                transition: "all 0.3s", cursor: "default",
                               }}>
-                              {isDone ? "✓" : sNum}
+                                {/* Number or checkmark */}
+                                <span style={{ fontSize: isDone ? "0.8rem" : "0.65rem", fontWeight: 900, lineHeight: 1 }}>
+                                  {isDone ? "✓" : sNum}
+                                </span>
+                                {/* Duration inside the node */}
+                                {dur ? (
+                                  <span style={{
+                                    fontSize: "0.42rem", fontWeight: 700, lineHeight: 1,
+                                    color: isDone ? "rgba(255,255,255,0.85)" : isCur ? BLUE_M : "#aaa",
+                                    marginTop: 2, textAlign: "center", maxWidth: "100%", padding: "0 2px",
+                                  }}>
+                                    {dur}
+                                  </span>
+                                ) : isCur ? (
+                                  <span style={{
+                                    fontSize: "0.38rem", fontWeight: 900, lineHeight: 1,
+                                    color: BLUE_M, marginTop: 2,
+                                    animation: "stg-pulse 2s ease-in-out infinite",
+                                  }}>
+                                    جارٍ
+                                  </span>
+                                ) : null}
+                              </div>
+                              {/* Role label below node */}
+                              <div style={{
+                                fontSize: "0.44rem", marginTop: 4, textAlign: "center",
+                                color: isDone ? BLUE : isCur ? BLUE_M : "#9baab8",
+                                fontWeight: isCur ? 800 : 500,
+                                lineHeight: 1.3, maxWidth: stg.merged ? 64 : 50,
+                              }}>
+                                {stg.role}
+                              </div>
                             </div>
                             {/* Connector */}
                             {!isLast && (
                               <div style={{
-                                width: 10, height: 2, flexShrink: 0,
+                                width: 8, height: 2, marginTop: 22, flexShrink: 0,
                                 background: isDone ? `linear-gradient(90deg, ${BLUE}, ${BLUE_L})` : "rgba(0,0,0,0.07)",
                                 borderRadius: 2, transition: "background 0.4s",
                               }} />
