@@ -18,6 +18,14 @@ const AMB_BR  = "rgba(245,166,35,0.28)";
 
 const TRACKING_ROLE = "مسؤول المتابعة";
 
+function contractStatus(endDate?: string): { label: string; color: string; bg: string; border: string } {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  if (endDate && new Date(endDate) < today) {
+    return { label: "مكتمل", color: "#16a34a", bg: "rgba(34,197,94,0.08)", border: "rgba(34,197,94,0.22)" };
+  }
+  return { label: "قيد التنفيذ", color: "#b45309", bg: "rgba(245,166,35,0.10)", border: "rgba(245,166,35,0.35)" };
+}
+
 interface ExecPhase  { id: number; label: string; pct: number; durationDays: number; }
 interface BoqItem    { id: number; code: string; description: string; unit: string; qty: number; executedQty: number; unitPrice: number; }
 interface Payment    { id: number; no: number; invoiceRef: string; date: string; amount: number; status: "paid" | "pending"; }
@@ -762,7 +770,9 @@ export default function ContractMonitor({ contract, role }: { contract: Contract
         <StatBox label="نوع الأعمال"          value={contract.contractType || "—"} />
         <StatBox label="تاريخ البداية"         value={contract.startDate || "—"} />
         <StatBox label="تاريخ النهاية"         value={contract.endDate || "—"} />
-        <StatBox label="حالة العقد"            value="مكتمل" valueStyle={{ color: GREEN }} />
+        {(() => { const st = contractStatus(contract.endDate); return (
+          <StatBox label="حالة العقد" value={st.label} valueStyle={{ color: st.color }} />
+        ); })()}
       </div>
 
       {/* ── Execution Path + Time Box ── */}

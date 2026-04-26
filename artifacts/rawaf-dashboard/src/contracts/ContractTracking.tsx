@@ -53,6 +53,7 @@ interface NewMonitorDraft {
   contractNo: string;
   vendorName: string;
   projectName: string;
+  durationDays: string;
   startDate: string;
   endDate: string;
   value: string;
@@ -60,8 +61,23 @@ interface NewMonitorDraft {
 
 const EMPTY_DRAFT: NewMonitorDraft = {
   title: "", contractNo: "", vendorName: "",
-  projectName: "", startDate: "", endDate: "", value: "",
+  projectName: "", durationDays: "", startDate: "", endDate: "", value: "",
 };
+
+function calcEndDate(start: string, days: string): string {
+  if (!start || !days || parseInt(days) <= 0) return "";
+  const d = new Date(start);
+  d.setDate(d.getDate() + parseInt(days));
+  return d.toISOString().split("T")[0];
+}
+
+function contractStatus(endDate?: string): { label: string; color: string; bg: string; border: string } {
+  const today = new Date(); today.setHours(0,0,0,0);
+  if (endDate && new Date(endDate) < today) {
+    return { label: "مكتمل", color: "#16a34a", bg: "rgba(34,197,94,0.08)", border: "rgba(34,197,94,0.22)" };
+  }
+  return { label: "قيد التنفيذ", color: "#b45309", bg: "rgba(245,166,35,0.10)", border: "rgba(245,166,35,0.35)" };
+}
 
 
 export default function ContractTracking({ role, actorName, onOpenContract }: Props) {
@@ -165,10 +181,15 @@ export default function ContractTracking({ role, actorName, onOpenContract }: Pr
             </div>
           </div>
 
-          <div style={{
-            fontSize: "0.6rem", fontWeight: 800, padding: "4px 12px", borderRadius: 20,
-            background: "rgba(34,197,94,0.15)", color: GREEN, border: "1px solid rgba(34,197,94,0.3)",
-          }}>مكتمل — قيد المتابعة</div>
+          {(() => {
+            const st = contractStatus(monitorContract.endDate);
+            return (
+              <div style={{
+                fontSize: "0.6rem", fontWeight: 800, padding: "4px 12px", borderRadius: 20,
+                background: st.bg, color: st.color, border: `1px solid ${st.border}`,
+              }}>{st.label} — قيد المتابعة</div>
+            );
+          })()}
 
           {isManager && (
             <div style={{ fontSize: "0.58rem", padding: "4px 10px", borderRadius: 8, background: AMBER_B, color: AMBER, border: `1px solid ${AMBER_R}`, fontWeight: 700 }}>
@@ -306,12 +327,33 @@ export default function ContractTracking({ role, actorName, onOpenContract }: Pr
               <input style={inputSt} value={draft.projectName} onChange={e => setDraft(d => ({ ...d, projectName: e.target.value }))} placeholder="اسم المشروع" />
             </div>
             <div>
-              <label style={labelSt}>تاريخ البداية</label>
-              <input type="date" style={inputSt} value={draft.startDate} onChange={e => setDraft(d => ({ ...d, startDate: e.target.value }))} />
+              <label style={labelSt}>المدة (بالأيام)</label>
+              <input
+                type="number" min={1} style={inputSt} value={draft.durationDays}
+                placeholder="عدد الأيام"
+                onChange={e => {
+                  const days = e.target.value;
+                  setDraft(d => ({ ...d, durationDays: days, endDate: calcEndDate(d.startDate, days) }));
+                }}
+              />
             </div>
             <div>
-              <label style={labelSt}>تاريخ الانتهاء</label>
-              <input type="date" style={inputSt} value={draft.endDate} onChange={e => setDraft(d => ({ ...d, endDate: e.target.value }))} />
+              <label style={labelSt}>تاريخ البداية</label>
+              <input
+                type="date" style={inputSt} value={draft.startDate}
+                onChange={e => {
+                  const start = e.target.value;
+                  setDraft(d => ({ ...d, startDate: start, endDate: calcEndDate(start, d.durationDays) }));
+                }}
+              />
+            </div>
+            <div>
+              <label style={labelSt}>تاريخ الانتهاء (محتسب تلقائياً)</label>
+              <input
+                type="date" style={{ ...inputSt, background: draft.endDate ? "rgba(25,118,210,0.04)" : "#fff", color: draft.endDate ? BLUE_M : "#1A1A1A" }}
+                value={draft.endDate}
+                onChange={e => setDraft(d => ({ ...d, endDate: e.target.value }))}
+              />
             </div>
             <div>
               <label style={labelSt}>قيمة العقد (ر.س)</label>
@@ -404,11 +446,13 @@ export default function ContractTracking({ role, actorName, onOpenContract }: Pr
                             background: BLUE_B, color: BLUE_M, fontWeight: 700, border: `1px solid ${BLUE_BR}`,
                           }}>{c.contractNo}</span>
                         )}
-                        <span style={{
-                          fontSize: "0.6rem", padding: "2px 8px", borderRadius: 20,
-                          background: "rgba(34,197,94,0.08)", color: GREEN,
-                          fontWeight: 700, border: "1px solid rgba(34,197,94,0.22)",
-                        }}>مكتمل</span>
+                        {(() => { const st = contractStatus(c.endDate); return (
+                          <span style={{
+                            fontSize: "0.6rem", padding: "2px 8px", borderRadius: 20,
+                            background: st.bg, color: st.color,
+                            fontWeight: 700, border: `1px solid ${st.border}`,
+                          }}>{st.label}</span>
+                        ); })()}
                       </div>
 
                       <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: "0.68rem", color: "#666" }}>
