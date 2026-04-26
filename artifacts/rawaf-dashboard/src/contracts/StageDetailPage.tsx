@@ -40,28 +40,41 @@ function formatSAR(n: number) {
 }
 
 interface Props {
-  stageNum: number;
+  stageNum?: number;        // single stage (original behaviour)
+  stageNums?: number[];     // multiple stages (tab mode)
+  hideBack?: boolean;       // hide back button when embedded in tab
   role: string;
   actorName: string;
   onBack: () => void;
   onOpenContract: (id: number) => void;
 }
 
-export default function StageDetailPage({ stageNum, role, actorName, onBack, onOpenContract }: Props) {
+export default function StageDetailPage({ stageNum, stageNums, hideBack, role, actorName, onBack, onOpenContract }: Props) {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState("");
   const [sortBy, setSortBy]       = useState<"stageAge" | "totalAge" | "value">("stageAge");
 
-  const stage = STAGES[stageNum - 1];
+  // Resolved stage numbers list
+  const resolvedStages: number[] = stageNums?.length
+    ? stageNums
+    : stageNum != null ? [stageNum] : [];
+
+  const stage = stageNum != null ? STAGES[stageNum - 1] : undefined;
 
   useEffect(() => {
+    if (resolvedStages.length === 0) { setLoading(false); return; }
     setLoading(true);
-    listContracts({ stage: stageNum })
-      .then(data => setContracts(data.filter(c => c.status !== "completed")))
+    Promise.all(resolvedStages.map(n => listContracts({ stage: n })))
+      .then(results => {
+        const all = results.flat().filter(c => c.status !== "completed");
+        // de-duplicate by id
+        const seen = new Set<number>();
+        setContracts(all.filter(c => { if (seen.has(c.id)) return false; seen.add(c.id); return true; }));
+      })
       .catch(() => setContracts([]))
       .finally(() => setLoading(false));
-  }, [stageNum]);
+  }, [resolvedStages.join(",")]);
 
   const filtered = contracts
     .filter(c => !search || c.title.includes(search) || c.contractNo.includes(search) || c.vendorName?.includes(search))
@@ -109,19 +122,21 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
         {/* Blue+Gold top line */}
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg,${BLUE_M},${BLUE_L},${AMBER})` }}/>
 
-        {/* Back */}
-        <button
-          onClick={onBack}
-          style={{
-            padding: "8px 16px", borderRadius: 10, flexShrink: 0,
-            background: "rgba(255,255,255,0.08)", border: "1px solid rgba(197,160,89,0.28)",
-            color: GOLD_END, fontSize: "0.76rem", fontWeight: 700, cursor: "pointer",
-            fontFamily: "'Cairo','Tajawal',sans-serif",
-            transition: "background 0.15s",
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.14)"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)"; }}
-        >رجوع</button>
+        {/* Back — hidden in tab mode */}
+        {!hideBack && (
+          <button
+            onClick={onBack}
+            style={{
+              padding: "8px 16px", borderRadius: 10, flexShrink: 0,
+              background: "rgba(255,255,255,0.08)", border: "1px solid rgba(197,160,89,0.28)",
+              color: GOLD_END, fontSize: "0.76rem", fontWeight: 700, cursor: "pointer",
+              fontFamily: "'Cairo','Tajawal',sans-serif",
+              transition: "background 0.15s",
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.14)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)"; }}
+          >رجوع</button>
+        )}
 
         {/* Logo */}
         <div style={{
@@ -137,13 +152,21 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
         {/* Stage info */}
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: "0.5rem", fontWeight: 900, letterSpacing: "0.12em", color: BLUE_L, marginBottom: 3, textTransform: "uppercase" }}>
-            المرحلة {stageNum} من {STAGES.length} · نظام إدارة العقود
+            {stage
+              ? `المرحلة ${stageNum} من ${STAGES.length} · نظام إدارة العقود`
+              : `طلبات العقود · نظام إدارة العقود`}
           </div>
           <div style={{ fontSize: "1.12rem", fontWeight: 900, color: GOLD_END, letterSpacing: "-0.02em" }}>
-            {stage?.label}
+            {stage
+              ? stage.label
+              : resolvedStages.length === 1
+                ? STAGES[resolvedStages[0] - 1]?.label
+                : (actorName || role || "طلباتك")}
           </div>
           <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.42)", marginTop: 2 }}>
-            {role ? `${actorName || role} · المسؤول: ${stage?.role}` : `المسؤول: ${stage?.role}`}
+            {stage
+              ? (role ? `${actorName || role} · المسؤول: ${stage.role}` : `المسؤول: ${stage.role}`)
+              : resolvedStages.map(n => STAGES[n - 1]?.label).filter(Boolean).join(" · ")}
           </div>
         </div>
 

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Toaster } from "sonner";
 import ContractSidebar from "./ContractSidebar";
 import ContractDashboard from "./ContractDashboard";
-import ContractRequests from "./ContractRequests";
 import ContractDetail from "./ContractDetail";
 import ContractTracking from "./ContractTracking";
 import ContractArchive from "./ContractArchive";
@@ -212,13 +211,20 @@ export default function ContractApp({ onExit }: Props) {
               onOpenStage={openStage}
             />
           ) : activeTab === "requests" ? (
-            <ContractRequests
-              role={role}
-              actorName={actorName}
-              onOpenContract={openContract}
-              filterStage={filterStage ?? undefined}
-              onClearFilter={() => setFilterStage(null)}
-            />
+            (() => {
+              const roleInfo = ROLES.find(r => r.name === role);
+              const myStages = roleInfo?.stage ?? [];
+              return (
+                <StageDetailPage
+                  stageNums={myStages.length > 0 ? myStages : undefined}
+                  hideBack={true}
+                  role={role}
+                  actorName={actorName}
+                  onBack={() => {}}
+                  onOpenContract={(id) => openContract(id)}
+                />
+              );
+            })()
           ) : activeTab === "tracking" ? (
             <ContractTracking
               role={role}
