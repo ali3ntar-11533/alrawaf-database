@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { GOLD, GOLD_BG, GOLD_BORDER, STAGES } from "./types";
+import { STAGES } from "./types";
 import type { Contract, ContractComment, StageLog } from "./types";
 import { getContract, getContractAudit, advanceStage, getContractComments, addContractComment } from "./api";
 import { tafqit } from "./tafqit";
@@ -12,6 +12,9 @@ const BLUE_M      = "#1976D2";
 const BLUE        = "#1565C0";
 const BLUE_L      = "#4A90D9";
 const AMBER       = "#F5A623";
+const GOLD        = BLUE_M;
+const GOLD_BG     = "rgba(25,118,210,0.07)";
+const GOLD_BORDER = "rgba(25,118,210,0.18)";
 const GLASS_BG    = "rgba(255,255,255,0.97)";
 const GLASS_BG2   = "rgba(255,255,255,0.85)";
 const GLASS_BORDER= "rgba(0,0,0,0.07)";
@@ -66,21 +69,50 @@ function getInitials(name: string) {
 /* ── Attachment placeholder cell ── */
 function AttachCell() {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
       <div style={{
-        width: 28, height: 28, borderRadius: 7, flexShrink: 0,
-        background: GOLD_BG, border: `1px solid ${GOLD_BORDER}`,
-        display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.85rem",
+        width: 26, height: 26, borderRadius: 7, flexShrink: 0,
+        background: "rgba(25,118,210,0.08)", border: "1px solid rgba(25,118,210,0.18)",
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.82rem",
       }}>📎</div>
-      <span style={{ fontSize: "0.65rem", color: GOLD, fontWeight: 700 }}>رفع ملف</span>
+      <span style={{ fontSize: "0.62rem", color: BLUE_M, fontWeight: 700 }}>رفع ملف</span>
+    </div>
+  );
+}
+
+function Attach3Cell() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+      {[1,2,3].map(n => (
+        <div key={n} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+          <div style={{
+            width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+            background: "rgba(25,118,210,0.07)", border: "1px solid rgba(25,118,210,0.16)",
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.75rem",
+          }}>📎</div>
+          <span style={{ fontSize: "0.6rem", color: BLUE_M, fontWeight: 700 }}>عرض {n}</span>
+        </div>
+      ))}
     </div>
   );
 }
 
 /* ── Table cell types ── */
-type CellContent = string | null | undefined | "ATTACH" | "EMPTY";
+interface ValueWithAttach { text: string | null | undefined; hasAttach: true }
+type CellContent = string | null | undefined | "ATTACH" | "ATTACH3" | "EMPTY" | ValueWithAttach;
 function renderCell(content: CellContent) {
   if (content === "ATTACH") return <AttachCell />;
+  if (content === "ATTACH3") return <Attach3Cell />;
+  if (content !== null && typeof content === "object" && "hasAttach" in content) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {content.text
+          ? <span>{content.text}</span>
+          : <span style={{ color: "#ccc" }}>—</span>}
+        <AttachCell />
+      </div>
+    );
+  }
   if (content === "EMPTY" || content === null || content === undefined || content === "")
     return <span style={{ color: "#ccc" }}>—</span>;
   return <>{content}</>;
@@ -114,7 +146,7 @@ function DataRow({
       <div style={labelStyle}>{rightLabel}</div>
       <div style={valueStyle}>{renderCell(rightContent)}</div>
       <div style={{ ...labelStyle, borderRight: "1px solid rgba(255,255,255,0.12)" }}>{leftLabel}</div>
-      <div style={{ ...valueStyle, borderRight: "1px solid rgba(197,160,89,0.15)" }}>{renderCell(leftContent)}</div>
+      <div style={{ ...valueStyle, borderRight: "1px solid rgba(25,118,210,0.1)" }}>{renderCell(leftContent)}</div>
     </>
   );
 }
@@ -228,7 +260,7 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
                 }}>{getInitials(c.actorName)}</div>
                 <div style={{ maxWidth: "72%", display: "flex", flexDirection: "column", gap: 2, alignItems: isMe ? "flex-end" : "flex-start" }}>
                   <div style={{ fontSize: "0.6rem", color: "#bbb", display: "flex", gap: 4 }}>
-                    <span style={{ fontWeight: 700, color: "#9b8060" }}>{c.actorName}</span>
+                    <span style={{ fontWeight: 700, color: BLUE_M }}>{c.actorName}</span>
                     <span>·</span><span>{c.actorRole}</span>
                   </div>
                   <div style={{
@@ -294,10 +326,10 @@ const SMART_DOCS = [
 ];
 
 const TABS = [
-  { id: "request",     label: "بيانات الطلب",    icon: "📋" },
-  { id: "attachments", label: "المرفقات الذكية",  icon: "📎" },
-  { id: "log",         label: "سجل الإجراءات",    icon: "📅" },
-  { id: "chat",        label: "المحادثة",          icon: "💬" },
+  { id: "log",      label: "سجل الإجراءات", icon: "📅" },
+  { id: "request",  label: "بيانات الطلب",  icon: "📋" },
+  { id: "chat",     label: "المحادثات",      icon: "💬" },
+  { id: "contract", label: "",               icon: "📄" },
 ] as const;
 type TabId = typeof TABS[number]["id"];
 
@@ -448,7 +480,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
               background: GLASS_BG,
               backdropFilter: BLUR_SM,
               cursor: "pointer",
-              color: GOLD2,
+              color: "#64748B",
               fontSize: "0.82rem",
               fontWeight: 700,
               display: "flex", alignItems: "center", gap: 6,
@@ -462,14 +494,17 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
           </button>
 
           <div style={{ flex: 1, textAlign: "center" }}>
-            <span style={{
-              fontSize: "0.76rem", fontWeight: 800, color: "#7d622a",
-              background: GLASS_BG, backdropFilter: BLUR_SM,
-              border: `1px solid ${GLASS_BORDER}`, borderRadius: 20,
-              padding: "5px 14px", boxShadow: SHADOW_SM,
-            }}>
-              {contract.contractNo}
-            </span>
+            <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+              <span style={{ fontSize: "0.58rem", fontWeight: 700, color: "#64748B", letterSpacing: "0.08em" }}>رقم الطلب</span>
+              <span style={{
+                fontSize: "0.78rem", fontWeight: 900, color: BLUE_M,
+                background: "rgba(25,118,210,0.06)", backdropFilter: BLUR_SM,
+                border: `1px solid rgba(25,118,210,0.18)`, borderRadius: 20,
+                padding: "5px 16px", boxShadow: SHADOW_SM,
+              }}>
+                {contract.contractNo}
+              </span>
+            </div>
           </div>
 
           <button
@@ -514,23 +549,29 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
             </div>
 
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: "1rem", fontWeight: 900, color: "#0C1427", marginBottom: 3, lineHeight: 1.4 }}>
+              <div style={{ fontSize: "1rem", fontWeight: 900, color: "#0C1427", marginBottom: 4, lineHeight: 1.4 }}>
                 {contract.title}
               </div>
-              <div style={{ fontSize: "0.7rem", color: "#64748B", display: "flex", flexWrap: "wrap", gap: "0 8px" }}>
-                <span>{contract.contractNo}</span>
-                {contract.projectNo && <span>· م {contract.projectNo}</span>}
-                <span>· {contract.contractType}</span>
-              </div>
-              {contract.value > 0 && (
-                <div style={{
-                  fontSize: "0.76rem", color: BLUE, fontWeight: 700, marginTop: 4,
-                  background: "rgba(25,118,210,0.08)", borderRadius: 8, padding: "3px 10px",
-                  display: "inline-block", border: `1px solid rgba(25,118,210,0.18)`,
-                }}>
-                  {contract.value.toLocaleString("ar-SA")} ريال — {tafqit(contract.value)}
+              {(contract.projectName || contract.projectNo) && (
+                <div style={{ fontSize: "0.72rem", color: "#64748B", marginBottom: 4, display: "flex", flexWrap: "wrap", gap: "0 8px" }}>
+                  {contract.projectName && <span>م/ {contract.projectName}</span>}
+                  {contract.projectNo  && <span>· {contract.projectNo}</span>}
                 </div>
               )}
+              {/* Stage status badge */}
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6,
+                background: isCompleted ? "rgba(39,174,96,0.1)" : "rgba(25,118,210,0.08)",
+                border: `1px solid ${isCompleted ? "rgba(39,174,96,0.25)" : "rgba(25,118,210,0.2)"}`,
+                borderRadius: 20, padding: "4px 12px",
+              }}>
+                <span style={{ fontSize: "0.78rem" }}>{stage?.icon ?? "📄"}</span>
+                <span style={{ fontSize: "0.68rem", fontWeight: 800, color: isCompleted ? "#27ae60" : BLUE_M }}>
+                  {isCompleted ? "مكتمل" : stage?.label ?? "—"}
+                </span>
+                {!isCompleted && (
+                  <span style={{ fontSize: "0.6rem", color: "#64748B" }}>· {stage?.role}</span>
+                )}
+              </div>
             </div>
 
             <div style={{
@@ -649,25 +690,31 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
         }}>
           {TABS.map((tab, idx) => {
             const isActive = activeTab === tab.id;
+            const label = tab.id === "contract" ? (contract?.title ?? "وثيقة العقد") : tab.label;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                title={tab.id === "contract" ? contract?.title : undefined}
                 style={{
-                  flex: 1, padding: "11px 6px",
+                  flex: tab.id === "contract" ? 1.4 : 1, padding: "11px 6px",
                   border: "none",
                   borderLeft: idx < TABS.length - 1 ? `1px solid ${GLASS_BORDER}` : "none",
                   background: isActive ? `linear-gradient(135deg, ${BLUE}, ${BLUE_M})` : "transparent",
                   color: isActive ? "#fff" : "#64748B",
-                  cursor: "pointer", fontSize: "0.76rem", fontWeight: isActive ? 800 : 600,
+                  cursor: "pointer", fontSize: "0.72rem", fontWeight: isActive ? 800 : 600,
                   fontFamily: "'Cairo', 'Tajawal', sans-serif",
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
                   transition: "all 0.2s",
                   boxShadow: isActive ? "inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 8px rgba(25,118,210,0.3)" : "none",
+                  overflow: "hidden",
                 }}
               >
-                <span style={{ fontSize: "0.9rem" }}>{tab.icon}</span>
-                {tab.label}
+                <span style={{ fontSize: "0.88rem", flexShrink: 0 }}>{tab.icon}</span>
+                <span style={{
+                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                  maxWidth: tab.id === "contract" ? 110 : undefined,
+                }}>{label}</span>
               </button>
             );
           })}
@@ -676,24 +723,20 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
         {/* ── TAB: بيانات الطلب ── */}
         {activeTab === "request" && (() => {
           const rows: { r: string; rv: CellContent; l: string; lv: CellContent }[] = [
-            { r: "الطرف الثاني",                              rv: contract.vendorName,          l: "تاريخ الطلب",              lv: formattedDate },
-            { r: "رقم الآيبان",                               rv: contract.vendorIban,          l: "جهة إصدار الطلب",          lv: contract.issuerEntity },
-            { r: "الرقم الضريبي",                             rv: contract.vendorTaxNo,         l: "اسم المشروع",              lv: contract.projectName },
-            { r: "شهادة ضريبة القيمة المضافة / الزكاة",      rv: "ATTACH",                     l: "رقم المشروع",              lv: contract.projectNo },
-            { r: "تفويض التوقيع",                             rv: "ATTACH",                     l: "نوع الأعمال",              lv: contract.workType },
-            { r: "اسم المفوض",                                rv: contract.vendorDelegate,      l: "نوع العقد",                lv: contract.contractType },
-            { r: "المسمى الوظيفي للمفوض",                     rv: contract.vendorDelegateTitle, l: "قيمة العقد",               lv: contract.value > 0 ? `${contract.value.toLocaleString("ar-SA")} ريال` : null },
-            { r: "رقم الهوية / الإقامة للمفوض",               rv: contract.vendorDelegateId,    l: "مدة العقد",                lv: contract.contractDuration ? `${contract.contractDuration} يوماً` : null },
-            { r: "الهوية / الإقامة (صورة)",                   rv: "ATTACH",                     l: "قسم تقدير التكاليف",       lv: contract.costEstimationDept },
-            { r: "رقم التواصل",                               rv: contract.vendorContact,       l: "حالة تحليل السعر",         lv: contract.priceAnalysisStatus },
-            { r: "البريد الإلكتروني",                         rv: contract.vendorEmail,         l: "تحليل السعر",              lv: "ATTACH" },
-            { r: "الرمز البريدي",                             rv: contract.vendorPostalCode,    l: "مقارنة مالية فنية",        lv: "ATTACH" },
-            { r: "العنوان",                                   rv: contract.vendorAddress,       l: "عرض سعر - 1",              lv: "ATTACH" },
-            { r: "السجل التجاري",                             rv: "ATTACH",                     l: "عرض سعر - 2",              lv: "ATTACH" },
-            { r: "تاريخ انتهاء السجل التجاري",                rv: contract.vendorRegExpiry,     l: "عرض سعر - 3",              lv: "ATTACH" },
-            { r: "مؤسسة / شركة",                             rv: contract.vendorEntityType,    l: "عقد مماثل",                lv: "ATTACH" },
-            { r: "EMPTY",                                     rv: "EMPTY",                      l: "مخططات",                   lv: "ATTACH" },
-            { r: "EMPTY",                                     rv: "EMPTY",                      l: "توصيفات",                  lv: "ATTACH" },
+            { r: "اسم الطرف الثاني",                         rv: contract.vendorName,          l: "تاريخ الطلب",              lv: formattedDate },
+            { r: "رقم الآيبان",                              rv: { text: contract.vendorIban, hasAttach: true },             l: "جهة إصدار الطلب",          lv: contract.issuerEntity },
+            { r: "الرقم / شهادة ضريبة القيمة المضافة",       rv: { text: contract.vendorTaxNo, hasAttach: true },            l: "اسم المشروع",              lv: contract.projectName },
+            { r: "ممثل الطرف الثاني",                        rv: contract.vendorDelegate,      l: "رقم المشروع",              lv: contract.projectNo },
+            { r: "صفته",                                     rv: contract.vendorDelegateTitle, l: "نوع الأعمال",              lv: contract.workType },
+            { r: "رقم الهوية / الإقامة للمفوض",              rv: contract.vendorDelegateId,    l: "نوع العقد",                lv: contract.contractType },
+            { r: "رقم التواصل الرسمي للمنشأة",               rv: contract.vendorContact,       l: "قيمة العقد",               lv: contract.value > 0 ? `${contract.value.toLocaleString("ar-SA")} ريال` : null },
+            { r: "البريد الإلكتروني الرسمي للمنشأة",          rv: contract.vendorEmail,         l: "مدة العقد",                lv: contract.contractDuration ? `${contract.contractDuration} يوماً` : null },
+            { r: "العنوان الوطني",                            rv: { text: contract.vendorAddress, hasAttach: true },          l: "حالة تحليل السعر",         lv: { text: contract.priceAnalysisStatus, hasAttach: true } },
+            { r: "الرمز البريدي",                             rv: contract.vendorPostalCode,    l: "مقارنة مالية وفنية",       lv: "ATTACH" },
+            { r: "السجل التجاري",                             rv: "ATTACH",                     l: "عقد مماثل",                lv: "ATTACH" },
+            { r: "عقد التأسيس",                              rv: "ATTACH",                     l: "المخططات",                 lv: "ATTACH" },
+            { r: "العرض الفني والمالي للمنشأة",               rv: "ATTACH",                     l: "توصيفات",                  lv: "ATTACH" },
+            { r: "عروض أسعار مماثلة",                        rv: "ATTACH3",                    l: "طلب إصدار العقد BOQ",       lv: "ATTACH" },
           ];
           return (
             <div style={{ display: "flex", flexDirection: "column", gap: 14, animation: "fadeSlideUp 0.3s ease both" }}>
@@ -707,16 +750,17 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
               }}>
                 {/* Top color band */}
                 <div style={{ height: 4, background: `linear-gradient(90deg, ${BLUE_M}, ${BLUE_L}, ${AMBER})` }}/>
-                {/* Table title */}
+                {/* Table title — glass style */}
                 <div style={{
-                  background: `linear-gradient(135deg, ${BLUE} 0%, ${BLUE_M} 55%, ${BLUE_L} 100%)`,
-                  color: "#fff", textAlign: "center",
-                  padding: "13px 20px", fontSize: "0.9rem", fontWeight: 900,
+                  background: "rgba(25,118,210,0.07)",
+                  backdropFilter: BLUR_SM,
+                  color: BLUE, textAlign: "center",
+                  padding: "12px 20px", fontSize: "0.88rem", fontWeight: 900,
                   letterSpacing: "0.04em",
-                  textShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                  borderBottom: "1px solid rgba(25,118,210,0.12)",
                 }}>بيانات الطلب والعقد</div>
 
-                {/* Column sub-headers */}
+                {/* Column sub-headers — glass style */}
                 <div style={{ display: "grid", gridTemplateColumns: "170px 1fr 170px 1fr" }}>
                   {[
                     { label: "بيانات الطرف الثاني" },
@@ -725,12 +769,13 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                     { label: "",                borderRight: true },
                   ].map((col, i) => (
                     <div key={i} style={{
-                      background: "linear-gradient(135deg, #0D47A1, #1565C0)",
-                      color: col.label ? "rgba(255,255,255,0.92)" : "transparent",
+                      background: "rgba(25,118,210,0.05)",
+                      backdropFilter: BLUR_SM,
+                      color: col.label ? BLUE : "transparent",
                       padding: "7px 13px", fontSize: "0.69rem", fontWeight: 800,
                       textAlign: "center",
-                      borderLeft: i === 2 ? "1px solid rgba(255,255,255,0.12)" : undefined,
-                      borderRight: col.borderRight ? "1px solid rgba(255,255,255,0.12)" : undefined,
+                      borderBottom: "1px solid rgba(25,118,210,0.1)",
+                      borderLeft: i === 2 ? "1px solid rgba(25,118,210,0.1)" : undefined,
                     }}>{col.label || "‎"}</div>
                   ))}
                 </div>
@@ -765,85 +810,120 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
           );
         })()}
 
-        {/* ── TAB: المرفقات الذكية ── */}
-        {activeTab === "attachments" && (
-          <div style={{
-            background: GLASS_BG, backdropFilter: BLUR_SM,
-            borderRadius: 16, padding: "20px 22px",
-            border: `1.5px solid ${GLASS_BORDER}`,
-            boxShadow: SHADOW_MD,
-            animation: "fadeSlideUp 0.3s ease both",
-          }}>
-            <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#4a3520", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ width: 4, height: 16, background: `linear-gradient(180deg,${GOLD},${GOLD2})`, borderRadius: 2, display: "inline-block" }} />
-              المرفقات الذكية
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
-              {SMART_DOCS.map((doc, i) => (
-                <div
-                  key={i}
-                  style={{
-                    background: `linear-gradient(135deg, rgba(197,160,89,0.1), rgba(197,160,89,0.04))`,
-                    backdropFilter: BLUR_SM,
-                    borderRadius: 14, padding: "18px 12px",
-                    border: `1.5px solid ${GLASS_BORDER}`, textAlign: "center",
-                    cursor: "pointer", transition: "all 0.2s",
-                    display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-                    boxShadow: SHADOW_SM,
-                  }}
-                  onMouseEnter={e => {
-                    (e.currentTarget as HTMLDivElement).style.boxShadow = SHADOW_GOLD;
-                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
-                    (e.currentTarget as HTMLDivElement).style.borderColor = GOLD_BORDER;
-                  }}
-                  onMouseLeave={e => {
-                    (e.currentTarget as HTMLDivElement).style.boxShadow = SHADOW_SM;
-                    (e.currentTarget as HTMLDivElement).style.transform = "none";
-                    (e.currentTarget as HTMLDivElement).style.borderColor = GLASS_BORDER;
-                  }}
-                >
-                  <div style={{ fontSize: "2rem" }}>{doc.icon}</div>
-                  <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#4a3520", lineHeight: 1.4 }}>{doc.label}</div>
-                  <div style={{ fontSize: "0.58rem", color: "#b0a08a" }}>{doc.hint}</div>
-                  <div style={{
-                    marginTop: 4, padding: "4px 10px", borderRadius: 20,
-                    background: "rgba(197,160,89,0.15)", fontSize: "0.6rem",
-                    color: "#8B6914", fontWeight: 700,
-                    border: `1px solid rgba(197,160,89,0.25)`,
-                  }}>غير مرفق بعد</div>
+        {/* ── TAB: وثيقة العقد ── */}
+        {activeTab === "contract" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, animation: "fadeSlideUp 0.3s ease both" }}>
+
+            {/* Contract document section */}
+            <div style={{
+              background: GLASS_BG, backdropFilter: BLUR_SM,
+              borderRadius: 16, overflow: "hidden",
+              border: "1.5px solid rgba(25,118,210,0.15)",
+              boxShadow: SHADOW_MD,
+            }}>
+              <div style={{ height: 4, background: `linear-gradient(90deg, ${BLUE_M}, ${BLUE_L}, ${AMBER})` }}/>
+              <div style={{
+                background: "rgba(25,118,210,0.07)", backdropFilter: BLUR_SM,
+                padding: "14px 20px", display: "flex", alignItems: "center", gap: 12,
+                borderBottom: "1px solid rgba(25,118,210,0.1)",
+              }}>
+                <div style={{
+                  width: 42, height: 42, borderRadius: 12, flexShrink: 0,
+                  background: `linear-gradient(135deg, ${BLUE_M}, ${BLUE})`,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem",
+                  boxShadow: "0 4px 14px rgba(25,118,210,0.25)",
+                }}>📄</div>
+                <div>
+                  <div style={{ fontSize: "0.86rem", fontWeight: 900, color: "#0C1427" }}>{contract.title}</div>
+                  <div style={{ fontSize: "0.66rem", color: "#64748B", marginTop: 3 }}>{contract.contractNo} · {contract.contractType}</div>
                 </div>
-              ))}
-            </div>
-            {(contract.wordFilename || contract.signedFilename) && (
-              <div style={{ marginTop: 18 }}>
-                <div style={{ fontSize: "0.74rem", fontWeight: 700, color: "#4a3520", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ width: 3, height: 12, background: GOLD, borderRadius: 2, display: "inline-block" }} />
-                  المرفقات المرفوعة
+                <div style={{ marginRight: "auto", display: "flex", gap: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(25,118,210,0.08)", borderRadius: 20, padding: "5px 14px", border: "1px solid rgba(25,118,210,0.18)", cursor: "pointer" }}>
+                    <span style={{ fontSize: "0.82rem" }}>📎</span>
+                    <span style={{ fontSize: "0.66rem", fontWeight: 700, color: BLUE_M }}>رفع وثيقة العقد</span>
+                  </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              </div>
+              {(contract.wordFilename || contract.signedFilename) && (
+                <div style={{ padding: "14px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
                   {contract.wordFilename && (
                     <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(39,174,96,0.06)", backdropFilter: BLUR_SM, borderRadius: 12, padding: "11px 16px", border: "1px solid rgba(39,174,96,0.2)", boxShadow: SHADOW_SM }}>
                       <span style={{ fontSize: "1.3rem" }}>📄</span>
                       <div>
-                        <div style={{ fontSize: "0.76rem", fontWeight: 700, color: "#1a1206" }}>نسخة Word</div>
-                        <div style={{ fontSize: "0.65rem", color: "#9b8060" }}>{contract.wordFilename}</div>
+                        <div style={{ fontSize: "0.76rem", fontWeight: 700, color: "#1a1206" }}>مسودة Word</div>
+                        <div style={{ fontSize: "0.65rem", color: "#64748B" }}>{contract.wordFilename}</div>
                       </div>
-                      <div style={{ marginRight: "auto", fontSize: "0.6rem", color: "#27ae60", fontWeight: 700, background: "rgba(39,174,96,0.1)", padding: "3px 10px", borderRadius: 20 }}>مرفوع ✓</div>
+                      <div style={{ marginRight: "auto", fontSize: "0.6rem", color: "#27ae60", fontWeight: 700, background: "rgba(39,174,96,0.1)", padding: "3px 10px", borderRadius: 20 }}>مرفوع</div>
                     </div>
                   )}
                   {contract.signedFilename && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(197,160,89,0.08)", backdropFilter: BLUR_SM, borderRadius: 12, padding: "11px 16px", border: `1px solid ${GLASS_BORDER}`, boxShadow: SHADOW_SM }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(25,118,210,0.06)", backdropFilter: BLUR_SM, borderRadius: 12, padding: "11px 16px", border: `1px solid rgba(25,118,210,0.18)`, boxShadow: SHADOW_SM }}>
                       <span style={{ fontSize: "1.3rem" }}>✒️</span>
                       <div>
                         <div style={{ fontSize: "0.76rem", fontWeight: 700, color: "#1a1206" }}>نسخة موقعة</div>
-                        <div style={{ fontSize: "0.65rem", color: "#9b8060" }}>{contract.signedFilename}</div>
+                        <div style={{ fontSize: "0.65rem", color: "#64748B" }}>{contract.signedFilename}</div>
                       </div>
-                      <div style={{ marginRight: "auto", fontSize: "0.6rem", color: GOLD, fontWeight: 700, background: GOLD_BG, padding: "3px 10px", borderRadius: 20, border: `1px solid ${GOLD_BORDER}` }}>موقع ✓</div>
+                      <div style={{ marginRight: "auto", fontSize: "0.6rem", color: BLUE_M, fontWeight: 700, background: "rgba(25,118,210,0.1)", padding: "3px 10px", borderRadius: 20 }}>موقع</div>
                     </div>
                   )}
                 </div>
+              )}
+              {!contract.wordFilename && !contract.signedFilename && (
+                <div style={{ padding: "32px 20px", textAlign: "center", color: "#94a3b8", fontSize: "0.78rem" }}>
+                  <div style={{ fontSize: "2rem", marginBottom: 8 }}>📋</div>
+                  لم يُرفع ملف العقد بعد
+                </div>
+              )}
+            </div>
+
+            {/* Smart attachments */}
+            <div style={{
+              background: GLASS_BG, backdropFilter: BLUR_SM,
+              borderRadius: 16, padding: "18px 20px",
+              border: `1.5px solid ${GLASS_BORDER}`,
+              boxShadow: SHADOW_MD,
+            }}>
+              <div style={{ fontSize: "0.8rem", fontWeight: 800, color: BLUE, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ width: 4, height: 16, background: `linear-gradient(180deg,${BLUE_M},${BLUE_L})`, borderRadius: 2, display: "inline-block" }} />
+                مرفقات العقد
               </div>
-            )}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+                {SMART_DOCS.map((doc, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      background: "rgba(25,118,210,0.04)",
+                      backdropFilter: BLUR_SM,
+                      borderRadius: 12, padding: "16px 10px",
+                      border: `1.5px solid rgba(25,118,210,0.1)`, textAlign: "center",
+                      cursor: "pointer", transition: "all 0.2s",
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: 7,
+                      boxShadow: SHADOW_SM,
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 18px rgba(25,118,210,0.14)";
+                      (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
+                      (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(25,118,210,0.22)";
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLDivElement).style.boxShadow = SHADOW_SM;
+                      (e.currentTarget as HTMLDivElement).style.transform = "none";
+                      (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(25,118,210,0.1)";
+                    }}
+                  >
+                    <div style={{ fontSize: "1.8rem" }}>{doc.icon}</div>
+                    <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#1a2535", lineHeight: 1.4 }}>{doc.label}</div>
+                    <div style={{ fontSize: "0.56rem", color: "#94a3b8" }}>{doc.hint}</div>
+                    <div style={{
+                      marginTop: 3, padding: "3px 10px", borderRadius: 20,
+                      background: "rgba(25,118,210,0.07)", fontSize: "0.58rem",
+                      color: BLUE_M, fontWeight: 700,
+                      border: `1px solid rgba(25,118,210,0.15)`,
+                    }}>رفع ملف</div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -856,12 +936,12 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
             boxShadow: SHADOW_MD,
             animation: "fadeSlideUp 0.3s ease both",
           }}>
-            <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#4a3520", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ width: 4, height: 16, background: `linear-gradient(180deg,${GOLD},${GOLD2})`, borderRadius: 2, display: "inline-block" }} />
+            <div style={{ fontSize: "0.82rem", fontWeight: 800, color: BLUE, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ width: 4, height: 16, background: `linear-gradient(180deg,${BLUE_M},${BLUE_L})`, borderRadius: 2, display: "inline-block" }} />
               سجل الإجراءات والعمليات
             </div>
             <div style={{ position: "relative" }}>
-              <div style={{ position: "absolute", right: 15, top: 0, bottom: 0, width: 2, background: `linear-gradient(180deg, ${GOLD_BORDER}, rgba(197,160,89,0.06))`, borderRadius: 2 }} />
+              <div style={{ position: "absolute", right: 15, top: 0, bottom: 0, width: 2, background: `linear-gradient(180deg, rgba(25,118,210,0.2), rgba(25,118,210,0.04))`, borderRadius: 2 }} />
               {log.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "40px 0", color: "#bbb", fontSize: "0.82rem" }}>
                   <div style={{ fontSize: "2rem", marginBottom: 8 }}>📋</div>
@@ -1069,7 +1149,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                       ? "rgba(231,76,60,0.1)"
                       : "rgba(255,255,255,0.85)",
                     backdropFilter: BLUR_SM,
-                    color: notesExpanded ? "#c0392b" : "#8B6914",
+                    color: notesExpanded ? "#c0392b" : "#64748B",
                     border: `1.5px solid ${notesExpanded ? "rgba(231,76,60,0.35)" : GLASS_BORDER}`,
                     cursor: actionBusy ? "not-allowed" : "pointer",
                     fontSize: "0.82rem", fontWeight: 800,
@@ -1088,8 +1168,8 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                 border: `1.5px dashed rgba(0,0,0,0.1)`,
                 textAlign: "center", fontSize: "0.78rem", color: "#bbb",
               }}>
-                المرحلة الحالية (<strong style={{ color: GOLD2 }}>{stage?.label}</strong>) مخصصة لدور{" "}
-                <strong style={{ color: "#7d622a" }}>{STAGE_ALLOWED[contract.currentStage]?.join(" / ")}</strong>
+                المرحلة الحالية (<strong style={{ color: BLUE_M }}>{stage?.label}</strong>) مخصصة لدور{" "}
+                <strong style={{ color: BLUE }}>{STAGE_ALLOWED[contract.currentStage]?.join(" / ")}</strong>
               </div>
             )}
           </div>
