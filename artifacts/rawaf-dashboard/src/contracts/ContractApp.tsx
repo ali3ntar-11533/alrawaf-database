@@ -38,7 +38,8 @@ export default function ContractApp({ onExit }: Props) {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [filterStage, setFilterStage] = useState<number | null>(null);
   const [stageDetailNum, setStageDetailNum] = useState<number | null>(null);
-  const navSeq = useRef(0);
+  const navSeq       = useRef(0);
+  const fromStageRef = useRef<number | null>(null); // previous stage when drilling into a contract
 
   /* ── Derive a unique key for current view (drives CSS animation) */
   const viewKey = openContractId !== null
@@ -87,18 +88,22 @@ export default function ContractApp({ onExit }: Props) {
   /* ── Navigate helpers — each bumps navSeq to force key change */
   function openContract(id: number) {
     navSeq.current += 1;
+    fromStageRef.current = stageDetailNum; // remember where we came from
     setStageDetailNum(null);
     setOpenContractId(id);
   }
   function openStage(n: number) {
     navSeq.current += 1;
+    fromStageRef.current = null;
     setOpenContractId(null);
     setStageDetailNum(n);
   }
   function closeDetail() {
     navSeq.current += 1;
+    const prevStage = fromStageRef.current;
+    fromStageRef.current = null;
     setOpenContractId(null);
-    setStageDetailNum(null);
+    setStageDetailNum(prevStage); // go back to previous stage, or null (main list)
   }
   function switchTab(tab: ContractTab) {
     navSeq.current += 1;
@@ -195,7 +200,7 @@ export default function ContractApp({ onExit }: Props) {
               role={role}
               actorName={actorName}
               onBack={closeDetail}
-              onOpenContract={(id) => { closeDetail(); openContract(id); }}
+              onOpenContract={(id) => openContract(id)}
             />
           ) : activeTab === "dashboard" ? (
             <ContractDashboard
