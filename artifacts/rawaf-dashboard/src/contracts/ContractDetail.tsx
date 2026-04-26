@@ -786,25 +786,10 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
               </div>
             </div>
 
-            {/* ── LEFT: pct% box  + stage timeline side-by-side ── */}
-            <div className="no-print" style={{ flexShrink: 0, display: "flex", flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
+            {/* ── LEFT: stage timeline + pct% (pct% leftmost in RTL) ── */}
+            <div className="no-print" style={{ flexShrink: 0, display: "flex", flexDirection: "row", alignItems: "stretch", gap: 10 }}>
 
-              {/* Completion % box */}
-              <div style={{
-                textAlign: "center", flexShrink: 0,
-                background: isCompleted
-                  ? "rgba(39,174,96,0.1)"
-                  : `linear-gradient(135deg, rgba(25,118,210,0.12), rgba(25,118,210,0.05))`,
-                backdropFilter: BLUR_SM,
-                border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : "rgba(25,118,210,0.18)"}`,
-                borderRadius: 12, padding: "10px 18px",
-                boxShadow: isCompleted ? "0 4px 16px rgba(39,174,96,0.12)" : "0 4px 16px rgba(25,118,210,0.12)",
-              }}>
-                <div style={{ fontSize: "1.5rem", fontWeight: 900, color: isCompleted ? "#27ae60" : BLUE_M }}>{pct}%</div>
-                <div style={{ fontSize: "0.56rem", color: "#64748B", marginTop: 2 }}>إنجاز</div>
-              </div>
-
-              {/* Stage timeline — beside pct%, last two merged */}
+              {/* Stage timeline — beside pct%, last two merged — FIRST in markup = right in RTL */}
               {(() => {
                 // Build display stages: 1→9 as-is, then merge last two (10+11) into one
                 const lastTwo = STAGES.slice(-2);
@@ -820,73 +805,49 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                   { label: mergedLabel, role: lastTwo[0].role, icon: mergedIcon, sNum: 10, merged: true },
                 ];
                 return (
+                  /* compact card — height matches pct% box */
                   <div style={{
                     background: isCompleted ? "rgba(39,174,96,0.05)" : "rgba(25,118,210,0.04)",
                     border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.15)" : "rgba(25,118,210,0.12)"}`,
-                    borderRadius: 14, padding: "10px 14px",
+                    borderRadius: 12, padding: "0 14px",
                     boxShadow: "0 2px 12px rgba(25,118,210,0.08)",
-                    overflowX: "auto",
+                    overflowX: "auto", display: "flex", alignItems: "center",
                   }}>
-                    <div style={{ display: "flex", alignItems: "flex-start", minWidth: "max-content", direction: "rtl", gap: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", minWidth: "max-content", direction: "rtl", gap: 0 }}>
                       {displayStages.map((stg, idx) => {
                         const sNum   = stg.sNum;
                         const isDone = stg.merged ? mDone  : (isCompleted ? true : sNum < contract.currentStage);
                         const isCur  = stg.merged ? mCur   : (!isCompleted && sNum === contract.currentStage);
-                        const dur    = stageDurations[sNum];
                         const isLast = idx === displayStages.length - 1;
+                        const cSize  = stg.merged ? 34 : 28;
                         return (
-                          <div key={sNum} style={{ display: "flex", alignItems: "flex-start" }}>
-                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: stg.merged ? 68 : 58, padding: "0 2px" }}>
-                              {/* Circle */}
-                              <div style={{
-                                width: stg.merged ? 44 : 38, height: stg.merged ? 44 : 38,
+                          <div key={sNum} style={{ display: "flex", alignItems: "center" }}>
+                            {/* Circle only — tooltip shows label */}
+                            <div
+                              title={stg.label}
+                              style={{
+                                width: cSize, height: cSize,
                                 borderRadius: "50%", flexShrink: 0,
                                 display: "flex", alignItems: "center", justifyContent: "center",
-                                fontSize: isDone ? (stg.merged ? "1.15rem" : "1rem") : "0.78rem", fontWeight: 900,
+                                fontSize: isDone ? (stg.merged ? "0.85rem" : "0.72rem") : "0.6rem",
+                                fontWeight: 900, cursor: "default",
                                 background: isDone
                                   ? `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`
                                   : isCur ? GLASS_BG2 : "rgba(0,0,0,0.05)",
                                 color: isDone ? "#fff" : isCur ? BLUE_M : "#ccc",
-                                border: isCur ? `2.5px solid ${BLUE_M}` : isDone ? "2px solid transparent" : "2px solid rgba(0,0,0,0.08)",
+                                border: isCur ? `2px solid ${BLUE_M}` : isDone ? "2px solid transparent" : "1.5px solid rgba(0,0,0,0.08)",
                                 boxShadow: isDone
-                                  ? `0 3px 12px rgba(25,118,210,0.4), inset 0 1px 0 rgba(255,255,255,0.2)`
-                                  : isCur ? `0 0 0 5px rgba(25,118,210,0.2), 0 2px 8px rgba(25,118,210,0.25)` : "none",
+                                  ? `0 2px 8px rgba(25,118,210,0.35), inset 0 1px 0 rgba(255,255,255,0.2)`
+                                  : isCur ? `0 0 0 4px rgba(25,118,210,0.18), 0 2px 6px rgba(25,118,210,0.2)` : "none",
                                 animation: isCur ? "stg-pulse 2s ease-in-out infinite" : "none",
                                 transition: "all 0.3s",
                               }}>
-                                {isDone ? "✓" : sNum}
-                              </div>
-                              {/* Label */}
-                              <div style={{
-                                fontSize: stg.merged ? "0.5rem" : "0.48rem", marginTop: 5, textAlign: "center",
-                                color: isDone ? BLUE : isCur ? BLUE_M : "#bbb",
-                                fontWeight: isCur ? 900 : 600,
-                                lineHeight: 1.35, maxWidth: stg.merged ? 66 : 56,
-                              }}>
-                                {stg.label}
-                              </div>
-                              {/* Badge */}
-                              {isDone && dur && (
-                                <div style={{
-                                  fontSize: "0.4rem", color: BLUE, marginTop: 3,
-                                  background: "rgba(25,118,210,0.09)", borderRadius: 6,
-                                  padding: "2px 5px", fontWeight: 700,
-                                  border: "1px solid rgba(25,118,210,0.2)",
-                                }}>{dur}</div>
-                              )}
-                              {isCur && (
-                                <div style={{
-                                  fontSize: "0.4rem", color: BLUE_M, marginTop: 3, fontWeight: 900,
-                                  background: "rgba(25,118,210,0.12)", borderRadius: 6, padding: "2px 5px",
-                                  border: `1.5px solid rgba(25,118,210,0.3)`,
-                                  animation: "stg-pulse 2s ease-in-out infinite",
-                                }}>جارٍ</div>
-                              )}
+                              {isDone ? "✓" : sNum}
                             </div>
                             {/* Connector */}
                             {!isLast && (
                               <div style={{
-                                width: 14, height: 3, marginTop: stg.merged ? 21 : 18, flexShrink: 0,
+                                width: 10, height: 2, flexShrink: 0,
                                 background: isDone ? `linear-gradient(90deg, ${BLUE}, ${BLUE_L})` : "rgba(0,0,0,0.07)",
                                 borderRadius: 2, transition: "background 0.4s",
                               }} />
@@ -898,6 +859,22 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                   </div>
                 );
               })()}
+
+              {/* Completion % box — LAST in markup = leftmost in RTL */}
+              <div style={{
+                textAlign: "center", flexShrink: 0,
+                background: isCompleted
+                  ? "rgba(39,174,96,0.1)"
+                  : `linear-gradient(135deg, rgba(25,118,210,0.12), rgba(25,118,210,0.05))`,
+                backdropFilter: BLUR_SM,
+                border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : "rgba(25,118,210,0.18)"}`,
+                borderRadius: 12, padding: "10px 18px",
+                boxShadow: isCompleted ? "0 4px 16px rgba(39,174,96,0.12)" : "0 4px 16px rgba(25,118,210,0.12)",
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              }}>
+                <div style={{ fontSize: "1.5rem", fontWeight: 900, color: isCompleted ? "#27ae60" : BLUE_M }}>{pct}%</div>
+                <div style={{ fontSize: "0.56rem", color: "#64748B", marginTop: 2 }}>إنجاز</div>
+              </div>
 
             </div>{/* end LEFT row */}
 
