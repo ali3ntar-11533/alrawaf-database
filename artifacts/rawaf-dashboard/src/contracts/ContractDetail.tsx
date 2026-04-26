@@ -747,34 +747,42 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
           {/* ── Header row: right = icon+title (fixed)  |  left = timeline+pct% (fills space) ── */}
           <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
 
-            {/* ── RIGHT: contract no box + vendor name ── */}
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 14, flexShrink: 0, maxWidth: 300 }}>
-              {/* Contract number box */}
+            {/* ── RIGHT: vendor name (main) + contract no + project ── */}
+            <div style={{ flexShrink: 0, maxWidth: 310, minWidth: 0 }}>
+              {/* Vendor name — primary heading */}
               <div style={{
-                minWidth: 52, height: 52, borderRadius: 14, flexShrink: 0, padding: "0 8px",
-                background: isCompleted
-                  ? "rgba(39,174,96,0.12)"
-                  : `linear-gradient(135deg, rgba(25,118,210,0.15), rgba(25,118,210,0.06))`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexDirection: "column", gap: 1,
-                border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : "rgba(25,118,210,0.18)"}`,
-                boxShadow: isCompleted ? "0 4px 16px rgba(39,174,96,0.15)" : "0 4px 16px rgba(25,118,210,0.12)",
+                fontSize: "1.05rem", fontWeight: 900, color: "#0C1427",
+                lineHeight: 1.35, marginBottom: 6,
               }}>
-                <span style={{ fontSize: "0.42rem", color: "#64748B", fontWeight: 600 }}>رقم العقد</span>
-                <span style={{ fontSize: "0.78rem", fontWeight: 900, color: isCompleted ? "#27ae60" : BLUE_M, whiteSpace: "nowrap" }}>
-                  {contract.contractNo || "—"}
-                </span>
+                {contract.vendorName || contract.title}
               </div>
-              {/* Vendor name + project info */}
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: "1rem", fontWeight: 900, color: "#0C1427", marginBottom: 4, lineHeight: 1.4 }}>
-                  {contract.vendorName || contract.title}
+              {/* Contract number chip + project info on same row */}
+              <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
+                <div style={{
+                  display: "inline-flex", alignItems: "center", gap: 4,
+                  background: isCompleted
+                    ? "rgba(39,174,96,0.1)"
+                    : `linear-gradient(135deg, rgba(25,118,210,0.13), rgba(25,118,210,0.06))`,
+                  border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.28)" : "rgba(25,118,210,0.22)"}`,
+                  borderRadius: 8, padding: "3px 10px",
+                  boxShadow: isCompleted
+                    ? "0 2px 8px rgba(39,174,96,0.1)"
+                    : "0 2px 8px rgba(25,118,210,0.1)",
+                }}>
+                  <span style={{ fontSize: "0.58rem", color: "#64748B", fontWeight: 600 }}>رقم:</span>
+                  <span style={{
+                    fontSize: "0.72rem", fontWeight: 900,
+                    color: isCompleted ? "#27ae60" : BLUE_M,
+                    letterSpacing: "0.02em",
+                  }}>
+                    {contract.contractNo || "—"}
+                  </span>
                 </div>
                 {(contract.projectName || contract.projectNo) && (
-                  <div style={{ fontSize: "0.72rem", color: "#64748B", display: "flex", flexWrap: "wrap", gap: "0 8px" }}>
-                    {contract.projectName && <span>م/ {contract.projectName}</span>}
-                    {contract.projectNo  && <span>· {contract.projectNo}</span>}
-                  </div>
+                  <span style={{ fontSize: "0.68rem", color: "#64748B" }}>
+                    {contract.projectName && <>م/ {contract.projectName}</>}
+                    {contract.projectNo  && <> · {contract.projectNo}</>}
+                  </span>
                 )}
               </div>
             </div>
