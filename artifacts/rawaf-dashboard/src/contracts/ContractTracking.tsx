@@ -239,8 +239,8 @@ export default function ContractTracking({ role, actorName, onOpenContract }: Pr
               <div style={{ fontSize: "0.86rem", fontWeight: 900, color: "#86EFAC" }}>{contracts.length}</div>
             </div>
 
-            {/* إنشاء متابعة جديدة — hidden for مسؤول المتابعة */}
-            {!isManager && (
+            {/* إنشاء متابعة جديدة — visible for مسؤول المتابعة only */}
+            {isManager && (
               <button
                 onClick={() => { setDraft(EMPTY_DRAFT); setDraftError(""); setShowNewForm(true); }}
                 style={{
