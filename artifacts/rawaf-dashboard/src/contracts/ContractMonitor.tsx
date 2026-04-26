@@ -22,17 +22,23 @@ interface ExecPhase  { id: number; label: string; pct: number; durationDays: num
 interface BoqItem    { id: number; code: string; description: string; unit: string; qty: number; executedQty: number; unitPrice: number; }
 interface Payment    { id: number; no: number; invoiceRef: string; date: string; amount: number; status: "paid" | "pending"; }
 interface PhaseReport {
-  id: number;
-  phaseId: number;
-  date: string;
-  completionPct: number;
-  recipientName: string;
-  summary: string;
-  challenges: string;
-  nextSteps: string;
-  requestedSupport: string;
-  submittedBy: string;
-  status: "draft" | "submitted";
+  id: number; phaseId: number; date: string; completionPct: number;
+  recipientName: string; submittedBy: string; status: "draft" | "submitted";
+  /* § 1 — Technical */
+  planCompliance: string; executionQuality: string;
+  snagsCount: number; snagsSpeed: string; workforceRating: string;
+  /* § 2 — Contractual */
+  timelineStatus: string; delayReasons: string;
+  contractViolations: string; safetyRating: string; incidents: number;
+  /* § 3 — Financial */
+  hasInvoice: string; invoiceDescription: string; invoiceRef: string;
+  invoiceQty: string; invoiceValue: string; invoiceDate: string;
+  invoiceAccurate: string; invoiceApprovalDelayed: string;
+  /* § 4 — Recommendation */
+  overallTechRating: string; overallContractRating: string;
+  finalRecommendation: string; interventionRequest: string;
+  /* compat */
+  summary: string; challenges: string; nextSteps: string; requestedSupport: string;
 }
 
 const SYSTEM_RECIPIENTS = [
@@ -42,6 +48,107 @@ const SYSTEM_RECIPIENTS = [
   "المشرف الهندسي",
   "مدير التشغيل",
 ];
+
+/* ── Notification store (localStorage) ───────────────── */
+interface RawafNotif { id: number; recipientRole: string; message: string; contractTitle: string; reportId: number; time: string; read: boolean; }
+const _NK = "rawaf_notifs_v2";
+function getNotifs(): RawafNotif[] { try { return JSON.parse(localStorage.getItem(_NK) || "[]"); } catch { return []; } }
+function pushNotif(n: Omit<RawafNotif, "id" | "time" | "read">) {
+  const all = getNotifs();
+  all.unshift({ ...n, id: Date.now(), time: new Date().toLocaleString("ar-SA"), read: false });
+  localStorage.setItem(_NK, JSON.stringify(all.slice(0, 50)));
+  window.dispatchEvent(new Event("rawaf-notif"));
+}
+function countUnread(role: string) { return getNotifs().filter(n => n.recipientRole === role && !n.read).length; }
+function markRead(role: string) {
+  const all = getNotifs().map(n => n.recipientRole === role ? { ...n, read: true } : n);
+  localStorage.setItem(_NK, JSON.stringify(all));
+}
+
+/* ── Rating chip options ──────────────────────────────── */
+const OPT_QUALITY = [
+  { label: "ممتاز",  color: GREEN,  bg: "rgba(34,197,94,0.1)"  },
+  { label: "جيد",    color: BLUE_M, bg: "rgba(25,118,210,0.07)" },
+  { label: "مقبول",  color: AMBER,  bg: "rgba(245,166,35,0.08)" },
+  { label: "ضعيف",   color: RED,    bg: "rgba(239,68,68,0.08)"  },
+];
+const OPT_HIGH_MED_LOW = [
+  { label: "عالية",  color: GREEN,  bg: "rgba(34,197,94,0.1)"  },
+  { label: "متوسطة", color: BLUE_M, bg: "rgba(25,118,210,0.07)" },
+  { label: "ضعيفة",  color: RED,    bg: "rgba(239,68,68,0.08)"  },
+];
+const OPT_SPEED = [
+  { label: "سريعة",  color: GREEN,  bg: "rgba(34,197,94,0.1)"  },
+  { label: "متوسطة", color: AMBER,  bg: "rgba(245,166,35,0.08)" },
+  { label: "بطيئة",  color: RED,    bg: "rgba(239,68,68,0.08)"  },
+];
+const OPT_TIMELINE = [
+  { label: "ملتزم",  color: GREEN,  bg: "rgba(34,197,94,0.1)"  },
+  { label: "متقدم",  color: BLUE_M, bg: "rgba(25,118,210,0.07)" },
+  { label: "متأخر",  color: RED,    bg: "rgba(239,68,68,0.08)"  },
+];
+const OPT_YESNO = [
+  { label: "نعم", color: GREEN, bg: "rgba(34,197,94,0.1)"  },
+  { label: "لا",  color: RED,   bg: "rgba(239,68,68,0.08)" },
+];
+const OPT_RECOMMEND = [
+  { label: "الاستمرار",      color: GREEN,  bg: "rgba(34,197,94,0.1)"  },
+  { label: "تحسين أداء",    color: BLUE_M, bg: "rgba(25,118,210,0.07)" },
+  { label: "إنذار",          color: AMBER,  bg: "rgba(245,166,35,0.08)" },
+  { label: "إيقاف التعامل", color: RED,    bg: "rgba(239,68,68,0.08)"  },
+];
+const DELAY_REASON_OPTS = ["نقص عمالة", "نقص مواد", "سوء إدارة", "أسباب أخرى"];
+
+/* ── RatingChips component ────────────────────────────── */
+function RatingChips({ value, onChange, options, disabled }: {
+  value: string; onChange: (v: string) => void;
+  options: { label: string; color: string; bg: string }[];
+  disabled?: boolean;
+}) {
+  return (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      {options.map(o => (
+        <button key={o.label} onClick={() => !disabled && onChange(value === o.label ? "" : o.label)} style={{
+          padding: "5px 16px", borderRadius: 20, cursor: disabled ? "default" : "pointer",
+          border: `1.5px solid ${value === o.label ? o.color : "#E8E8E8"}`,
+          background: value === o.label ? o.bg : "#fff",
+          color: value === o.label ? o.color : "#888",
+          fontSize: "0.7rem", fontWeight: value === o.label ? 800 : 500,
+          fontFamily: "'Cairo','Tajawal',sans-serif", transition: "all 0.12s",
+        }}>{o.label}</button>
+      ))}
+    </div>
+  );
+}
+
+/* ── Multi-select chips ───────────────────────────────── */
+function MultiChips({ value, onChange, options, disabled }: {
+  value: string; onChange: (v: string) => void;
+  options: string[]; disabled?: boolean;
+}) {
+  const sel = value ? value.split(",").filter(Boolean) : [];
+  function toggle(opt: string) {
+    if (disabled) return;
+    const next = sel.includes(opt) ? sel.filter(s => s !== opt) : [...sel, opt];
+    onChange(next.join(","));
+  }
+  return (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      {options.map(o => {
+        const on = sel.includes(o);
+        return (
+          <button key={o} onClick={() => toggle(o)} style={{
+            padding: "5px 16px", borderRadius: 20, cursor: disabled ? "default" : "pointer",
+            border: `1.5px solid ${on ? RED : "#E8E8E8"}`,
+            background: on ? "rgba(239,68,68,0.08)" : "#fff",
+            color: on ? RED : "#888", fontSize: "0.7rem", fontWeight: on ? 800 : 500,
+            fontFamily: "'Cairo','Tajawal',sans-serif",
+          }}>{o}</button>
+        );
+      })}
+    </div>
+  );
+}
 
 const UNITS = ["م²", "م³", "م.ط", "طن", "نقطة", "وحدة", "مقطوعي"];
 const INIT_PHASES: ExecPhase[] = [
@@ -174,164 +281,239 @@ function PhaseEditorModal({
 
 /* ── Report Form Modal ─────────────────────────────── */
 function ReportFormModal({
-  report, phase, contract, onSave, onClose,
-}: { report: PhaseReport; phase: ExecPhase | undefined; contract: Contract; onSave: (r: PhaseReport) => void; onClose: () => void }) {
+  report, phase, contract, role, onSave, onClose, onNotifUpdate,
+}: {
+  report: PhaseReport; phase: ExecPhase | undefined; contract: Contract;
+  role: string; onSave: (r: PhaseReport) => void; onClose: () => void;
+  onNotifUpdate?: () => void;
+}) {
   const [draft, setDraft] = useState<PhaseReport>({ ...report });
+  const [recipientSearch, setRecipientSearch] = useState("");
+  const [showDrop, setShowDrop] = useState(false);
+
   const isSubmitted = report.status === "submitted";
+  const isRecipient = !!report.recipientName && role === report.recipientName;
 
-  const inputStyle: CSSProperties = {
+  const filteredRecipients = SYSTEM_RECIPIENTS.filter(r =>
+    !recipientSearch || r.includes(recipientSearch)
+  );
+
+  const iSt: CSSProperties = {
     width: "100%", padding: "8px 12px", borderRadius: 9,
-    border: `1.5px solid ${BLUE_BR}`, fontSize: "0.76rem",
+    border: `1.5px solid ${BLUE_BR}`, fontSize: "0.75rem",
     fontFamily: "'Cairo','Tajawal',sans-serif", outline: "none",
-    boxSizing: "border-box", resize: "vertical",
-    background: isSubmitted ? "#F8FAFC" : "#fff",
-    color: isSubmitted ? "#555" : "#1A1A1A",
+    boxSizing: "border-box", background: "#fff", color: "#1A1A1A",
   };
+  const lSt: CSSProperties = {
+    fontSize: "0.62rem", fontWeight: 700, color: "#555", display: "block", marginBottom: 6,
+  };
+  const ro = isSubmitted && !isRecipient;
 
-  /* ── Read-only answer display ── */
-  function AnswerBlock({ label, value }: { label: string; value: string }) {
+  function set<K extends keyof PhaseReport>(k: K, v: PhaseReport[K]) { setDraft(d => ({ ...d, [k]: v })); }
+
+  function SectionH({ num, label, color, bg }: { num: string; label: string; color: string; bg: string }) {
     return (
-      <div>
-        <div style={{ fontSize: "0.64rem", fontWeight: 700, color: "#777", marginBottom: 4 }}>{label}</div>
-        <div style={{
-          padding: "10px 14px", borderRadius: 9, background: "#F4F7FC",
-          border: `1px solid #E8EEF8`, fontSize: "0.76rem", color: "#1A1A1A",
-          lineHeight: 1.7, minHeight: 36, whiteSpace: "pre-wrap",
-        }}>
-          {value || <span style={{ color: "#ccc" }}>لم يتم التعبئة</span>}
-        </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 14px", borderRadius: 10, background: bg, border: `1.5px solid ${color}44`, marginBottom: 12 }}>
+        <div style={{ width: 22, height: 22, borderRadius: "50%", background: color, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.68rem", fontWeight: 900, flexShrink: 0 }}>{num}</div>
+        <span style={{ fontSize: "0.76rem", fontWeight: 900, color }}>{label}</span>
       </div>
     );
   }
 
-  return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(12,20,39,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "40px 16px" }} onClick={onClose}>
-      <div dir="rtl" style={{ background: "#fff", borderRadius: 18, width: "min(640px,94vw)", boxShadow: "0 24px 80px rgba(0,0,0,0.28)", fontFamily: "'Cairo','Tajawal',sans-serif", overflow: "hidden" }} onClick={e => e.stopPropagation()}>
+  function handleSend() {
+    if (!draft.recipientName) { alert("يرجى اختيار جهة الإرسال أولاً"); return; }
+    const saved = { ...draft, status: "submitted" as const };
+    onSave(saved);
+    pushNotif({ recipientRole: draft.recipientName, message: `تقرير متابعة جديد من ${draft.submittedBy || role}`, contractTitle: contract.title, reportId: draft.id });
+    onNotifUpdate?.();
+    onClose();
+  }
 
-        {/* Modal header */}
+  function handleRecipientSave() { onSave({ ...draft }); onClose(); }
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(12,20,39,0.65)", display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "28px 12px 48px" }} onClick={onClose}>
+      <div dir="rtl" style={{ background: "#fff", borderRadius: 20, width: "min(720px,97vw)", boxShadow: "0 24px 80px rgba(0,0,0,0.32)", fontFamily: "'Cairo','Tajawal',sans-serif", overflow: "hidden" }} onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
         <div style={{ background: `linear-gradient(135deg, ${DARK}, #152040)`, padding: "18px 24px", position: "relative" }}>
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg,${BLUE_M},${BLUE_L},${AMBER})` }}/>
-          <div style={{ fontSize: "0.52rem", color: BLUE_L, fontWeight: 800, letterSpacing: "0.1em", marginBottom: 4 }}>تقرير متابعة المرحلة · نظام إدارة العقود</div>
+          <div style={{ fontSize: "0.5rem", color: BLUE_L, fontWeight: 800, letterSpacing: "0.1em", marginBottom: 3 }}>تقرير متابعة المرحلة · نظام إدارة العقود</div>
           <div style={{ fontSize: "1rem", fontWeight: 900, color: "#F0F0F0" }}>{phase?.label ?? "مرحلة غير محددة"}</div>
-          <div style={{ fontSize: "0.64rem", color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
-            {contract.contractNo} · {contract.vendorName} · الإنجاز: {draft.completionPct}%
-          </div>
-          <button onClick={onClose} style={{ position: "absolute", top: 16, left: 16, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 8, width: 28, height: 28, cursor: "pointer", color: "#ccc", fontSize: "0.85rem" }}>✕</button>
+          <div style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.45)", marginTop: 3 }}>{contract.contractNo} · {contract.vendorName} · الإنجاز: {draft.completionPct}%</div>
+          {isSubmitted && (
+            <div style={{ marginTop: 8, display: "inline-block", padding: "3px 12px", borderRadius: 12, background: isRecipient ? "rgba(245,166,35,0.25)" : "rgba(34,197,94,0.2)", color: isRecipient ? AMBER : GREEN, fontSize: "0.6rem", fontWeight: 800 }}>
+              {isRecipient ? "مُرسَل إليك — يرجى التعبئة والحفظ" : "تم الإرسال"}
+            </div>
+          )}
+          <button onClick={onClose} style={{ position: "absolute", top: 14, left: 16, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 8, width: 28, height: 28, cursor: "pointer", color: "#ccc", fontSize: "0.85rem" }}>✕</button>
         </div>
 
-        {/* ── Submitted state: show filled data ── */}
-        {isSubmitted ? (
-          <div style={{ padding: "22px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 18, maxHeight: "76vh", overflowY: "auto" }}>
 
-            {/* Success banner */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 12, background: "rgba(34,197,94,0.08)", border: `1.5px solid rgba(34,197,94,0.3)` }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(34,197,94,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", flexShrink: 0 }}>✓</div>
-              <div>
-                <div style={{ fontSize: "0.78rem", fontWeight: 900, color: GREEN }}>تم الإرسال وتم التعبئة</div>
-                <div style={{ fontSize: "0.62rem", color: "#888", marginTop: 2 }}>
-                  أُرسل إلى: <strong style={{ color: DARK }}>{draft.recipientName || "—"}</strong>
-                  {draft.submittedBy && <> &nbsp;·&nbsp; بواسطة: <strong style={{ color: DARK }}>{draft.submittedBy}</strong></>}
-                  {draft.date && <> &nbsp;·&nbsp; {draft.date}</>}
+          {/* ─ Recipient + Date + Completion ─ */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {/* Recipient search */}
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={lSt}>إرسال إلى (داخل النظام)</label>
+              <div style={{ position: "relative" }}>
+                <div style={{ display: "flex", alignItems: "center", border: `1.5px solid ${draft.recipientName ? BLUE_M : BLUE_BR}`, borderRadius: 9, background: ro ? "#F8FAFC" : "#fff", overflow: "hidden" }}>
+                  <span style={{ padding: "0 10px", color: BLUE_M, display: "flex", alignItems: "center" }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  </span>
+                  <input
+                    value={ro ? (draft.recipientName || "—") : (draft.recipientName && !showDrop ? draft.recipientName : recipientSearch)}
+                    onChange={e => { if (ro) return; setRecipientSearch(e.target.value); set("recipientName", ""); setShowDrop(true); }}
+                    onFocus={() => { if (!ro) setShowDrop(true); }}
+                    readOnly={ro}
+                    placeholder="ابحث عن الجهة المستلِمة..."
+                    style={{ flex: 1, border: "none", outline: "none", padding: "9px 4px", fontSize: "0.75rem", fontFamily: "'Cairo','Tajawal',sans-serif", background: "transparent" }}
+                  />
+                  {draft.recipientName && !ro && (
+                    <span style={{ marginLeft: 8, padding: "3px 10px", borderRadius: 10, background: BLUE_B, color: BLUE_M, fontSize: "0.65rem", fontWeight: 800 }}>{draft.recipientName}</span>
+                  )}
                 </div>
+                {showDrop && !ro && (
+                  <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, left: 0, background: "#fff", borderRadius: 10, boxShadow: "0 8px 28px rgba(0,0,0,0.14)", border: `1px solid ${BLUE_BR}`, zIndex: 999, overflow: "hidden" }} onMouseLeave={() => setShowDrop(false)}>
+                    {filteredRecipients.map(r => (
+                      <button key={r} onClick={() => { set("recipientName", r); setRecipientSearch(""); setShowDrop(false); }} style={{ display: "block", width: "100%", padding: "10px 16px", border: "none", borderBottom: "1px solid #F0F0F0", background: draft.recipientName === r ? BLUE_B : "#fff", textAlign: "right", fontSize: "0.75rem", cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif", color: draft.recipientName === r ? BLUE_M : "#1A1A1A", fontWeight: draft.recipientName === r ? 800 : 500 }}>{r}</button>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-
-            {/* Meta */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <div style={{ padding: "10px 14px", background: "#F4F7FC", borderRadius: 9, border: `1px solid #E8EEF8` }}>
-                <div style={{ fontSize: "0.62rem", color: "#999", marginBottom: 2 }}>تاريخ التقرير</div>
-                <div style={{ fontSize: "0.78rem", fontWeight: 700 }}>{draft.date}</div>
-              </div>
-              <div style={{ padding: "10px 14px", background: "#F4F7FC", borderRadius: 9, border: `1px solid #E8EEF8`, display: "flex", alignItems: "center", gap: 10 }}>
-                <div>
-                  <div style={{ fontSize: "0.62rem", color: "#999", marginBottom: 2 }}>نسبة الإنجاز</div>
-                  <div style={{ fontSize: "1rem", fontWeight: 900, color: BLUE_M }}>{draft.completionPct}%</div>
-                </div>
-                <div style={{ flex: 1, height: 6, borderRadius: 3, background: "#E0E8F4", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${draft.completionPct}%`, background: `linear-gradient(90deg, ${BLUE}, ${BLUE_M})`, borderRadius: 3 }} />
-                </div>
-              </div>
-            </div>
-
-            {/* Answers */}
-            <AnswerBlock label="ملخص الأعمال المنجزة في هذه المرحلة" value={draft.summary} />
-            <AnswerBlock label="التحديات والعقبات التي واجهتها" value={draft.challenges} />
-            <AnswerBlock label="الخطوات التالية المخطط لها" value={draft.nextSteps} />
-            <AnswerBlock label="الدعم المطلوب" value={draft.requestedSupport} />
-
-            <button onClick={onClose} style={{ marginTop: 4, padding: "11px", borderRadius: 10, border: `1.5px solid #E8E8E8`, background: "#fff", color: "#666", fontSize: "0.78rem", cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif" }}>إغلاق</button>
-          </div>
-        ) : (
-
-        /* ── Draft state: editable form ── */
-        <div style={{ padding: "22px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
-
-          {/* Recipient + Meta */}
-          <div>
-            <label style={{ fontSize: "0.64rem", fontWeight: 700, color: "#555", display: "block", marginBottom: 5 }}>إرسال إلى (داخل النظام)</label>
-            <select
-              value={draft.recipientName}
-              onChange={e => setDraft(d => ({ ...d, recipientName: e.target.value }))}
-              style={{ ...inputStyle, resize: "none", cursor: "pointer" }}
-            >
-              <option value="">— اختر الجهة المستلِمة —</option>
-              {SYSTEM_RECIPIENTS.map(r => <option key={r} value={r}>{r}</option>)}
-            </select>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <div>
-              <label style={{ fontSize: "0.64rem", fontWeight: 700, color: "#777", display: "block", marginBottom: 5 }}>تاريخ التقرير</label>
-              <input type="date" value={draft.date} onChange={e => setDraft(d => ({ ...d, date: e.target.value }))} style={{ ...inputStyle, resize: "none" }} />
             </div>
             <div>
-              <label style={{ fontSize: "0.64rem", fontWeight: 700, color: "#777", display: "block", marginBottom: 5 }}>نسبة الإنجاز المُبلَّغة</label>
+              <label style={lSt}>تاريخ التقرير</label>
+              <input type="date" value={draft.date} onChange={e => set("date", e.target.value)} readOnly={ro} style={{ ...iSt }} />
+            </div>
+            <div>
+              <label style={lSt}>نسبة الإنجاز المُبلَّغة</label>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <input type="number" min={0} max={100} value={draft.completionPct} onChange={e => setDraft(d => ({ ...d, completionPct: parseInt(e.target.value) || 0 }))} style={{ ...inputStyle, width: 72, resize: "none" }} />
-                <span style={{ fontSize: "0.72rem", color: "#999" }}>%</span>
+                <input type="number" min={0} max={100} value={draft.completionPct} onChange={e => set("completionPct", parseInt(e.target.value) || 0)} readOnly={ro} style={{ ...iSt, width: 68 }} />
+                <span style={{ fontSize: "0.68rem", color: "#999" }}>%</span>
                 <div style={{ flex: 1, height: 6, borderRadius: 3, background: "#EEF2F8", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${draft.completionPct}%`, background: `linear-gradient(90deg, ${BLUE}, ${BLUE_M})`, borderRadius: 3, transition: "width 0.3s" }} />
+                  <div style={{ height: "100%", width: `${draft.completionPct}%`, background: `linear-gradient(90deg,${BLUE},${BLUE_M})`, borderRadius: 3, transition: "width 0.3s" }} />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Questions */}
-          {[
-            { key: "summary"          as const, label: "ملخص الأعمال المنجزة في هذه المرحلة", rows: 3 },
-            { key: "challenges"       as const, label: "التحديات والعقبات التي واجهتها", rows: 2 },
-            { key: "nextSteps"        as const, label: "الخطوات التالية المخطط لها", rows: 2 },
-            { key: "requestedSupport" as const, label: "الدعم المطلوب من مدير المشروع", rows: 2 },
-          ].map(q => (
-            <div key={q.key}>
-              <label style={{ fontSize: "0.66rem", fontWeight: 700, color: "#555", display: "block", marginBottom: 5 }}>{q.label}</label>
-              <textarea rows={q.rows} value={draft[q.key]} onChange={e => setDraft(d => ({ ...d, [q.key]: e.target.value }))} placeholder="أكتب هنا..." style={{ ...inputStyle }} />
-            </div>
-          ))}
+          <div style={{ borderTop: "1.5px solid #F0F4FA", margin: "0 -24px" }}/>
 
-          {/* Submitted by */}
+          {/* ─ § 1 Technical ─ */}
           <div>
-            <label style={{ fontSize: "0.64rem", fontWeight: 700, color: "#777", display: "block", marginBottom: 5 }}>اسم منفذ التقرير</label>
-            <input value={draft.submittedBy} onChange={e => setDraft(d => ({ ...d, submittedBy: e.target.value }))} placeholder="الاسم الكامل..." style={{ ...inputStyle, resize: "none" }} />
+            <SectionH num="1" label="الجانب الفني والجودة" color={BLUE_M} bg={BLUE_B2}/>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div><label style={lSt}>مدى الالتزام بالمخططات</label><RatingChips value={draft.planCompliance} onChange={v => set("planCompliance", v)} options={OPT_QUALITY} disabled={ro}/></div>
+              <div><label style={lSt}>جودة التنفيذ</label><RatingChips value={draft.executionQuality} onChange={v => set("executionQuality", v)} options={OPT_HIGH_MED_LOW} disabled={ro}/></div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div>
+                  <label style={lSt}>عدد الملاحظات الفنية (Snags)</label>
+                  <input type="number" min={0} value={draft.snagsCount || ""} onChange={e => set("snagsCount", parseInt(e.target.value) || 0)} readOnly={ro} placeholder="0" style={{ ...iSt }} />
+                </div>
+                <div><label style={lSt}>سرعة معالجة الملاحظات</label><RatingChips value={draft.snagsSpeed} onChange={v => set("snagsSpeed", v)} options={OPT_SPEED} disabled={ro}/></div>
+              </div>
+              <div><label style={lSt}>كفاية الكوادر (العمالة والجهاز الهندسي)</label><RatingChips value={draft.workforceRating} onChange={v => set("workforceRating", v)} options={OPT_QUALITY} disabled={ro}/></div>
+            </div>
           </div>
 
-          {/* Actions */}
-          <div style={{ display: "flex", gap: 10, paddingTop: 6 }}>
-            <button
-              onClick={() => {
-                if (!draft.recipientName) { alert("يرجى اختيار الجهة المستلِمة أولاً"); return; }
-                onSave({ ...draft, status: "submitted" });
-                onClose();
-              }}
-              style={{ flex: 1, padding: "11px", borderRadius: 10, border: "none", background: `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`, color: "#fff", fontSize: "0.8rem", fontWeight: 800, cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif" }}
-            >إرسال التقرير</button>
-            <button
-              onClick={() => { onSave({ ...draft, status: "draft" }); onClose(); }}
-              style={{ padding: "11px 18px", borderRadius: 10, border: `1.5px solid #E8E8E8`, background: "#fff", color: "#666", fontSize: "0.76rem", cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif" }}
-            >حفظ مسودة</button>
+          <div style={{ borderTop: "1.5px solid #F0F4FA", margin: "0 -24px" }}/>
+
+          {/* ─ § 2 Contractual ─ */}
+          <div>
+            <SectionH num="2" label="التحديات والعقبات التعاقدية" color={AMBER} bg={AMB_B}/>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div><label style={lSt}>الالتزام بالوقت</label><RatingChips value={draft.timelineStatus} onChange={v => set("timelineStatus", v)} options={OPT_TIMELINE} disabled={ro}/></div>
+              {(draft.timelineStatus === "متأخر" || (ro && draft.delayReasons)) && (
+                <div><label style={lSt}>أسباب التأخير</label><MultiChips value={draft.delayReasons} onChange={v => set("delayReasons", v)} options={DELAY_REASON_OPTS} disabled={ro}/></div>
+              )}
+              <div>
+                <label style={lSt}>المخالفات التعاقدية أو المطالبات المالية غير المبررة</label>
+                <textarea rows={2} value={draft.contractViolations} onChange={e => set("contractViolations", e.target.value)} readOnly={ro} placeholder="اذكر أي مخالفات أو مطالبات مالية..." style={{ ...iSt, resize: "vertical" }} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div><label style={lSt}>الالتزام بنظام السلامة والجودة</label><RatingChips value={draft.safetyRating} onChange={v => set("safetyRating", v)} options={OPT_QUALITY} disabled={ro}/></div>
+                <div>
+                  <label style={lSt}>عدد الحوادث المسجّلة</label>
+                  <input type="number" min={0} value={draft.incidents || ""} onChange={e => set("incidents", parseInt(e.target.value) || 0)} readOnly={ro} placeholder="0" style={{ ...iSt }} />
+                </div>
+              </div>
+            </div>
           </div>
+
+          <div style={{ borderTop: "1.5px solid #F0F4FA", margin: "0 -24px" }}/>
+
+          {/* ─ § 3 Financial ─ */}
+          <div>
+            <SectionH num="3" label="نظام المستخلصات المالية" color={GREEN} bg="rgba(34,197,94,0.05)"/>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div><label style={lSt}>هل تم رفع مستخلصات في هذه المرحلة؟</label><RatingChips value={draft.hasInvoice} onChange={v => set("hasInvoice", v)} options={OPT_YESNO} disabled={ro}/></div>
+              {draft.hasInvoice === "نعم" && (
+                <div style={{ background: "rgba(34,197,94,0.04)", border: "1.5px solid rgba(34,197,94,0.2)", borderRadius: 12, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ fontSize: "0.63rem", fontWeight: 900, color: GREEN }}>بيانات المستخلص</div>
+                  <div>
+                    <label style={lSt}>وصف المستخلص</label>
+                    <input value={draft.invoiceDescription} onChange={e => set("invoiceDescription", e.target.value)} readOnly={ro} placeholder="وصف موجز..." style={{ ...iSt }} />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                    <div><label style={lSt}>رقم المستخلص</label><input value={draft.invoiceRef} onChange={e => set("invoiceRef", e.target.value)} readOnly={ro} placeholder="INV-XXX" style={{ ...iSt }} /></div>
+                    <div><label style={lSt}>الكمية المنفذة</label><input value={draft.invoiceQty} onChange={e => set("invoiceQty", e.target.value)} readOnly={ro} placeholder="0" style={{ ...iSt }} /></div>
+                    <div><label style={lSt}>القيمة (ر.س)</label><input value={draft.invoiceValue} onChange={e => set("invoiceValue", e.target.value)} readOnly={ro} placeholder="0.00" style={{ ...iSt }} /></div>
+                  </div>
+                  <div><label style={lSt}>تاريخ المستخلص</label><input type="date" value={draft.invoiceDate} onChange={e => set("invoiceDate", e.target.value)} readOnly={ro} style={{ ...iSt, width: 160 }} /></div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <div><label style={lSt}>هل يعكس الواقع المنفذ فعلياً؟</label><RatingChips value={draft.invoiceAccurate} onChange={v => set("invoiceAccurate", v)} options={OPT_YESNO} disabled={ro}/></div>
+                    <div><label style={lSt}>هل يوجد تأخير في اعتماد المستخلص؟</label><RatingChips value={draft.invoiceApprovalDelayed} onChange={v => set("invoiceApprovalDelayed", v)} options={OPT_YESNO} disabled={ro}/></div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div style={{ borderTop: "1.5px solid #F0F4FA", margin: "0 -24px" }}/>
+
+          {/* ─ § 4 Recommendation ─ */}
+          <div>
+            <SectionH num="4" label="التوصية والقرار الإداري" color={RED} bg="rgba(239,68,68,0.04)"/>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div><label style={lSt}>التقييم الفني العام</label><RatingChips value={draft.overallTechRating} onChange={v => set("overallTechRating", v)} options={OPT_QUALITY} disabled={ro}/></div>
+                <div><label style={lSt}>التقييم التعاقدي العام</label><RatingChips value={draft.overallContractRating} onChange={v => set("overallContractRating", v)} options={OPT_QUALITY} disabled={ro}/></div>
+              </div>
+              <div><label style={lSt}>التوصية النهائية</label><RatingChips value={draft.finalRecommendation} onChange={v => set("finalRecommendation", v)} options={OPT_RECOMMEND} disabled={ro}/></div>
+              <div>
+                <label style={lSt}>طلب التدخل أو الدعم من مدير المشروع</label>
+                <textarea rows={2} value={draft.interventionRequest} onChange={e => set("interventionRequest", e.target.value)} readOnly={ro} placeholder="أي دعم قانوني أو مالي يتطلب قراراً من مدير المشروع..." style={{ ...iSt, resize: "vertical" }} />
+              </div>
+            </div>
+          </div>
+
+          <div style={{ borderTop: "1.5px solid #F0F4FA", margin: "0 -24px" }}/>
+
+          {/* ─ منفذ التقرير ─ */}
+          <div>
+            <label style={lSt}>اسم منفذ التقرير</label>
+            <input value={draft.submittedBy} onChange={e => set("submittedBy", e.target.value)} readOnly={ro} placeholder="الاسم الكامل..." style={{ ...iSt }} />
+          </div>
+
+          {/* ─ Footer actions ─ */}
+          <div style={{ display: "flex", gap: 10, paddingTop: 4, borderTop: "1.5px solid #F0F4FA" }}>
+            {isRecipient ? (
+              <>
+                <button onClick={handleRecipientSave} style={{ flex: 1, padding: "11px", borderRadius: 10, border: "none", background: `linear-gradient(135deg, #16a34a, ${GREEN})`, color: "#fff", fontSize: "0.8rem", fontWeight: 800, cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif" }}>حفظ البيانات</button>
+                <button onClick={onClose} style={{ padding: "11px 18px", borderRadius: 10, border: `1.5px solid #E8E8E8`, background: "#fff", color: "#666", fontSize: "0.76rem", cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif" }}>إغلاق</button>
+              </>
+            ) : isSubmitted ? (
+              <button onClick={onClose} style={{ flex: 1, padding: "11px", borderRadius: 10, border: `1.5px solid #E8E8E8`, background: "#fff", color: "#666", fontSize: "0.76rem", cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif" }}>إغلاق</button>
+            ) : (
+              <>
+                <button onClick={handleSend} style={{ flex: 1, padding: "11px", borderRadius: 10, border: "none", background: `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`, color: "#fff", fontSize: "0.8rem", fontWeight: 800, cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif" }}>إرسال التقرير</button>
+                <button onClick={() => { onSave({ ...draft, status: "draft" }); onClose(); }} style={{ padding: "11px 18px", borderRadius: 10, border: `1.5px solid #E8E8E8`, background: "#fff", color: "#666", fontSize: "0.76rem", cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif" }}>حفظ مسودة</button>
+              </>
+            )}
+          </div>
+
         </div>
-        )}
       </div>
     </div>
   );
@@ -355,6 +537,13 @@ export default function ContractMonitor({ contract, role }: { contract: Contract
 
   const [reports, setReports]       = useState<PhaseReport[]>([]);
   const [openReportId, setOpenReportId] = useState<number | null>(null);
+  const [notifCount, setNotifCount] = useState(() => countUnread(role));
+
+  useEffect(() => {
+    function onNotif() { setNotifCount(countUnread(role)); }
+    window.addEventListener("rawaf-notif", onNotif);
+    return () => window.removeEventListener("rawaf-notif", onNotif);
+  }, [role]);
 
   const [durationOverride, setDurationOverride] = useState<number | null>(null);
   const [editingDuration, setEditingDuration]   = useState(false);
@@ -423,9 +612,12 @@ export default function ContractMonitor({ contract, role }: { contract: Contract
       id: Date.now(), phaseId,
       date: new Date().toISOString().split("T")[0],
       completionPct: phase?.pct ?? 0,
-      recipientName: "",
-      summary: "", challenges: "", nextSteps: "", requestedSupport: "", submittedBy: "",
-      status: "draft",
+      recipientName: "", submittedBy: "", status: "draft",
+      /* § 1 */ planCompliance: "", executionQuality: "", snagsCount: 0, snagsSpeed: "", workforceRating: "",
+      /* § 2 */ timelineStatus: "", delayReasons: "", contractViolations: "", safetyRating: "", incidents: 0,
+      /* § 3 */ hasInvoice: "", invoiceDescription: "", invoiceRef: "", invoiceQty: "", invoiceValue: "", invoiceDate: "", invoiceAccurate: "", invoiceApprovalDelayed: "",
+      /* § 4 */ overallTechRating: "", overallContractRating: "", finalRecommendation: "", interventionRequest: "",
+      /* compat */ summary: "", challenges: "", nextSteps: "", requestedSupport: "",
     };
     setReports(prev => [...prev, newReport]);
     setOpenReportId(newReport.id);
@@ -463,8 +655,10 @@ export default function ContractMonitor({ contract, role }: { contract: Contract
           report={openReport}
           phase={phases.find(p => p.id === openReport.phaseId)}
           contract={contract}
+          role={role}
           onSave={saveReport}
-          onClose={() => setOpenReportId(null)}
+          onClose={() => { setOpenReportId(null); markRead(role); setNotifCount(countUnread(role)); }}
+          onNotifUpdate={() => setNotifCount(countUnread(role))}
         />
       )}
 
@@ -819,22 +1013,30 @@ export default function ContractMonitor({ contract, role }: { contract: Contract
           <SectionTitle
             accent={AMB_BR}
             extra={
-              canEdit ? (
-                <div style={{ display: "flex", gap: 6 }}>
-                  {phases.map(p => (
-                    <button
-                      key={p.id}
-                      onClick={() => addReport(p.id)}
-                      title={`إضافة تقرير للمرحلة: ${p.label}`}
-                      style={{
-                        padding: "4px 9px", borderRadius: 7, border: `1px solid ${AMB_BR}`,
-                        background: AMB_B, color: "#8B6914", fontSize: "0.58rem", fontWeight: 700,
-                        cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif",
-                      }}
-                    >م{p.id}</button>
-                  ))}
-                </div>
-              ) : undefined
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {notifCount > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 14, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.28)" }}>
+                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: RED }} />
+                    <span style={{ fontSize: "0.6rem", fontWeight: 900, color: RED }}>{notifCount} تقرير جديد</span>
+                  </div>
+                )}
+                {canEdit && (
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {phases.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => addReport(p.id)}
+                        title={`إضافة تقرير للمرحلة: ${p.label}`}
+                        style={{
+                          padding: "4px 9px", borderRadius: 7, border: `1px solid ${AMB_BR}`,
+                          background: AMB_B, color: "#8B6914", fontSize: "0.58rem", fontWeight: 700,
+                          cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif",
+                        }}
+                      >م{p.id}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
             }
           >سجل التقارير</SectionTitle>
 
@@ -871,6 +1073,13 @@ export default function ContractMonitor({ contract, role }: { contract: Contract
                       <div style={{ fontSize: "0.6rem", color: "#999" }}>{r.date}</div>
                       {r.submittedBy && <div style={{ fontSize: "0.58rem", color: "#bbb" }}>بواسطة: {r.submittedBy}</div>}
                     </div>
+                    {/* Recommendation badge */}
+                    {r.finalRecommendation && (() => {
+                      const recOpt = OPT_RECOMMEND.find(o => o.label === r.finalRecommendation);
+                      return recOpt ? (
+                        <div style={{ fontSize: "0.58rem", fontWeight: 800, padding: "3px 8px", borderRadius: 20, background: recOpt.bg, color: recOpt.color, border: `1px solid ${recOpt.color}44`, flexShrink: 0 }}>{r.finalRecommendation}</div>
+                      ) : null;
+                    })()}
                     {/* Status */}
                     <div style={{ fontSize: "0.6rem", fontWeight: 800, padding: "3px 8px", borderRadius: 20, background: `${statusColor}18`, color: statusColor, border: `1px solid ${statusColor}44`, flexShrink: 0 }}>
                       {statusLabel}
