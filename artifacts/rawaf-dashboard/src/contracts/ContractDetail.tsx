@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { STAGES } from "./types";
 import type { Contract, ContractComment, StageLog } from "./types";
 import { getContract, getContractAudit, advanceStage, getContractComments, addContractComment } from "./api";
@@ -177,34 +177,56 @@ function SectionCard({ title, icon, children }: { title: string; icon: string; c
 }
 
 /* ── Chat panel (inline version for tab) ── */
+interface CommentExtended extends ContractComment {
+  toName?: string; toRole?: string;
+  ccName?: string; ccRole?: string;
+}
+
+const MSG_ROLES = Object.keys(ROLE_COLORS);
+const selectStyle: React.CSSProperties = {
+  padding: "6px 10px", borderRadius: 8, border: "1.5px solid rgba(25,118,210,0.18)",
+  fontSize: "0.73rem", fontFamily: "'Cairo','Tajawal',sans-serif",
+  background: "#fff", color: "#1a2535", outline: "none", cursor: "pointer", minWidth: 130,
+};
+
 function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; actorName: string; actorRole: string }) {
-  const [comments, setComments] = useState<ContractComment[]>([]);
+  const [comments, setComments] = useState<CommentExtended[]>([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState("");
+  const [toRole, setToRole]   = useState("");
+  const [ccRole, setCcRole]   = useState("");
   const [sending, setSending] = useState(false);
   const [sendErr, setSendErr] = useState("");
-  const bottomRef = useRef<HTMLDivElement>(null);
   const canSend = !!actorName.trim() && !!msg.trim() && !sending;
 
   async function loadComments() {
-    try { setComments(await getContractComments(contractId)); }
+    try { setComments(await getContractComments(contractId) as CommentExtended[]); }
     finally { setLoading(false); }
   }
 
   useEffect(() => { loadComments(); }, [contractId]);
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [comments]);
 
   async function handleSend() {
     if (!canSend) return;
     setSending(true); setSendErr("");
     try {
-      const created = await addContractComment(contractId, { actorName, actorRole, message: msg.trim() });
+      const created = await addContractComment(contractId, {
+        actorName, actorRole, message: msg.trim(),
+        toRole, ccRole,
+      }) as CommentExtended;
       setComments(prev => [...prev, created]);
-      setMsg("");
+      setMsg(""); setToRole(""); setCcRole("");
     } catch (e: unknown) {
       setSendErr(e instanceof Error ? e.message : "حدث خطأ");
     } finally { setSending(false); }
   }
+
+  const COL = "185px 185px 185px 1fr 130px";
+  const thStyle: React.CSSProperties = {
+    padding: "9px 12px", fontSize: "0.67rem", fontWeight: 800, color: BLUE,
+    background: "rgba(25,118,210,0.07)", borderBottom: "1px solid rgba(25,118,210,0.12)",
+    borderRight: "1px solid rgba(25,118,210,0.08)", textAlign: "center",
+  };
 
   return (
     <div style={{
@@ -212,18 +234,18 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
       borderRadius: 16, overflow: "hidden",
       border: `1.5px solid ${GLASS_BORDER}`,
       boxShadow: SHADOW_MD,
-      display: "flex", flexDirection: "column", minHeight: 480,
+      display: "flex", flexDirection: "column",
     }}>
+      {/* Header */}
       <div style={{
         padding: "14px 20px", borderBottom: `1.5px solid rgba(0,0,0,0.06)`,
         background: `linear-gradient(135deg, rgba(25,118,210,0.08), rgba(25,118,210,0.02))`,
-        backdropFilter: BLUR_SM,
-        display: "flex", alignItems: "center", gap: 10,
+        backdropFilter: BLUR_SM, display: "flex", alignItems: "center", gap: 10,
       }}>
         <div style={{
           width: 38, height: 38, borderRadius: "50%",
           background: `linear-gradient(135deg, ${BLUE_M}, ${BLUE})`,
-          display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem",
+          display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: "0 4px 12px rgba(25,118,210,0.25)",
         }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -234,56 +256,114 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
         </div>
         <button onClick={loadComments} title="تحديث" style={{
           marginRight: "auto", border: "none", background: "transparent",
-          cursor: "pointer", color: BLUE_M, fontSize: "0.9rem", padding: 4,
-        }}>↻</button>
+          cursor: "pointer", color: BLUE_M, padding: 4,
+        }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+        </button>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 12, minHeight: 300 }}>
-        {loading ? (
-          <div style={{ textAlign: "center", color: "#bbb", fontSize: "0.8rem", paddingTop: 30 }}>جاري التحميل…</div>
-        ) : comments.length === 0 ? (
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#ccc", textAlign: "center", gap: 10, paddingTop: 60 }}>
-            <div style={{ fontSize: "2.5rem" }}>💬</div>
-            <div style={{ fontSize: "0.78rem" }}>لا توجد رسائل بعد<br />ابدأ المحادثة!</div>
-          </div>
-        ) : (
-          comments.map(c => {
+      {/* Table */}
+      <div style={{ overflowX: "auto", flex: 1 }}>
+        <div style={{ display: "grid", gridTemplateColumns: COL, minWidth: 700 }}>
+          {/* Column headers */}
+          {["المرسِل", "إلى", "نسخة", "الرسالة", "التاريخ والوقت"].map((h, i) => (
+            <div key={i} style={{ ...thStyle, borderRight: i < 4 ? "1px solid rgba(25,118,210,0.08)" : "none" }}>{h}</div>
+          ))}
+
+          {/* Empty state */}
+          {!loading && comments.length === 0 && (
+            <div style={{ gridColumn: "1 / -1", padding: "50px 20px", textAlign: "center", color: "#94a3b8", fontSize: "0.78rem" }}>
+              <div style={{ fontSize: "2rem", marginBottom: 8 }}>💬</div>
+              <div>لا توجد رسائل بعد — أرسل أول رسالة</div>
+            </div>
+          )}
+
+          {loading && (
+            <div style={{ gridColumn: "1 / -1", padding: "40px 20px", textAlign: "center", color: "#bbb", fontSize: "0.8rem" }}>جاري التحميل…</div>
+          )}
+
+          {/* Rows */}
+          {comments.map((c, i) => {
             const isMe = c.actorName === actorName;
-            const color = ROLE_COLORS[c.actorRole] ?? GOLD;
+            const fromColor = ROLE_COLORS[c.actorRole] ?? GOLD;
+            const rowBg = i % 2 === 0 ? "#fff" : "rgba(25,118,210,0.025)";
+            const cellStyle: React.CSSProperties = {
+              padding: "10px 12px", fontSize: "0.74rem", color: "#1a2535",
+              background: isMe ? "rgba(25,118,210,0.04)" : rowBg,
+              borderBottom: "1px solid rgba(0,0,0,0.05)",
+              borderRight: "1px solid rgba(25,118,210,0.06)",
+              display: "flex", alignItems: "center", gap: 6,
+            };
+            const dt = new Date(c.createdAt);
             return (
-              <div key={c.id} style={{ display: "flex", gap: 8, flexDirection: isMe ? "row-reverse" : "row", alignItems: "flex-end" }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
-                  background: color, display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "0.6rem", color: "#fff", fontWeight: 900,
-                  boxShadow: `0 2px 8px ${color}44`,
-                }}>{getInitials(c.actorName)}</div>
-                <div style={{ maxWidth: "72%", display: "flex", flexDirection: "column", gap: 2, alignItems: isMe ? "flex-end" : "flex-start" }}>
-                  <div style={{ fontSize: "0.6rem", color: "#bbb", display: "flex", gap: 4 }}>
-                    <span style={{ fontWeight: 700, color: BLUE_M }}>{c.actorName}</span>
-                    <span>·</span><span>{c.actorRole}</span>
-                  </div>
+              <React.Fragment key={c.id}>
+                {/* من */}
+                <div style={cellStyle}>
                   <div style={{
-                    background: isMe ? `linear-gradient(135deg, ${BLUE_M}, ${BLUE})` : GLASS_BG,
-                    backdropFilter: BLUR_SM,
-                    color: isMe ? "#fff" : "#1a2535",
-                    borderRadius: isMe ? "14px 14px 3px 14px" : "14px 14px 14px 3px",
-                    padding: "9px 13px", fontSize: "0.8rem", lineHeight: 1.55,
-                    border: isMe ? "none" : `1px solid ${GLASS_BORDER}`,
-                    boxShadow: isMe ? SHADOW_GOLD : SHADOW_SM,
-                  }}>{c.message}</div>
-                  <div style={{ fontSize: "0.56rem", color: "#ccc" }}>
-                    {new Date(c.createdAt).toLocaleDateString("ar-SA", { day: "numeric", month: "short" })} · {new Date(c.createdAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })}
+                    width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+                    background: fromColor, display: "flex", alignItems: "center",
+                    justifyContent: "center", fontSize: "0.55rem", color: "#fff", fontWeight: 900,
+                  }}>{getInitials(c.actorName)}</div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: "0.72rem" }}>{c.actorName}</div>
+                    <div style={{ fontSize: "0.6rem", color: "#64748B" }}>{c.actorRole}</div>
                   </div>
                 </div>
-              </div>
+                {/* إلى */}
+                <div style={{ ...cellStyle, borderRight: "1px solid rgba(25,118,210,0.06)" }}>
+                  {c.toRole
+                    ? <><div style={{ width: 8, height: 8, borderRadius: "50%", background: ROLE_COLORS[c.toRole] ?? "#ccc", flexShrink: 0 }} /><span>{c.toRole}</span></>
+                    : <span style={{ color: "#ccc" }}>—</span>}
+                </div>
+                {/* نسخة */}
+                <div style={{ ...cellStyle, borderRight: "1px solid rgba(25,118,210,0.06)" }}>
+                  {c.ccRole
+                    ? <><div style={{ width: 8, height: 8, borderRadius: "50%", background: ROLE_COLORS[c.ccRole] ?? "#ccc", flexShrink: 0 }} /><span>{c.ccRole}</span></>
+                    : <span style={{ color: "#ccc" }}>—</span>}
+                </div>
+                {/* الرسالة */}
+                <div style={{ ...cellStyle, borderRight: "1px solid rgba(25,118,210,0.06)", lineHeight: 1.55, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                  {c.message}
+                </div>
+                {/* التاريخ والوقت */}
+                <div style={{ ...cellStyle, flexDirection: "column", alignItems: "flex-start", gap: 2, borderRight: "none" }}>
+                  <span style={{ fontSize: "0.68rem", fontWeight: 600 }}>
+                    {dt.toLocaleDateString("ar-SA", { day: "numeric", month: "short", year: "numeric" })}
+                  </span>
+                  <span style={{ fontSize: "0.62rem", color: "#64748B" }}>
+                    {dt.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </div>
+              </React.Fragment>
             );
-          })
-        )}
-        <div ref={bottomRef} />
+          })}
+        </div>
       </div>
 
-      <div style={{ padding: "12px 16px", borderTop: `1.5px solid rgba(0,0,0,0.06)`, background: "rgba(248,250,255,0.9)", backdropFilter: BLUR_SM }}>
+      {/* Compose area */}
+      <div style={{ padding: "14px 16px", borderTop: `1.5px solid rgba(0,0,0,0.06)`, background: "rgba(248,250,255,0.95)", backdropFilter: BLUR_SM }}>
+        {/* To / CC row */}
+        <div style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: "0.7rem", fontWeight: 700, color: BLUE, whiteSpace: "nowrap" }}>إلى:</span>
+            <select value={toRole} onChange={e => setToRole(e.target.value)} style={selectStyle}>
+              <option value="">— اختر المستلم —</option>
+              {MSG_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#64748B", whiteSpace: "nowrap" }}>نسخة:</span>
+            <select value={ccRole} onChange={e => setCcRole(e.target.value)} style={selectStyle}>
+              <option value="">— نسخة لـ —</option>
+              {MSG_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div style={{ fontSize: "0.65rem", color: "#94a3b8", marginRight: "auto" }}>
+            المرسِل: <strong style={{ color: BLUE_M }}>{actorName || "—"}</strong>
+            {actorRole && <span style={{ color: "#64748B" }}> · {actorRole}</span>}
+          </div>
+        </div>
+        {/* Message + send */}
         <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
           <textarea
             value={msg} onChange={e => setMsg(e.target.value)}
@@ -293,7 +373,7 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
             style={{
               flex: 1, padding: "9px 12px", borderRadius: 10,
               border: `1.5px solid rgba(0,0,0,0.12)`, fontSize: "0.82rem",
-              fontFamily: "'Cairo', 'Tajawal', sans-serif", resize: "none", outline: "none", lineHeight: 1.5,
+              fontFamily: "'Cairo','Tajawal',sans-serif", resize: "none", outline: "none", lineHeight: 1.5,
               background: "rgba(255,255,255,0.97)",
             }}
           />
@@ -301,7 +381,7 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
             width: 42, height: 42, borderRadius: "50%", border: "none", flexShrink: 0,
             background: canSend ? `linear-gradient(135deg, ${BLUE}, ${BLUE_M})` : "#ddd",
             color: "#fff", cursor: canSend ? "pointer" : "not-allowed",
-            fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center",
+            display: "flex", alignItems: "center", justifyContent: "center",
             boxShadow: canSend ? "0 4px 12px rgba(25,118,210,0.35)" : "none", transition: "all 0.2s",
           }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>

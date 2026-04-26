@@ -446,6 +446,10 @@ router.patch("/contracts/:id/stage", async (req, res): Promise<void> => {
 const AddCommentBody = z.object({
   actorName: z.string().min(1),
   actorRole: z.string().default(""),
+  toName:    z.string().default(""),
+  toRole:    z.string().default(""),
+  ccName:    z.string().default(""),
+  ccRole:    z.string().default(""),
   message:   z.string().min(1),
 });
 

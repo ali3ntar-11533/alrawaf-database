@@ -151,7 +151,11 @@ export async function getContractComments(id: number): Promise<ContractComment[]
 export interface AddCommentPayload {
   actorName: string;
   actorRole: string;
-  message: string;
+  toName?:   string;
+  toRole?:   string;
+  ccName?:   string;
+  ccRole?:   string;
+  message:   string;
 }
 
 export async function addContractComment(id: number, payload: AddCommentPayload): Promise<ContractComment> {
