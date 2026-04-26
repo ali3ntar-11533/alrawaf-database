@@ -356,6 +356,10 @@ export default function ContractMonitor({ contract, role }: { contract: Contract
   const [reports, setReports]       = useState<PhaseReport[]>([]);
   const [openReportId, setOpenReportId] = useState<number | null>(null);
 
+  const [durationOverride, setDurationOverride] = useState<number | null>(null);
+  const [editingDuration, setEditingDuration]   = useState(false);
+  const [durationInput, setDurationInput]       = useState("");
+
   /* ── Computed ── */
   const remainingDays = useMemo(() => {
     if (!contract.endDate) return null;
@@ -590,10 +594,46 @@ export default function ContractMonitor({ contract, role }: { contract: Contract
           {remainingDays != null && (
             <span style={{ fontSize: "0.62rem", color: "#999" }}>{remainingDays < 0 ? "يوم (تأخير)" : "يوم"}</span>
           )}
-          {plannedDays && (
+          {(plannedDays || durationOverride) && (
             <div style={{ marginTop: 6, fontSize: "0.6rem", color: "#bbb", textAlign: "center", lineHeight: 1.8 }}>
-              <div>مدة التنفيذ</div>
-              <div style={{ fontWeight: 700, color: "#777" }}>{plannedDays} يوم</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                <span>مدة التنفيذ</span>
+                <button
+                  title="تعديل المدة"
+                  onClick={() => { setDurationInput(String(durationOverride ?? plannedDays ?? "")); setEditingDuration(true); }}
+                  style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 1, color: BLUE_M, display: "flex", alignItems: "center" }}
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+              </div>
+              {editingDuration ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginTop: 2 }}>
+                  <input
+                    type="number"
+                    value={durationInput}
+                    onChange={e => setDurationInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") {
+                        const v = parseInt(durationInput);
+                        if (!isNaN(v) && v > 0) setDurationOverride(v);
+                        setEditingDuration(false);
+                      }
+                      if (e.key === "Escape") setEditingDuration(false);
+                    }}
+                    autoFocus
+                    style={{ width: 52, fontSize: "0.65rem", padding: "2px 4px", borderRadius: 5, border: `1.5px solid ${BLUE_M}`, textAlign: "center", fontFamily: "'Cairo','Tajawal',sans-serif", outline: "none" }}
+                  />
+                  <button
+                    onClick={() => { const v = parseInt(durationInput); if (!isNaN(v) && v > 0) setDurationOverride(v); setEditingDuration(false); }}
+                    style={{ background: BLUE_M, border: "none", borderRadius: 4, color: "#fff", fontSize: "0.6rem", padding: "2px 6px", cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif" }}
+                  >حفظ</button>
+                </div>
+              ) : (
+                <div style={{ fontWeight: 700, color: "#777" }}>{durationOverride ?? plannedDays} يوم</div>
+              )}
               {elapsedDays != null && (
                 <>
                   <div style={{ marginTop: 2 }}>المنقضية</div>
