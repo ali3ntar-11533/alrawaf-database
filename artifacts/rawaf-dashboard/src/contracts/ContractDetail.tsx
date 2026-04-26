@@ -848,28 +848,26 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                                 animation: isCur ? "stg-pulse 2s ease-in-out infinite" : "none",
                                 transition: "all 0.3s", cursor: "default",
                               }}>
-                                {/* Number or checkmark */}
-                                <span style={{ fontSize: isDone ? "0.8rem" : "0.65rem", fontWeight: 900, lineHeight: 1 }}>
-                                  {isDone ? "✓" : sNum}
-                                </span>
-                                {/* Duration inside the node */}
-                                {dur ? (
-                                  <span style={{
-                                    fontSize: "0.42rem", fontWeight: 700, lineHeight: 1,
-                                    color: isDone ? "rgba(255,255,255,0.85)" : isCur ? BLUE_M : "#aaa",
-                                    marginTop: 2, textAlign: "center", maxWidth: "100%", padding: "0 2px",
-                                  }}>
-                                    {dur}
-                                  </span>
-                                ) : isCur ? (
-                                  <span style={{
-                                    fontSize: "0.38rem", fontWeight: 900, lineHeight: 1,
-                                    color: BLUE_M, marginTop: 2,
-                                    animation: "stg-pulse 2s ease-in-out infinite",
-                                  }}>
-                                    جارٍ
-                                  </span>
-                                ) : null}
+                                {/* Checkmark (done) or number (pending/current) */}
+                                {isDone ? (
+                                  <span style={{ fontSize: stg.merged ? "1.1rem" : "0.95rem", fontWeight: 900, lineHeight: 1 }}>✓</span>
+                                ) : (
+                                  <>
+                                    <span style={{ fontSize: "0.65rem", fontWeight: 900, lineHeight: 1 }}>{sNum}</span>
+                                    {isCur ? (
+                                      <span style={{
+                                        fontSize: "0.38rem", fontWeight: 900, lineHeight: 1,
+                                        color: BLUE_M, marginTop: 2,
+                                        animation: "stg-pulse 2s ease-in-out infinite",
+                                      }}>جارٍ</span>
+                                    ) : dur ? (
+                                      <span style={{
+                                        fontSize: "0.42rem", fontWeight: 700, lineHeight: 1,
+                                        color: "#aaa", marginTop: 2, textAlign: "center",
+                                      }}>{dur}</span>
+                                    ) : null}
+                                  </>
+                                )}
                               </div>
                               {/* Role label below node */}
                               <div style={{
