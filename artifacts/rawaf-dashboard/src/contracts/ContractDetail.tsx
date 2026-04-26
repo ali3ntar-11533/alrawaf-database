@@ -699,7 +699,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
               transition: "all 0.18s",
             }}
           >
-            رجوع للقائمة
+            رجوع
           </button>
 
           <div style={{ flex: 1, textAlign: "center" }}>
