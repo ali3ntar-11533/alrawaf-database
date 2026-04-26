@@ -233,13 +233,13 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
             <thead>
               <tr style={{ background: "#FAFAFA", borderBottom: "2px solid #F0F0F0" }}>
                 {[
-                  { label: "#",            width: 44 },
-                  { label: "رقم العقد",    width: 100 },
-                  { label: "العنوان",      width: undefined },
-                  { label: "المورد",       width: 130 },
-                  { label: "القيمة",       width: 120 },
-                  { label: "زمن المرحلة", width: 120, note: "منذ آخر تحديث" },
-                  { label: "عمر الطلب",  width: 110, note: "منذ الإنشاء" },
+                  { label: "رقم الطلب",         width: 52 },
+                  { label: "رقم العقد",          width: 110 },
+                  { label: "اسم الطرف الثاني",   width: 140 },
+                  { label: "رقم واسم المشروع",   width: undefined },
+                  { label: "المحفظة",            width: 110 },
+                  { label: "زمن المرحلة",        width: 130, note: "منذ آخر تحديث" },
+                  { label: "عمر الطلب",          width: 110, note: "منذ الإنشاء" },
                 ].map((col, i) => (
                   <th
                     key={i}
@@ -296,29 +296,51 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
                       }}>{c.contractNo}</div>
                     </td>
 
-                    {/* العنوان */}
+                    {/* اسم الطرف الثاني */}
                     <td style={{ padding: "13px 14px" }}>
-                      <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "#1A1A1A", marginBottom: 2 }}>
-                        {c.title}
+                      <div style={{ fontSize: "0.76rem", fontWeight: 700, color: "#1A1A1A", marginBottom: 2 }}>
+                        {c.vendorName || "—"}
                       </div>
                       {c.rejectionReason && (
                         <div style={{ fontSize: "0.58rem", color: RED, display: "flex", gap: 4 }}>
                           <span style={{ fontWeight: 700 }}>سبب الإعادة:</span><span style={{ marginRight: 4 }}>{c.rejectionReason}</span>
                         </div>
                       )}
-                      {c.projectName && (
-                        <div style={{ fontSize: "0.58rem", color: "#AAAAAA" }}>{c.projectName}</div>
+                    </td>
+
+                    {/* رقم واسم المشروع */}
+                    <td style={{ padding: "13px 14px" }}>
+                      {(c.projectNo || c.projectName) ? (
+                        <div>
+                          {c.projectNo && (
+                            <div style={{
+                              fontSize: "0.62rem", fontWeight: 800, color: GOLD2,
+                              background: `rgba(197,160,89,0.07)`, border: `1px solid ${GOLD_BOR}`,
+                              borderRadius: 6, padding: "2px 7px", display: "inline-block", marginBottom: 3,
+                            }}>{c.projectNo}</div>
+                          )}
+                          {c.projectName && (
+                            <div style={{ fontSize: "0.7rem", color: "#444", fontWeight: 600 }}>{c.projectName}</div>
+                          )}
+                        </div>
+                      ) : (
+                        <span style={{ color: "#ccc", fontSize: "0.7rem" }}>—</span>
                       )}
                     </td>
 
-                    {/* المورد */}
-                    <td style={{ padding: "13px 14px", fontSize: "0.72rem", color: "#555" }}>
-                      {c.vendorName || "—"}
-                    </td>
-
-                    {/* القيمة */}
-                    <td style={{ padding: "13px 14px", fontSize: "0.72rem", fontWeight: 700, color: "#1A1A1A", whiteSpace: "nowrap" }}>
-                      {formatSAR(c.value)}
+                    {/* المحفظة */}
+                    <td style={{ padding: "13px 14px" }}>
+                      {(c.contractType || c.workType) ? (
+                        <div style={{
+                          fontSize: "0.65rem", fontWeight: 700, color: "#555",
+                          background: "rgba(0,0,0,0.04)", border: "1px solid #E8E8E8",
+                          borderRadius: 6, padding: "3px 8px", display: "inline-block",
+                        }}>
+                          {c.contractType || c.workType}
+                        </div>
+                      ) : (
+                        <span style={{ color: "#ccc", fontSize: "0.7rem" }}>—</span>
+                      )}
                     </td>
 
                     {/* زمن المرحلة */}
