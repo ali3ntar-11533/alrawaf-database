@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Contract } from "./types";
-import { listContracts, deleteContract } from "./api";
+import { listContracts, deleteContract, createContract } from "./api";
 import ContractMonitor from "./ContractMonitor";
 import logoImg from "@assets/logo_1776506524686.jpg";
 
@@ -63,27 +63,6 @@ const EMPTY_DRAFT: NewMonitorDraft = {
   projectName: "", startDate: "", endDate: "", value: "",
 };
 
-let _tempId = -1;
-function makeTempContract(d: NewMonitorDraft): Contract {
-  return {
-    id: _tempId--,
-    title: d.title || "متابعة جديدة",
-    contractNo: d.contractNo,
-    vendorName: d.vendorName,
-    projectName: d.projectName,
-    startDate: d.startDate,
-    endDate: d.endDate,
-    value: parseFloat(d.value) || 0,
-    status: "completed",
-    currentStage: 10,
-    contractType: "",
-    notes: "",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    signedFilename: null,
-    actorName: "",
-  } as unknown as Contract;
-}
 
 export default function ContractTracking({ role, actorName, onOpenContract }: Props) {
   const [contracts, setContracts] = useState<Contract[]>([]);
@@ -95,6 +74,7 @@ export default function ContractTracking({ role, actorName, onOpenContract }: Pr
   const [showNewForm, setShowNewForm] = useState(false);
   const [draft, setDraft] = useState<NewMonitorDraft>(EMPTY_DRAFT);
   const [draftError, setDraftError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const isManager = role === TRACKING_ROLE;
 
@@ -119,12 +99,28 @@ export default function ContractTracking({ role, actorName, onOpenContract }: Pr
     }
   }
 
-  function handleOpenNewMonitor() {
+  async function handleSaveMonitor() {
     if (!draft.title.trim()) { setDraftError("يرجى إدخال اسم العقد على الأقل"); return; }
     setDraftError("");
-    setMonitorContract(makeTempContract(draft));
-    setShowNewForm(false);
-    setDraft(EMPTY_DRAFT);
+    setSaving(true);
+    try {
+      const saved = await createContract({
+        title: draft.title.trim(),
+        vendorName: draft.vendorName.trim(),
+        value: parseFloat(draft.value) || 0,
+        startDate: draft.startDate || undefined,
+        endDate: draft.endDate || undefined,
+        projectName: draft.projectName || undefined,
+        createdBy: actorName,
+      });
+      setContracts(prev => [saved, ...prev]);
+      setShowNewForm(false);
+      setDraft(EMPTY_DRAFT);
+    } catch {
+      setDraftError("حدث خطأ أثناء الحفظ، يرجى المحاولة مرة أخرى");
+    } finally {
+      setSaving(false);
+    }
   }
 
   /* ── Monitor detail view ─────────────────────────────────── */
@@ -338,15 +334,17 @@ export default function ContractTracking({ role, actorName, onOpenContract }: Pr
               }}
             >إلغاء</button>
             <button
-              onClick={handleOpenNewMonitor}
+              onClick={handleSaveMonitor}
+              disabled={saving}
               style={{
                 padding: "9px 24px", borderRadius: 9, border: "none",
-                background: `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`,
+                background: saving ? "#93B5E1" : `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`,
                 color: "#fff", fontSize: "0.76rem", fontWeight: 800,
-                cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif",
+                cursor: saving ? "not-allowed" : "pointer",
+                fontFamily: "'Cairo','Tajawal',sans-serif",
                 boxShadow: "0 2px 8px rgba(25,118,210,0.28)",
               }}
-            >فتح لوحة المتابعة</button>
+            >{saving ? "جاري الحفظ..." : "حفظ المتابعة"}</button>
           </div>
         </div>
       )}
