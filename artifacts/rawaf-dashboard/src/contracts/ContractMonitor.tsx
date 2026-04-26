@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, type CSSProperties } from "react";
+import { useState, useMemo, useEffect, useRef, type CSSProperties } from "react";
 import type { Contract } from "./types";
 import { tafqit } from "./tafqit";
 
@@ -21,6 +21,12 @@ const TRACKING_ROLE = "مسؤول المتابعة";
 interface ExecPhase  { id: number; label: string; pct: number; durationDays: number; }
 interface BoqItem    { id: number; code: string; description: string; unit: string; qty: number; executedQty: number; unitPrice: number; }
 interface Payment    { id: number; no: number; invoiceRef: string; date: string; amount: number; status: "paid" | "pending"; }
+interface InvoiceItem {
+  id: number; description: string; ref: string;
+  qty: string; value: string; date: string;
+  accurate: string; approvalDelayed: string;
+}
+interface AttachmentItem { id: number; name: string; }
 interface PhaseReport {
   id: number; phaseId: number; date: string; completionPct: number;
   recipientName: string; submittedBy: string; status: "draft" | "submitted";
@@ -31,14 +37,17 @@ interface PhaseReport {
   timelineStatus: string; delayReasons: string;
   contractViolations: string; safetyRating: string; incidents: number;
   /* § 3 — Financial */
-  hasInvoice: string; invoiceDescription: string; invoiceRef: string;
-  invoiceQty: string; invoiceValue: string; invoiceDate: string;
-  invoiceAccurate: string; invoiceApprovalDelayed: string;
+  hasInvoice: string; invoices: InvoiceItem[];
   /* § 4 — Recommendation */
   overallTechRating: string; overallContractRating: string;
   finalRecommendation: string; interventionRequest: string;
+  /* Attachments */
+  attachments: AttachmentItem[];
   /* compat */
   summary: string; challenges: string; nextSteps: string; requestedSupport: string;
+  invoiceDescription: string; invoiceRef: string;
+  invoiceQty: string; invoiceValue: string; invoiceDate: string;
+  invoiceAccurate: string; invoiceApprovalDelayed: string;
 }
 
 const SYSTEM_RECIPIENTS = [
@@ -287,9 +296,30 @@ function ReportFormModal({
   role: string; onSave: (r: PhaseReport) => void; onClose: () => void;
   onNotifUpdate?: () => void;
 }) {
-  const [draft, setDraft] = useState<PhaseReport>({ ...report });
+  const [draft, setDraft] = useState<PhaseReport>({ ...report, invoices: report.invoices ?? [], attachments: report.attachments ?? [] });
   const [recipientSearch, setRecipientSearch] = useState("");
   const [showDrop, setShowDrop] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function addInvoice() {
+    const inv: InvoiceItem = { id: Date.now(), description: "", ref: "", qty: "", value: "", date: "", accurate: "", approvalDelayed: "" };
+    setDraft(d => ({ ...d, invoices: [...(d.invoices ?? []), inv] }));
+  }
+  function updateInvoice(id: number, key: keyof InvoiceItem, val: string) {
+    setDraft(d => ({ ...d, invoices: (d.invoices ?? []).map(inv => inv.id === id ? { ...inv, [key]: val } : inv) }));
+  }
+  function removeInvoice(id: number) {
+    setDraft(d => ({ ...d, invoices: (d.invoices ?? []).filter(inv => inv.id !== id) }));
+  }
+  function handleFileAdd(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    const newAttachments: AttachmentItem[] = files.map(f => ({ id: Date.now() + Math.random(), name: f.name }));
+    setDraft(d => ({ ...d, attachments: [...(d.attachments ?? []), ...newAttachments] }));
+    e.target.value = "";
+  }
+  function removeAttachment(id: number) {
+    setDraft(d => ({ ...d, attachments: (d.attachments ?? []).filter(a => a.id !== id) }));
+  }
 
   const isSubmitted = report.status === "submitted";
   const isRecipient = !!report.recipientName && role === report.recipientName;
@@ -423,7 +453,7 @@ function ReportFormModal({
           <div>
             <SectionH num="2" label="التحديات والعقبات التعاقدية" color={AMBER} bg={AMB_B}/>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div><label style={lSt}>الالتزام بالوقت</label><RatingChips value={draft.timelineStatus} onChange={v => set("timelineStatus", v)} options={OPT_TIMELINE} disabled={ro}/></div>
+              <div><label style={lSt}>مدى الالتزام ببرنامج التنفيذ ومدة العقد</label><RatingChips value={draft.timelineStatus} onChange={v => set("timelineStatus", v)} options={OPT_TIMELINE} disabled={ro}/></div>
               {(draft.timelineStatus === "متأخر" || (ro && draft.delayReasons)) && (
                 <div><label style={lSt}>أسباب التأخير</label><MultiChips value={draft.delayReasons} onChange={v => set("delayReasons", v)} options={DELAY_REASON_OPTS} disabled={ro}/></div>
               )}
@@ -449,22 +479,38 @@ function ReportFormModal({
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div><label style={lSt}>هل تم رفع مستخلصات في هذه المرحلة؟</label><RatingChips value={draft.hasInvoice} onChange={v => set("hasInvoice", v)} options={OPT_YESNO} disabled={ro}/></div>
               {draft.hasInvoice === "نعم" && (
-                <div style={{ background: "rgba(34,197,94,0.04)", border: "1.5px solid rgba(34,197,94,0.2)", borderRadius: 12, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-                  <div style={{ fontSize: "0.63rem", fontWeight: 900, color: GREEN }}>بيانات المستخلص</div>
-                  <div>
-                    <label style={lSt}>وصف المستخلص</label>
-                    <input value={draft.invoiceDescription} onChange={e => set("invoiceDescription", e.target.value)} readOnly={ro} placeholder="وصف موجز..." style={{ ...iSt }} />
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                    <div><label style={lSt}>رقم المستخلص</label><input value={draft.invoiceRef} onChange={e => set("invoiceRef", e.target.value)} readOnly={ro} placeholder="INV-XXX" style={{ ...iSt }} /></div>
-                    <div><label style={lSt}>الكمية المنفذة</label><input value={draft.invoiceQty} onChange={e => set("invoiceQty", e.target.value)} readOnly={ro} placeholder="0" style={{ ...iSt }} /></div>
-                    <div><label style={lSt}>القيمة (ر.س)</label><input value={draft.invoiceValue} onChange={e => set("invoiceValue", e.target.value)} readOnly={ro} placeholder="0.00" style={{ ...iSt }} /></div>
-                  </div>
-                  <div><label style={lSt}>تاريخ المستخلص</label><input type="date" value={draft.invoiceDate} onChange={e => set("invoiceDate", e.target.value)} readOnly={ro} style={{ ...iSt, width: 160 }} /></div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <div><label style={lSt}>هل يعكس الواقع المنفذ فعلياً؟</label><RatingChips value={draft.invoiceAccurate} onChange={v => set("invoiceAccurate", v)} options={OPT_YESNO} disabled={ro}/></div>
-                    <div><label style={lSt}>هل يوجد تأخير في اعتماد المستخلص؟</label><RatingChips value={draft.invoiceApprovalDelayed} onChange={v => set("invoiceApprovalDelayed", v)} options={OPT_YESNO} disabled={ro}/></div>
-                  </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {/* list of invoices */}
+                  {(draft.invoices ?? []).map((inv, idx) => (
+                    <div key={inv.id} style={{ background: "rgba(34,197,94,0.04)", border: "1.5px solid rgba(34,197,94,0.22)", borderRadius: 12, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10, position: "relative" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div style={{ fontSize: "0.63rem", fontWeight: 900, color: GREEN }}>مستخلص {idx + 1}</div>
+                        {!ro && (
+                          <button onClick={() => removeInvoice(inv.id)} style={{ background: "rgba(239,68,68,0.1)", border: "none", borderRadius: 6, padding: "2px 8px", cursor: "pointer", color: RED, fontSize: "0.62rem", fontWeight: 800, fontFamily: "'Cairo','Tajawal',sans-serif" }}>حذف</button>
+                        )}
+                      </div>
+                      <div>
+                        <label style={lSt}>وصف المستخلص</label>
+                        <input value={inv.description} onChange={e => updateInvoice(inv.id, "description", e.target.value)} readOnly={ro} placeholder="وصف موجز..." style={{ ...iSt }} />
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                        <div><label style={lSt}>رقم المستخلص</label><input value={inv.ref} onChange={e => updateInvoice(inv.id, "ref", e.target.value)} readOnly={ro} placeholder="INV-XXX" style={{ ...iSt }} /></div>
+                        <div><label style={lSt}>الكمية المنفذة</label><input value={inv.qty} onChange={e => updateInvoice(inv.id, "qty", e.target.value)} readOnly={ro} placeholder="0" style={{ ...iSt }} /></div>
+                        <div><label style={lSt}>القيمة (ر.س)</label><input value={inv.value} onChange={e => updateInvoice(inv.id, "value", e.target.value)} readOnly={ro} placeholder="0.00" style={{ ...iSt }} /></div>
+                      </div>
+                      <div><label style={lSt}>تاريخ المستخلص</label><input type="date" value={inv.date} onChange={e => updateInvoice(inv.id, "date", e.target.value)} readOnly={ro} style={{ ...iSt, width: 160 }} /></div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                        <div><label style={lSt}>هل يعكس الواقع المنفذ فعلياً؟</label><RatingChips value={inv.accurate} onChange={v => updateInvoice(inv.id, "accurate", v)} options={OPT_YESNO} disabled={ro}/></div>
+                        <div><label style={lSt}>هل يوجد تأخير في اعتماد المستخلص؟</label><RatingChips value={inv.approvalDelayed} onChange={v => updateInvoice(inv.id, "approvalDelayed", v)} options={OPT_YESNO} disabled={ro}/></div>
+                      </div>
+                    </div>
+                  ))}
+                  {/* add invoice button */}
+                  {!ro && (
+                    <button onClick={addInvoice} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px", borderRadius: 10, border: `1.5px dashed rgba(34,197,94,0.45)`, background: "rgba(34,197,94,0.03)", color: GREEN, fontSize: "0.72rem", fontWeight: 800, cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif" }}>
+                      <span style={{ fontSize: "1.1rem", lineHeight: 1 }}>+</span> إضافة مستخلص
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -486,6 +532,43 @@ function ReportFormModal({
                 <textarea rows={2} value={draft.interventionRequest} onChange={e => set("interventionRequest", e.target.value)} readOnly={ro} placeholder="أي دعم قانوني أو مالي يتطلب قراراً من مدير المشروع..." style={{ ...iSt, resize: "vertical" }} />
               </div>
             </div>
+          </div>
+
+          <div style={{ borderTop: "1.5px solid #F0F4FA", margin: "0 -24px" }}/>
+
+          {/* ─ § 5 Attachments ─ */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 14px", borderRadius: 10, background: "rgba(25,118,210,0.04)", border: `1.5px solid rgba(25,118,210,0.15)`, marginBottom: 12 }}>
+              <div style={{ width: 22, height: 22, borderRadius: "50%", background: BLUE_M, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.68rem", fontWeight: 900, flexShrink: 0 }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05L12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.42 17.41a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              </div>
+              <span style={{ fontSize: "0.76rem", fontWeight: 900, color: BLUE_M }}>المرفقات</span>
+              {(draft.attachments ?? []).length > 0 && (
+                <span style={{ marginRight: "auto", fontSize: "0.6rem", fontWeight: 800, padding: "2px 8px", borderRadius: 10, background: BLUE_B, color: BLUE_M }}>{(draft.attachments ?? []).length} ملف</span>
+              )}
+            </div>
+            {/* Attachment chips */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: (draft.attachments ?? []).length > 0 ? 10 : 0 }}>
+              {(draft.attachments ?? []).map(att => (
+                <div key={att.id} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 8, background: BLUE_B, border: `1px solid ${BLUE_BR}`, fontSize: "0.67rem", color: BLUE_M, fontWeight: 700 }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  <span>{att.name}</span>
+                  {!ro && (
+                    <button onClick={() => removeAttachment(att.id)} style={{ background: "none", border: "none", cursor: "pointer", color: RED, fontSize: "0.7rem", padding: 0, lineHeight: 1, marginRight: 2 }}>✕</button>
+                  )}
+                </div>
+              ))}
+            </div>
+            {/* Hidden file input + trigger button */}
+            {!ro && (
+              <>
+                <input ref={fileInputRef} type="file" multiple style={{ display: "none" }} onChange={handleFileAdd} />
+                <button onClick={() => fileInputRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 16px", borderRadius: 10, border: `1.5px dashed ${BLUE_BR}`, background: BLUE_B2, color: BLUE_M, fontSize: "0.72rem", fontWeight: 800, cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif" }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05L12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.42 17.41a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                  إضافة مرفقات
+                </button>
+              </>
+            )}
           </div>
 
           <div style={{ borderTop: "1.5px solid #F0F4FA", margin: "0 -24px" }}/>
@@ -615,9 +698,10 @@ export default function ContractMonitor({ contract, role }: { contract: Contract
       recipientName: "", submittedBy: "", status: "draft",
       /* § 1 */ planCompliance: "", executionQuality: "", snagsCount: 0, snagsSpeed: "", workforceRating: "",
       /* § 2 */ timelineStatus: "", delayReasons: "", contractViolations: "", safetyRating: "", incidents: 0,
-      /* § 3 */ hasInvoice: "", invoiceDescription: "", invoiceRef: "", invoiceQty: "", invoiceValue: "", invoiceDate: "", invoiceAccurate: "", invoiceApprovalDelayed: "",
+      /* § 3 */ hasInvoice: "", invoices: [], attachments: [],
       /* § 4 */ overallTechRating: "", overallContractRating: "", finalRecommendation: "", interventionRequest: "",
       /* compat */ summary: "", challenges: "", nextSteps: "", requestedSupport: "",
+      invoiceDescription: "", invoiceRef: "", invoiceQty: "", invoiceValue: "", invoiceDate: "", invoiceAccurate: "", invoiceApprovalDelayed: "",
     };
     setReports(prev => [...prev, newReport]);
     setOpenReportId(newReport.id);
