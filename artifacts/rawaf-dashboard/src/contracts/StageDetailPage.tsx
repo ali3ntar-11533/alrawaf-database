@@ -10,10 +10,12 @@ const GOLD_END  = "#E2C275";
 const GOLD_GLOW = "rgba(197,160,89,0.45)";
 const GOLD_BOR  = "rgba(197,160,89,0.22)";
 const GREEN     = "#22c55e";
-const AMBER     = "#f59e0b";
+const AMBER     = "#F5A623";
 const RED       = "#ef4444";
 const DARK      = "#0C1427";
 const DARK2     = "#152040";
+const BLUE      = "#1565C0";
+const BLUE_M    = "#1976D2";
 const BLUE_L    = "#4A90D9";
 
 function daysSince(iso: string) {
@@ -105,7 +107,7 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
         boxShadow: "0 4px 24px rgba(12,20,39,0.28)",
       }}>
         {/* Blue+Gold top line */}
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,${BLUE_L},${GOLD},${BLUE_L})`, opacity: 0.7 }}/>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg,${BLUE_M},${BLUE_L},${AMBER})` }}/>
 
         {/* Back */}
         <button

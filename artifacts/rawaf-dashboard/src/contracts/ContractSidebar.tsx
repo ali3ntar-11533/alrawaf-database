@@ -9,12 +9,14 @@ const GOLD       = "#C5A059";
 const GOLD2      = "#E2C275";
 const GOLD_DIM   = "rgba(197,160,89,0.18)";
 const GOLD_BOR   = "rgba(197,160,89,0.30)";
+const AMBER      = "#F5A623";
 const DARK_BG    = "#0C1427";
 const DARK_HDR   = "#0A1020";
 const DARK_CARD  = "rgba(255,255,255,0.05)";
 const TEXT_MAIN  = "#E8E8E8";
 const TEXT_MUT   = "#8899BB";
-const BLUE       = "#4A90D9";
+const BLUE       = "#1976D2";
+const BLUE_L     = "#4A90D9";
 const RED        = "#ef4444";
 
 const SIDEBAR_W  = 240;
@@ -90,10 +92,10 @@ export default function ContractSidebar({
         .rawaf-tab-btn:hover { background: rgba(255,255,255,0.06) !important; }
       `}</style>
 
-      {/* ── Decorative top glow line ── */}
+      {/* ── Decorative top glow line — blue-to-amber slide gradient ── */}
       <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, height: 2,
-        background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`,
+        position: "absolute", top: 0, left: 0, right: 0, height: 3,
+        background: `linear-gradient(90deg, ${BLUE}, ${BLUE_L}, ${AMBER})`,
         animation: "goldPulse 3s ease-in-out infinite",
       }}/>
 
@@ -244,15 +246,15 @@ export default function ContractSidebar({
                 display: "flex", alignItems: "center", gap: 10,
                 padding: "11px 14px", borderRadius: 10, border: "none",
                 background: isActive
-                  ? `linear-gradient(135deg, rgba(197,160,89,0.18), rgba(197,160,89,0.08))`
+                  ? `linear-gradient(135deg, rgba(25,118,210,0.22), rgba(25,118,210,0.08))`
                   : "transparent",
                 cursor: "pointer", width: "100%", textAlign: "right",
                 fontFamily: "'Cairo', 'Tajawal', sans-serif",
                 fontSize: "0.82rem", fontWeight: isActive ? 800 : 500,
-                color: isActive ? GOLD2 : TEXT_MAIN,
-                borderRight: isActive ? `3px solid ${GOLD}` : "3px solid transparent",
+                color: isActive ? "#FFFFFF" : TEXT_MAIN,
+                borderRight: isActive ? `3px solid ${BLUE_L}` : "3px solid transparent",
                 transition: "all 0.18s ease",
-                boxShadow: isActive ? `0 2px 12px rgba(197,160,89,0.12), inset 0 0 0 1px rgba(197,160,89,0.15)` : "none",
+                boxShadow: isActive ? `0 2px 14px rgba(25,118,210,0.18), inset 0 0 0 1px rgba(25,118,210,0.20)` : "none",
                 position: "relative",
                 overflow: "hidden",
               }}
@@ -261,13 +263,13 @@ export default function ContractSidebar({
               {isActive && (
                 <div style={{
                   position: "absolute", inset: 0,
-                  background: "linear-gradient(90deg, rgba(197,160,89,0.05) 0%, transparent 100%)",
+                  background: "linear-gradient(90deg, rgba(25,118,210,0.08) 0%, transparent 100%)",
                   pointerEvents: "none",
                 }}/>
               )}
               <span style={{
                 fontSize: "0.7rem",
-                color: isActive ? GOLD : TEXT_MUT,
+                color: isActive ? BLUE_L : TEXT_MUT,
                 transition: "color 0.15s",
                 flexShrink: 0,
               }}>

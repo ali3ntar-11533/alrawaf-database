@@ -121,7 +121,7 @@ export default function ContractApp({ onExit }: Props) {
       style={{
         position: "fixed", inset: 0, zIndex: 9000,
         display: "flex", flexDirection: "row",
-        background: "#F0F2F8",
+        background: "#FFFFFF",
         fontFamily: "'Cairo', 'Tajawal', sans-serif",
         overflowX: "hidden",
       }}

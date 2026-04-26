@@ -5,20 +5,22 @@ import type { Contract } from "./types";
 import logoImg from "@assets/logo_1776506524686.jpg";
 
 /* ── Design tokens ─────────────────────────────────────────── */
-const GOLD     = "#C5A059";
-const GOLD2    = "#a88540";
-const GOLD_END = "#E2C275";
-const GREEN    = "#16a34a";
-const GREEN_L  = "#22c55e";
-const RED      = "#dc2626";
-const AMBER    = "#d97706";
-const BLUE     = "#1565C0";
-const BLUE_L   = "#4A90D9";
-const DARK     = "#0C1427";
-const DARK2    = "#152040";
-const GLASS    = "rgba(255,255,255,0.95)";
-const GLASS_B  = "rgba(255,255,255,0.80)";
-const G_BORDER = "rgba(197,160,89,0.18)";
+const GOLD      = "#C5A059";
+const GOLD2     = "#a88540";
+const GOLD_END  = "#E2C275";
+const GREEN     = "#16a34a";
+const GREEN_L   = "#22c55e";
+const RED       = "#dc2626";
+const AMBER     = "#F5A623";
+const BLUE      = "#1565C0";
+const BLUE_M    = "#1976D2";
+const BLUE_L    = "#4A90D9";
+const DARK      = "#0C1427";
+const DARK2     = "#152040";
+const GLASS     = "rgba(255,255,255,0.97)";
+const GLASS_B   = "rgba(255,255,255,0.85)";
+const G_BORDER  = "rgba(197,160,89,0.14)";
+const SLIDE_BG  = "#FFFFFF";
 
 /* ── Stage display — synced with STAGES in types.ts ────────── */
 const DASH_STAGES = [
@@ -83,44 +85,44 @@ function PulseWave({ pct, active, done, total }: { pct: number; active: number; 
     const y = H / 2 - amp * Math.sin((2 * Math.PI * x) / λ);
     return `${i === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
   }).join(" ");
-  const BG = "#FFFDF8";
+  const BG = "#F8FBFF";
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 10,
-      background: `linear-gradient(120deg,${BG} 0%,#FBF6EC 60%,${BG} 100%)`,
-      border: `1px solid ${G_BORDER}`, borderRadius: 14, padding: "7px 14px 7px 10px",
-      boxShadow: "0 2px 12px rgba(197,160,89,0.08)", position: "relative", overflow: "hidden",
+      background: `linear-gradient(120deg,${BG} 0%,#EFF5FF 60%,${BG} 100%)`,
+      border: `1px solid rgba(25,118,210,0.16)`, borderRadius: 14, padding: "7px 14px 7px 10px",
+      boxShadow: "0 2px 12px rgba(25,118,210,0.08)", position: "relative", overflow: "hidden",
     }}>
       <div style={{ position: "relative", width: W, height: H, overflow: "hidden", flexShrink: 0 }}>
         <svg width={W * 2} height={H} style={{ position: "absolute", left: 0, animation: "pulseWaveScroll 3.2s linear infinite" }}>
           <defs>
             <linearGradient id="wGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%"   stopColor={GOLD} stopOpacity="0"/>
-              <stop offset="30%"  stopColor={GOLD} stopOpacity="0.28"/>
-              <stop offset="70%"  stopColor={GOLD_END} stopOpacity="0.28"/>
-              <stop offset="100%" stopColor={GOLD} stopOpacity="0"/>
+              <stop offset="0%"   stopColor={BLUE_M} stopOpacity="0"/>
+              <stop offset="30%"  stopColor={BLUE_M} stopOpacity="0.30"/>
+              <stop offset="70%"  stopColor={BLUE_L}  stopOpacity="0.30"/>
+              <stop offset="100%" stopColor={BLUE_M} stopOpacity="0"/>
             </linearGradient>
           </defs>
-          <line x1="0" y1={H/2} x2={W*2} y2={H/2} stroke="rgba(197,160,89,0.1)" strokeWidth="1"/>
+          <line x1="0" y1={H/2} x2={W*2} y2={H/2} stroke="rgba(25,118,210,0.1)" strokeWidth="1"/>
           <path d={pts} fill="none" stroke="url(#wGrad)" strokeWidth="1.4"/>
         </svg>
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(90deg,${BG} 0%,transparent 22%,transparent 78%,${BG} 100%)`, pointerEvents: "none" }}/>
-        <div style={{ position: "absolute", top: "50%", right: 6, transform: "translateY(-50%)", width: 3, height: 3, borderRadius: "50%", background: GOLD, opacity: 0.4, animation: "pulseDot 2.2s ease-in-out infinite" }}/>
+        <div style={{ position: "absolute", top: "50%", right: 6, transform: "translateY(-50%)", width: 3, height: 3, borderRadius: "50%", background: BLUE_M, opacity: 0.5, animation: "pulseDot 2.2s ease-in-out infinite" }}/>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 0, alignItems: "center" }}>
-        <div style={{ fontSize: "0.38rem", color: "rgba(139,105,20,0.45)", letterSpacing: "0.1em", fontWeight: 700 }}>COMPLETION</div>
-        <div style={{ fontSize: "1.45rem", fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, color: GOLD2 }}>
+        <div style={{ fontSize: "0.38rem", color: "rgba(25,118,210,0.50)", letterSpacing: "0.1em", fontWeight: 700 }}>COMPLETION</div>
+        <div style={{ fontSize: "1.45rem", fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, color: BLUE }}>
           <AnimCount value={pct}/><span style={{ fontSize: "0.7rem" }}>%</span>
         </div>
-        <div style={{ fontSize: "0.4rem", color: "rgba(139,105,20,0.38)" }}>{done}/{total}</div>
+        <div style={{ fontSize: "0.4rem", color: "rgba(25,118,210,0.40)" }}>{done}/{total}</div>
       </div>
-      <div style={{ width: 1, height: 26, background: "rgba(197,160,89,0.18)", flexShrink: 0 }}/>
+      <div style={{ width: 1, height: 26, background: "rgba(25,118,210,0.15)", flexShrink: 0 }}/>
       <div style={{ display: "flex", flexDirection: "column", gap: 0, alignItems: "center" }}>
-        <div style={{ fontSize: "0.38rem", color: "rgba(139,105,20,0.45)", letterSpacing: "0.1em", fontWeight: 700 }}>ACTIVE</div>
-        <div style={{ fontSize: "1.1rem", fontWeight: 900, color: GOLD2, letterSpacing: "-0.03em", lineHeight: 1 }}>
+        <div style={{ fontSize: "0.38rem", color: "rgba(25,118,210,0.50)", letterSpacing: "0.1em", fontWeight: 700 }}>ACTIVE</div>
+        <div style={{ fontSize: "1.1rem", fontWeight: 900, color: BLUE_M, letterSpacing: "-0.03em", lineHeight: 1 }}>
           <AnimCount value={active}/>
         </div>
-        <div style={{ fontSize: "0.4rem", color: "rgba(139,105,20,0.38)" }}>نشط</div>
+        <div style={{ fontSize: "0.4rem", color: "rgba(25,118,210,0.40)" }}>نشط</div>
       </div>
     </div>
   );
@@ -138,32 +140,40 @@ function FolderCard({ label, sub, count, accent, onClick }: {
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        borderRadius: 16, padding: "16px 18px 14px",
-        background: hov
-          ? `linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.88))`
-          : GLASS,
-        backdropFilter: "blur(14px)",
-        border: `1.5px solid ${hov ? accent + "55" : G_BORDER}`,
+        borderRadius: 18, overflow: "hidden",
+        background: GLASS,
+        backdropFilter: "blur(20px)",
+        border: `1.5px solid ${hov ? accent + "40" : "rgba(0,0,0,0.06)"}`,
         boxShadow: hov
-          ? `0 10px 32px ${accent}1A, 0 2px 8px rgba(0,0,0,0.06)`
-          : "0 2px 8px rgba(0,0,0,0.04)",
-        cursor: "pointer", position: "relative", overflow: "hidden",
-        transform: hov ? "translateY(-3px)" : "translateY(0)",
-        transition: "all 0.22s cubic-bezier(0.34,1.56,0.64,1)",
+          ? `0 16px 48px ${accent}22, 0 4px 16px rgba(0,0,0,0.08)`
+          : "0 4px 16px rgba(0,0,0,0.05), 0 1px 4px rgba(0,0,0,0.04)",
+        cursor: "pointer", position: "relative",
+        transform: hov ? "translateY(-4px) scale(1.01)" : "translateY(0) scale(1)",
+        transition: "all 0.25s cubic-bezier(0.34,1.56,0.64,1)",
       }}
     >
+      {/* Top color band — slide style */}
       <div style={{
-        position: "absolute", top: 0, right: 0, width: 3, height: "100%",
-        background: hov ? accent : accent + "30",
-        borderRadius: "0 16px 16px 0", transition: "background 0.22s",
+        height: hov ? 5 : 4,
+        background: `linear-gradient(90deg, ${accent}, ${accent}BB)`,
+        transition: "height 0.2s",
       }}/>
-      <div style={{ fontSize: "0.56rem", fontWeight: 700, color: hov ? accent : "#9CA3AF", letterSpacing: "0.03em", transition: "color 0.2s", marginBottom: 8, paddingRight: 5 }}>
-        {sub}
+      <div style={{ padding: "14px 18px 16px" }}>
+        <div style={{ fontSize: "0.56rem", fontWeight: 700, color: hov ? accent : "#9CA3AF", letterSpacing: "0.03em", transition: "color 0.2s", marginBottom: 6 }}>
+          {sub}
+        </div>
+        <div style={{ fontSize: "2.2rem", fontWeight: 900, letterSpacing: "-0.05em", lineHeight: 1, color: hov ? accent : "#111827", transition: "color 0.2s" }}>
+          <AnimCount value={count}/>
+        </div>
+        <div style={{ fontSize: "0.74rem", fontWeight: 700, color: "#374151", marginTop: 5 }}>{label}</div>
+        {/* Small decorative accent square — slide-style */}
+        <div style={{
+          position: "absolute", bottom: 12, left: 14,
+          width: 8, height: 8, borderRadius: 2,
+          background: hov ? accent : accent + "30",
+          transition: "background 0.2s",
+        }}/>
       </div>
-      <div style={{ fontSize: "2.1rem", fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, color: hov ? accent : "#111827", transition: "color 0.2s", paddingRight: 5 }}>
-        <AnimCount value={count}/>
-      </div>
-      <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#4B5563", marginTop: 4, paddingRight: 5 }}>{label}</div>
     </div>
   );
 }
@@ -516,44 +526,45 @@ export default function ContractDashboard({ role, actorName, contracts, pendingC
   ];
 
   const FOLDERS = [
-    { key: "all"       as ViewMode, label: "إجمالي العقود",   sub: "جميع الحالات",     count: total,   accent: BLUE  },
-    { key: "active"    as ViewMode, label: "الطلبات النشطة",  sub: "قيد التنفيذ",       count: cActive, accent: GOLD  },
-    { key: "completed" as ViewMode, label: "العقود المكتملة", sub: "أُنجزت بنجاح",     count: cDone,   accent: GREEN },
-    { key: "rejected"  as ViewMode, label: "العقود المرفوضة", sub: "مرفوضة أو معادة",  count: cRej,    accent: RED   },
+    { key: "all"       as ViewMode, label: "إجمالي العقود",   sub: "جميع الحالات",     count: total,   accent: BLUE_M },
+    { key: "active"    as ViewMode, label: "الطلبات النشطة",  sub: "قيد التنفيذ",       count: cActive, accent: AMBER  },
+    { key: "completed" as ViewMode, label: "العقود المكتملة", sub: "أُنجزت بنجاح",     count: cDone,   accent: GREEN  },
+    { key: "rejected"  as ViewMode, label: "العقود المرفوضة", sub: "مرفوضة أو معادة",  count: cRej,    accent: RED    },
   ];
 
   return (
-    <div dir="rtl" style={{ background: "#F0F2F8", minHeight: "100%", fontFamily: "'Cairo','Tajawal',sans-serif" }}>
+    <div dir="rtl" style={{ background: SLIDE_BG, minHeight: "100%", fontFamily: "'Cairo','Tajawal',sans-serif" }}>
       <style>{`
         @keyframes rowFadeIn { from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)} }
-        @keyframes fadeUp    { from{opacity:0;transform:translateY(12px);filter:blur(1px)}to{opacity:1;transform:translateY(0);filter:blur(0)} }
+        @keyframes fadeUp    { from{opacity:0;transform:translateY(14px);filter:blur(2px)}to{opacity:1;transform:translateY(0);filter:blur(0)} }
         @keyframes glowLogo  { 0%,100%{box-shadow:0 0 0 2px rgba(197,160,89,0.32),0 4px 20px rgba(0,0,0,0.14)} 50%{box-shadow:0 0 0 3px rgba(197,160,89,0.58),0 6px 28px rgba(197,160,89,0.22)} }
         @keyframes urgBlink  { 0%,100%{opacity:1} 50%{opacity:0.6} }
         @keyframes pulseWaveScroll { from{transform:translateX(0)} to{transform:translateX(-220px)} }
         @keyframes pulseDot  { 0%,100%{opacity:1;transform:translateY(-50%) scale(1)} 50%{opacity:0.5;transform:translateY(-50%) scale(1.5)} }
-        @keyframes cardBreath{ 0%,100%{box-shadow:0 4px 20px rgba(0,0,0,0.06)} 50%{box-shadow:0 8px 32px rgba(0,0,0,0.10)} }
+        @keyframes cardBreath{ 0%,100%{box-shadow:0 4px 24px rgba(0,0,0,0.05)} 50%{box-shadow:0 8px 36px rgba(25,118,210,0.10)} }
         @keyframes topLineGlow{ 0%,100%{opacity:0.6} 50%{opacity:1} }
+        @keyframes slideDecor{ 0%,100%{opacity:0.35;transform:scale(1)} 50%{opacity:0.55;transform:scale(1.08)} }
       `}</style>
 
       {/* ═══ HEADER ═══════════════════════════════════════════════ */}
       <div style={{
-        background: GLASS, backdropFilter: "blur(20px)",
-        borderBottom: `1px solid rgba(197,160,89,0.14)`,
+        background: GLASS, backdropFilter: "blur(24px)",
+        borderBottom: `1px solid rgba(0,0,0,0.07)`,
         padding: "0 28px",
         display: "flex", alignItems: "stretch", gap: 0,
-        boxShadow: "0 2px 20px rgba(12,20,39,0.08)",
+        boxShadow: "0 2px 20px rgba(0,0,0,0.06)",
         position: "sticky", top: 0, zIndex: 30,
         overflow: "hidden",
       }}>
-        {/* Left accent bar */}
-        <div style={{ width: 4, background: `linear-gradient(180deg,${GOLD_END},${GOLD},${BLUE_L})`, flexShrink: 0, animation: "topLineGlow 4s ease infinite" }}/>
+        {/* Left accent bar — blue-to-amber slide colors */}
+        <div style={{ width: 5, background: `linear-gradient(180deg,${BLUE_M},${BLUE_L},${AMBER})`, flexShrink: 0, animation: "topLineGlow 4s ease infinite" }}/>
 
         <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, padding: "13px 0 13px 0", paddingRight: 20 }}>
           <div style={{ width: 46, height: 46, borderRadius: 13, overflow: "hidden", flexShrink: 0, animation: "glowLogo 4s ease infinite" }}>
             <img src={logoImg} alt="الرواف" style={{ width: "100%", height: "100%", objectFit: "cover" }}/>
           </div>
           <div>
-            <div style={{ fontSize: "0.44rem", fontWeight: 900, letterSpacing: "0.16em", color: GOLD, marginBottom: 2 }}>ALRAWAF CONTRACTING</div>
+            <div style={{ fontSize: "0.44rem", fontWeight: 900, letterSpacing: "0.16em", color: BLUE_M, marginBottom: 2 }}>ALRAWAF CONTRACTING</div>
             <div style={{ fontSize: "1.16rem", fontWeight: 900, letterSpacing: "-0.025em", color: DARK }}>
               لوحة القيادة التنفيذية
             </div>
@@ -595,38 +606,44 @@ export default function ContractDashboard({ role, actorName, contracts, pendingC
             {/* ── Workflow stages ── */}
             <div style={{
               background: GLASS,
-              border: `1px solid rgba(197,160,89,0.14)`, borderRadius: 22,
-              boxShadow: "0 4px 24px rgba(12,20,39,0.07)",
+              border: `1px solid rgba(0,0,0,0.07)`, borderRadius: 22,
+              boxShadow: "0 6px 28px rgba(0,0,0,0.06)",
               animation: "fadeUp 0.4s ease 0.06s both",
               overflow: "hidden",
             }}>
+              {/* Blue band header — slide style */}
               <div style={{
-                padding: "15px 24px 13px",
-                borderBottom: `1px solid rgba(0,0,0,0.06)`,
+                padding: "16px 24px 15px",
+                background: `linear-gradient(135deg, ${BLUE_M} 0%, ${BLUE} 50%, #0D47A1 100%)`,
                 display: "flex", alignItems: "center", justifyContent: "space-between",
-                background: `linear-gradient(90deg, rgba(12,20,39,0.03) 0%, transparent 100%)`,
+                position: "relative", overflow: "hidden",
               }}>
+                {/* Decorative amber square — slide element */}
+                <div style={{
+                  position: "absolute", top: 8, left: 16,
+                  width: 12, height: 12, borderRadius: 3,
+                  background: AMBER, animation: "slideDecor 4s ease infinite",
+                }}/>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 4, height: 34, borderRadius: 2, background: `linear-gradient(180deg,${BLUE_L},${GOLD})` }}/>
+                  <div style={{ width: 4, height: 32, borderRadius: 2, background: `linear-gradient(180deg,${AMBER},rgba(245,166,35,0.4))` }}/>
                   <div>
-                    <div style={{ fontSize: "0.96rem", fontWeight: 900, color: DARK }}>مسار العقود — الهيكل التنظيمي</div>
-                    <div style={{ fontSize: "0.55rem", color: "#94A3B8", marginTop: 2 }}>11 مرحلة تصاعدياً · انقر على المرحلة للتفاصيل الكاملة</div>
+                    <div style={{ fontSize: "0.96rem", fontWeight: 900, color: "#FFFFFF" }}>مسار العقود — الهيكل التنظيمي الوظيفي</div>
+                    <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.65)", marginTop: 2 }}>11 مرحلة تصاعدياً · انقر على المرحلة للتفاصيل الكاملة</div>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {myRoleInfo && (
                     <div style={{
-                      background: "rgba(197,160,89,0.08)", border: `1px solid ${G_BORDER}`,
+                      background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)",
                       borderRadius: 20, padding: "5px 14px",
-                      fontSize: "0.6rem", fontWeight: 800, color: GOLD2,
+                      fontSize: "0.6rem", fontWeight: 800, color: "#FFFFFF",
                     }}>
                       مرحلتك: {myRoleInfo.stage.map(s => `م${s}`).join("، ")}
                     </div>
                   )}
                   <div style={{
-                    background: `rgba(21,101,192,0.08)`, border: "1px solid rgba(21,101,192,0.15)",
-                    borderRadius: 20, padding: "5px 12px",
-                    fontSize: "0.58rem", color: BLUE, fontWeight: 700,
+                    background: AMBER, borderRadius: 20, padding: "5px 12px",
+                    fontSize: "0.58rem", color: "#1A1A1A", fontWeight: 800,
                   }}>{maxCount} أعلى عدد</div>
                 </div>
               </div>
@@ -649,9 +666,9 @@ export default function ContractDashboard({ role, actorName, contracts, pendingC
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, animation: "fadeUp 0.4s ease 0.1s both" }}>
 
               {/* Pie chart */}
-              <div style={{ background: GLASS, backdropFilter: "blur(14px)", border: `1px solid ${G_BORDER}`, borderRadius: 22, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.05)", animation: "cardBreath 6s ease infinite" }}>
+              <div style={{ background: GLASS, backdropFilter: "blur(16px)", border: `1px solid rgba(0,0,0,0.06)`, borderRadius: 22, overflow: "hidden", boxShadow: "0 6px 28px rgba(0,0,0,0.05)", animation: "cardBreath 6s ease infinite" }}>
+                <div style={{ height: 4, background: `linear-gradient(90deg,${BLUE_M},${BLUE_L})` }}/>
                 <div style={{ padding: "14px 20px 12px", borderBottom: `1px solid rgba(0,0,0,0.05)`, display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 5, height: 28, borderRadius: 2, background: `linear-gradient(180deg,${GOLD},${GOLD_END})` }}/>
                   <div>
                     <div style={{ fontSize: "0.82rem", fontWeight: 900, color: "#111827" }}>توزيع الحالات</div>
                     <div style={{ fontSize: "0.54rem", color: "#B0B8C4" }}>نسبة كل حالة من الإجمالي</div>
@@ -689,9 +706,9 @@ export default function ContractDashboard({ role, actorName, contracts, pendingC
               </div>
 
               {/* Weekly chart */}
-              <div style={{ background: GLASS, backdropFilter: "blur(14px)", border: `1px solid ${G_BORDER}`, borderRadius: 22, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.05)", animation: "cardBreath 6s ease 2s infinite" }}>
+              <div style={{ background: GLASS, backdropFilter: "blur(16px)", border: `1px solid rgba(0,0,0,0.06)`, borderRadius: 22, overflow: "hidden", boxShadow: "0 6px 28px rgba(0,0,0,0.05)", animation: "cardBreath 6s ease 2s infinite" }}>
+                <div style={{ height: 4, background: `linear-gradient(90deg,${GREEN},${GREEN_L})` }}/>
                 <div style={{ padding: "14px 20px 12px", borderBottom: `1px solid rgba(0,0,0,0.05)`, display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 5, height: 28, borderRadius: 2, background: `linear-gradient(180deg,${GREEN_L},${GREEN})` }}/>
                   <div>
                     <div style={{ fontSize: "0.82rem", fontWeight: 900, color: "#111827" }}>الأداء الأسبوعي</div>
                     <div style={{ fontSize: "0.54rem", color: "#B0B8C4" }}>عقود منجزة هذا الأسبوع مقارنةً بالسابق</div>
@@ -729,42 +746,34 @@ export default function ContractDashboard({ role, actorName, contracts, pendingC
               </div>
             </div>
 
-            {/* ── KPI strip ── */}
+            {/* ── KPI strip — slide style: clean white card with colored top bars ── */}
             <div style={{
-              background: `linear-gradient(135deg,${DARK} 0%,${DARK2} 60%,${DARK} 100%)`,
-              borderRadius: 22, padding: "18px 28px",
-              display: "flex", alignItems: "stretch",
-              border: "1px solid rgba(197,160,89,0.28)",
-              boxShadow: "0 12px 48px rgba(12,20,39,0.28), inset 0 1px 0 rgba(197,160,89,0.15)",
+              display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10,
               animation: "fadeUp 0.4s ease 0.15s both",
-              position: "relative", overflow: "hidden",
             }}>
-              {/* Background glow orbs */}
-              <div style={{ position: "absolute", top: -40, right: "20%", width: 160, height: 160, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(197,160,89,0.08) 0%,transparent 70%)", pointerEvents: "none" }}/>
-              <div style={{ position: "absolute", bottom: -40, left: "15%", width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(74,144,217,0.08) 0%,transparent 70%)", pointerEvents: "none" }}/>
               {[
-                { label: "متوسط زمن الإنجاز",  value: avgCycle > 0 ? `${avgCycle}` : "—", unit: avgCycle > 0 ? "يوم" : "", color: GOLD_END  },
-                { label: "الطلبات في المسار",   value: `${cActive}`,                          unit: "عقد",                   color: BLUE_L   },
-                { label: "مكتملة هذا الأسبوع", value: `${completedThisWeek}`,                unit: "عقد",                   color: "#4ADE80" },
-                { label: "نسبة الإنجاز الكلية", value: `${completePct}`,                      unit: "%",                     color: GOLD_END  },
-              ].map((item, i, arr) => (
+                { label: "متوسط زمن الإنجاز",  numVal: avgCycle,         display: avgCycle > 0 ? null : "—", unit: avgCycle > 0 ? "يوم" : "", color: AMBER,  topBg: `linear-gradient(90deg,${AMBER},#FFD080)` },
+                { label: "الطلبات في المسار",   numVal: cActive,          display: null,                       unit: "عقد",                    color: BLUE_M, topBg: `linear-gradient(90deg,${BLUE_M},${BLUE_L})` },
+                { label: "مكتملة هذا الأسبوع", numVal: completedThisWeek,display: null,                       unit: "عقد",                    color: GREEN,  topBg: `linear-gradient(90deg,${GREEN},${GREEN_L})` },
+                { label: "نسبة الإنجاز الكلية", numVal: completePct,      display: null,                       unit: "%",                      color: GOLD,   topBg: `linear-gradient(90deg,${GOLD},${GOLD_END})` },
+              ].map((item, i) => (
                 <div key={i} style={{
-                  flex: 1, textAlign: "center",
-                  borderLeft: i < arr.length - 1 ? "1px solid rgba(197,160,89,0.10)" : "none",
-                  padding: "4px 16px",
+                  background: GLASS, backdropFilter: "blur(16px)",
+                  border: `1px solid rgba(0,0,0,0.06)`, borderRadius: 18, overflow: "hidden",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.05)",
                 }}>
-                  <div style={{ fontSize: "0.52rem", fontWeight: 700, color: "rgba(226,194,117,0.50)", marginBottom: 6, letterSpacing: "0.04em" }}>{item.label}</div>
-                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 3 }}>
-                    <span style={{
-                      fontSize: "1.6rem", fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1,
-                      color: item.color,
-                      textShadow: `0 0 24px ${item.color}55`,
-                    }}>
-                      {item.value}
-                    </span>
-                    {item.unit && (
-                      <span style={{ fontSize: "0.58rem", fontWeight: 700, color: "rgba(226,194,117,0.55)" }}>{item.unit}</span>
-                    )}
+                  <div style={{ height: 4, background: item.topBg }}/>
+                  <div style={{ padding: "14px 18px 16px", textAlign: "center" }}>
+                    <div style={{ fontSize: "0.50rem", fontWeight: 700, color: "#9CA3AF", marginBottom: 6, letterSpacing: "0.05em" }}>{item.label}</div>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 3 }}>
+                      <span style={{ fontSize: "1.7rem", fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, color: item.color }}>
+                        {item.display ?? <AnimCount value={item.numVal}/>}
+                      </span>
+                      {item.unit && (
+                        <span style={{ fontSize: "0.58rem", fontWeight: 700, color: item.color + "90" }}>{item.unit}</span>
+                      )}
+                    </div>
+                    <div style={{ width: 6, height: 6, borderRadius: 1.5, background: item.color + "30", margin: "8px auto 0" }}/>
                   </div>
                 </div>
               ))}

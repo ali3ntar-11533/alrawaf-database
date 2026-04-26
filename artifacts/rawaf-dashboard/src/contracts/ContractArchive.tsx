@@ -35,7 +35,7 @@ export default function ContractArchive({ onOpenContract }: Props) {
   const totalValue = contracts.reduce((sum, c) => sum + c.value, 0);
 
   return (
-    <div dir="rtl" style={{ padding: "24px 28px", fontFamily: "'Cairo', 'Tajawal', sans-serif", background: "#F0F2F8", minHeight: "100%" }}>
+    <div dir="rtl" style={{ padding: "24px 28px", fontFamily: "'Cairo', 'Tajawal', sans-serif", background: "#FFFFFF", minHeight: "100%" }}>
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ fontSize: "1.3rem", fontWeight: 900, color: "#0C1427", marginBottom: 4 }}>
           قاعدة البيانات والتقارير

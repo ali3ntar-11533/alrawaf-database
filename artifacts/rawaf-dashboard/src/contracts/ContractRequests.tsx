@@ -130,22 +130,22 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
   const amountVal = parseInt((form.value || "0").replace(/,/g, ""), 10);
 
   return (
-    <div dir="rtl" style={{ background: "#F0F2F8", minHeight: "100%", fontFamily: "'Cairo', 'Tajawal', sans-serif" }}>
+    <div dir="rtl" style={{ background: "#FFFFFF", minHeight: "100%", fontFamily: "'Cairo', 'Tajawal', sans-serif" }}>
 
       {/* ── Section Header ── */}
       <div style={{
-        background: "rgba(255,255,255,0.95)", backdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(197,160,89,0.14)",
+        background: "rgba(255,255,255,0.97)", backdropFilter: "blur(24px)",
+        borderBottom: "1px solid rgba(0,0,0,0.07)",
         padding: "0 28px",
         display: "flex", alignItems: "stretch",
-        boxShadow: "0 2px 16px rgba(12,20,39,0.07)",
+        boxShadow: "0 2px 16px rgba(0,0,0,0.05)",
         position: "sticky", top: 0, zIndex: 30,
         overflow: "hidden",
       }}>
-        <div style={{ width: 4, background: "linear-gradient(180deg,#E2C275,#C5A059,#4A90D9)", flexShrink: 0 }}/>
+        <div style={{ width: 5, background: "linear-gradient(180deg,#1976D2,#4A90D9,#F5A623)", flexShrink: 0 }}/>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flex: 1, padding: "13px 0 13px 20px" }}>
           <div>
-            <div style={{ fontSize: "0.44rem", fontWeight: 900, letterSpacing: "0.14em", color: "#C5A059", marginBottom: 2 }}>CONTRACT REQUESTS</div>
+            <div style={{ fontSize: "0.44rem", fontWeight: 900, letterSpacing: "0.14em", color: "#1976D2", marginBottom: 2 }}>CONTRACT REQUESTS</div>
             <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "#0C1427" }}>طلبات العقود</div>
             <div style={{ fontSize: "0.54rem", color: "#64748B", marginTop: 1 }}>إدارة جميع طلبات وعقود الشركة</div>
           </div>
@@ -154,16 +154,16 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
               onClick={() => setShowForm(true)}
               style={{
                 padding: "10px 22px", borderRadius: 10, border: "none",
-                background: `linear-gradient(135deg, ${GOLD}, #a88540)`,
+                background: `linear-gradient(135deg, #1976D2, #1565C0)`,
                 color: "#fff", cursor: "pointer", fontSize: "0.82rem", fontWeight: 800,
                 fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                boxShadow: `0 4px 16px rgba(197,160,89,0.38)`,
+                boxShadow: `0 4px 16px rgba(25,118,210,0.38)`,
                 display: "flex", alignItems: "center", gap: 8,
                 transition: "all 0.18s ease",
                 animation: "req-glow 2.4s ease-in-out infinite",
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 24px rgba(197,160,89,0.5)"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ""; (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 16px rgba(197,160,89,0.38)"; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 24px rgba(25,118,210,0.5)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ""; (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 16px rgba(25,118,210,0.38)"; }}
             >
               إرسال طلب عقد جديد
             </button>
