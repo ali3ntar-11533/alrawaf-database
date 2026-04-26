@@ -448,9 +448,10 @@ const AddCommentBody = z.object({
   actorRole: z.string().default(""),
   toName:    z.string().default(""),
   toRole:    z.string().default(""),
-  ccName:    z.string().default(""),
-  ccRole:    z.string().default(""),
-  message:   z.string().min(1),
+  ccName:         z.string().default(""),
+  ccRole:         z.string().default(""),
+  attachmentName: z.string().default(""),
+  message:        z.string().min(1),
 });
 
 router.get("/contracts/:id/comments", async (req, res): Promise<void> => {

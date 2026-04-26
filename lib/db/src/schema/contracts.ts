@@ -69,8 +69,9 @@ export const contractCommentsTable = pgTable("contract_comments", {
   actorRole: text("actor_role").notNull().default(""),
   toName:    text("to_name").notNull().default(""),
   toRole:    text("to_role").notNull().default(""),
-  ccName:    text("cc_name").notNull().default(""),
-  ccRole:    text("cc_role").notNull().default(""),
+  ccName:          text("cc_name").notNull().default(""),
+  ccRole:          text("cc_role").notNull().default(""),
+  attachmentName:  text("attachment_name").notNull().default(""),
   message: text("message").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

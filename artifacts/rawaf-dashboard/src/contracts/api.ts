@@ -153,9 +153,10 @@ export interface AddCommentPayload {
   actorRole: string;
   toName?:   string;
   toRole?:   string;
-  ccName?:   string;
-  ccRole?:   string;
-  message:   string;
+  ccName?:         string;
+  ccRole?:         string;
+  attachmentName?: string;
+  message:         string;
 }
 
 export async function addContractComment(id: number, payload: AddCommentPayload): Promise<ContractComment> {

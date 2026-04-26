@@ -180,6 +180,7 @@ function SectionCard({ title, icon, children }: { title: string; icon: string; c
 interface CommentExtended extends ContractComment {
   toName?: string; toRole?: string;
   ccName?: string; ccRole?: string;
+  attachmentName?: string;
 }
 
 const MSG_ROLES = Object.keys(ROLE_COLORS);
@@ -190,13 +191,15 @@ const selectStyle: React.CSSProperties = {
 };
 
 function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; actorName: string; actorRole: string }) {
-  const [comments, setComments] = useState<CommentExtended[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [msg, setMsg] = useState("");
-  const [toRole, setToRole]   = useState("");
-  const [ccRole, setCcRole]   = useState("");
-  const [sending, setSending] = useState(false);
-  const [sendErr, setSendErr] = useState("");
+  const [comments, setComments]       = useState<CommentExtended[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [msg, setMsg]                 = useState("");
+  const [toRole, setToRole]           = useState("");
+  const [ccRole, setCcRole]           = useState("");
+  const [attachFile, setAttachFile]   = useState<File | null>(null);
+  const [sending, setSending]         = useState(false);
+  const [sendErr, setSendErr]         = useState("");
+  const fileInputRef                  = useRef<HTMLInputElement>(null);
   const canSend = !!actorName.trim() && !!msg.trim() && !sending;
 
   async function loadComments() {
@@ -213,15 +216,17 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
       const created = await addContractComment(contractId, {
         actorName, actorRole, message: msg.trim(),
         toRole, ccRole,
+        attachmentName: attachFile?.name ?? "",
       }) as CommentExtended;
       setComments(prev => [...prev, created]);
-      setMsg(""); setToRole(""); setCcRole("");
+      setMsg(""); setToRole(""); setCcRole(""); setAttachFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (e: unknown) {
       setSendErr(e instanceof Error ? e.message : "حدث خطأ");
     } finally { setSending(false); }
   }
 
-  const COL = "185px 185px 185px 1fr 130px";
+  const COL = "175px 160px 160px 1fr 145px 120px";
   const thStyle: React.CSSProperties = {
     padding: "9px 12px", fontSize: "0.67rem", fontWeight: 800, color: BLUE,
     background: "rgba(25,118,210,0.07)", borderBottom: "1px solid rgba(25,118,210,0.12)",
@@ -266,8 +271,8 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
       <div style={{ overflowX: "auto", flex: 1 }}>
         <div style={{ display: "grid", gridTemplateColumns: COL, minWidth: 700 }}>
           {/* Column headers */}
-          {["المرسِل", "إلى", "نسخة", "الرسالة", "التاريخ والوقت"].map((h, i) => (
-            <div key={i} style={{ ...thStyle, borderRight: i < 4 ? "1px solid rgba(25,118,210,0.08)" : "none" }}>{h}</div>
+          {["المرسِل", "إلى", "نسخة", "الرسالة", "المرفق", "التاريخ والوقت"].map((h, i) => (
+            <div key={i} style={{ ...thStyle, borderRight: i < 5 ? "1px solid rgba(25,118,210,0.08)" : "none" }}>{h}</div>
           ))}
 
           {/* Empty state */}
@@ -325,6 +330,22 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
                 <div style={{ ...cellStyle, borderRight: "1px solid rgba(25,118,210,0.06)", lineHeight: 1.55, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
                   {c.message}
                 </div>
+                {/* المرفق */}
+                <div style={{ ...cellStyle, borderRight: "1px solid rgba(25,118,210,0.06)", justifyContent: "center" }}>
+                  {c.attachmentName
+                    ? (
+                      <div style={{
+                        display: "flex", alignItems: "center", gap: 5,
+                        background: "rgba(25,118,210,0.07)", borderRadius: 7,
+                        padding: "4px 9px", border: "1px solid rgba(25,118,210,0.16)",
+                        cursor: "default", maxWidth: "100%",
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={BLUE_M} strokeWidth="2.5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                        <span style={{ fontSize: "0.62rem", color: BLUE_M, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 100 }}>{c.attachmentName}</span>
+                      </div>
+                    )
+                    : <span style={{ color: "#ccc", fontSize: "0.7rem" }}>—</span>}
+                </div>
                 {/* التاريخ والوقت */}
                 <div style={{ ...cellStyle, flexDirection: "column", alignItems: "flex-start", gap: 2, borderRight: "none" }}>
                   <span style={{ fontSize: "0.68rem", fontWeight: 600 }}>
@@ -363,8 +384,36 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
             {actorRole && <span style={{ color: "#64748B" }}> · {actorRole}</span>}
           </div>
         </div>
-        {/* Message + send */}
+        {/* Attachment preview badge */}
+        {attachFile && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 6,
+              background: "rgba(25,118,210,0.07)", borderRadius: 8,
+              padding: "5px 10px", border: "1px solid rgba(25,118,210,0.18)", flex: 1,
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={BLUE_M} strokeWidth="2.5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              <span style={{ fontSize: "0.68rem", color: BLUE_M, fontWeight: 700, flex: 1 }}>{attachFile.name}</span>
+              <button onClick={() => { setAttachFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }} style={{
+                border: "none", background: "transparent", color: "#94a3b8", cursor: "pointer", fontSize: "0.75rem", padding: "0 2px",
+              }}>✕</button>
+            </div>
+          </div>
+        )}
+        {/* Message + attach + send */}
         <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+          <input
+            ref={fileInputRef} type="file" style={{ display: "none" }}
+            onChange={e => setAttachFile(e.target.files?.[0] ?? null)}
+          />
+          <button onClick={() => fileInputRef.current?.click()} title="إرفاق ملف" style={{
+            width: 42, height: 42, borderRadius: 10, border: `1.5px solid rgba(25,118,210,0.2)`,
+            background: attachFile ? "rgba(25,118,210,0.1)" : "rgba(255,255,255,0.9)",
+            color: BLUE_M, cursor: "pointer", flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s",
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          </button>
           <textarea
             value={msg} onChange={e => setMsg(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
