@@ -306,13 +306,12 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
 
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10, justifyContent: "center" }}>
           <div style={{ width: 48, height: 1.5, background: "linear-gradient(90deg, transparent, rgba(197,160,89,0.65))" }} />
-          <span style={{ fontSize: "0.88rem", color: "rgba(197,160,89,0.92)", fontWeight: 700, letterSpacing: "0.04em", textShadow: "0 1px 8px rgba(0,0,0,0.6)" }}>نظام إدارة الموردين والمقاولين</span>
+          <span style={{ fontSize: "0.88rem", color: "rgba(197,160,89,0.92)", fontWeight: 700, letterSpacing: "0.04em", textShadow: "0 1px 8px rgba(0,0,0,0.6)" }}>Contract Lifecycle Management - CLM</span>
           <div style={{ width: 48, height: 1.5, background: "linear-gradient(90deg, rgba(197,160,89,0.65), transparent)" }} />
         </div>
 
-        <p style={{ fontSize: "0.88rem", color: "rgba(255,255,255,0.90)", lineHeight: 1.9, maxWidth: 420, marginBottom: 42, textShadow: "0 2px 12px rgba(0,0,0,0.8)", fontWeight: 500 }}>
-          منصة داخلية متكاملة لإدارة بيانات المقاولين والموردين<br />
-          وتحليل الأسعار وتنسيق المشاريع الإنشائية
+        <p style={{ fontSize: "0.88rem", color: "rgba(255,255,255,0.90)", lineHeight: 1.9, maxWidth: 460, marginBottom: 42, textShadow: "0 2px 12px rgba(0,0,0,0.8)", fontWeight: 500 }}>
+          المنظومة الرقمية الموحدة لادارة دورة حياة العقود وتدفق الموارد حيث يلتقي ذكاء التخطيط ببراعة الميدان لضمان السيادة المطلقة على كل تفاصيل المشروع حتى تمام الإتقان.
         </p>
 
         {/* Stats */}
