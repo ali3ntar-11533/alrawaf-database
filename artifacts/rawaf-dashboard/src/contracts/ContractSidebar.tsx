@@ -39,6 +39,10 @@ interface Props {
   onOpenContract: (id: number) => void;
 }
 
+/* Extra role not in shared types */
+const TRACKING_ROLE = { name: "مسؤول المتابعة", icon: "📋", stage: [] as number[] };
+const ALL_ROLES = [...ROLES, TRACKING_ROLE];
+
 /* Tab icon map using clean unicode shapes */
 const TAB_ICONS: Record<ContractTab, string> = {
   dashboard:  "▦",
@@ -62,7 +66,7 @@ export default function ContractSidebar({
   notifications, unreadCount, onMarkAllRead, onDismissOne, onDismissAll, onOpenContract,
 }: Props) {
   const [nameEditing, setNameEditing] = useState(false);
-  const myRoleInfo = ROLES.find(r => r.name === role);
+  const myRoleInfo = ALL_ROLES.find(r => r.name === role);
 
   const myStageLabels = myRoleInfo?.stage.map(n => {
     const st = STAGES[n - 1];
@@ -153,7 +157,7 @@ export default function ContractSidebar({
               }}
             >
               <option value="" style={{ color: "#888", background: "#1a2540" }}>— اختر دورك الوظيفي —</option>
-              {ROLES.map(r => {
+              {ALL_ROLES.map(r => {
                 const pending = pendingByRole[r.name] ?? 0;
                 return (
                   <option key={r.name} value={r.name} style={{ background: "#1a2540" }}>

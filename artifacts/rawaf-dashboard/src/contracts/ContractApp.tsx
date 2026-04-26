@@ -239,6 +239,7 @@ export default function ContractApp({ onExit }: Props) {
           ) : activeTab === "tracking" ? (
             <ContractTracking
               role={role}
+              actorName={actorName}
               onOpenContract={openContract}
             />
           ) : activeTab === "analytics" ? (

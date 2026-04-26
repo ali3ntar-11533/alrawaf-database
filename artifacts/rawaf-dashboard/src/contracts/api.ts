@@ -166,6 +166,10 @@ export async function addContractComment(id: number, payload: AddCommentPayload)
   });
 }
 
+export async function deleteContract(id: number): Promise<void> {
+  await apiFetch<void>(`/contracts/${id}`, { method: "DELETE" });
+}
+
 export async function getVendors(): Promise<string[]> {
   return apiFetch<string[]>("/contracts/vendors");
 }

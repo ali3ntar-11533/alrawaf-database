@@ -316,6 +316,22 @@ router.get("/contracts/:id", async (req, res): Promise<void> => {
   res.json(serializeContract(row));
 });
 
+router.delete("/contracts/:id", async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const [row] = await db.select({ id: contractsTable.id }).from(contractsTable).where(eq(contractsTable.id, id));
+  if (!row) { res.status(404).json({ error: "Not found" }); return; }
+
+  // cascade delete: logs, comments, documents first
+  await db.delete(contractStageLogTable).where(eq(contractStageLogTable.contractId, id));
+  await db.delete(contractCommentsTable).where(eq(contractCommentsTable.contractId, id));
+  await db.delete(contractDocumentsTable).where(eq(contractDocumentsTable.contractId, id));
+  await db.delete(contractsTable).where(eq(contractsTable.id, id));
+
+  res.status(204).send();
+});
+
 router.get("/contracts/:id/audit", async (req, res): Promise<void> => {
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
