@@ -848,24 +848,27 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                                 animation: isCur ? "stg-pulse 2s ease-in-out infinite" : "none",
                                 transition: "all 0.3s", cursor: "default",
                               }}>
-                                {/* Checkmark (done) or number (pending/current) */}
+                                {/* Done: duration text | Current: number + جارٍ | Future: number */}
                                 {isDone ? (
-                                  <span style={{ fontSize: stg.merged ? "1.1rem" : "0.95rem", fontWeight: 900, lineHeight: 1 }}>✓</span>
+                                  dur ? (
+                                    <span style={{
+                                      fontSize: "0.5rem", fontWeight: 800, lineHeight: 1.2,
+                                      textAlign: "center", padding: "0 2px",
+                                      color: "rgba(255,255,255,0.95)",
+                                    }}>{dur}</span>
+                                  ) : (
+                                    <span style={{ fontSize: "0.95rem", fontWeight: 900, lineHeight: 1 }}>✓</span>
+                                  )
                                 ) : (
                                   <>
                                     <span style={{ fontSize: "0.65rem", fontWeight: 900, lineHeight: 1 }}>{sNum}</span>
-                                    {isCur ? (
+                                    {isCur && (
                                       <span style={{
                                         fontSize: "0.38rem", fontWeight: 900, lineHeight: 1,
                                         color: BLUE_M, marginTop: 2,
                                         animation: "stg-pulse 2s ease-in-out infinite",
                                       }}>جارٍ</span>
-                                    ) : dur ? (
-                                      <span style={{
-                                        fontSize: "0.42rem", fontWeight: 700, lineHeight: 1,
-                                        color: "#aaa", marginTop: 2, textAlign: "center",
-                                      }}>{dur}</span>
-                                    ) : null}
+                                    )}
                                   </>
                                 )}
                               </div>
