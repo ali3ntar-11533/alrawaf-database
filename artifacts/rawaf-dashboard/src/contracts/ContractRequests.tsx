@@ -130,31 +130,48 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
   const amountVal = parseInt((form.value || "0").replace(/,/g, ""), 10);
 
   return (
-    <div dir="rtl" style={{ padding: "24px 28px", fontFamily: "'Cairo', 'Tajawal', sans-serif" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-        <div>
-          <h2 style={{ fontSize: "1.3rem", fontWeight: 900, color: "#1a1206", marginBottom: 4 }}>
-            طلبات العقود
-          </h2>
-          <p style={{ color: "#9b8060", fontSize: "0.82rem" }}>إدارة جميع طلبات وعقود الشركة</p>
+    <div dir="rtl" style={{ background: "#F0F2F8", minHeight: "100%", fontFamily: "'Cairo', 'Tajawal', sans-serif" }}>
+
+      {/* ── Section Header ── */}
+      <div style={{
+        background: "rgba(255,255,255,0.95)", backdropFilter: "blur(20px)",
+        borderBottom: "1px solid rgba(197,160,89,0.14)",
+        padding: "0 28px",
+        display: "flex", alignItems: "stretch",
+        boxShadow: "0 2px 16px rgba(12,20,39,0.07)",
+        position: "sticky", top: 0, zIndex: 30,
+        overflow: "hidden",
+      }}>
+        <div style={{ width: 4, background: "linear-gradient(180deg,#E2C275,#C5A059,#4A90D9)", flexShrink: 0 }}/>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flex: 1, padding: "13px 0 13px 20px" }}>
+          <div>
+            <div style={{ fontSize: "0.44rem", fontWeight: 900, letterSpacing: "0.14em", color: "#C5A059", marginBottom: 2 }}>CONTRACT REQUESTS</div>
+            <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "#0C1427" }}>طلبات العقود</div>
+            <div style={{ fontSize: "0.54rem", color: "#64748B", marginTop: 1 }}>إدارة جميع طلبات وعقود الشركة</div>
+          </div>
+          {role === "مدير المشروع" && (
+            <button
+              onClick={() => setShowForm(true)}
+              style={{
+                padding: "10px 22px", borderRadius: 10, border: "none",
+                background: `linear-gradient(135deg, ${GOLD}, #a88540)`,
+                color: "#fff", cursor: "pointer", fontSize: "0.82rem", fontWeight: 800,
+                fontFamily: "'Cairo', 'Tajawal', sans-serif",
+                boxShadow: `0 4px 16px rgba(197,160,89,0.38)`,
+                display: "flex", alignItems: "center", gap: 8,
+                transition: "all 0.18s ease",
+                animation: "req-glow 2.4s ease-in-out infinite",
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 24px rgba(197,160,89,0.5)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ""; (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 16px rgba(197,160,89,0.38)"; }}
+            >
+              إرسال طلب عقد جديد
+            </button>
+          )}
         </div>
-        {role === "مدير المشروع" && (
-          <button
-            onClick={() => setShowForm(true)}
-            style={{
-              padding: "10px 22px", borderRadius: 10, border: "none",
-              background: `linear-gradient(135deg, ${GOLD}, #a88540)`,
-              color: "#fff", cursor: "pointer", fontSize: "0.85rem", fontWeight: 800,
-              fontFamily: "'Cairo', 'Tajawal', sans-serif",
-              boxShadow: `0 4px 14px rgba(197,160,89,0.4)`,
-              display: "flex", alignItems: "center", gap: 8,
-              animation: "req-glow 2.4s ease-in-out infinite",
-            }}
-          >
-            إرسال طلب عقد جديد
-          </button>
-        )}
       </div>
+
+      <div style={{ padding: "20px 28px" }}>
 
       {filterStage != null && (
         <div style={{
@@ -642,6 +659,7 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
           50%       { box-shadow: 0 4px 22px rgba(197,160,89,0.6); }
         }
       `}</style>
+      </div>
     </div>
   );
 }

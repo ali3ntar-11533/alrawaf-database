@@ -24,26 +24,33 @@ export default function RoleSelector({ onSelect, pendingByRole }: Props) {
   return (
     <div dir="rtl" style={{
       position: "fixed", inset: 0, zIndex: 9000,
-      background: "linear-gradient(145deg, #F2EDE4 0%, #EDE8DC 100%)",
+      background: `linear-gradient(145deg, #0C1427 0%, #152040 50%, #0C1427 100%)`,
       display: "flex", alignItems: "center", justifyContent: "center",
       fontFamily: "'Cairo', 'Tajawal', sans-serif",
+      overflow: "hidden",
     }}>
-      <div style={{ width: "100%", maxWidth: 780, padding: "0 24px" }}>
+      {/* Background decoration */}
+      <div style={{ position: "absolute", top: -100, right: -100, width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(197,160,89,0.06) 0%,transparent 70%)", pointerEvents: "none" }}/>
+      <div style={{ position: "absolute", bottom: -100, left: -100, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(74,144,217,0.06) 0%,transparent 70%)", pointerEvents: "none" }}/>
+      {/* Top gold line */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg,transparent,#C5A059,transparent)" }}/>
+
+      <div style={{ width: "100%", maxWidth: 820, padding: "0 24px" }}>
 
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{
-            width: 56, height: 56, borderRadius: 16, margin: "0 auto 14px",
+            width: 60, height: 60, borderRadius: 18, margin: "0 auto 16px",
             background: `linear-gradient(135deg, ${GOLD}, ${GOLD2})`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: `0 8px 24px rgba(197,160,89,0.35)`,
+            boxShadow: `0 8px 32px rgba(197,160,89,0.40), 0 0 0 1px rgba(197,160,89,0.3)`,
           }}>
-            <div style={{ width: 26, height: 26, borderRadius: "50%", background: "rgba(255,255,255,0.3)", border: "2px solid rgba(255,255,255,0.6)" }}/>
+            <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.25)", border: "2px solid rgba(255,255,255,0.5)" }}/>
           </div>
-          <h2 style={{ fontSize: "1.5rem", fontWeight: 900, color: "#1a1206", marginBottom: 6 }}>
+          <h2 style={{ fontSize: "1.6rem", fontWeight: 900, color: "#E2C275", marginBottom: 6, letterSpacing: "-0.02em" }}>
             نظام الرواف لإدارة العقود
           </h2>
-          <p style={{ color: "#6b5c3e", fontSize: "0.88rem" }}>اختر دورك الوظيفي للمتابعة</p>
+          <p style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.86rem" }}>اختر دورك الوظيفي للمتابعة</p>
         </div>
 
         {/* Role grid */}
@@ -63,29 +70,29 @@ export default function RoleSelector({ onSelect, pendingByRole }: Props) {
                 key={r.name}
                 onClick={() => { setSelected(r.name); setErr(""); }}
                 style={{
-                  border: `2px solid ${active ? GOLD : G_BOR}`,
+                  border: `1.5px solid ${active ? GOLD : "rgba(255,255,255,0.10)"}`,
                   borderRadius: 14, padding: "14px 12px",
                   background: active
-                    ? `linear-gradient(135deg, rgba(197,160,89,0.12), rgba(197,160,89,0.06))`
-                    : GLASS,
+                    ? `linear-gradient(135deg, rgba(197,160,89,0.18), rgba(197,160,89,0.08))`
+                    : "rgba(255,255,255,0.05)",
                   backdropFilter: "blur(12px)",
                   cursor: "pointer", textAlign: "center",
                   transition: "all 0.18s",
                   boxShadow: active
-                    ? `0 0 0 3px rgba(197,160,89,0.18), 0 6px 20px rgba(197,160,89,0.15)`
-                    : "0 2px 8px rgba(0,0,0,0.05)",
+                    ? `0 0 0 3px rgba(197,160,89,0.20), 0 8px 24px rgba(197,160,89,0.18)`
+                    : "0 2px 8px rgba(0,0,0,0.12)",
                   position: "relative",
                 }}
                 onMouseEnter={e => {
                   if (!active) {
-                    (e.currentTarget as HTMLElement).style.borderColor = GOLD_BORDER;
-                    (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 16px rgba(197,160,89,0.12)`;
+                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(197,160,89,0.35)";
+                    (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.09)";
                   }
                 }}
                 onMouseLeave={e => {
                   if (!active) {
-                    (e.currentTarget as HTMLElement).style.borderColor = G_BOR;
-                    (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 8px rgba(0,0,0,0.05)";
+                    (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.10)";
+                    (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)";
                   }
                 }}
               >
@@ -96,21 +103,21 @@ export default function RoleSelector({ onSelect, pendingByRole }: Props) {
                     background: "#e74c3c", color: "#fff",
                     fontSize: "0.68rem", fontWeight: 800,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    boxShadow: "0 2px 8px rgba(231,76,60,0.35)",
+                    boxShadow: "0 2px 8px rgba(231,76,60,0.45)",
                   }}>{pending}</div>
                 )}
                 {/* Role color bar */}
                 <div style={{
-                  width: 32, height: 4, borderRadius: 2, margin: "0 auto 10px",
-                  background: active ? `linear-gradient(90deg,${GOLD},${GOLD2})` : "rgba(0,0,0,0.1)",
+                  width: 32, height: 3, borderRadius: 2, margin: "0 auto 10px",
+                  background: active ? `linear-gradient(90deg,${GOLD},${GOLD2})` : "rgba(255,255,255,0.12)",
                   transition: "background 0.18s",
                 }}/>
-                <div style={{ fontSize: "0.86rem", fontWeight: 800, color: active ? "#7d622a" : "#2d1f06", marginBottom: 4 }}>
+                <div style={{ fontSize: "0.84rem", fontWeight: 800, color: active ? "#E2C275" : "rgba(255,255,255,0.80)", marginBottom: 4 }}>
                   {r.name}
                 </div>
                 {stageLabels.map((sl, i) => (
                   <div key={i} style={{
-                    fontSize: "0.58rem", color: active ? "#9b7d38" : "#9b8060", marginTop: 2, lineHeight: 1.4,
+                    fontSize: "0.56rem", color: active ? "rgba(197,160,89,0.75)" : "rgba(255,255,255,0.38)", marginTop: 2, lineHeight: 1.4,
                   }}>م{r.stage[i]}: {sl}</div>
                 ))}
               </div>
@@ -120,7 +127,7 @@ export default function RoleSelector({ onSelect, pendingByRole }: Props) {
 
         {/* Name input */}
         <div style={{ marginBottom: 18 }}>
-          <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "#4a3520", marginBottom: 6 }}>
+          <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, color: "rgba(255,255,255,0.55)", marginBottom: 8, letterSpacing: "0.04em" }}>
             اسمك الكامل
           </label>
           <input
@@ -129,20 +136,20 @@ export default function RoleSelector({ onSelect, pendingByRole }: Props) {
             onKeyDown={e => { if (e.key === "Enter") confirm(); }}
             placeholder="أدخل اسمك للسجلات الرسمية"
             style={{
-              width: "100%", padding: "12px 16px", borderRadius: 10,
-              border: `1.5px solid ${G_BOR}`, fontSize: "0.9rem",
+              width: "100%", padding: "13px 16px", borderRadius: 11,
+              border: `1.5px solid rgba(197,160,89,0.25)`, fontSize: "0.9rem",
               fontFamily: "'Cairo', 'Tajawal', sans-serif",
               outline: "none", boxSizing: "border-box",
-              background: GLASS, backdropFilter: "blur(8px)", color: "#1a1206",
+              background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.88)",
               transition: "border-color 0.2s",
             }}
             onFocus={e => e.currentTarget.style.borderColor = GOLD}
-            onBlur={e => e.currentTarget.style.borderColor = G_BOR}
+            onBlur={e => e.currentTarget.style.borderColor = "rgba(197,160,89,0.25)"}
           />
         </div>
 
         {err && (
-          <div style={{ color: "#e74c3c", fontSize: "0.78rem", marginBottom: 12, textAlign: "center", padding: "8px", background: "rgba(231,76,60,0.06)", borderRadius: 8, border: "1px solid rgba(231,76,60,0.15)" }}>
+          <div style={{ color: "#FCA5A5", fontSize: "0.78rem", marginBottom: 12, textAlign: "center", padding: "10px", background: "rgba(239,68,68,0.1)", borderRadius: 8, border: "1px solid rgba(239,68,68,0.25)" }}>
             {err}
           </div>
         )}
@@ -154,11 +161,12 @@ export default function RoleSelector({ onSelect, pendingByRole }: Props) {
             background: `linear-gradient(135deg, ${GOLD}, ${GOLD2})`,
             color: "#fff", border: "none", cursor: "pointer",
             fontSize: "1rem", fontWeight: 800, fontFamily: "'Cairo', 'Tajawal', sans-serif",
-            boxShadow: `0 6px 20px rgba(197,160,89,0.4)`,
-            transition: "opacity 0.2s",
+            boxShadow: `0 6px 24px rgba(197,160,89,0.42)`,
+            transition: "all 0.2s ease",
+            letterSpacing: "0.02em",
           }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = "0.9"; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
+          onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = "translateY(-2px)"; el.style.boxShadow = "0 10px 32px rgba(197,160,89,0.55)"; }}
+          onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = ""; el.style.boxShadow = "0 6px 24px rgba(197,160,89,0.42)"; }}
         >
           دخول النظام
         </button>

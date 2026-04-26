@@ -12,13 +12,13 @@ const GREEN    = "#16a34a";
 const GREEN_L  = "#22c55e";
 const RED      = "#dc2626";
 const AMBER    = "#d97706";
-const BLUE     = "#2563eb";
-const BLUE_L   = "#3b82f6";
-const DARK     = "#0D0A04";
-const DARK2    = "#1A1208";
-const GLASS    = "rgba(255,255,255,0.82)";
-const GLASS_B  = "rgba(255,255,255,0.64)";
-const G_BORDER = "rgba(197,160,89,0.20)";
+const BLUE     = "#1565C0";
+const BLUE_L   = "#4A90D9";
+const DARK     = "#0C1427";
+const DARK2    = "#152040";
+const GLASS    = "rgba(255,255,255,0.95)";
+const GLASS_B  = "rgba(255,255,255,0.80)";
+const G_BORDER = "rgba(197,160,89,0.18)";
 
 /* ── Stage display — synced with STAGES in types.ts ────────── */
 const DASH_STAGES = [
@@ -523,46 +523,59 @@ export default function ContractDashboard({ role, actorName, contracts, pendingC
   ];
 
   return (
-    <div dir="rtl" style={{ background: "linear-gradient(165deg,#F2EDE4 0%,#EDE8DC 100%)", minHeight: "100%", fontFamily: "'Cairo','Tajawal',sans-serif" }}>
+    <div dir="rtl" style={{ background: "#F0F2F8", minHeight: "100%", fontFamily: "'Cairo','Tajawal',sans-serif" }}>
       <style>{`
         @keyframes rowFadeIn { from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)} }
-        @keyframes fadeUp    { from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)} }
+        @keyframes fadeUp    { from{opacity:0;transform:translateY(12px);filter:blur(1px)}to{opacity:1;transform:translateY(0);filter:blur(0)} }
         @keyframes glowLogo  { 0%,100%{box-shadow:0 0 0 2px rgba(197,160,89,0.32),0 4px 20px rgba(0,0,0,0.14)} 50%{box-shadow:0 0 0 3px rgba(197,160,89,0.58),0 6px 28px rgba(197,160,89,0.22)} }
-        @keyframes urgBlink  { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        @keyframes urgBlink  { 0%,100%{opacity:1} 50%{opacity:0.6} }
         @keyframes pulseWaveScroll { from{transform:translateX(0)} to{transform:translateX(-220px)} }
         @keyframes pulseDot  { 0%,100%{opacity:1;transform:translateY(-50%) scale(1)} 50%{opacity:0.5;transform:translateY(-50%) scale(1.5)} }
-        @keyframes cardBreath{ 0%,100%{box-shadow:0 4px 16px rgba(0,0,0,0.05)} 50%{box-shadow:0 6px 24px rgba(0,0,0,0.08)} }
+        @keyframes cardBreath{ 0%,100%{box-shadow:0 4px 20px rgba(0,0,0,0.06)} 50%{box-shadow:0 8px 32px rgba(0,0,0,0.10)} }
+        @keyframes topLineGlow{ 0%,100%{opacity:0.6} 50%{opacity:1} }
       `}</style>
 
       {/* ═══ HEADER ═══════════════════════════════════════════════ */}
       <div style={{
-        background: "rgba(255,255,255,0.86)", backdropFilter: "blur(20px)",
-        borderBottom: `1px solid ${G_BORDER}`,
-        padding: "12px 28px",
-        display: "flex", alignItems: "center", gap: 14,
-        boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+        background: GLASS, backdropFilter: "blur(20px)",
+        borderBottom: `1px solid rgba(197,160,89,0.14)`,
+        padding: "0 28px",
+        display: "flex", alignItems: "stretch", gap: 0,
+        boxShadow: "0 2px 20px rgba(12,20,39,0.08)",
         position: "sticky", top: 0, zIndex: 30,
+        overflow: "hidden",
       }}>
-        <div style={{ width: 48, height: 48, borderRadius: 15, overflow: "hidden", flexShrink: 0, animation: "glowLogo 4s ease infinite" }}>
-          <img src={logoImg} alt="الرواف" style={{ width: "100%", height: "100%", objectFit: "cover" }}/>
-        </div>
-        <div>
-          <div style={{ fontSize: "0.45rem", fontWeight: 900, letterSpacing: "0.16em", color: GOLD2, marginBottom: 1 }}>ALRAWAF CONTRACTING</div>
-          <div style={{ fontSize: "1.18rem", fontWeight: 900, letterSpacing: "-0.025em", background: `linear-gradient(120deg,#1A1A2E,#374151,${GOLD2})`, backgroundSize: "200%", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-            لوحة القيادة التنفيذية
-          </div>
-          <div style={{ fontSize: "0.55rem", color: "#9CA3AF", marginTop: 1 }}>
-            {role ? `${actorName || role} · ${pendingContracts.length} عقد بانتظار قرارك` : "نظام إدارة العقود — الجيل الثالث"}
-          </div>
-        </div>
+        {/* Left accent bar */}
+        <div style={{ width: 4, background: `linear-gradient(180deg,${GOLD_END},${GOLD},${BLUE_L})`, flexShrink: 0, animation: "topLineGlow 4s ease infinite" }}/>
 
-        <div style={{ marginRight: "auto", display: "flex", alignItems: "center", gap: 12 }}>
-          {urgentCount > 0 && (
-            <div style={{ background: "#FEF2F2", border: "1px solid rgba(220,38,38,0.28)", borderRadius: 20, padding: "5px 13px", fontSize: "0.6rem", fontWeight: 900, color: RED, animation: "urgBlink 2.5s ease infinite" }}>
-              {urgentCount} عاجل
+        <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, padding: "13px 0 13px 0", paddingRight: 20 }}>
+          <div style={{ width: 46, height: 46, borderRadius: 13, overflow: "hidden", flexShrink: 0, animation: "glowLogo 4s ease infinite" }}>
+            <img src={logoImg} alt="الرواف" style={{ width: "100%", height: "100%", objectFit: "cover" }}/>
+          </div>
+          <div>
+            <div style={{ fontSize: "0.44rem", fontWeight: 900, letterSpacing: "0.16em", color: GOLD, marginBottom: 2 }}>ALRAWAF CONTRACTING</div>
+            <div style={{ fontSize: "1.16rem", fontWeight: 900, letterSpacing: "-0.025em", color: DARK }}>
+              لوحة القيادة التنفيذية
             </div>
-          )}
-          <PulseWave pct={completePct} active={cActive} done={cDone} total={total}/>
+            <div style={{ fontSize: "0.55rem", color: "#64748B", marginTop: 1 }}>
+              {role ? `${actorName || role} · ${pendingContracts.length} عقد بانتظار قرارك` : "نظام إدارة العقود — رؤية 2030"}
+            </div>
+          </div>
+
+          <div style={{ marginRight: "auto", display: "flex", alignItems: "center", gap: 12 }}>
+            {urgentCount > 0 && (
+              <div style={{
+                background: "#FEF2F2", border: "1px solid rgba(220,38,38,0.28)",
+                borderRadius: 20, padding: "5px 14px",
+                fontSize: "0.62rem", fontWeight: 900, color: RED,
+                animation: "urgBlink 2s ease infinite",
+                boxShadow: "0 2px 8px rgba(220,38,38,0.12)",
+              }}>
+                {urgentCount} عاجل
+              </div>
+            )}
+            <PulseWave pct={completePct} active={cActive} done={cDone} total={total}/>
+          </div>
         </div>
       </div>
 
@@ -581,26 +594,40 @@ export default function ContractDashboard({ role, actorName, contracts, pendingC
 
             {/* ── Workflow stages ── */}
             <div style={{
-              background: GLASS, backdropFilter: "blur(16px)",
-              border: `1px solid ${G_BORDER}`, borderRadius: 24,
-              boxShadow: "0 6px 32px rgba(0,0,0,0.07)",
+              background: GLASS,
+              border: `1px solid rgba(197,160,89,0.14)`, borderRadius: 22,
+              boxShadow: "0 4px 24px rgba(12,20,39,0.07)",
               animation: "fadeUp 0.4s ease 0.06s both",
+              overflow: "hidden",
             }}>
-              <div style={{ padding: "16px 24px 13px", borderBottom: `1px solid rgba(0,0,0,0.05)`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{
+                padding: "15px 24px 13px",
+                borderBottom: `1px solid rgba(0,0,0,0.06)`,
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                background: `linear-gradient(90deg, rgba(12,20,39,0.03) 0%, transparent 100%)`,
+              }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 4, height: 32, borderRadius: 2, background: `linear-gradient(180deg,${GOLD_END},${GOLD}55)` }}/>
+                  <div style={{ width: 4, height: 34, borderRadius: 2, background: `linear-gradient(180deg,${BLUE_L},${GOLD})` }}/>
                   <div>
-                    <div style={{ fontSize: "0.95rem", fontWeight: 900, color: "#111827" }}>مسار العقود — الهيكل التنظيمي</div>
-                    <div style={{ fontSize: "0.56rem", color: "#B0B8C4", marginTop: 1 }}>11 مرحلة · انقر على المرحلة للتفاصيل</div>
+                    <div style={{ fontSize: "0.96rem", fontWeight: 900, color: DARK }}>مسار العقود — الهيكل التنظيمي</div>
+                    <div style={{ fontSize: "0.55rem", color: "#94A3B8", marginTop: 2 }}>11 مرحلة تصاعدياً · انقر على المرحلة للتفاصيل الكاملة</div>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {myRoleInfo && (
-                    <div style={{ background: "rgba(197,160,89,0.08)", border: `1px solid ${G_BORDER}`, borderRadius: 20, padding: "5px 14px", fontSize: "0.6rem", fontWeight: 800, color: GOLD2 }}>
+                    <div style={{
+                      background: "rgba(197,160,89,0.08)", border: `1px solid ${G_BORDER}`,
+                      borderRadius: 20, padding: "5px 14px",
+                      fontSize: "0.6rem", fontWeight: 800, color: GOLD2,
+                    }}>
                       مرحلتك: {myRoleInfo.stage.map(s => `م${s}`).join("، ")}
                     </div>
                   )}
-                  <div style={{ background: "rgba(0,0,0,0.04)", borderRadius: 20, padding: "5px 12px", fontSize: "0.58rem", color: "#6B7280", fontWeight: 700 }}>{maxCount} أعلى عدد</div>
+                  <div style={{
+                    background: `rgba(21,101,192,0.08)`, border: "1px solid rgba(21,101,192,0.15)",
+                    borderRadius: 20, padding: "5px 12px",
+                    fontSize: "0.58rem", color: BLUE, fontWeight: 700,
+                  }}>{maxCount} أعلى عدد</div>
                 </div>
               </div>
               <div style={{ padding: "8px 22px 14px" }}>
@@ -704,25 +731,40 @@ export default function ContractDashboard({ role, actorName, contracts, pendingC
 
             {/* ── KPI strip ── */}
             <div style={{
-              background: `linear-gradient(130deg,${DARK} 0%,${DARK2} 45%,${DARK} 100%)`,
-              borderRadius: 22, padding: "15px 28px",
-              display: "flex", alignItems: "center",
-              border: "1px solid rgba(197,160,89,0.22)",
-              boxShadow: "0 10px 40px rgba(0,0,0,0.18), inset 0 1px 0 rgba(197,160,89,0.1)",
+              background: `linear-gradient(135deg,${DARK} 0%,${DARK2} 60%,${DARK} 100%)`,
+              borderRadius: 22, padding: "18px 28px",
+              display: "flex", alignItems: "stretch",
+              border: "1px solid rgba(197,160,89,0.28)",
+              boxShadow: "0 12px 48px rgba(12,20,39,0.28), inset 0 1px 0 rgba(197,160,89,0.15)",
               animation: "fadeUp 0.4s ease 0.15s both",
               position: "relative", overflow: "hidden",
             }}>
-              <div style={{ position: "absolute", top: -60, right: "30%", width: 200, height: 180, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(197,160,89,0.05) 0%,transparent 70%)", pointerEvents: "none" }}/>
+              {/* Background glow orbs */}
+              <div style={{ position: "absolute", top: -40, right: "20%", width: 160, height: 160, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(197,160,89,0.08) 0%,transparent 70%)", pointerEvents: "none" }}/>
+              <div style={{ position: "absolute", bottom: -40, left: "15%", width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(ellipse,rgba(74,144,217,0.08) 0%,transparent 70%)", pointerEvents: "none" }}/>
               {[
-                { label: "متوسط زمن الإنجاز",  value: avgCycle > 0 ? `${avgCycle} يوم` : "—"  },
-                { label: "الطلبات في المسار",   value: `${cActive} عقد`                          },
-                { label: "مكتملة هذا الأسبوع", value: `${completedThisWeek} عقد`                },
-                { label: "نسبة الإنجاز الكلية", value: `${completePct}%`                          },
+                { label: "متوسط زمن الإنجاز",  value: avgCycle > 0 ? `${avgCycle}` : "—", unit: avgCycle > 0 ? "يوم" : "", color: GOLD_END  },
+                { label: "الطلبات في المسار",   value: `${cActive}`,                          unit: "عقد",                   color: BLUE_L   },
+                { label: "مكتملة هذا الأسبوع", value: `${completedThisWeek}`,                unit: "عقد",                   color: "#4ADE80" },
+                { label: "نسبة الإنجاز الكلية", value: `${completePct}`,                      unit: "%",                     color: GOLD_END  },
               ].map((item, i, arr) => (
-                <div key={i} style={{ flex: 1, textAlign: "center", borderLeft: i < arr.length - 1 ? "1px solid rgba(197,160,89,0.12)" : "none", padding: "0 8px" }}>
-                  <div style={{ fontSize: "0.54rem", color: "rgba(226,194,117,0.45)", marginBottom: 5 }}>{item.label}</div>
-                  <div style={{ fontSize: "1.08rem", fontWeight: 900, letterSpacing: "-0.02em", background: `linear-gradient(135deg,${GOLD_END},${GOLD})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                    {item.value}
+                <div key={i} style={{
+                  flex: 1, textAlign: "center",
+                  borderLeft: i < arr.length - 1 ? "1px solid rgba(197,160,89,0.10)" : "none",
+                  padding: "4px 16px",
+                }}>
+                  <div style={{ fontSize: "0.52rem", fontWeight: 700, color: "rgba(226,194,117,0.50)", marginBottom: 6, letterSpacing: "0.04em" }}>{item.label}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 3 }}>
+                    <span style={{
+                      fontSize: "1.6rem", fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1,
+                      color: item.color,
+                      textShadow: `0 0 24px ${item.color}55`,
+                    }}>
+                      {item.value}
+                    </span>
+                    {item.unit && (
+                      <span style={{ fontSize: "0.58rem", fontWeight: 700, color: "rgba(226,194,117,0.55)" }}>{item.unit}</span>
+                    )}
                   </div>
                 </div>
               ))}

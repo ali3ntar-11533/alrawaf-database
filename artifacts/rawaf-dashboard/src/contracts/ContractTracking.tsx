@@ -81,10 +81,10 @@ export default function ContractTracking({ role, onOpenContract }: Props) {
 
   /* ── قائمة العقود النشطة ── */
   return (
-    <div dir="rtl" style={{ padding: "24px 28px", fontFamily: "'Cairo', 'Tajawal', sans-serif" }}>
+    <div dir="rtl" style={{ padding: "24px 28px", fontFamily: "'Cairo', 'Tajawal', sans-serif", background: "#F0F2F8", minHeight: "100%" }}>
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: "1.3rem", fontWeight: 900, color: "#1a1206", marginBottom: 4 }}>
-          🛡️ نظام متابعة العقود
+        <h2 style={{ fontSize: "1.3rem", fontWeight: 900, color: "#0C1427", marginBottom: 4 }}>
+          نظام متابعة العقود
         </h2>
         <p style={{ color: "#9b8060", fontSize: "0.82rem" }}>
           انقر على أي عقد لفتح لوحة المتابعة التفصيلية مباشرةً

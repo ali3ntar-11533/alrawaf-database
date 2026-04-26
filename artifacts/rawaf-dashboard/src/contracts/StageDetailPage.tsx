@@ -12,6 +12,9 @@ const GOLD_BOR  = "rgba(197,160,89,0.22)";
 const GREEN     = "#22c55e";
 const AMBER     = "#f59e0b";
 const RED       = "#ef4444";
+const DARK      = "#0C1427";
+const DARK2     = "#152040";
+const BLUE_L    = "#4A90D9";
 
 function daysSince(iso: string) {
   return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
@@ -76,7 +79,7 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
   return (
     <div dir="rtl" style={{
       minHeight: "100%",
-      background: "#FFFFFF",
+      background: "#F0F2F8",
       fontFamily: "'Cairo','Tajawal',sans-serif",
       display: "flex", flexDirection: "column",
     }}>
@@ -86,58 +89,64 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
           to   { opacity:1; transform:translateY(0); }
         }
         .detail-row { transition: background 0.15s; }
-        .detail-row:hover { background: rgba(197,160,89,0.04) !important; }
+        .detail-row:hover { background: rgba(197,160,89,0.05) !important; }
         .sort-btn { transition: all 0.15s; cursor: pointer; }
         .sort-btn:hover { background: rgba(197,160,89,0.1) !important; }
       `}</style>
 
       {/* ── Page Header ─────────────────────────────────────────── */}
       <div style={{
-        background: "linear-gradient(120deg, #1C1810 0%, #2E2112 55%, #1C1810 100%)",
-        borderBottom: `2px solid ${GOLD_BOR}`,
-        padding: "16px 28px",
+        background: `linear-gradient(135deg, ${DARK} 0%, ${DARK2} 60%, ${DARK} 100%)`,
+        borderBottom: `2px solid rgba(197,160,89,0.28)`,
+        padding: "14px 28px",
         display: "flex", alignItems: "center", gap: 16,
         position: "sticky", top: 0, zIndex: 50,
         flexShrink: 0,
+        boxShadow: "0 4px 24px rgba(12,20,39,0.28)",
       }}>
+        {/* Blue+Gold top line */}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,${BLUE_L},${GOLD},${BLUE_L})`, opacity: 0.7 }}/>
+
         {/* Back */}
         <button
           onClick={onBack}
           style={{
-            width: 38, height: 38, borderRadius: 11, flexShrink: 0,
-            background: "rgba(255,255,255,0.1)", border: "1px solid rgba(197,160,89,0.25)",
-            color: "rgba(226,194,117,0.9)", fontSize: "1.1rem", cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "8px 16px", borderRadius: 10, flexShrink: 0,
+            background: "rgba(255,255,255,0.08)", border: "1px solid rgba(197,160,89,0.28)",
+            color: GOLD_END, fontSize: "0.76rem", fontWeight: 700, cursor: "pointer",
+            fontFamily: "'Cairo','Tajawal',sans-serif",
             transition: "background 0.15s",
           }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.14)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)"; }}
         >رجوع</button>
 
         {/* Logo */}
         <div style={{
-          width: 44, height: 44, borderRadius: 13, overflow: "hidden", flexShrink: 0,
+          width: 42, height: 42, borderRadius: 12, overflow: "hidden", flexShrink: 0,
           boxShadow: `0 0 0 2px rgba(197,160,89,0.4), 0 4px 16px rgba(0,0,0,0.4)`,
         }}>
           <img src={logoImg} alt="الرواف" style={{ width: "100%", height: "100%", objectFit: "cover" }}/>
         </div>
 
+        {/* Divider */}
+        <div style={{ width: 1, height: 36, background: "rgba(197,160,89,0.18)", flexShrink: 0 }}/>
+
         {/* Stage info */}
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: "0.52rem", fontWeight: 900, letterSpacing: "0.12em", color: "rgba(197,160,89,0.65)", marginBottom: 2 }}>
-            المرحلة {stageNum} من {STAGES.length}
+          <div style={{ fontSize: "0.5rem", fontWeight: 900, letterSpacing: "0.12em", color: BLUE_L, marginBottom: 3, textTransform: "uppercase" }}>
+            المرحلة {stageNum} من {STAGES.length} · نظام إدارة العقود
           </div>
-          <div style={{
-            fontSize: "1.15rem", fontWeight: 900,
-            background: `linear-gradient(135deg, ${GOLD_END}, ${GOLD})`,
-            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
-            letterSpacing: "-0.02em",
-          }}>{stage?.label}</div>
-          <div style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.45)", marginTop: 1 }}>
+          <div style={{ fontSize: "1.12rem", fontWeight: 900, color: GOLD_END, letterSpacing: "-0.02em" }}>
+            {stage?.label}
+          </div>
+          <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.42)", marginTop: 2 }}>
             {role ? `${actorName || role} · المسؤول: ${stage?.role}` : `المسؤول: ${stage?.role}`}
           </div>
         </div>
 
         {/* Quick stats strip */}
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {[
             { label: "إجمالي الطلبات", value: contracts.length, color: GOLD_END },
             { label: "متوسط الانتظار", value: `${avgStageWait} يوم`, color: avgStageWait >= 7 ? "#FCA5A5" : avgStageWait >= 3 ? "#FCD34D" : "#86EFAC" },
@@ -145,11 +154,12 @@ export default function StageDetailPage({ stageNum, role, actorName, onBack, onO
             { label: "إجمالي القيمة", value: formatSAR(totalVal), color: GOLD_END },
           ].map((s, i) => (
             <div key={i} style={{
-              background: "rgba(255,255,255,0.07)", border: "1px solid rgba(197,160,89,0.18)",
-              borderRadius: 11, padding: "7px 14px", textAlign: "center",
+              background: "rgba(255,255,255,0.06)", border: "1px solid rgba(197,160,89,0.15)",
+              borderRadius: 11, padding: "7px 13px", textAlign: "center",
+              backdropFilter: "blur(8px)",
             }}>
-              <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.45)", marginBottom: 2 }}>{s.label}</div>
-              <div style={{ fontSize: "0.82rem", fontWeight: 900, color: s.color }}>{s.value}</div>
+              <div style={{ fontSize: "0.53rem", color: "rgba(255,255,255,0.38)", marginBottom: 2 }}>{s.label}</div>
+              <div style={{ fontSize: "0.86rem", fontWeight: 900, color: s.color }}>{s.value}</div>
             </div>
           ))}
         </div>

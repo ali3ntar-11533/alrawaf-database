@@ -121,19 +121,19 @@ export default function ContractApp({ onExit }: Props) {
       style={{
         position: "fixed", inset: 0, zIndex: 9000,
         display: "flex", flexDirection: "row",
-        background: "#F9F9F9",
+        background: "#F0F2F8",
         fontFamily: "'Cairo', 'Tajawal', sans-serif",
         overflowX: "hidden",
       }}
     >
       <style>{`
         @keyframes pageSlideIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0);   }
+          from { opacity: 0; transform: translateY(8px) scale(0.995); }
+          to   { opacity: 1; transform: translateY(0)   scale(1);     }
         }
-        @keyframes sidebarTabPulse {
-          0%,100% { box-shadow: none; }
-          50%     { box-shadow: inset 3px 0 8px rgba(197,160,89,0.18); }
+        @keyframes pageFadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
         }
       `}</style>
 
