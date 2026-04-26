@@ -20,12 +20,13 @@ const TRACKING_ROLE = "مسؤول المتابعة";
 
 interface ExecPhase  { id: number; label: string; pct: number; durationDays: number; }
 interface BoqItem    { id: number; code: string; description: string; unit: string; qty: number; executedQty: number; unitPrice: number; }
-interface Payment    { id: number; no: number; date: string; amount: number; status: "paid" | "pending"; }
+interface Payment    { id: number; no: number; invoiceRef: string; date: string; amount: number; status: "paid" | "pending"; }
 interface PhaseReport {
   id: number;
   phaseId: number;
   date: string;
   completionPct: number;
+  recipientName: string;
   summary: string;
   challenges: string;
   nextSteps: string;
@@ -33,6 +34,14 @@ interface PhaseReport {
   submittedBy: string;
   status: "draft" | "submitted";
 }
+
+const SYSTEM_RECIPIENTS = [
+  "مدير المشروع",
+  "مدير العقود",
+  "المدير العام",
+  "المشرف الهندسي",
+  "مدير التشغيل",
+];
 
 const UNITS = ["م²", "م³", "م.ط", "طن", "نقطة", "وحدة", "مقطوعي"];
 const INIT_PHASES: ExecPhase[] = [
@@ -168,13 +177,32 @@ function ReportFormModal({
   report, phase, contract, onSave, onClose,
 }: { report: PhaseReport; phase: ExecPhase | undefined; contract: Contract; onSave: (r: PhaseReport) => void; onClose: () => void }) {
   const [draft, setDraft] = useState<PhaseReport>({ ...report });
+  const isSubmitted = report.status === "submitted";
 
   const inputStyle: CSSProperties = {
     width: "100%", padding: "8px 12px", borderRadius: 9,
     border: `1.5px solid ${BLUE_BR}`, fontSize: "0.76rem",
     fontFamily: "'Cairo','Tajawal',sans-serif", outline: "none",
     boxSizing: "border-box", resize: "vertical",
+    background: isSubmitted ? "#F8FAFC" : "#fff",
+    color: isSubmitted ? "#555" : "#1A1A1A",
   };
+
+  /* ── Read-only answer display ── */
+  function AnswerBlock({ label, value }: { label: string; value: string }) {
+    return (
+      <div>
+        <div style={{ fontSize: "0.64rem", fontWeight: 700, color: "#777", marginBottom: 4 }}>{label}</div>
+        <div style={{
+          padding: "10px 14px", borderRadius: 9, background: "#F4F7FC",
+          border: `1px solid #E8EEF8`, fontSize: "0.76rem", color: "#1A1A1A",
+          lineHeight: 1.7, minHeight: 36, whiteSpace: "pre-wrap",
+        }}>
+          {value || <span style={{ color: "#ccc" }}>لم يتم التعبئة</span>}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(12,20,39,0.6)", display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "40px 16px" }} onClick={onClose}>
@@ -184,19 +212,73 @@ function ReportFormModal({
         <div style={{ background: `linear-gradient(135deg, ${DARK}, #152040)`, padding: "18px 24px", position: "relative" }}>
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg,${BLUE_M},${BLUE_L},${AMBER})` }}/>
           <div style={{ fontSize: "0.52rem", color: BLUE_L, fontWeight: 800, letterSpacing: "0.1em", marginBottom: 4 }}>تقرير متابعة المرحلة · نظام إدارة العقود</div>
-          <div style={{ fontSize: "1rem", fontWeight: 900, color: "#F0F0F0" }}>
-            {phase?.label ?? "مرحلة غير محددة"}
-          </div>
+          <div style={{ fontSize: "1rem", fontWeight: 900, color: "#F0F0F0" }}>{phase?.label ?? "مرحلة غير محددة"}</div>
           <div style={{ fontSize: "0.64rem", color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
             {contract.contractNo} · {contract.vendorName} · الإنجاز: {draft.completionPct}%
           </div>
           <button onClick={onClose} style={{ position: "absolute", top: 16, left: 16, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 8, width: 28, height: 28, cursor: "pointer", color: "#ccc", fontSize: "0.85rem" }}>✕</button>
         </div>
 
-        {/* Form body */}
+        {/* ── Submitted state: show filled data ── */}
+        {isSubmitted ? (
+          <div style={{ padding: "22px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
+
+            {/* Success banner */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 12, background: "rgba(34,197,94,0.08)", border: `1.5px solid rgba(34,197,94,0.3)` }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(34,197,94,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", flexShrink: 0 }}>✓</div>
+              <div>
+                <div style={{ fontSize: "0.78rem", fontWeight: 900, color: GREEN }}>تم الإرسال وتم التعبئة</div>
+                <div style={{ fontSize: "0.62rem", color: "#888", marginTop: 2 }}>
+                  أُرسل إلى: <strong style={{ color: DARK }}>{draft.recipientName || "—"}</strong>
+                  {draft.submittedBy && <> &nbsp;·&nbsp; بواسطة: <strong style={{ color: DARK }}>{draft.submittedBy}</strong></>}
+                  {draft.date && <> &nbsp;·&nbsp; {draft.date}</>}
+                </div>
+              </div>
+            </div>
+
+            {/* Meta */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div style={{ padding: "10px 14px", background: "#F4F7FC", borderRadius: 9, border: `1px solid #E8EEF8` }}>
+                <div style={{ fontSize: "0.62rem", color: "#999", marginBottom: 2 }}>تاريخ التقرير</div>
+                <div style={{ fontSize: "0.78rem", fontWeight: 700 }}>{draft.date}</div>
+              </div>
+              <div style={{ padding: "10px 14px", background: "#F4F7FC", borderRadius: 9, border: `1px solid #E8EEF8`, display: "flex", alignItems: "center", gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: "0.62rem", color: "#999", marginBottom: 2 }}>نسبة الإنجاز</div>
+                  <div style={{ fontSize: "1rem", fontWeight: 900, color: BLUE_M }}>{draft.completionPct}%</div>
+                </div>
+                <div style={{ flex: 1, height: 6, borderRadius: 3, background: "#E0E8F4", overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${draft.completionPct}%`, background: `linear-gradient(90deg, ${BLUE}, ${BLUE_M})`, borderRadius: 3 }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Answers */}
+            <AnswerBlock label="ملخص الأعمال المنجزة في هذه المرحلة" value={draft.summary} />
+            <AnswerBlock label="التحديات والعقبات التي واجهتها" value={draft.challenges} />
+            <AnswerBlock label="الخطوات التالية المخطط لها" value={draft.nextSteps} />
+            <AnswerBlock label="الدعم المطلوب" value={draft.requestedSupport} />
+
+            <button onClick={onClose} style={{ marginTop: 4, padding: "11px", borderRadius: 10, border: `1.5px solid #E8E8E8`, background: "#fff", color: "#666", fontSize: "0.78rem", cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif" }}>إغلاق</button>
+          </div>
+        ) : (
+
+        /* ── Draft state: editable form ── */
         <div style={{ padding: "22px 24px", display: "flex", flexDirection: "column", gap: 14 }}>
 
-          {/* Meta row */}
+          {/* Recipient + Meta */}
+          <div>
+            <label style={{ fontSize: "0.64rem", fontWeight: 700, color: "#555", display: "block", marginBottom: 5 }}>إرسال إلى (داخل النظام)</label>
+            <select
+              value={draft.recipientName}
+              onChange={e => setDraft(d => ({ ...d, recipientName: e.target.value }))}
+              style={{ ...inputStyle, resize: "none", cursor: "pointer" }}
+            >
+              <option value="">— اختر الجهة المستلِمة —</option>
+              {SYSTEM_RECIPIENTS.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div>
               <label style={{ fontSize: "0.64rem", fontWeight: 700, color: "#777", display: "block", marginBottom: 5 }}>تاريخ التقرير</label>
@@ -205,7 +287,7 @@ function ReportFormModal({
             <div>
               <label style={{ fontSize: "0.64rem", fontWeight: 700, color: "#777", display: "block", marginBottom: 5 }}>نسبة الإنجاز المُبلَّغة</label>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <input type="number" min={0} max={100} value={draft.completionPct} onChange={e => setDraft(d => ({ ...d, completionPct: parseInt(e.target.value) || 0 }))} style={{ ...inputStyle, width: 80, resize: "none" }} />
+                <input type="number" min={0} max={100} value={draft.completionPct} onChange={e => setDraft(d => ({ ...d, completionPct: parseInt(e.target.value) || 0 }))} style={{ ...inputStyle, width: 72, resize: "none" }} />
                 <span style={{ fontSize: "0.72rem", color: "#999" }}>%</span>
                 <div style={{ flex: 1, height: 6, borderRadius: 3, background: "#EEF2F8", overflow: "hidden" }}>
                   <div style={{ height: "100%", width: `${draft.completionPct}%`, background: `linear-gradient(90deg, ${BLUE}, ${BLUE_M})`, borderRadius: 3, transition: "width 0.3s" }} />
@@ -216,48 +298,40 @@ function ReportFormModal({
 
           {/* Questions */}
           {[
-            { key: "summary"         as const, label: "ملخص الأعمال المنجزة في هذه المرحلة", rows: 3 },
-            { key: "challenges"      as const, label: "التحديات والعقبات التي واجهتها", rows: 2 },
-            { key: "nextSteps"       as const, label: "الخطوات التالية المخطط لها", rows: 2 },
+            { key: "summary"          as const, label: "ملخص الأعمال المنجزة في هذه المرحلة", rows: 3 },
+            { key: "challenges"       as const, label: "التحديات والعقبات التي واجهتها", rows: 2 },
+            { key: "nextSteps"        as const, label: "الخطوات التالية المخطط لها", rows: 2 },
             { key: "requestedSupport" as const, label: "الدعم المطلوب من مدير المشروع", rows: 2 },
           ].map(q => (
             <div key={q.key}>
-              <label style={{ fontSize: "0.66rem", fontWeight: 700, color: "#555", display: "block", marginBottom: 5 }}>
-                {q.label}
-              </label>
-              <textarea
-                rows={q.rows}
-                value={draft[q.key]}
-                onChange={e => setDraft(d => ({ ...d, [q.key]: e.target.value }))}
-                placeholder={`أكتب هنا...`}
-                style={{ ...inputStyle }}
-              />
+              <label style={{ fontSize: "0.66rem", fontWeight: 700, color: "#555", display: "block", marginBottom: 5 }}>{q.label}</label>
+              <textarea rows={q.rows} value={draft[q.key]} onChange={e => setDraft(d => ({ ...d, [q.key]: e.target.value }))} placeholder="أكتب هنا..." style={{ ...inputStyle }} />
             </div>
           ))}
 
           {/* Submitted by */}
           <div>
             <label style={{ fontSize: "0.64rem", fontWeight: 700, color: "#777", display: "block", marginBottom: 5 }}>اسم منفذ التقرير</label>
-            <input
-              value={draft.submittedBy}
-              onChange={e => setDraft(d => ({ ...d, submittedBy: e.target.value }))}
-              placeholder="الاسم الكامل..."
-              style={{ ...inputStyle, resize: "none" }}
-            />
+            <input value={draft.submittedBy} onChange={e => setDraft(d => ({ ...d, submittedBy: e.target.value }))} placeholder="الاسم الكامل..." style={{ ...inputStyle, resize: "none" }} />
           </div>
 
           {/* Actions */}
           <div style={{ display: "flex", gap: 10, paddingTop: 6 }}>
             <button
-              onClick={() => { onSave({ ...draft, status: "submitted" }); onClose(); }}
+              onClick={() => {
+                if (!draft.recipientName) { alert("يرجى اختيار الجهة المستلِمة أولاً"); return; }
+                onSave({ ...draft, status: "submitted" });
+                onClose();
+              }}
               style={{ flex: 1, padding: "11px", borderRadius: 10, border: "none", background: `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`, color: "#fff", fontSize: "0.8rem", fontWeight: 800, cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif" }}
-            >إرسال التقرير لمدير المشروع</button>
+            >إرسال التقرير</button>
             <button
               onClick={() => { onSave({ ...draft, status: "draft" }); onClose(); }}
               style={{ padding: "11px 18px", borderRadius: 10, border: `1.5px solid #E8E8E8`, background: "#fff", color: "#666", fontSize: "0.76rem", cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif" }}
             >حفظ مسودة</button>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
@@ -319,7 +393,7 @@ export default function ContractMonitor({ contract, role }: { contract: Contract
 
   /* ── Payment handlers ── */
   function addPayment() {
-    setPayments(prev => [...prev, { id: Date.now(), no: prev.length + 1, date: new Date().toISOString().split("T")[0], amount: 0, status: "pending" }]);
+    setPayments(prev => [...prev, { id: Date.now(), no: prev.length + 1, invoiceRef: "", date: new Date().toISOString().split("T")[0], amount: 0, status: "pending" }]);
   }
   function updatePayment(id: number, field: keyof Payment, value: string | number) {
     setPayments(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
@@ -333,6 +407,7 @@ export default function ContractMonitor({ contract, role }: { contract: Contract
       id: Date.now(), phaseId,
       date: new Date().toISOString().split("T")[0],
       completionPct: phase?.pct ?? 0,
+      recipientName: "",
       summary: "", challenges: "", nextSteps: "", requestedSupport: "", submittedBy: "",
       status: "draft",
     };
@@ -647,7 +722,9 @@ export default function ContractMonitor({ contract, role }: { contract: Contract
                   )}
                   {payments.map(p => (
                     <tr key={p.id}>
-                      <td style={{ ...cellSt, padding: "5px 6px" }}>{p.no}</td>
+                      <td style={{ ...cellSt, padding: "5px 6px" }}>
+                        <input type="text" value={p.invoiceRef ?? ""} onChange={e => canEdit && updatePayment(p.id, "invoiceRef", e.target.value)} readOnly={!canEdit} placeholder="رقم الاستخلاص" style={{ ...inputSt, width: 90 }} />
+                      </td>
                       <td style={{ ...cellSt, padding: "5px 6px" }}>
                         <input type="date" value={p.date} onChange={e => canEdit && updatePayment(p.id, "date", e.target.value)} readOnly={!canEdit} style={{ ...inputSt, width: 112 }} />
                       </td>
