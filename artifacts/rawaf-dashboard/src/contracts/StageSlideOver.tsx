@@ -185,10 +185,10 @@ function ContractCard({
           <div style={{
             fontSize: "0.82rem", fontWeight: 800, color: "#1A1A1A",
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          }}>{contract.title}</div>
+          }}>{contract.vendorName || contract.title}</div>
           <div style={{ fontSize: "0.62rem", color: "#9b8060", marginTop: 2 }}>
             {contract.contractNo}
-            {contract.vendorName && ` · ${contract.vendorName}`}
+            {contract.title && ` · ${contract.title}`}
             {contract.value > 0 && ` · ${formatSAR(contract.value)}`}
           </div>
         </div>

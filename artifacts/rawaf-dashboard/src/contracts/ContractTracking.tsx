@@ -158,10 +158,10 @@ export default function ContractTracking({ role, actorName, onOpenContract }: Pr
 
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: "0.76rem", fontWeight: 800, color: "#F0F0F0" }}>
-              {monitorContract.title}
+              {monitorContract.vendorName || monitorContract.title}
             </div>
             <div style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.45)", marginTop: 1 }}>
-              {monitorContract.contractNo} · {monitorContract.vendorName}
+              {monitorContract.contractNo}{monitorContract.title ? ` · ${monitorContract.title}` : ""}
             </div>
           </div>
 
@@ -397,7 +397,7 @@ export default function ContractTracking({ role, actorName, onOpenContract }: Pr
                     {/* Main info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
-                        <span style={{ fontSize: "0.88rem", fontWeight: 800, color: "#1A1A1A" }}>{c.title}</span>
+                        <span style={{ fontSize: "0.88rem", fontWeight: 800, color: "#1A1A1A" }}>{c.vendorName || c.title}</span>
                         {c.contractNo && (
                           <span style={{
                             fontSize: "0.62rem", padding: "2px 8px", borderRadius: 20,
@@ -412,7 +412,7 @@ export default function ContractTracking({ role, actorName, onOpenContract }: Pr
                       </div>
 
                       <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: "0.68rem", color: "#666" }}>
-                        {c.vendorName && <span>الطرف الثاني: <strong style={{ color: "#333" }}>{c.vendorName}</strong></span>}
+                        {c.title && <span>نوع الاعمال: <strong style={{ color: "#333" }}>{c.title}</strong></span>}
                         {c.projectName && <span>المشروع: <strong style={{ color: "#333" }}>{c.projectName}</strong></span>}
                         {c.value > 0 && <span>القيمة: <strong style={{ color: BLUE_M }}>{formatSAR(c.value)}</strong></span>}
                         {c.endDate && <span>انتهاء العقد: <strong style={{ color: "#333" }}>{new Date(c.endDate).toLocaleDateString("ar-SA")}</strong></span>}
