@@ -105,11 +105,11 @@ function renderCell(content: CellContent) {
   if (content === "ATTACH3") return <Attach3Cell />;
   if (content !== null && typeof content === "object" && "hasAttach" in content) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         {content.text
-          ? <span>{content.text}</span>
-          : <span style={{ color: "#ccc" }}>—</span>}
-        <AttachCell />
+          ? <span style={{ flex: 1, wordBreak: "break-word" }}>{content.text}</span>
+          : <span style={{ color: "#ccc", flex: 1 }}>—</span>}
+        <div style={{ flexShrink: 0 }}><AttachCell /></div>
       </div>
     );
   }
@@ -131,9 +131,9 @@ function DataRow({
   const valueBg = evenRow ? VALUE_BG_E : VALUE_BG_O;
   const labelStyle: React.CSSProperties = {
     background: LABEL_BG, color: BLUE,
-    padding: "9px 13px", fontSize: "0.73rem", fontWeight: 700,
+    padding: "9px 13px", fontSize: "0.7rem", fontWeight: 700,
     borderBottom: "1px solid rgba(25,118,210,0.08)",
-    lineHeight: 1.4, whiteSpace: "nowrap",
+    lineHeight: 1.4, whiteSpace: "normal",
   };
   const valueStyle: React.CSSProperties = {
     background: valueBg, color: "#1a2535",
@@ -761,7 +761,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                 }}>بيانات الطلب والعقد</div>
 
                 {/* Column sub-headers — glass style */}
-                <div style={{ display: "grid", gridTemplateColumns: "170px 1fr 170px 1fr" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "185px 1fr 185px 1fr" }}>
                   {[
                     { label: "بيانات الطرف الثاني" },
                     { label: "" },
@@ -781,7 +781,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                 </div>
 
                 {/* Data rows */}
-                <div style={{ display: "grid", gridTemplateColumns: "170px 1fr 170px 1fr" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "185px 1fr 185px 1fr" }}>
                   {rows.map((row, i) => (
                     <DataRow
                       key={i}
@@ -894,41 +894,41 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                   padding: "3px 10px", border: "1px solid rgba(148,163,184,0.2)",
                 }}>سيتم ربطها بملاحق رقم العقد تلقائياً</span>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
-                {SMART_DOCS.map((doc, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      background: "rgba(25,118,210,0.04)",
-                      backdropFilter: BLUR_SM,
-                      borderRadius: 12, padding: "16px 10px",
-                      border: `1.5px solid rgba(25,118,210,0.1)`, textAlign: "center",
-                      cursor: "pointer", transition: "all 0.2s",
-                      display: "flex", flexDirection: "column", alignItems: "center", gap: 7,
-                      boxShadow: SHADOW_SM,
-                    }}
-                    onMouseEnter={e => {
-                      (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 18px rgba(25,118,210,0.14)";
-                      (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
-                      (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(25,118,210,0.22)";
-                    }}
-                    onMouseLeave={e => {
-                      (e.currentTarget as HTMLDivElement).style.boxShadow = SHADOW_SM;
-                      (e.currentTarget as HTMLDivElement).style.transform = "none";
-                      (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(25,118,210,0.1)";
-                    }}
-                  >
-                    <div style={{ fontSize: "1.8rem" }}>{doc.icon}</div>
-                    <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#1a2535", lineHeight: 1.4 }}>{doc.label}</div>
-                    <div style={{ fontSize: "0.56rem", color: "#94a3b8" }}>{doc.hint}</div>
-                    <div style={{
-                      marginTop: 3, padding: "3px 10px", borderRadius: 20,
-                      background: "rgba(25,118,210,0.07)", fontSize: "0.58rem",
-                      color: BLUE_M, fontWeight: 700,
-                      border: `1px solid rgba(25,118,210,0.15)`,
-                    }}>رفع ملف</div>
+              {/* Annexes table */}
+              <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid rgba(25,118,210,0.12)" }}>
+                {/* Table header */}
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "80px 1fr 120px 110px 80px 90px",
+                  background: "rgba(25,118,210,0.07)",
+                  borderBottom: "1px solid rgba(25,118,210,0.12)",
+                }}>
+                  {["رقم الملحق", "عنوان الملحق", "نوع الملحق", "تاريخ الإصدار", "المرفق", "الحالة"].map((h, i) => (
+                    <div key={i} style={{
+                      padding: "9px 12px", fontSize: "0.68rem", fontWeight: 800, color: BLUE,
+                      borderRight: i < 5 ? "1px solid rgba(25,118,210,0.1)" : undefined,
+                      textAlign: "center",
+                    }}>{h}</div>
+                  ))}
+                </div>
+                {/* Empty state */}
+                <div style={{
+                  padding: "40px 20px", textAlign: "center",
+                  color: "#94a3b8", fontSize: "0.78rem",
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
+                }}>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 14,
+                    background: "rgba(25,118,210,0.06)",
+                    border: "1.5px dashed rgba(25,118,210,0.2)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: "1.4rem",
+                  }}>📋</div>
+                  <div>
+                    <div style={{ fontWeight: 700, color: "#64748B", marginBottom: 4 }}>لا توجد ملاحق مرتبطة بهذا العقد بعد</div>
+                    <div style={{ fontSize: "0.66rem" }}>سيتم عرض ملاحق العقد هنا تلقائياً عند إضافتها برقم العقد {contract.contractNo}</div>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
           </div>
