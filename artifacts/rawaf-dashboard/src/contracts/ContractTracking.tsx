@@ -100,7 +100,7 @@ export default function ContractTracking({ role, actorName, onOpenContract }: Pr
   }
 
   async function handleSaveMonitor() {
-    if (!draft.title.trim()) { setDraftError("يرجى إدخال اسم العقد على الأقل"); return; }
+    if (!draft.vendorName.trim()) { setDraftError("يرجى إدخال اسم الطرف الثاني (المقاول) على الأقل"); return; }
     setDraftError("");
     setSaving(true);
     try {
@@ -285,12 +285,12 @@ export default function ContractTracking({ role, actorName, onOpenContract }: Pr
           {/* Form body */}
           <div style={{ padding: "20px 20px 16px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px 16px" }}>
             <div style={{ gridColumn: "1 / -1" }}>
-              <label style={labelSt}>اسم العقد <span style={{ color: RED }}>*</span></label>
+              <label style={labelSt}>الطرف الثاني (المقاول) <span style={{ color: RED }}>*</span></label>
               <input
                 style={inputSt}
-                value={draft.title}
-                onChange={e => setDraft(d => ({ ...d, title: e.target.value }))}
-                placeholder="مثال: عقد إنشاء مبنى الإدارة الجديد"
+                value={draft.vendorName}
+                onChange={e => setDraft(d => ({ ...d, vendorName: e.target.value }))}
+                placeholder="اسم الشركة أو المقاول"
               />
             </div>
             <div>
@@ -298,8 +298,8 @@ export default function ContractTracking({ role, actorName, onOpenContract }: Pr
               <input style={inputSt} value={draft.contractNo} onChange={e => setDraft(d => ({ ...d, contractNo: e.target.value }))} placeholder="CON-2026-XXXX" />
             </div>
             <div>
-              <label style={labelSt}>الطرف الثاني (المقاول)</label>
-              <input style={inputSt} value={draft.vendorName} onChange={e => setDraft(d => ({ ...d, vendorName: e.target.value }))} placeholder="اسم الشركة أو المقاول" />
+              <label style={labelSt}>نوع الاعمال</label>
+              <input style={inputSt} value={draft.title} onChange={e => setDraft(d => ({ ...d, title: e.target.value }))} placeholder="مثال: عقد إنشاء مبنى الإدارة الجديد" />
             </div>
             <div>
               <label style={labelSt}>المشروع</label>
