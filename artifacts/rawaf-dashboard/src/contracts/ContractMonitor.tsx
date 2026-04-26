@@ -1,4 +1,4 @@
-import { useState, useMemo, type CSSProperties } from "react";
+import { useState, useMemo, useEffect, type CSSProperties } from "react";
 import type { Contract } from "./types";
 import { tafqit } from "./tafqit";
 
@@ -360,19 +360,31 @@ export default function ContractMonitor({ contract, role }: { contract: Contract
   const [editingDuration, setEditingDuration]   = useState(false);
   const [durationInput, setDurationInput]       = useState("");
 
+  /* ── Live clock (updates every minute so day counters stay current) ── */
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   /* ── Computed ── */
   const remainingDays = useMemo(() => {
     if (!contract.endDate) return null;
-    return Math.ceil((new Date(contract.endDate).getTime() - Date.now()) / 86_400_000);
-  }, [contract.endDate]);
+    return Math.ceil((new Date(contract.endDate).getTime() - now) / 86_400_000);
+  }, [contract.endDate, now]);
   const plannedDays = useMemo(() => {
     if (!contract.startDate || !contract.endDate) return null;
     return Math.ceil((new Date(contract.endDate).getTime() - new Date(contract.startDate).getTime()) / 86_400_000);
   }, [contract.startDate, contract.endDate]);
   const elapsedDays = useMemo(() => {
     if (!contract.startDate) return null;
-    return Math.ceil((Date.now() - new Date(contract.startDate).getTime()) / 86_400_000);
-  }, [contract.startDate]);
+    return Math.ceil((now - new Date(contract.startDate).getTime()) / 86_400_000);
+  }, [contract.startDate, now]);
+
+  /* When the user overrides the total duration, remaining = override - elapsed */
+  const displayRemainingDays = durationOverride != null && elapsedDays != null
+    ? durationOverride - elapsedDays
+    : remainingDays;
 
   const boqTotal      = useMemo(() => boqItems.reduce((s, r) => s + r.qty * r.unitPrice, 0), [boqItems]);
   const contractValue = contract.value > 0 ? contract.value : boqTotal;
@@ -586,28 +598,30 @@ export default function ContractMonitor({ contract, role }: { contract: Contract
         <div style={{ ...cardSt, marginBottom: 0, minWidth: 134, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
           <span style={{ fontSize: "0.62rem", color: "#999", textAlign: "center" }}>المدة المتبقية</span>
           <span style={{
-            fontSize: remainingDays != null ? "2.4rem" : "1.2rem", fontWeight: 900, lineHeight: 1,
-            color: remainingDays == null ? "#ccc" : remainingDays <= 30 ? RED : remainingDays <= 90 ? AMBER : BLUE_M,
+            fontSize: displayRemainingDays != null ? "2.4rem" : "1.2rem", fontWeight: 900, lineHeight: 1,
+            color: displayRemainingDays == null ? "#ccc" : displayRemainingDays <= 30 ? RED : displayRemainingDays <= 90 ? AMBER : BLUE_M,
           }}>
-            {remainingDays != null ? Math.abs(remainingDays) : "—"}
+            {displayRemainingDays != null ? Math.abs(displayRemainingDays) : "—"}
           </span>
-          {remainingDays != null && (
-            <span style={{ fontSize: "0.62rem", color: "#999" }}>{remainingDays < 0 ? "يوم (تأخير)" : "يوم"}</span>
+          {displayRemainingDays != null && (
+            <span style={{ fontSize: "0.62rem", color: "#999" }}>{displayRemainingDays < 0 ? "يوم (تأخير)" : "يوم"}</span>
           )}
           {(plannedDays || durationOverride) && (
             <div style={{ marginTop: 6, fontSize: "0.6rem", color: "#bbb", textAlign: "center", lineHeight: 1.8 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                 <span>مدة التنفيذ</span>
-                <button
-                  title="تعديل المدة"
-                  onClick={() => { setDurationInput(String(durationOverride ?? plannedDays ?? "")); setEditingDuration(true); }}
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 1, color: BLUE_M, display: "flex", alignItems: "center" }}
-                >
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
+                {canEdit && (
+                  <button
+                    title="تعديل المدة"
+                    onClick={() => { setDurationInput(String(durationOverride ?? plannedDays ?? "")); setEditingDuration(true); }}
+                    style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 1, color: BLUE_M, display: "flex", alignItems: "center" }}
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                )}
               </div>
               {editingDuration ? (
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginTop: 2 }}>
