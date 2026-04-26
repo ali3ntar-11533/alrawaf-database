@@ -786,12 +786,12 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
               </div>
             </div>
 
-            {/* ── LEFT: pct% box  +  stage timeline below it ── */}
-            <div className="no-print" style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
+            {/* ── LEFT: pct% box  + stage timeline side-by-side ── */}
+            <div className="no-print" style={{ flexShrink: 0, display: "flex", flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
 
-              {/* Completion % */}
+              {/* Completion % box */}
               <div style={{
-                textAlign: "center",
+                textAlign: "center", flexShrink: 0,
                 background: isCompleted
                   ? "rgba(39,174,96,0.1)"
                   : `linear-gradient(135deg, rgba(25,118,210,0.12), rgba(25,118,210,0.05))`,
@@ -804,85 +804,102 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                 <div style={{ fontSize: "0.56rem", color: "#64748B", marginTop: 2 }}>إنجاز</div>
               </div>
 
-              {/* Stage timeline — bigger circles, impressive */}
-              <div style={{
-                background: isCompleted ? "rgba(39,174,96,0.05)" : "rgba(25,118,210,0.04)",
-                border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.15)" : "rgba(25,118,210,0.12)"}`,
-                borderRadius: 14, padding: "10px 14px",
-                boxShadow: "0 2px 12px rgba(25,118,210,0.08)",
-                overflowX: "auto", maxWidth: "min(820px, 60vw)",
-              }}>
-                <div style={{ display: "flex", alignItems: "flex-start", minWidth: "max-content", direction: "rtl", gap: 0 }}>
-                  {STAGES.map((stg, idx) => {
-                    const sNum   = idx + 1;
-                    const isDone = isCompleted ? true : sNum < contract.currentStage;
-                    const isCur  = !isCompleted && sNum === contract.currentStage;
-                    const dur    = stageDurations[sNum];
-                    return (
-                      <div key={sNum} style={{ display: "flex", alignItems: "flex-start" }}>
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 58, padding: "0 2px" }}>
-                          {/* Circle — larger for visual impact */}
-                          <div style={{
-                            width: 38, height: 38, borderRadius: "50%", flexShrink: 0,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: isDone ? "1rem" : "0.78rem", fontWeight: 900,
-                            background: isDone
-                              ? `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`
-                              : isCur ? GLASS_BG2 : "rgba(0,0,0,0.05)",
-                            color: isDone ? "#fff" : isCur ? BLUE_M : "#ccc",
-                            border: isCur ? `2.5px solid ${BLUE_M}` : isDone ? "2px solid transparent" : "2px solid rgba(0,0,0,0.08)",
-                            boxShadow: isDone
-                              ? `0 3px 10px rgba(25,118,210,0.35), inset 0 1px 0 rgba(255,255,255,0.2)`
-                              : isCur ? `0 0 0 5px rgba(25,118,210,0.2), 0 2px 8px rgba(25,118,210,0.25)` : "none",
-                            animation: isCur ? "stg-pulse 2s ease-in-out infinite" : "none",
-                            transition: "all 0.3s",
-                          }}>
-                            {isDone ? "✓" : sNum}
+              {/* Stage timeline — beside pct%, last two merged */}
+              {(() => {
+                // Build display stages: 1→9 as-is, then merge last two (10+11) into one
+                const lastTwo = STAGES.slice(-2);
+                const mergedLabel = "التوقيعات والأرشفة";
+                const mergedIcon  = "📋";
+                // merged stage status: done if stage 10 is done, current if stage 10 or 11 is current
+                const m10done = isCompleted ? true : 10 < contract.currentStage;
+                const m11done = isCompleted ? true : 11 < contract.currentStage;
+                const mDone   = m10done && m11done;
+                const mCur    = !isCompleted && (contract.currentStage === 10 || contract.currentStage === 11);
+                const displayStages = [
+                  ...STAGES.slice(0, 9).map((s, i) => ({ ...s, sNum: i + 1, merged: false })),
+                  { label: mergedLabel, role: lastTwo[0].role, icon: mergedIcon, sNum: 10, merged: true },
+                ];
+                return (
+                  <div style={{
+                    background: isCompleted ? "rgba(39,174,96,0.05)" : "rgba(25,118,210,0.04)",
+                    border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.15)" : "rgba(25,118,210,0.12)"}`,
+                    borderRadius: 14, padding: "10px 14px",
+                    boxShadow: "0 2px 12px rgba(25,118,210,0.08)",
+                    overflowX: "auto",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", minWidth: "max-content", direction: "rtl", gap: 0 }}>
+                      {displayStages.map((stg, idx) => {
+                        const sNum   = stg.sNum;
+                        const isDone = stg.merged ? mDone  : (isCompleted ? true : sNum < contract.currentStage);
+                        const isCur  = stg.merged ? mCur   : (!isCompleted && sNum === contract.currentStage);
+                        const dur    = stageDurations[sNum];
+                        const isLast = idx === displayStages.length - 1;
+                        return (
+                          <div key={sNum} style={{ display: "flex", alignItems: "flex-start" }}>
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: stg.merged ? 68 : 58, padding: "0 2px" }}>
+                              {/* Circle */}
+                              <div style={{
+                                width: stg.merged ? 44 : 38, height: stg.merged ? 44 : 38,
+                                borderRadius: "50%", flexShrink: 0,
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                fontSize: isDone ? (stg.merged ? "1.15rem" : "1rem") : "0.78rem", fontWeight: 900,
+                                background: isDone
+                                  ? `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`
+                                  : isCur ? GLASS_BG2 : "rgba(0,0,0,0.05)",
+                                color: isDone ? "#fff" : isCur ? BLUE_M : "#ccc",
+                                border: isCur ? `2.5px solid ${BLUE_M}` : isDone ? "2px solid transparent" : "2px solid rgba(0,0,0,0.08)",
+                                boxShadow: isDone
+                                  ? `0 3px 12px rgba(25,118,210,0.4), inset 0 1px 0 rgba(255,255,255,0.2)`
+                                  : isCur ? `0 0 0 5px rgba(25,118,210,0.2), 0 2px 8px rgba(25,118,210,0.25)` : "none",
+                                animation: isCur ? "stg-pulse 2s ease-in-out infinite" : "none",
+                                transition: "all 0.3s",
+                              }}>
+                                {isDone ? "✓" : sNum}
+                              </div>
+                              {/* Label */}
+                              <div style={{
+                                fontSize: stg.merged ? "0.5rem" : "0.48rem", marginTop: 5, textAlign: "center",
+                                color: isDone ? BLUE : isCur ? BLUE_M : "#bbb",
+                                fontWeight: isCur ? 900 : 600,
+                                lineHeight: 1.35, maxWidth: stg.merged ? 66 : 56,
+                              }}>
+                                {stg.label}
+                              </div>
+                              {/* Badge */}
+                              {isDone && dur && (
+                                <div style={{
+                                  fontSize: "0.4rem", color: BLUE, marginTop: 3,
+                                  background: "rgba(25,118,210,0.09)", borderRadius: 6,
+                                  padding: "2px 5px", fontWeight: 700,
+                                  border: "1px solid rgba(25,118,210,0.2)",
+                                }}>{dur}</div>
+                              )}
+                              {isCur && (
+                                <div style={{
+                                  fontSize: "0.4rem", color: BLUE_M, marginTop: 3, fontWeight: 900,
+                                  background: "rgba(25,118,210,0.12)", borderRadius: 6, padding: "2px 5px",
+                                  border: `1.5px solid rgba(25,118,210,0.3)`,
+                                  animation: "stg-pulse 2s ease-in-out infinite",
+                                }}>جارٍ</div>
+                              )}
+                            </div>
+                            {/* Connector */}
+                            {!isLast && (
+                              <div style={{
+                                width: 14, height: 3, marginTop: stg.merged ? 21 : 18, flexShrink: 0,
+                                background: isDone ? `linear-gradient(90deg, ${BLUE}, ${BLUE_L})` : "rgba(0,0,0,0.07)",
+                                borderRadius: 2, transition: "background 0.4s",
+                              }} />
+                            )}
                           </div>
-                          {/* Label */}
-                          <div style={{
-                            fontSize: "0.48rem", marginTop: 5, textAlign: "center",
-                            color: isDone ? BLUE : isCur ? BLUE_M : "#bbb",
-                            fontWeight: isCur ? 800 : 500,
-                            lineHeight: 1.35, maxWidth: 56,
-                          }}>
-                            {stg.label}
-                          </div>
-                          {/* Duration / current badge */}
-                          {isDone && dur && (
-                            <div style={{
-                              fontSize: "0.4rem", color: BLUE, marginTop: 3,
-                              background: "rgba(25,118,210,0.09)", borderRadius: 6,
-                              padding: "2px 5px", fontWeight: 700,
-                              border: "1px solid rgba(25,118,210,0.2)",
-                            }}>{dur}</div>
-                          )}
-                          {isCur && (
-                            <div style={{
-                              fontSize: "0.4rem", color: BLUE_M, marginTop: 3, fontWeight: 900,
-                              background: "rgba(25,118,210,0.12)", borderRadius: 6, padding: "2px 5px",
-                              border: `1.5px solid rgba(25,118,210,0.3)`,
-                              animation: "stg-pulse 2s ease-in-out infinite",
-                            }}>جارٍ</div>
-                          )}
-                        </div>
-                        {/* Connector */}
-                        {idx < STAGES.length - 1 && (
-                          <div style={{
-                            width: 14, height: 3, marginTop: 18, flexShrink: 0,
-                            background: isDone
-                              ? `linear-gradient(90deg, ${BLUE}, ${BLUE_L})`
-                              : "rgba(0,0,0,0.07)",
-                            borderRadius: 2, transition: "background 0.4s",
-                          }} />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
 
-            </div>{/* end LEFT column */}
+            </div>{/* end LEFT row */}
 
           </div>
 
