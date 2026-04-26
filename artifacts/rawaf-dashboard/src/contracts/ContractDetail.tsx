@@ -5,11 +5,21 @@ import { getContract, getContractAudit, advanceStage, getContractComments, addCo
 import { tafqit } from "./tafqit";
 
 const PRINT_STYLE_ID = "print-contract-detail-style";
-const LABEL_BG    = "#9b7d38";
-const LABEL_COLOR = "#fff";
-const VALUE_BG    = "#fff";
-const VALUE_BG2   = "#fafaf8";
-const BORDER      = "rgba(197,160,89,0.25)";
+
+/* ── Design tokens ── */
+const GOLD2       = "#a88540";
+const GLASS_BG    = "rgba(255,255,255,0.82)";
+const GLASS_BG2   = "rgba(255,255,255,0.65)";
+const GLASS_BORDER= "rgba(197,160,89,0.22)";
+const SHADOW_SM   = "0 2px 10px rgba(0,0,0,0.06)";
+const SHADOW_MD   = "0 6px 28px rgba(0,0,0,0.09)";
+const SHADOW_GOLD = "0 4px 20px rgba(197,160,89,0.18)";
+const BLUR        = "blur(18px)";
+const BLUR_SM     = "blur(10px)";
+
+const LABEL_BG    = "linear-gradient(135deg, #8B6914, #6b4f0e)";
+const VALUE_BG_E  = "rgba(255,255,255,0.9)";
+const VALUE_BG_O  = "rgba(253,249,243,0.95)";
 
 interface Props {
   contractId: number;
@@ -82,79 +92,26 @@ function DataRow({
   leftLabel:  string; leftContent:  CellContent;
   evenRow: boolean;
 }) {
-  const valueBg = evenRow ? "#fff" : "#fdf9f3";
+  const valueBg = evenRow ? VALUE_BG_E : VALUE_BG_O;
   const labelStyle: React.CSSProperties = {
-    background: LABEL_BG, color: LABEL_COLOR,
+    background: LABEL_BG, color: "#fff",
     padding: "9px 13px", fontSize: "0.73rem", fontWeight: 700,
-    borderBottom: `1px solid rgba(255,255,255,0.1)`,
+    borderBottom: "1px solid rgba(255,255,255,0.08)",
     lineHeight: 1.4, whiteSpace: "nowrap",
   };
   const valueStyle: React.CSSProperties = {
     background: valueBg, color: "#2d2416",
     padding: "9px 13px", fontSize: "0.79rem",
-    borderBottom: `1px solid rgba(197,160,89,0.14)`,
+    borderBottom: "1px solid rgba(197,160,89,0.12)",
     lineHeight: 1.4, wordBreak: "break-word",
   };
   return (
     <>
       <div style={labelStyle}>{rightLabel}</div>
       <div style={valueStyle}>{renderCell(rightContent)}</div>
-      <div style={{ ...labelStyle, borderRight: `1px solid rgba(255,255,255,0.15)` }}>{leftLabel}</div>
-      <div style={{ ...valueStyle, borderRight: `1px solid rgba(197,160,89,0.18)` }}>{renderCell(leftContent)}</div>
+      <div style={{ ...labelStyle, borderRight: "1px solid rgba(255,255,255,0.12)" }}>{leftLabel}</div>
+      <div style={{ ...valueStyle, borderRight: "1px solid rgba(197,160,89,0.15)" }}>{renderCell(leftContent)}</div>
     </>
-  );
-}
-
-/* ── Colored file-type icon ── */
-type FileType = "pdf" | "excel" | "word" | "image" | "generic";
-const FILE_CFG: Record<FileType, { bg: string; color: string; icon: string; abbr: string }> = {
-  pdf:     { bg: "rgba(231,76,60,0.1)",   color: "#e74c3c", icon: "📕", abbr: "PDF"  },
-  excel:   { bg: "rgba(39,174,96,0.1)",   color: "#27ae60", icon: "📗", abbr: "XLS"  },
-  word:    { bg: "rgba(41,128,185,0.1)",  color: "#2980b9", icon: "📘", abbr: "DOC"  },
-  image:   { bg: "rgba(142,68,173,0.1)",  color: "#8e44ad", icon: "🖼️", abbr: "IMG"  },
-  generic: { bg: "rgba(0,0,0,0.05)",      color: "#7f8c8d", icon: "📄", abbr: "ملف" },
-};
-function FileIcon({ fileType = "generic", label }: { fileType?: FileType; label: string }) {
-  const c = FILE_CFG[fileType];
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 9, cursor: "pointer" }}>
-      <div style={{
-        width: 34, height: 34, borderRadius: 9, background: c.bg, flexShrink: 0,
-        display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.15rem",
-        border: `1px solid ${c.color}22`,
-      }}>{c.icon}</div>
-      <div>
-        <div style={{ fontSize: "0.73rem", fontWeight: 700, color: "#3a2d1a", lineHeight: 1.3 }}>{label}</div>
-        <div style={{
-          fontSize: "0.55rem", color: c.color, fontWeight: 800,
-          background: c.bg, padding: "1px 7px", borderRadius: 8,
-          display: "inline-block", marginTop: 2,
-        }}>{c.abbr}</div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Single info row inside a section card ── */
-function InfoRow({ label, value, even }: { label: string; value: React.ReactNode; even: boolean }) {
-  return (
-    <div style={{
-      display: "grid", gridTemplateColumns: "190px 1fr",
-      borderBottom: "1px solid rgba(197,160,89,0.12)",
-      background: even ? "#fff" : "#fafaf8",
-    }}>
-      <div style={{
-        background: LABEL_BG, color: LABEL_COLOR,
-        padding: "10px 14px", fontSize: "0.74rem", fontWeight: 700,
-        whiteSpace: "nowrap", lineHeight: 1.45, wordBreak: "keep-all",
-      }}>{label}</div>
-      <div style={{
-        padding: "10px 16px", fontSize: "0.8rem", color: "#2d2416",
-        lineHeight: 1.45, wordBreak: "break-word",
-      }}>
-        {(value === null || value === undefined || value === "") ? <span style={{ color: "#ccc" }}>—</span> : value}
-      </div>
-    </div>
   );
 }
 
@@ -162,13 +119,14 @@ function InfoRow({ label, value, even }: { label: string; value: React.ReactNode
 function SectionCard({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
   return (
     <div style={{
-      background: "#fff", borderRadius: 14, overflow: "hidden",
-      border: "1.5px solid rgba(197,160,89,0.22)",
-      boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+      background: GLASS_BG, backdropFilter: BLUR_SM,
+      borderRadius: 16, overflow: "hidden",
+      border: `1.5px solid ${GLASS_BORDER}`,
+      boxShadow: SHADOW_GOLD,
       marginBottom: 14,
     }}>
       <div style={{
-        background: `linear-gradient(135deg, ${GOLD}, #a88540)`,
+        background: `linear-gradient(135deg, ${GOLD}, ${GOLD2})`,
         padding: "12px 18px", color: "#fff",
         display: "flex", alignItems: "center", gap: 9,
         fontSize: "0.88rem", fontWeight: 800,
@@ -212,18 +170,23 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
 
   return (
     <div style={{
-      background: "#fff", borderRadius: 16, overflow: "hidden",
-      border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+      background: GLASS_BG, backdropFilter: BLUR_SM,
+      borderRadius: 16, overflow: "hidden",
+      border: `1.5px solid ${GLASS_BORDER}`,
+      boxShadow: SHADOW_MD,
       display: "flex", flexDirection: "column", minHeight: 480,
     }}>
       <div style={{
         padding: "14px 20px", borderBottom: `1.5px solid ${GOLD_BORDER}`,
-        background: GOLD_BG, display: "flex", alignItems: "center", gap: 10,
+        background: `linear-gradient(135deg, rgba(197,160,89,0.12), rgba(197,160,89,0.04))`,
+        backdropFilter: BLUR_SM,
+        display: "flex", alignItems: "center", gap: 10,
       }}>
         <div style={{
-          width: 36, height: 36, borderRadius: "50%",
-          background: `linear-gradient(135deg, ${GOLD}, #a88540)`,
+          width: 38, height: 38, borderRadius: "50%",
+          background: `linear-gradient(135deg, ${GOLD}, ${GOLD2})`,
           display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem",
+          boxShadow: SHADOW_GOLD,
         }}>💬</div>
         <div>
           <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "#4a3520" }}>المحادثة الداخلية</div>
@@ -253,6 +216,7 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
                   width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
                   background: color, display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "0.6rem", color: "#fff", fontWeight: 900,
+                  boxShadow: `0 2px 8px ${color}44`,
                 }}>{getInitials(c.actorName)}</div>
                 <div style={{ maxWidth: "72%", display: "flex", flexDirection: "column", gap: 2, alignItems: isMe ? "flex-end" : "flex-start" }}>
                   <div style={{ fontSize: "0.6rem", color: "#bbb", display: "flex", gap: 4 }}>
@@ -260,11 +224,13 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
                     <span>·</span><span>{c.actorRole}</span>
                   </div>
                   <div style={{
-                    background: isMe ? `linear-gradient(135deg, ${GOLD}, #a88540)` : "rgba(0,0,0,0.04)",
+                    background: isMe ? `linear-gradient(135deg, ${GOLD}, ${GOLD2})` : GLASS_BG,
+                    backdropFilter: BLUR_SM,
                     color: isMe ? "#fff" : "#2d2416",
                     borderRadius: isMe ? "14px 14px 3px 14px" : "14px 14px 14px 3px",
                     padding: "9px 13px", fontSize: "0.8rem", lineHeight: 1.55,
-                    border: isMe ? "none" : "1px solid rgba(0,0,0,0.07)",
+                    border: isMe ? "none" : `1px solid ${GLASS_BORDER}`,
+                    boxShadow: isMe ? SHADOW_GOLD : SHADOW_SM,
                   }}>{c.message}</div>
                   <div style={{ fontSize: "0.56rem", color: "#ccc" }}>
                     {new Date(c.createdAt).toLocaleDateString("ar-SA", { day: "numeric", month: "short" })} · {new Date(c.createdAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })}
@@ -277,7 +243,7 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
         <div ref={bottomRef} />
       </div>
 
-      <div style={{ padding: "12px 16px", borderTop: `1.5px solid ${GOLD_BORDER}`, background: "#fafafa" }}>
+      <div style={{ padding: "12px 16px", borderTop: `1.5px solid ${GOLD_BORDER}`, background: "rgba(253,249,243,0.8)", backdropFilter: BLUR_SM }}>
         <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
           <textarea
             value={msg} onChange={e => setMsg(e.target.value)}
@@ -288,14 +254,15 @@ function ChatPanel({ contractId, actorName, actorRole }: { contractId: number; a
               flex: 1, padding: "9px 12px", borderRadius: 10,
               border: `1.5px solid ${GOLD_BORDER}`, fontSize: "0.82rem",
               fontFamily: "'Cairo', 'Tajawal', sans-serif", resize: "none", outline: "none", lineHeight: 1.5,
+              background: "rgba(255,255,255,0.9)",
             }}
           />
           <button onClick={handleSend} disabled={!canSend} style={{
-            width: 40, height: 40, borderRadius: "50%", border: "none", flexShrink: 0,
-            background: canSend ? `linear-gradient(135deg, ${GOLD}, #a88540)` : "#ddd",
+            width: 42, height: 42, borderRadius: "50%", border: "none", flexShrink: 0,
+            background: canSend ? `linear-gradient(135deg, ${GOLD}, ${GOLD2})` : "#ddd",
             color: "#fff", cursor: canSend ? "pointer" : "not-allowed",
-            fontSize: "1.05rem", display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: canSend ? `0 3px 12px rgba(197,160,89,0.4)` : "none", transition: "all 0.2s",
+            fontSize: "1rem", display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: canSend ? SHADOW_GOLD : "none", transition: "all 0.2s",
           }}>➤</button>
         </div>
         {sendErr && <div style={{ fontSize: "0.64rem", color: "#e74c3c", marginTop: 5 }}>⚠ {sendErr}</div>}
@@ -390,7 +357,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
       setLog(await getContractAudit(contractId));
       setNotesExpanded(false);
       setNotes(""); setFilename(""); setRejectReason("");
-      setSuccess(action === "advance" ? "✅ تم الاعتماد والانتقال للمرحلة التالية" : "↩ تم إرجاع العقد للمرحلة الأولى");
+      setSuccess(action === "advance" ? "✅ تم الاعتماد والانتقال للمرحلة التالية" : "تم إرجاع العقد للمرحلة الأولى");
       setTimeout(() => setSuccess(""), 4000);
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "حدث خطأ");
@@ -422,148 +389,219 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
   }, [log]);
 
   if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, color: "#bbb" }}>
-      جاري التحميل...
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, flexDirection: "column", gap: 14, color: "#bbb" }}>
+      <div style={{ width: 44, height: 44, borderRadius: "50%", border: `3px solid ${GOLD_BORDER}`, borderTopColor: GOLD, animation: "spin 0.9s linear infinite" }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <span style={{ fontSize: "0.82rem" }}>جاري تحميل بيانات العقد…</span>
     </div>
   );
   if (!contract) return <div style={{ padding: 32, color: "#e74c3c" }}>لم يُعثر على العقد</div>;
 
-  const canAct    = STAGE_ALLOWED[contract.currentStage]?.includes(role);
+  const canAct      = STAGE_ALLOWED[contract.currentStage]?.includes(role);
   const isCompleted = contract.status === "completed";
-  const pct       = isCompleted ? 100 : Math.round(((contract.currentStage - 1) / 11) * 100);
-  const stage     = STAGES[contract.currentStage - 1];
-  const needsFile = contract.currentStage === 6 || contract.currentStage === 10;
+  const pct         = isCompleted ? 100 : Math.round(((contract.currentStage - 1) / 11) * 100);
+  const stage       = STAGES[contract.currentStage - 1];
+  const needsFile   = contract.currentStage === 6 || contract.currentStage === 10;
 
-  /* ── Build table rows ── */
   const formattedDate = contract.createdAt
     ? new Date(contract.createdAt).toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" }) +
       " — " + new Date(contract.createdAt).toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })
     : null;
 
-
   return (
-    <div dir="rtl" style={{ fontFamily: "'Cairo', 'Tajawal', sans-serif", height: "100%", display: "flex", flexDirection: "column" }}>
-      {/* Main scroll area */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "18px 24px" }}>
+    <div dir="rtl" style={{ fontFamily: "'Cairo', 'Tajawal', sans-serif", height: "100%", display: "flex", flexDirection: "column", background: "linear-gradient(160deg,#F7F4EE 0%,#F0EDE4 100%)" }}>
 
-        {/* Top bar */}
-        <div className="no-print" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <button onClick={onBack} style={{
-            border: "none", background: "none", cursor: "pointer",
-            color: GOLD, fontSize: "0.82rem", fontWeight: 700,
-            display: "flex", alignItems: "center", gap: 6,
-            fontFamily: "'Cairo', 'Tajawal', sans-serif",
-          <button onClick={handlePrint} style={{
-            display: "flex", alignItems: "center", gap: 7,
-            padding: "9px 18px", borderRadius: 10,
-            background: `linear-gradient(135deg, ${GOLD}, #a88540)`,
-            color: "#fff", border: "none", cursor: "pointer",
-            fontSize: "0.82rem", fontWeight: 800,
-            fontFamily: "'Cairo', 'Tajawal', sans-serif",
-            boxShadow: `0 3px 12px rgba(197,160,89,0.35)`,
+      <style>{`
+        @keyframes stg-pulse {
+          0%, 100% { box-shadow: 0 0 0 3px rgba(197,160,89,0.22); }
+          50%       { box-shadow: 0 0 0 7px rgba(197,160,89,0); }
+        }
+        @keyframes fadeSlideUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @media print { .print-only-bar { display: block !important; } }
+      `}</style>
+
+      {/* Main scroll area */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px 22px" }}>
+
+        {/* ── Top bar ── */}
+        <div className="no-print" style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          marginBottom: 16, gap: 10,
+        }}>
+          <button
+            onClick={onBack}
+            style={{
+              border: `1px solid ${GLASS_BORDER}`,
+              background: GLASS_BG,
+              backdropFilter: BLUR_SM,
+              cursor: "pointer",
+              color: GOLD2,
+              fontSize: "0.82rem",
+              fontWeight: 700,
+              display: "flex", alignItems: "center", gap: 6,
+              fontFamily: "'Cairo', 'Tajawal', sans-serif",
+              padding: "8px 16px", borderRadius: 10,
+              boxShadow: SHADOW_SM,
+              transition: "all 0.18s",
+            }}
+          >
+            رجوع للقائمة
+          </button>
+
+          <div style={{ flex: 1, textAlign: "center" }}>
+            <span style={{
+              fontSize: "0.76rem", fontWeight: 800, color: "#7d622a",
+              background: GLASS_BG, backdropFilter: BLUR_SM,
+              border: `1px solid ${GLASS_BORDER}`, borderRadius: 20,
+              padding: "5px 14px", boxShadow: SHADOW_SM,
+            }}>
+              {contract.contractNo}
+            </span>
+          </div>
+
+          <button
+            onClick={handlePrint}
+            style={{
+              display: "flex", alignItems: "center", gap: 7,
+              padding: "9px 18px", borderRadius: 10,
+              background: `linear-gradient(135deg, ${GOLD}, ${GOLD2})`,
+              color: "#fff", border: "none", cursor: "pointer",
+              fontSize: "0.82rem", fontWeight: 800,
+              fontFamily: "'Cairo', 'Tajawal', sans-serif",
+              boxShadow: `0 3px 14px rgba(197,160,89,0.45)`,
+              transition: "all 0.18s",
+            }}
+          >
+            🖨️ طباعة
+          </button>
         </div>
 
-        {/* Contract header card */}
+        {/* ── Contract header card (glassmorphism) ── */}
         <div style={{
-          background: "#fff", borderRadius: 14, padding: "18px 22px", marginBottom: 14,
-          border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+          background: GLASS_BG,
+          backdropFilter: BLUR,
+          borderRadius: 18,
+          padding: "20px 24px",
+          marginBottom: 14,
+          border: `1.5px solid ${GLASS_BORDER}`,
+          boxShadow: `${SHADOW_MD}, ${SHADOW_GOLD}`,
+          animation: "fadeSlideUp 0.32s ease both",
         }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
             <div style={{
-              width: 48, height: 48, borderRadius: 12, flexShrink: 0,
-              background: isCompleted ? "rgba(39,174,96,0.1)" : GOLD_BG,
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.3rem",
-              border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : GOLD_BORDER}`,
+              width: 52, height: 52, borderRadius: 14, flexShrink: 0,
+              background: isCompleted
+                ? "rgba(39,174,96,0.12)"
+                : `linear-gradient(135deg, rgba(197,160,89,0.18), rgba(197,160,89,0.08))`,
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem",
+              border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : GLASS_BORDER}`,
+              boxShadow: isCompleted ? "0 4px 16px rgba(39,174,96,0.15)" : SHADOW_GOLD,
             }}>
               {isCompleted ? "✅" : stage?.icon ?? "📄"}
             </div>
+
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: "0.96rem", fontWeight: 900, color: "#1a1206", marginBottom: 2, lineHeight: 1.4 }}>
+              <div style={{ fontSize: "1rem", fontWeight: 900, color: "#1a1206", marginBottom: 3, lineHeight: 1.4 }}>
                 {contract.title}
               </div>
-              <div style={{ fontSize: "0.7rem", color: "#9b8060" }}>
-                {contract.contractNo}
-                {contract.projectNo && <span> · م {contract.projectNo}</span>}
-                {" · "}{contract.contractType}
+              <div style={{ fontSize: "0.7rem", color: "#9b8060", display: "flex", flexWrap: "wrap", gap: "0 8px" }}>
+                <span>{contract.contractNo}</span>
+                {contract.projectNo && <span>· م {contract.projectNo}</span>}
+                <span>· {contract.contractType}</span>
               </div>
               {contract.value > 0 && (
-                <div style={{ fontSize: "0.76rem", color: "#8B6914", fontWeight: 700, marginTop: 2 }}>
+                <div style={{
+                  fontSize: "0.76rem", color: "#7d622a", fontWeight: 700, marginTop: 4,
+                  background: "rgba(197,160,89,0.1)", borderRadius: 8, padding: "3px 10px",
+                  display: "inline-block", border: `1px solid rgba(197,160,89,0.2)`,
+                }}>
                   💰 {contract.value.toLocaleString("ar-SA")} ريال — {tafqit(contract.value)}
                 </div>
               )}
             </div>
+
             <div style={{
-              textAlign: "center", background: isCompleted ? "rgba(39,174,96,0.08)" : GOLD_BG,
-              border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : GOLD_BORDER}`,
-              borderRadius: 10, padding: "7px 14px", flexShrink: 0,
+              textAlign: "center",
+              background: isCompleted
+                ? "rgba(39,174,96,0.1)"
+                : `linear-gradient(135deg, rgba(197,160,89,0.14), rgba(197,160,89,0.06))`,
+              backdropFilter: BLUR_SM,
+              border: `1.5px solid ${isCompleted ? "rgba(39,174,96,0.3)" : GLASS_BORDER}`,
+              borderRadius: 12, padding: "10px 18px", flexShrink: 0,
+              boxShadow: isCompleted ? "0 4px 16px rgba(39,174,96,0.12)" : SHADOW_GOLD,
             }}>
-              <div style={{ fontSize: "1.4rem", fontWeight: 900, color: isCompleted ? "#27ae60" : GOLD }}>{pct}%</div>
-              <div style={{ fontSize: "0.56rem", color: "#9b8060" }}>إنجاز</div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: isCompleted ? "#27ae60" : GOLD }}>{pct}%</div>
+              <div style={{ fontSize: "0.56rem", color: "#9b8060", marginTop: 2 }}>إنجاز</div>
             </div>
           </div>
-          {/* ── Stage timeline (replaces thin progress bar) ── */}
-          <div className="no-print" style={{ marginTop: 14, overflowX: "auto", paddingBottom: 4 }}>
+
+          {/* ── Stage timeline ── */}
+          <div className="no-print" style={{ marginTop: 18, overflowX: "auto", paddingBottom: 4 }}>
             <div style={{ display: "flex", alignItems: "flex-start", minWidth: "max-content", direction: "rtl" }}>
               {STAGES.map((stg, idx) => {
-                const sNum    = idx + 1;
-                const isDone  = isCompleted ? true : sNum < contract.currentStage;
-                const isCur   = !isCompleted && sNum === contract.currentStage;
-                const dur     = stageDurations[sNum];
+                const sNum   = idx + 1;
+                const isDone = isCompleted ? true : sNum < contract.currentStage;
+                const isCur  = !isCompleted && sNum === contract.currentStage;
+                const dur    = stageDurations[sNum];
                 return (
                   <div key={sNum} style={{ display: "flex", alignItems: "flex-start" }}>
-                    <div style={{
-                      display: "flex", flexDirection: "column", alignItems: "center",
-                      minWidth: 62, padding: "0 3px",
-                    }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 60, padding: "0 3px" }}>
                       {/* Circle */}
                       <div style={{
-                        width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
+                        width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: isDone ? "0.85rem" : "0.7rem", fontWeight: 900,
+                        fontSize: isDone ? "0.88rem" : "0.72rem", fontWeight: 900,
                         background: isDone
-                          ? `linear-gradient(135deg, ${GOLD}, #a88540)`
+                          ? `linear-gradient(135deg, ${GOLD}, ${GOLD2})`
                           : isCur
-                            ? "rgba(197,160,89,0.15)"
-                            : "rgba(0,0,0,0.06)",
+                            ? GLASS_BG2
+                            : "rgba(0,0,0,0.05)",
                         color: isDone ? "#fff" : isCur ? GOLD : "#ccc",
-                        border: isCur ? `2px solid ${GOLD}` : "2px solid transparent",
-                        boxShadow: isCur ? `0 0 0 3px rgba(197,160,89,0.18)` : "none",
+                        border: isCur ? `2px solid ${GOLD}` : isDone ? "2px solid transparent" : "2px solid rgba(0,0,0,0.08)",
+                        boxShadow: isDone ? SHADOW_GOLD : isCur ? `0 0 0 4px rgba(197,160,89,0.18)` : "none",
                         animation: isCur ? "stg-pulse 2s ease-in-out infinite" : "none",
                         transition: "all 0.3s",
                       }}>
                         {isDone ? "✓" : sNum}
                       </div>
-                      {/* Stage label */}
+                      {/* Label */}
                       <div style={{
-                        fontSize: "0.48rem", marginTop: 5, textAlign: "center",
+                        fontSize: "0.47rem", marginTop: 5, textAlign: "center",
                         color: isDone ? "#8B6914" : isCur ? GOLD : "#bbb",
                         fontWeight: isCur ? 800 : 500,
-                        lineHeight: 1.35, maxWidth: 60,
+                        lineHeight: 1.35, maxWidth: 58,
                       }}>
                         {stg.label}
                       </div>
-                      {/* Duration or status */}
+                      {/* Duration badge */}
                       {isDone && dur && (
                         <div style={{
-                          fontSize: "0.42rem", color: "#b8a57c", marginTop: 3,
-                          background: "rgba(197,160,89,0.1)", borderRadius: 8,
+                          fontSize: "0.41rem", color: "#b8a57c", marginTop: 3,
+                          background: "rgba(197,160,89,0.12)", borderRadius: 8,
                           padding: "1px 5px", fontWeight: 600,
+                          border: "1px solid rgba(197,160,89,0.18)",
                         }}>{dur}</div>
                       )}
                       {isCur && (
                         <div style={{
-                          fontSize: "0.42rem", color: GOLD, marginTop: 3, fontWeight: 800,
-                          background: "rgba(197,160,89,0.1)", borderRadius: 8, padding: "1px 5px",
+                          fontSize: "0.41rem", color: GOLD, marginTop: 3, fontWeight: 800,
+                          background: "rgba(197,160,89,0.12)", borderRadius: 8, padding: "1px 5px",
+                          border: `1px solid ${GOLD_BORDER}`,
+                          animation: "stg-pulse 2s ease-in-out infinite",
                         }}>جارٍ</div>
                       )}
                     </div>
-                    {/* Connector line */}
+                    {/* Connector */}
                     {idx < STAGES.length - 1 && (
                       <div style={{
-                        width: 16, height: 2, marginTop: 14, flexShrink: 0,
+                        width: 14, height: 2, marginTop: 15, flexShrink: 0,
                         background: isDone
-                          ? `linear-gradient(90deg, #a88540, ${GOLD})`
-                          : "rgba(0,0,0,0.08)",
+                          ? `linear-gradient(90deg, ${GOLD2}, ${GOLD})`
+                          : "rgba(0,0,0,0.07)",
+                        borderRadius: 2,
                         transition: "background 0.4s",
                       }} />
                     )}
@@ -572,34 +610,32 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
               })}
             </div>
           </div>
-          {/* Print-only thin bar */}
-          <div className="print-only-bar" style={{ marginTop: 8, height: 5, borderRadius: 3, background: "rgba(0,0,0,0.06)", overflow: "hidden" }}>
-            <div style={{
-              height: "100%", width: `${pct}%`, borderRadius: 3,
-              background: isCompleted ? "#27ae60" : `linear-gradient(90deg, ${GOLD}, #a88540)`,
-            }} />
+
+          {/* Print-only bar */}
+          <div className="print-only-bar" style={{ display: "none", marginTop: 8, height: 5, borderRadius: 3, background: "rgba(0,0,0,0.06)", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${pct}%`, borderRadius: 3, background: isCompleted ? "#27ae60" : `linear-gradient(90deg, ${GOLD}, ${GOLD2})` }} />
           </div>
-          <style>{`
-            @keyframes stg-pulse {
-              0%, 100% { box-shadow: 0 0 0 3px rgba(197,160,89,0.18); }
-              50%       { box-shadow: 0 0 0 6px rgba(197,160,89,0); }
-            }
-            @media print { .print-only-bar { display: block !important; } }
-          `}</style>
+
+          {/* Rejection reason */}
           {contract.rejectionReason && !isCompleted && (
             <div style={{
-              marginTop: 10, background: "rgba(231,76,60,0.06)", borderRadius: 9, padding: "10px 14px",
-              border: "1px solid rgba(231,76,60,0.2)", fontSize: "0.76rem", color: "#e74c3c",
+              marginTop: 12, background: "rgba(231,76,60,0.06)", borderRadius: 10, padding: "10px 14px",
+              border: "1px solid rgba(231,76,60,0.2)", fontSize: "0.76rem", color: "#c0392b",
+              display: "flex", alignItems: "flex-start", gap: 8,
             }}>
+              <span style={{ fontSize: "1rem", flexShrink: 0 }}>⚠️</span>
+              <div><strong>سبب الإعادة: </strong>{contract.rejectionReason}</div>
             </div>
           )}
         </div>
 
-        {/* Tab bar */}
+        {/* ── Tab bar (glassmorphism) ── */}
         <div className="no-print" style={{
-          display: "flex", borderRadius: 11, overflow: "hidden",
-          border: `1.5px solid ${GOLD_BORDER}`, marginBottom: 14,
-          background: "#fff", boxShadow: "0 1px 5px rgba(0,0,0,0.04)",
+          display: "flex", borderRadius: 14, overflow: "hidden",
+          border: `1.5px solid ${GLASS_BORDER}`, marginBottom: 14,
+          background: GLASS_BG, backdropFilter: BLUR_SM,
+          boxShadow: SHADOW_SM,
+          animation: "fadeSlideUp 0.36s ease 0.05s both",
         }}>
           {TABS.map((tab, idx) => {
             const isActive = activeTab === tab.id;
@@ -610,16 +646,17 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                 style={{
                   flex: 1, padding: "11px 6px",
                   border: "none",
-                  borderLeft: idx < TABS.length - 1 ? `1px solid ${GOLD_BORDER}` : "none",
-                  background: isActive ? `linear-gradient(135deg, ${GOLD}, #a88540)` : "transparent",
+                  borderLeft: idx < TABS.length - 1 ? `1px solid ${GLASS_BORDER}` : "none",
+                  background: isActive ? `linear-gradient(135deg, ${GOLD}, ${GOLD2})` : "transparent",
                   color: isActive ? "#fff" : "#9b8060",
                   cursor: "pointer", fontSize: "0.76rem", fontWeight: isActive ? 800 : 600,
                   fontFamily: "'Cairo', 'Tajawal', sans-serif",
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
-                  transition: "all 0.18s",
+                  transition: "all 0.2s",
+                  boxShadow: isActive ? "inset 0 1px 0 rgba(255,255,255,0.2)" : "none",
                 }}
               >
-                <span style={{ fontSize: "0.88rem" }}>{tab.icon}</span>
+                <span style={{ fontSize: "0.9rem" }}>{tab.icon}</span>
                 {tab.label}
               </button>
             );
@@ -649,35 +686,39 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
             { r: "EMPTY",                                     rv: "EMPTY",                      l: "توصيفات",                  lv: "ATTACH" },
           ];
           return (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14, animation: "fadeSlideUp 0.3s ease both" }}>
               {/* 4-column data table */}
               <div style={{
-                borderRadius: 14, overflow: "hidden",
-                border: `1.5px solid rgba(197,160,89,0.28)`,
-                boxShadow: "0 4px 20px rgba(197,160,89,0.1)",
+                borderRadius: 16, overflow: "hidden",
+                border: `1.5px solid rgba(197,160,89,0.3)`,
+                boxShadow: `${SHADOW_MD}, ${SHADOW_GOLD}`,
+                background: GLASS_BG,
+                backdropFilter: BLUR_SM,
               }}>
                 {/* Table title */}
                 <div style={{
-                  background: `linear-gradient(135deg, ${GOLD} 0%, #b8923a 50%, #a07c2e 100%)`,
+                  background: `linear-gradient(135deg, ${GOLD} 0%, #b8923a 55%, #9a7628 100%)`,
                   color: "#fff", textAlign: "center",
                   padding: "13px 20px", fontSize: "0.9rem", fontWeight: 900,
                   letterSpacing: "0.04em",
-                }}>بيانات الطلب</div>
+                  textShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                }}>بيانات الطلب والعقد</div>
 
                 {/* Column sub-headers */}
                 <div style={{ display: "grid", gridTemplateColumns: "170px 1fr 170px 1fr" }}>
                   {[
-                    { label: "بيانات الطرف الثاني", borderLeft: "1px solid rgba(255,255,255,0.18)" },
-                    { label: "",                     borderLeft: "none" },
-                    { label: "بيانات المشروع",       borderLeft: "1px solid rgba(255,255,255,0.18)", borderRight: `1px solid rgba(197,160,89,0.3)` },
-                    { label: "",                     borderLeft: "none",                             borderRight: `1px solid rgba(197,160,89,0.3)` },
+                    { label: "بيانات الطرف الثاني" },
+                    { label: "" },
+                    { label: "بيانات المشروع",  borderRight: true },
+                    { label: "",                borderRight: true },
                   ].map((col, i) => (
                     <div key={i} style={{
-                      background: "#7d622a",
-                      color: col.label ? "#fff" : "transparent",
+                      background: "linear-gradient(135deg, #6b4f0e, #5a3f08)",
+                      color: col.label ? "rgba(255,255,255,0.92)" : "transparent",
                       padding: "7px 13px", fontSize: "0.69rem", fontWeight: 800,
-                      textAlign: "center", borderLeft: col.borderLeft,
-                      borderRight: (col as { borderRight?: string }).borderRight,
+                      textAlign: "center",
+                      borderLeft: i === 2 ? "1px solid rgba(255,255,255,0.12)" : undefined,
+                      borderRight: col.borderRight ? "1px solid rgba(197,160,89,0.25)" : undefined,
                     }}>{col.label || "‎"}</div>
                   ))}
                 </div>
@@ -699,9 +740,10 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
 
               {isCompleted && (
                 <div style={{
-                  background: "rgba(39,174,96,0.07)", borderRadius: 14, padding: "16px 20px",
+                  background: "rgba(39,174,96,0.08)", borderRadius: 14, padding: "16px 20px",
                   border: "1.5px solid rgba(39,174,96,0.25)", textAlign: "center",
                   fontSize: "0.9rem", color: "#27ae60", fontWeight: 800,
+                  backdropFilter: BLUR_SM,
                 }}>
                   🏆 العقد مكتمل ومُوقَّع — {contract.contractNo}
                   {contract.signedFilename && <div style={{ fontSize: "0.75rem", marginTop: 5, opacity: 0.8 }}>📜 {contract.signedFilename}</div>}
@@ -714,11 +756,14 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
         {/* ── TAB: المرفقات الذكية ── */}
         {activeTab === "attachments" && (
           <div style={{
-            background: "#fff", borderRadius: 14, padding: "20px 22px",
-            border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            background: GLASS_BG, backdropFilter: BLUR_SM,
+            borderRadius: 16, padding: "20px 22px",
+            border: `1.5px solid ${GLASS_BORDER}`,
+            boxShadow: SHADOW_MD,
+            animation: "fadeSlideUp 0.3s ease both",
           }}>
-            <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#4a3520", marginBottom: 16, display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 4, height: 16, background: GOLD, borderRadius: 2, display: "inline-block" }} />
+            <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#4a3520", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ width: 4, height: 16, background: `linear-gradient(180deg,${GOLD},${GOLD2})`, borderRadius: 2, display: "inline-block" }} />
               المرفقات الذكية
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
@@ -726,18 +771,23 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                 <div
                   key={i}
                   style={{
-                    background: GOLD_BG, borderRadius: 12, padding: "18px 12px",
-                    border: `1.5px solid ${GOLD_BORDER}`, textAlign: "center",
-                    cursor: "pointer", transition: "all 0.18s",
+                    background: `linear-gradient(135deg, rgba(197,160,89,0.1), rgba(197,160,89,0.04))`,
+                    backdropFilter: BLUR_SM,
+                    borderRadius: 14, padding: "18px 12px",
+                    border: `1.5px solid ${GLASS_BORDER}`, textAlign: "center",
+                    cursor: "pointer", transition: "all 0.2s",
                     display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+                    boxShadow: SHADOW_SM,
                   }}
                   onMouseEnter={e => {
-                    (e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 16px rgba(197,160,89,0.25)`;
-                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = SHADOW_GOLD;
+                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
+                    (e.currentTarget as HTMLDivElement).style.borderColor = GOLD_BORDER;
                   }}
                   onMouseLeave={e => {
-                    (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = SHADOW_SM;
                     (e.currentTarget as HTMLDivElement).style.transform = "none";
+                    (e.currentTarget as HTMLDivElement).style.borderColor = GLASS_BORDER;
                   }}
                 >
                   <div style={{ fontSize: "2rem" }}>{doc.icon}</div>
@@ -747,32 +797,36 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                     marginTop: 4, padding: "4px 10px", borderRadius: 20,
                     background: "rgba(197,160,89,0.15)", fontSize: "0.6rem",
                     color: "#8B6914", fontWeight: 700,
+                    border: `1px solid rgba(197,160,89,0.25)`,
                   }}>غير مرفق بعد</div>
                 </div>
               ))}
             </div>
             {(contract.wordFilename || contract.signedFilename) && (
               <div style={{ marginTop: 18 }}>
-                <div style={{ fontSize: "0.74rem", fontWeight: 700, color: "#4a3520", marginBottom: 10 }}>المرفقات المرفوعة</div>
+                <div style={{ fontSize: "0.74rem", fontWeight: 700, color: "#4a3520", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ width: 3, height: 12, background: GOLD, borderRadius: 2, display: "inline-block" }} />
+                  المرفقات المرفوعة
+                </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {contract.wordFilename && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(39,174,96,0.05)", borderRadius: 10, padding: "10px 14px", border: "1px solid rgba(39,174,96,0.2)" }}>
-                      <span style={{ fontSize: "1.2rem" }}>📄</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(39,174,96,0.06)", backdropFilter: BLUR_SM, borderRadius: 12, padding: "11px 16px", border: "1px solid rgba(39,174,96,0.2)", boxShadow: SHADOW_SM }}>
+                      <span style={{ fontSize: "1.3rem" }}>📄</span>
                       <div>
                         <div style={{ fontSize: "0.76rem", fontWeight: 700, color: "#1a1206" }}>نسخة Word</div>
                         <div style={{ fontSize: "0.65rem", color: "#9b8060" }}>{contract.wordFilename}</div>
                       </div>
-                      <div style={{ marginRight: "auto", fontSize: "0.6rem", color: "#27ae60", fontWeight: 700, background: "rgba(39,174,96,0.1)", padding: "3px 8px", borderRadius: 20 }}>مرفوع ✓</div>
+                      <div style={{ marginRight: "auto", fontSize: "0.6rem", color: "#27ae60", fontWeight: 700, background: "rgba(39,174,96,0.1)", padding: "3px 10px", borderRadius: 20 }}>مرفوع ✓</div>
                     </div>
                   )}
                   {contract.signedFilename && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, background: GOLD_BG, borderRadius: 10, padding: "10px 14px", border: `1px solid ${GOLD_BORDER}` }}>
-                      <span style={{ fontSize: "1.2rem" }}>✒️</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(197,160,89,0.08)", backdropFilter: BLUR_SM, borderRadius: 12, padding: "11px 16px", border: `1px solid ${GLASS_BORDER}`, boxShadow: SHADOW_SM }}>
+                      <span style={{ fontSize: "1.3rem" }}>✒️</span>
                       <div>
                         <div style={{ fontSize: "0.76rem", fontWeight: 700, color: "#1a1206" }}>نسخة موقعة</div>
                         <div style={{ fontSize: "0.65rem", color: "#9b8060" }}>{contract.signedFilename}</div>
                       </div>
-                      <div style={{ marginRight: "auto", fontSize: "0.6rem", color: GOLD, fontWeight: 700, background: GOLD_BG, padding: "3px 8px", borderRadius: 20 }}>موقع ✓</div>
+                      <div style={{ marginRight: "auto", fontSize: "0.6rem", color: GOLD, fontWeight: 700, background: GOLD_BG, padding: "3px 10px", borderRadius: 20, border: `1px solid ${GOLD_BORDER}` }}>موقع ✓</div>
                     </div>
                   )}
                 </div>
@@ -784,61 +838,83 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
         {/* ── TAB: سجل الإجراءات ── */}
         {activeTab === "log" && (
           <div style={{
-            background: "#fff", borderRadius: 14, padding: "20px 22px",
-            border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            background: GLASS_BG, backdropFilter: BLUR_SM,
+            borderRadius: 16, padding: "20px 22px",
+            border: `1.5px solid ${GLASS_BORDER}`,
+            boxShadow: SHADOW_MD,
+            animation: "fadeSlideUp 0.3s ease both",
           }}>
-            <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#4a3520", marginBottom: 16, display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 4, height: 16, background: GOLD, borderRadius: 2, display: "inline-block" }} />
+            <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#4a3520", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ width: 4, height: 16, background: `linear-gradient(180deg,${GOLD},${GOLD2})`, borderRadius: 2, display: "inline-block" }} />
               سجل الإجراءات والعمليات
             </div>
             <div style={{ position: "relative" }}>
-              <div style={{ position: "absolute", right: 15, top: 0, bottom: 0, width: 2, background: "rgba(197,160,89,0.2)" }} />
+              <div style={{ position: "absolute", right: 15, top: 0, bottom: 0, width: 2, background: `linear-gradient(180deg, ${GOLD_BORDER}, rgba(197,160,89,0.06))`, borderRadius: 2 }} />
               {log.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "30px 0", color: "#bbb", fontSize: "0.82rem" }}>لا يوجد سجلات بعد</div>
+                <div style={{ textAlign: "center", padding: "40px 0", color: "#bbb", fontSize: "0.82rem" }}>
+                  <div style={{ fontSize: "2rem", marginBottom: 8 }}>📋</div>
+                  لا يوجد سجلات بعد
+                </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                   {log.map((entry) => (
-                    <div key={entry.id} style={{ display: "flex", gap: 16, alignItems: "flex-start", paddingRight: 36 }}>
+                    <div key={entry.id} style={{ display: "flex", gap: 16, alignItems: "flex-start", paddingRight: 38 }}>
                       <div style={{
-                        position: "absolute", right: 6, width: 20, height: 20, borderRadius: "50%",
-                        background: entry.action === "reject" ? "#e74c3c" : GOLD,
+                        position: "absolute", right: 5, width: 22, height: 22, borderRadius: "50%",
+                        background: entry.action === "reject"
+                          ? "linear-gradient(135deg,#e74c3c,#c0392b)"
+                          : `linear-gradient(135deg,${GOLD},${GOLD2})`,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: "0.58rem", color: "#fff", fontWeight: 900, zIndex: 1,
+                        fontSize: "0.6rem", color: "#fff", fontWeight: 900, zIndex: 1,
+                        boxShadow: entry.action === "reject" ? "0 2px 8px rgba(231,76,60,0.35)" : SHADOW_GOLD,
                       }}>
                         {entry.action === "reject" ? "✕" : "✓"}
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        flex: 1, minWidth: 0,
+                        background: GLASS_BG2, backdropFilter: BLUR_SM,
+                        borderRadius: 12, padding: "12px 16px",
+                        border: `1px solid ${entry.action === "reject" ? "rgba(231,76,60,0.12)" : GLASS_BORDER}`,
+                        boxShadow: SHADOW_SM,
+                      }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                           <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#1a1206" }}>
                             م{entry.stage}: {STAGES[entry.stage - 1]?.label}
                           </span>
                           <span style={{
-                            fontSize: "0.62rem", padding: "2px 8px", borderRadius: 20,
+                            fontSize: "0.62rem", padding: "2px 9px", borderRadius: 20,
                             background: entry.action === "reject" ? "rgba(231,76,60,0.1)" : "rgba(39,174,96,0.1)",
-                            color: entry.action === "reject" ? "#e74c3c" : "#27ae60", fontWeight: 700,
+                            color: entry.action === "reject" ? "#e74c3c" : "#27ae60",
+                            fontWeight: 700,
+                            border: `1px solid ${entry.action === "reject" ? "rgba(231,76,60,0.2)" : "rgba(39,174,96,0.2)"}`,
                           }}>
                             {entry.action === "reject" ? "رُفض" : entry.action === "create" ? "أُنشئ" : "اعتُمد"}
                           </span>
                         </div>
-                        <div style={{ fontSize: "0.68rem", color: "#9b8060", marginTop: 2 }}>
+                        <div style={{ fontSize: "0.68rem", color: "#9b8060", marginTop: 4 }}>
                           {entry.actorName} ({entry.actorRole}) · {new Date(entry.createdAt).toLocaleString("ar-SA")}
                         </div>
                         {entry.notes && entry.notes !== `اعتماد المرحلة ${entry.stage}` && entry.notes !== "إنشاء العقد" && (
-                          <div style={{ fontSize: "0.7rem", color: "#6b5c3e", marginTop: 3 }}>💬 {entry.notes}</div>
+                          <div style={{ fontSize: "0.7rem", color: "#6b5c3e", marginTop: 5, paddingTop: 5, borderTop: "1px solid rgba(0,0,0,0.05)" }}>
+                            💬 {entry.notes}
+                          </div>
                         )}
                       </div>
                     </div>
                   ))}
+
                   <div style={{
-                    background: `linear-gradient(135deg, rgba(197,160,89,0.08), transparent)`,
-                    borderRadius: 12, padding: "10px 14px",
-                    border: `1px solid ${GOLD_BORDER}`, textAlign: "center",
+                    background: `linear-gradient(135deg, rgba(197,160,89,0.1), rgba(197,160,89,0.04))`,
+                    backdropFilter: BLUR_SM,
+                    borderRadius: 14, padding: "14px 18px",
+                    border: `1.5px solid ${GLASS_BORDER}`, textAlign: "center",
+                    boxShadow: SHADOW_GOLD,
                   }}>
                     <div style={{ fontSize: "0.88rem", fontWeight: 900, color: GOLD }}>
                       {isCompleted ? "🏆 " : "⚡ "}{pct}% مكتمل
                     </div>
-                    <div style={{ fontSize: "0.66rem", color: "#9b8060" }}>
-                      {isCompleted ? "تم اكتمال جميع المراحل" : `المرحلة الحالية: ${stage?.label}`}
+                    <div style={{ fontSize: "0.66rem", color: "#9b8060", marginTop: 3 }}>
+                      {isCompleted ? "تم اكتمال جميع المراحل بنجاح" : `المرحلة الحالية: ${stage?.label}`}
                     </div>
                   </div>
                 </div>
@@ -854,26 +930,29 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
 
       </div>
 
-      {/* ── Sticky action bar ── */}
+      {/* ── Sticky action bar (glassmorphism) ── */}
       {!isCompleted && (
         <div className="no-print" style={{
-          borderTop: "1.5px solid rgba(197,160,89,0.22)",
-          background: "#fff",
-          boxShadow: "0 -4px 20px rgba(0,0,0,0.08)",
+          borderTop: `1.5px solid ${GLASS_BORDER}`,
+          background: "rgba(255,255,255,0.88)",
+          backdropFilter: BLUR,
+          boxShadow: "0 -6px 28px rgba(0,0,0,0.1)",
           flexShrink: 0,
         }}>
+
           {/* Slide-down notes / return panel */}
           <div style={{
             overflow: "hidden",
-            maxHeight: notesExpanded ? 220 : 0,
-            transition: "max-height 0.32s cubic-bezier(0.4,0,0.2,1)",
+            maxHeight: notesExpanded ? 240 : 0,
+            transition: "max-height 0.35s cubic-bezier(0.4,0,0.2,1)",
           }}>
             <div style={{
-              padding: "14px 20px 10px",
-              borderBottom: "1px solid rgba(231,76,60,0.15)",
-              background: "rgba(231,76,60,0.02)",
+              padding: "16px 20px 12px",
+              borderBottom: "1px solid rgba(231,76,60,0.12)",
+              background: "rgba(254,246,246,0.92)",
+              backdropFilter: BLUR_SM,
             }}>
-              <div style={{ fontSize: "0.74rem", fontWeight: 700, color: "#c0392b", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ fontSize: "0.76rem", fontWeight: 700, color: "#c0392b", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ width: 3, height: 14, background: "#e74c3c", borderRadius: 2, display: "inline-block" }} />
                 سبب الإعادة / الملاحظات
               </div>
@@ -883,49 +962,66 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                 placeholder="اذكر سبب الإعادة أو ملاحظاتك بالتفصيل..."
                 rows={3}
                 style={{
-                  width: "100%", padding: "9px 12px", borderRadius: 10,
-                  border: "1.5px solid rgba(231,76,60,0.3)", fontSize: "0.82rem",
+                  width: "100%", padding: "10px 13px", borderRadius: 10,
+                  border: "1.5px solid rgba(231,76,60,0.28)", fontSize: "0.82rem",
                   fontFamily: "'Cairo', 'Tajawal', sans-serif", resize: "none",
                   outline: "none", boxSizing: "border-box", lineHeight: 1.55,
-                  background: "#fff",
+                  background: "rgba(255,255,255,0.95)",
+                  transition: "border-color 0.2s",
                 }}
+                onFocus={e => e.currentTarget.style.borderColor = "rgba(231,76,60,0.5)"}
+                onBlur={e => e.currentTarget.style.borderColor = "rgba(231,76,60,0.28)"}
               />
-              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+              <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center" }}>
                 <button
                   onClick={() => doAction("reject")}
                   disabled={!rejectReason.trim() || actionBusy}
                   style={{
                     padding: "9px 22px", borderRadius: 10,
-                    background: rejectReason.trim() && !actionBusy ? "rgba(231,76,60,0.9)" : "#ddd",
+                    background: rejectReason.trim() && !actionBusy
+                      ? "linear-gradient(135deg, #e74c3c, #c0392b)"
+                      : "#ddd",
                     color: "#fff", border: "none",
                     cursor: rejectReason.trim() && !actionBusy ? "pointer" : "not-allowed",
                     fontSize: "0.82rem", fontWeight: 800,
                     fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                    boxShadow: rejectReason.trim() ? "0 3px 10px rgba(231,76,60,0.3)" : "none",
+                    boxShadow: rejectReason.trim() ? "0 3px 12px rgba(231,76,60,0.35)" : "none",
                     transition: "all 0.2s",
                   }}
-                {err && <div style={{ fontSize: "0.72rem", color: "#e74c3c", display: "flex", alignItems: "center" }}>⚠ {err}</div>}
+                >
+                  {actionBusy ? "جاري الإعادة..." : "إعادة العقد للمرحلة الأولى"}
+                </button>
+                {err && (
+                  <div style={{ fontSize: "0.72rem", color: "#e74c3c", display: "flex", alignItems: "center", gap: 4 }}>
+                    ⚠ {err}
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* File input row (for stages that need a file) */}
+          {/* File input row */}
           {needsFile && canAct && !notesExpanded && (
             <div style={{ padding: "10px 20px 0" }}>
               <input
-                value={filename} onChange={e => setFilename(e.target.value)}
+                value={filename}
+                onChange={e => setFilename(e.target.value)}
                 placeholder={contract.currentStage === 6 ? "اسم ملف Word (عقد.docx)" : "اسم الملف الموقع (عقد_موقع.pdf)"}
                 style={{
-                  width: "100%", padding: "8px 12px", borderRadius: 9,
+                  width: "100%", padding: "9px 13px", borderRadius: 10,
                   border: `1.5px solid ${GOLD_BORDER}`, fontSize: "0.82rem",
-                  fontFamily: "'Cairo', 'Tajawal', sans-serif", outline: "none", boxSizing: "border-box",
+                  fontFamily: "'Cairo', 'Tajawal', sans-serif", outline: "none",
+                  boxSizing: "border-box", background: "rgba(255,255,255,0.9)",
+                  transition: "border-color 0.2s",
                 }}
+                onFocus={e => e.currentTarget.style.borderColor = GOLD}
+                onBlur={e => e.currentTarget.style.borderColor = GOLD_BORDER}
               />
             </div>
           )}
 
           {/* Main action buttons */}
-          <div style={{ padding: "12px 20px", display: "flex", gap: 10, alignItems: "center" }}>
+          <div style={{ padding: "13px 20px", display: "flex", gap: 10, alignItems: "center" }}>
             {canAct ? (
               <>
                 <button
@@ -933,31 +1029,41 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                   disabled={actionBusy || (needsFile && !filename.trim())}
                   style={{
                     flex: 1, padding: "13px 20px", borderRadius: 12,
-                    background: actionBusy ? "#ccc" : "linear-gradient(135deg, #2ecc71, #27ae60)",
+                    background: actionBusy
+                      ? "#ccc"
+                      : "linear-gradient(135deg, #2ecc71, #27ae60)",
                     color: "#fff", border: "none",
                     cursor: actionBusy || (needsFile && !filename.trim()) ? "not-allowed" : "pointer",
                     fontSize: "0.9rem", fontWeight: 800,
                     fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                    boxShadow: actionBusy ? "none" : "0 4px 16px rgba(39,174,96,0.35)",
+                    boxShadow: actionBusy ? "none" : "0 5px 18px rgba(39,174,96,0.38)",
                     transition: "all 0.2s",
+                    letterSpacing: "0.01em",
                   }}
                 >
-                  {actionBusy ? "⏳ جاري المعالجة..." : contract.currentStage < 11
-                    ? `✅ قبول واعتماد — الانتقال للمرحلة ${contract.currentStage + 1}`
-                    : "✅ قبول واعتماد الختم والإنهاء"}
+                  {actionBusy
+                    ? "⏳ جاري المعالجة..."
+                    : contract.currentStage < 11
+                      ? `✅ قبول واعتماد — الانتقال للمرحلة ${contract.currentStage + 1}`
+                      : "✅ قبول واعتماد الختم والإنهاء"}
                 </button>
+
                 <button
                   onClick={() => { setNotesExpanded(v => !v); setErr(""); }}
                   disabled={actionBusy}
                   style={{
                     padding: "13px 18px", borderRadius: 12,
-                    background: notesExpanded ? "rgba(231,76,60,0.1)" : GOLD_BG,
+                    background: notesExpanded
+                      ? "rgba(231,76,60,0.1)"
+                      : "rgba(255,255,255,0.85)",
+                    backdropFilter: BLUR_SM,
                     color: notesExpanded ? "#c0392b" : "#8B6914",
-                    border: `1.5px solid ${notesExpanded ? "rgba(231,76,60,0.35)" : GOLD_BORDER}`,
+                    border: `1.5px solid ${notesExpanded ? "rgba(231,76,60,0.35)" : GLASS_BORDER}`,
                     cursor: actionBusy ? "not-allowed" : "pointer",
                     fontSize: "0.82rem", fontWeight: 800,
                     fontFamily: "'Cairo', 'Tajawal', sans-serif",
                     transition: "all 0.22s", whiteSpace: "nowrap",
+                    boxShadow: SHADOW_SM,
                   }}
                 >
                   {notesExpanded ? "إلغاء" : "إضافة ملاحظات / إعادة"}
@@ -965,18 +1071,26 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
               </>
             ) : (
               <div style={{
-                flex: 1, padding: "12px 18px", borderRadius: 12,
-                background: "rgba(0,0,0,0.03)", border: "1.5px dashed rgba(0,0,0,0.1)",
+                flex: 1, padding: "13px 18px", borderRadius: 12,
+                background: "rgba(255,255,255,0.6)", backdropFilter: BLUR_SM,
+                border: `1.5px dashed rgba(0,0,0,0.1)`,
                 textAlign: "center", fontSize: "0.78rem", color: "#bbb",
               }}>
-                المرحلة الحالية ({stage?.label}) مخصصة لدور{" "}
-                <strong style={{ color: "#9b8060" }}>{STAGE_ALLOWED[contract.currentStage]?.join(" / ")}</strong>
+                المرحلة الحالية (<strong style={{ color: GOLD2 }}>{stage?.label}</strong>) مخصصة لدور{" "}
+                <strong style={{ color: "#7d622a" }}>{STAGE_ALLOWED[contract.currentStage]?.join(" / ")}</strong>
               </div>
             )}
           </div>
 
           {success && (
-            <div style={{ margin: "0 20px 12px", background: "rgba(39,174,96,0.08)", borderRadius: 10, padding: "10px 14px", color: "#27ae60", fontSize: "0.78rem", fontWeight: 700 }}>
+            <div style={{
+              margin: "0 20px 13px",
+              background: "rgba(39,174,96,0.09)", backdropFilter: BLUR_SM,
+              borderRadius: 10, padding: "10px 16px",
+              color: "#27ae60", fontSize: "0.78rem", fontWeight: 700,
+              border: "1px solid rgba(39,174,96,0.2)",
+              boxShadow: "0 2px 10px rgba(39,174,96,0.1)",
+            }}>
               {success}
             </div>
           )}
