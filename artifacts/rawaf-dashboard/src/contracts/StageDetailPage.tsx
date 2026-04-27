@@ -92,6 +92,8 @@ export default function StageDetailPage({ stageNum, stageNums, hideBack, role, a
   const [addReason, setAddReason]               = useState("");
   const [addSaving, setAddSaving]               = useState(false);
   const [addSuccess, setAddSuccess]             = useState(false);
+  const [addFormTab, setAddFormTab]             = useState<"project" | "vendor">("project");
+  const [addEditForm, setAddEditForm]           = useState<FormData>({ ...EMPTY_FORM });
   const allContractsRef                         = useRef<Contract[]>([]);
 
   // Resolved stage numbers list
@@ -560,8 +562,39 @@ export default function StageDetailPage({ stageNum, stageNums, hideBack, role, a
                         const all = await listContracts({});
                         allContractsRef.current = all;
                         const found = all.find(c => c.contractNo.trim().toLowerCase() === addNoQuery.trim().toLowerCase());
-                        if (found) { setAddContract(found); setAddValue(String(found.value || "")); }
-                        else setAddErr(`لم يُعثر على عقد برقم "${addNoQuery}" — تحقق من الرقم وحاول مجدداً`);
+                        if (found) {
+                          setAddContract(found);
+                          setAddValue(String(found.value || ""));
+                          setAddReason("");
+                          setAddNotes("");
+                          setAddFormTab("project");
+                          setAddEditForm({
+                            title:               found.title              || "",
+                            projectName:         found.projectName        || "",
+                            projectNo:           found.projectNo          || "",
+                            issuerEntity:        found.issuerEntity       || "",
+                            workType:            found.workType           || "",
+                            contractType:        found.contractType       || "خدمات",
+                            value:               found.value != null ? String(found.value) : "",
+                            startDate:           found.startDate          || "",
+                            endDate:             found.endDate            || "",
+                            contractDuration:    found.contractDuration   || "",
+                            priceAnalysisStatus: found.priceAnalysisStatus|| "",
+                            costEstimationDept:  found.costEstimationDept || "",
+                            vendorName:          found.vendorName         || "",
+                            vendorContact:       found.vendorContact      || "",
+                            vendorIban:          found.vendorIban         || "",
+                            vendorTaxNo:         found.vendorTaxNo        || "",
+                            vendorDelegate:      found.vendorDelegate     || "",
+                            vendorDelegateTitle: found.vendorDelegateTitle|| "",
+                            vendorDelegateId:    found.vendorDelegateId   || "",
+                            vendorEmail:         found.vendorEmail        || "",
+                            vendorAddress:       found.vendorAddress      || "",
+                            vendorPostalCode:    found.vendorPostalCode   || "",
+                            vendorRegExpiry:     found.vendorRegExpiry    || "",
+                            vendorEntityType:    found.vendorEntityType   || "",
+                          });
+                        } else setAddErr(`لم يُعثر على عقد برقم "${addNoQuery}" — تحقق من الرقم وحاول مجدداً`);
                       } catch { setAddErr("تعذّر الاتصال بالخادم — حاول مرة أخرى"); }
                       finally { setAddSearching(false); }
                     }}
@@ -577,64 +610,93 @@ export default function StageDetailPage({ stageNum, stageNums, hideBack, role, a
                 {addErr && <div style={{ marginTop: 6, color: "#DC2626", fontSize: "0.73rem", fontWeight: 600 }}>{addErr}</div>}
               </div>
 
-              {/* Step 2: Show fetched contract data (editable) */}
-              {addContract && (
-                <div style={{
-                  background: "#FAFAFA", border: `1px solid rgba(197,160,89,0.28)`,
-                  borderRadius: 12, padding: "16px 18px", marginBottom: 16,
-                }}>
-                  <div style={{ fontSize: "0.72rem", fontWeight: 800, color: GOLD2, marginBottom: 10 }}>
-                    بيانات العقد الأصلي
-                    <span style={{ marginRight: 8, fontSize: "0.65rem", color: "#94A3B8", fontWeight: 500 }}>(للعرض فقط)</span>
+              {/* Step 2: Full editable form + addendum fields */}
+              {addContract && (() => {
+                const aFld = (key: keyof FormData) => addEditForm[key] as string;
+                const aSet = (key: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+                  setAddEditForm(p => ({ ...p, [key]: e.target.value }));
+                const AField = ({ label, fkey, type = "text", placeholder = "" }: { label: string; fkey: keyof FormData; type?: string; placeholder?: string }) => (
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.63rem", fontWeight: 700, color: "#64748B", marginBottom: 4 }}>{label}</label>
+                    <input
+                      type={type}
+                      value={aFld(fkey)}
+                      onChange={aSet(fkey)}
+                      placeholder={placeholder}
+                      style={{ width: "100%", boxSizing: "border-box", padding: "7px 10px", borderRadius: 7, border: "1.5px solid #E2E8F0", fontSize: "0.77rem", fontFamily: "'Cairo','Tajawal',sans-serif", outline: "none" }}
+                      onFocus={e => { e.currentTarget.style.borderColor = GOLD; }}
+                      onBlur={e => { e.currentTarget.style.borderColor = "#E2E8F0"; }}
+                    />
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: "8px 16px" }}>
-                    {[
-                      { label: "رقم العقد",    value: addContract.contractNo },
-                      { label: "العنوان",       value: addContract.title },
-                      { label: "المورد",        value: addContract.vendorName },
-                      { label: "المشروع",       value: addContract.projectName || "—" },
-                      { label: "نوع العقد",    value: addContract.contractType || "—" },
-                      { label: "القيمة (ر.س)", value: addContract.value?.toLocaleString("ar-SA") || "—" },
-                      { label: "تاريخ البداية", value: addContract.startDate || "—" },
-                      { label: "تاريخ النهاية", value: addContract.endDate || "—" },
-                    ].map(f => (
-                      <div key={f.label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                        <span style={{ fontSize: "0.6rem", color: "#94A3B8", fontWeight: 700 }}>{f.label}</span>
-                        <span style={{ fontSize: "0.8rem", color: DARK, fontWeight: 600 }}>{f.value}</span>
-                      </div>
-                    ))}
+                );
+                const ASelect = ({ label, fkey, options }: { label: string; fkey: keyof FormData; options: string[] }) => (
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.63rem", fontWeight: 700, color: "#64748B", marginBottom: 4 }}>{label}</label>
+                    <select value={aFld(fkey)} onChange={aSet(fkey)} style={{ width: "100%", padding: "7px 10px", borderRadius: 7, border: "1.5px solid #E2E8F0", fontSize: "0.77rem", fontFamily: "'Cairo','Tajawal',sans-serif", background: "#fff" }}>
+                      <option value="">— اختر —</option>
+                      {options.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
                   </div>
-                </div>
-              )}
+                );
+                const AFilePill = ({ label }: { label: string }) => (
+                  <div>
+                    <div style={{ fontSize: "0.62rem", fontWeight: 700, color: "#94A3B8", marginBottom: 4 }}>{label}</div>
+                    <button type="button" style={{ padding: "5px 12px", borderRadius: 7, background: "#F8FAFC", border: "1.5px dashed #CBD5E1", fontSize: "0.66rem", color: "#94A3B8", cursor: "default", fontFamily: "'Cairo','Tajawal',sans-serif" }}>رقم ملف</button>
+                  </div>
+                );
+                return (
+                  <form
+                    onSubmit={async e => {
+                      e.preventDefault();
+                      if (!addReason.trim()) { setAddErr("سبب الملحق مطلوب"); return; }
+                      if (!addEditForm.vendorName.trim()) { setAddErr("اسم الطرف الثاني مطلوب"); setAddFormTab("vendor"); return; }
+                      setAddSaving(true); setAddErr("");
+                      try {
+                        const addendumTitle = `ملحق [${addContract.contractNo}]: ${addReason.trim().slice(0, 60)}`;
+                        await createContract({
+                          title: addendumTitle,
+                          projectName:         addEditForm.projectName.trim(),
+                          projectNo:           addEditForm.projectNo.trim(),
+                          issuerEntity:        addEditForm.issuerEntity.trim(),
+                          workType:            addEditForm.workType,
+                          contractType:        "ملحق عقد",
+                          value:               parseFloat(addEditForm.value) || 0,
+                          startDate:           addEditForm.startDate,
+                          endDate:             addEditForm.endDate,
+                          contractDuration:    addEditForm.contractDuration.trim(),
+                          priceAnalysisStatus: addEditForm.priceAnalysisStatus.trim(),
+                          costEstimationDept:  addEditForm.costEstimationDept.trim(),
+                          vendorName:          addEditForm.vendorName.trim(),
+                          vendorContact:       addEditForm.vendorContact.trim(),
+                          vendorIban:          addEditForm.vendorIban.trim(),
+                          vendorTaxNo:         addEditForm.vendorTaxNo.trim(),
+                          vendorDelegate:      addEditForm.vendorDelegate.trim(),
+                          vendorDelegateTitle: addEditForm.vendorDelegateTitle.trim(),
+                          vendorDelegateId:    addEditForm.vendorDelegateId.trim(),
+                          vendorEmail:         addEditForm.vendorEmail.trim(),
+                          vendorAddress:       addEditForm.vendorAddress.trim(),
+                          vendorPostalCode:    addEditForm.vendorPostalCode.trim(),
+                          vendorRegExpiry:     addEditForm.vendorRegExpiry,
+                          vendorEntityType:    addEditForm.vendorEntityType.trim(),
+                          createdBy: actorName || role,
+                        });
+                        setAddSuccess(true);
+                      } catch { setAddErr("حدث خطأ أثناء الحفظ — يرجى المحاولة مجدداً"); }
+                      finally { setAddSaving(false); }
+                    }}
+                  >
+                    {/* Parent contract badge */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                      <span style={{ fontSize: "0.63rem", fontWeight: 700, color: "#94A3B8" }}>مرتبط بالعقد الأصلي:</span>
+                      <span style={{ fontSize: "0.72rem", fontWeight: 900, color: GOLD2, background: `rgba(197,160,89,0.09)`, border: `1px solid rgba(197,160,89,0.22)`, borderRadius: 7, padding: "2px 10px" }}>{addContract.contractNo}</span>
+                      <span style={{ fontSize: "0.72rem", color: DARK, fontWeight: 600, maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{addContract.title}</span>
+                    </div>
 
-              {/* Step 3: Addendum form */}
-              {addContract && (
-                <form
-                  onSubmit={async e => {
-                    e.preventDefault();
-                    if (!addReason.trim()) { setAddErr("سبب الملحق مطلوب"); return; }
-                    setAddSaving(true); setAddErr("");
-                    try {
-                      const addendumTitle = `ملحق [${addContract.contractNo}]: ${addReason.trim().slice(0, 60)}`;
-                      await createContract({
-                        title: addendumTitle,
-                        vendorName: addContract.vendorName,
-                        vendorContact: addContract.vendorContact || "",
-                        value: parseFloat(addValue) || addContract.value || 0,
-                        startDate: addContract.startDate || "",
-                        endDate: addContract.endDate || "",
-                        contractType: "ملحق عقد",
-                        projectName: addContract.projectName || "",
-                        createdBy: actorName || role,
-                      });
-                      setAddSuccess(true);
-                    } catch { setAddErr("حدث خطأ أثناء الحفظ — يرجى المحاولة مجدداً"); }
-                    finally { setAddSaving(false); }
-                  }}
-                >
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: "12px 16px", marginBottom: 14 }}>
-                    <div style={{ gridColumn: "1/-1" }}>
-                      <label style={{ display: "block", fontSize: "0.67rem", fontWeight: 700, color: "#64748B", marginBottom: 5 }}>سبب إنشاء الملحق</label>
+                    {/* سبب الملحق — always visible */}
+                    <div style={{ marginBottom: 14 }}>
+                      <label style={{ display: "block", fontSize: "0.67rem", fontWeight: 700, color: "#64748B", marginBottom: 5 }}>
+                        سبب إنشاء الملحق <span style={{ color: "#EF4444" }}>*</span>
+                      </label>
                       <textarea
                         rows={2}
                         value={addReason}
@@ -644,17 +706,77 @@ export default function StageDetailPage({ stageNum, stageNums, hideBack, role, a
                         style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px", borderRadius: 8, border: "1.5px solid #E2E8F0", fontSize: "0.82rem", fontFamily: "'Cairo','Tajawal',sans-serif", resize: "vertical" }}
                       />
                     </div>
-                    <div>
-                      <label style={{ display: "block", fontSize: "0.67rem", fontWeight: 700, color: "#64748B", marginBottom: 5 }}>قيمة الملحق (ر.س)</label>
-                      <input
-                        type="number"
-                        value={addValue}
-                        onChange={e => setAddValue(e.target.value)}
-                        placeholder="0"
-                        style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px", borderRadius: 8, border: "1.5px solid #E2E8F0", fontSize: "0.82rem", fontFamily: "'Cairo','Tajawal',sans-serif" }}
-                      />
+
+                    {/* Tabs */}
+                    <div style={{ display: "flex", borderBottom: "2px solid #F1F5F9", marginBottom: 14 }}>
+                      {([
+                        { key: "project" as const, label: "بيانات المشروع" },
+                        { key: "vendor"  as const, label: "بيانات الطرف الثاني" },
+                      ]).map(t => (
+                        <button
+                          key={t.key}
+                          type="button"
+                          onClick={() => setAddFormTab(t.key)}
+                          style={{
+                            padding: "9px 18px", border: "none", cursor: "pointer",
+                            background: "none", fontFamily: "'Cairo','Tajawal',sans-serif",
+                            fontSize: "0.78rem", fontWeight: 700,
+                            color: addFormTab === t.key ? GOLD2 : "#94A3B8",
+                            borderBottom: addFormTab === t.key ? `3px solid ${GOLD}` : "3px solid transparent",
+                            marginBottom: -2, transition: "all 0.15s",
+                          }}
+                        >{t.label}</button>
+                      ))}
                     </div>
-                    <div style={{ gridColumn: "1/-1" }}>
+
+                    {/* Tab: بيانات المشروع */}
+                    {addFormTab === "project" && (
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px,1fr))", gap: "12px 16px", marginBottom: 14 }}>
+                        <AField label="عنوان الملحق / موضوع العقد" fkey="title" placeholder="عنوان الملحق" />
+                        <AField label="اسم المشروع" fkey="projectName" placeholder="اسم المشروع" />
+                        <AField label="رقم المشروع" fkey="projectNo" placeholder="PRJ-2024-001" />
+                        <AField label="جهة إصدار الطلب" fkey="issuerEntity" placeholder="الجهة المُصدِرة" />
+                        <ASelect label="نوع الأعمال" fkey="workType" options={WORK_TYPES} />
+                        <AField label="قيمة الملحق (ريال)" fkey="value" type="number" placeholder="0" />
+                        <AField label="مدة العقد" fkey="contractDuration" placeholder="مثال: 12 شهراً" />
+                        <AField label="تاريخ البداية" fkey="startDate" type="date" />
+                        <AField label="تاريخ النهاية"  fkey="endDate"   type="date" />
+                        <AField label="حالة تحليل السعر" fkey="priceAnalysisStatus" placeholder="معتمد / قيد المراجعة" />
+                        <AField label="القسم المرجعي (تقدير التكلفة)" fkey="costEstimationDept" placeholder="القسم الهندسي / المشتريات" />
+                        <AFilePill label="مقارنة مالية وفنية" />
+                        <AFilePill label="عقد مماثل" />
+                        <AFilePill label="المخططات" />
+                        <AFilePill label="توصيفات" />
+                        <AFilePill label="طلب إصدار العقد — BOQ" />
+                      </div>
+                    )}
+
+                    {/* Tab: بيانات الطرف الثاني */}
+                    {addFormTab === "vendor" && (
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px,1fr))", gap: "12px 16px", marginBottom: 14 }}>
+                        <AField label="اسم الطرف الثاني" fkey="vendorName" placeholder="اسم الشركة أو المورد" />
+                        <AField label="جهة الاتصال" fkey="vendorContact" placeholder="رقم الهاتف أو اسم المسؤول" />
+                        <AField label="رقم الأيبان (IBAN)" fkey="vendorIban" placeholder="SA00 0000 0000 0000 0000 0000" />
+                        <AField label="رقم / شهادة ضريبة القيمة المضافة" fkey="vendorTaxNo" placeholder="رقم التسجيل الضريبي" />
+                        <AField label="ممثل الطرف الثاني" fkey="vendorDelegate" placeholder="الاسم الكامل للممثل" />
+                        <AField label="صفته (المسمى الوظيفي)" fkey="vendorDelegateTitle" placeholder="المدير العام / المفوض..." />
+                        <AField label="رقم الهوية / الإقامة للمفوض" fkey="vendorDelegateId" placeholder="رقم الهوية أو الإقامة" />
+                        <AField label="البريد الإلكتروني الرسمي للمنشأة" fkey="vendorEmail" type="email" placeholder="info@company.com" />
+                        <AField label="العنوان الوطني" fkey="vendorAddress" placeholder="المدينة، الحي، الشارع" />
+                        <AField label="الرمز البريدي" fkey="vendorPostalCode" placeholder="00000" />
+                        <AField label="نوع المنشأة" fkey="vendorEntityType" placeholder="شركة ذ.م.م / مؤسسة فردية..." />
+                        <AField label="انتهاء السجل التجاري" fkey="vendorRegExpiry" type="date" />
+                        <AFilePill label="السجل التجاري" />
+                        <AFilePill label="عقد التأسيس" />
+                        <AFilePill label="العرض المالي والفني للمنشأة" />
+                        <AFilePill label="طلب أسعار مماثلة — عرض 1" />
+                        <AFilePill label="طلب أسعار مماثلة — عرض 2" />
+                        <AFilePill label="طلب أسعار مماثلة — عرض 3" />
+                      </div>
+                    )}
+
+                    {/* ملاحظات */}
+                    <div style={{ marginBottom: 14 }}>
                       <label style={{ display: "block", fontSize: "0.67rem", fontWeight: 700, color: "#64748B", marginBottom: 5 }}>ملاحظات إضافية</label>
                       <textarea
                         rows={2}
@@ -664,25 +786,31 @@ export default function StageDetailPage({ stageNum, stageNums, hideBack, role, a
                         style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px", borderRadius: 8, border: "1.5px solid #E2E8F0", fontSize: "0.82rem", fontFamily: "'Cairo','Tajawal',sans-serif", resize: "vertical" }}
                       />
                     </div>
-                  </div>
 
-                  {addErr && <div style={{ marginBottom: 10, color: "#DC2626", fontSize: "0.75rem", fontWeight: 600 }}>{addErr}</div>}
+                    {addErr && <div style={{ marginBottom: 10, color: "#DC2626", fontSize: "0.75rem", fontWeight: 600 }}>{addErr}</div>}
 
-                  <div style={{ display: "flex", gap: 10 }}>
-                    <button type="submit" disabled={addSaving} style={{
-                      padding: "9px 24px", borderRadius: 9, border: "none", cursor: addSaving ? "not-allowed" : "pointer",
-                      background: addSaving ? "#FCD34D" : GOLD, color: DARK,
-                      fontSize: "0.82rem", fontWeight: 700, fontFamily: "'Cairo','Tajawal',sans-serif",
-                    }}>
-                      {addSaving ? "جارٍ الحفظ…" : "إنشاء الملحق"}
-                    </button>
-                    <button type="button" onClick={() => setShowAddendum(false)} style={{
-                      padding: "9px 18px", borderRadius: 9, border: "1px solid #E2E8F0", cursor: "pointer",
-                      background: "#F8FAFC", color: "#64748B", fontSize: "0.82rem", fontWeight: 700, fontFamily: "'Cairo','Tajawal',sans-serif",
-                    }}>إلغاء</button>
-                  </div>
-                </form>
-              )}
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <button type="submit" disabled={addSaving} style={{
+                        padding: "9px 24px", borderRadius: 9, border: "none", cursor: addSaving ? "not-allowed" : "pointer",
+                        background: addSaving ? "#FCD34D" : GOLD, color: DARK,
+                        fontSize: "0.82rem", fontWeight: 700, fontFamily: "'Cairo','Tajawal',sans-serif",
+                      }}>
+                        {addSaving ? "جارٍ الحفظ…" : "إنشاء الملحق"}
+                      </button>
+                      {addFormTab === "project" && (
+                        <button type="button" onClick={() => setAddFormTab("vendor")} style={{ padding: "9px 18px", borderRadius: 9, border: `1.5px solid ${GOLD_BOR}`, cursor: "pointer", background: "#fff", color: GOLD2, fontSize: "0.82rem", fontWeight: 700, fontFamily: "'Cairo','Tajawal',sans-serif" }}>بيانات الطرف الثاني</button>
+                      )}
+                      {addFormTab === "vendor" && (
+                        <button type="button" onClick={() => setAddFormTab("project")} style={{ padding: "9px 18px", borderRadius: 9, border: `1.5px solid ${GOLD_BOR}`, cursor: "pointer", background: "#fff", color: GOLD2, fontSize: "0.82rem", fontWeight: 700, fontFamily: "'Cairo','Tajawal',sans-serif" }}>بيانات المشروع</button>
+                      )}
+                      <button type="button" onClick={() => { setShowAddendum(false); setAddContract(null); }} style={{
+                        padding: "9px 18px", borderRadius: 9, border: "1px solid #E2E8F0", cursor: "pointer",
+                        background: "#F8FAFC", color: "#64748B", fontSize: "0.82rem", fontWeight: 700, fontFamily: "'Cairo','Tajawal',sans-serif",
+                      }}>إلغاء</button>
+                    </div>
+                  </form>
+                );
+              })()}
             </>
           )}
         </div>

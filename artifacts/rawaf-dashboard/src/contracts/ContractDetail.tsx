@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { STAGES } from "./types";
 import type { Contract, ContractComment, StageLog } from "./types";
-import { getContract, getContractAudit, advanceStage, getContractComments, addContractComment } from "./api";
+import { getContract, getContractAudit, advanceStage, getContractComments, addContractComment, updateContract } from "./api";
+import type { CreateContractPayload } from "./api";
 import { tafqit } from "./tafqit";
 
 const PRINT_STYLE_ID = "print-contract-detail-style";
@@ -555,6 +556,14 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
   const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState<TabId>("request");
 
+  // ── Inline edit state (PM + stage 1 only) ──
+  const [editMode, setEditMode]       = useState(false);
+  const [editTab, setEditTab]         = useState<"project" | "vendor">("project");
+  const [editSaving, setEditSaving]   = useState(false);
+  const [editErr, setEditErr]         = useState("");
+  const [editSuccess, setEditSuccess] = useState(false);
+  const [editForm, setEditForm]       = useState<Partial<CreateContractPayload>>({});
+
   function handlePrint() {
     if (!contract) return;
     const existingStyle = document.getElementById(PRINT_STYLE_ID);
@@ -589,6 +598,39 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
     Promise.all([getContract(contractId), getContractAudit(contractId)])
       .then(([c, l]) => { setContract(c); setLog(l); })
       .finally(() => setLoading(false));
+  }
+
+  function openEdit(c: Contract) {
+    setEditForm({
+      title:               c.title              || "",
+      projectName:         c.projectName        || "",
+      projectNo:           c.projectNo          || "",
+      issuerEntity:        c.issuerEntity       || "",
+      workType:            c.workType           || "",
+      contractType:        c.contractType       || "خدمات",
+      value:               c.value ?? 0,
+      startDate:           c.startDate          || "",
+      endDate:             c.endDate            || "",
+      contractDuration:    c.contractDuration   || "",
+      priceAnalysisStatus: c.priceAnalysisStatus|| "",
+      costEstimationDept:  c.costEstimationDept || "",
+      vendorName:          c.vendorName         || "",
+      vendorContact:       c.vendorContact      || "",
+      vendorIban:          c.vendorIban         || "",
+      vendorTaxNo:         c.vendorTaxNo        || "",
+      vendorDelegate:      c.vendorDelegate     || "",
+      vendorDelegateTitle: c.vendorDelegateTitle|| "",
+      vendorDelegateId:    c.vendorDelegateId   || "",
+      vendorEmail:         c.vendorEmail        || "",
+      vendorAddress:       c.vendorAddress      || "",
+      vendorPostalCode:    c.vendorPostalCode   || "",
+      vendorRegExpiry:     c.vendorRegExpiry    || "",
+      vendorEntityType:    c.vendorEntityType   || "",
+    });
+    setEditTab("project");
+    setEditErr("");
+    setEditSuccess(false);
+    setEditMode(true);
   }
 
   useEffect(() => { reload(); }, [contractId]);
@@ -1008,11 +1050,178 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                 <div style={{
                   background: "rgba(25,118,210,0.07)",
                   backdropFilter: BLUR_SM,
-                  color: BLUE, textAlign: "center",
-                  padding: "12px 20px", fontSize: "0.88rem", fontWeight: 900,
+                  color: BLUE,
+                  padding: "10px 18px", fontSize: "0.88rem", fontWeight: 900,
                   letterSpacing: "0.04em",
                   borderBottom: "1px solid rgba(25,118,210,0.12)",
-                }}>بيانات الطلب والعقد</div>
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  position: "relative",
+                }}>
+                  <span>بيانات الطلب والعقد</span>
+                  {role === "مدير المشروع" && contract.currentStage === 1 && (
+                    <button
+                      type="button"
+                      onClick={() => { if (editMode) { setEditMode(false); } else { openEdit(contract); } }}
+                      title={editMode ? "إغلاق التعديل" : "تعديل البيانات"}
+                      style={{
+                        position: "absolute", left: 14,
+                        width: 32, height: 32, borderRadius: 8,
+                        border: editMode ? `1.5px solid ${BLUE_M}` : "1.5px solid rgba(25,118,210,0.3)",
+                        background: editMode ? BLUE_M : "rgba(25,118,210,0.08)",
+                        color: editMode ? "#fff" : BLUE_M,
+                        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "0.88rem", transition: "all 0.18s",
+                      }}
+                      onMouseEnter={e => { if (!editMode) { (e.currentTarget as HTMLElement).style.background = "rgba(25,118,210,0.18)"; } }}
+                      onMouseLeave={e => { if (!editMode) { (e.currentTarget as HTMLElement).style.background = "rgba(25,118,210,0.08)"; } }}
+                    >✏️</button>
+                  )}
+                </div>
+
+                {/* ── Inline edit panel ── */}
+                {editMode && role === "مدير المشروع" && contract.currentStage === 1 && (() => {
+                  const CONTRACT_TYPES_CD = ["خدمات", "مستلزمات", "إنشاءات", "استشارات", "ملحق عقد", "أخرى"];
+                  const WORK_TYPES_CD    = ["مدني", "كهربائي", "ميكانيكي", "تقنية معلومات", "استشاري", "أمني", "أخرى"];
+                  const ef = editForm;
+                  const setEF = (key: keyof CreateContractPayload, val: string | number) =>
+                    setEditForm(p => ({ ...p, [key]: val }));
+                  const EField = ({ label, fkey, type = "text", placeholder = "" }: { label: string; fkey: keyof CreateContractPayload; type?: string; placeholder?: string }) => (
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.63rem", fontWeight: 700, color: "#64748B", marginBottom: 4 }}>{label}</label>
+                      <input
+                        type={type}
+                        value={type === "number" ? (ef[fkey] as number ?? 0) : (ef[fkey] as string ?? "")}
+                        onChange={e => setEF(fkey, type === "number" ? Number(e.target.value) : e.target.value)}
+                        placeholder={placeholder}
+                        style={{ width: "100%", boxSizing: "border-box", padding: "7px 10px", borderRadius: 7, border: "1.5px solid #E2E8F0", fontSize: "0.77rem", fontFamily: "'Cairo','Tajawal',sans-serif", outline: "none" }}
+                        onFocus={e => { e.currentTarget.style.borderColor = BLUE_M; }}
+                        onBlur={e => { e.currentTarget.style.borderColor = "#E2E8F0"; }}
+                      />
+                    </div>
+                  );
+                  const ESelect = ({ label, fkey, options }: { label: string; fkey: keyof CreateContractPayload; options: string[] }) => (
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.63rem", fontWeight: 700, color: "#64748B", marginBottom: 4 }}>{label}</label>
+                      <select value={ef[fkey] as string ?? ""} onChange={e => setEF(fkey, e.target.value)} style={{ width: "100%", padding: "7px 10px", borderRadius: 7, border: "1.5px solid #E2E8F0", fontSize: "0.77rem", fontFamily: "'Cairo','Tajawal',sans-serif", background: "#fff" }}>
+                        <option value="">— اختر —</option>
+                        {options.map(o => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  );
+                  const EFilePill = ({ label }: { label: string }) => (
+                    <div>
+                      <div style={{ fontSize: "0.62rem", fontWeight: 700, color: "#94A3B8", marginBottom: 4 }}>{label}</div>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        <button type="button" style={{ padding: "5px 12px", borderRadius: 7, background: "rgba(25,118,210,0.07)", border: "1.5px dashed rgba(25,118,210,0.3)", fontSize: "0.66rem", color: BLUE_M, cursor: "pointer", fontFamily: "'Cairo','Tajawal',sans-serif" }}>رفع ملف</button>
+                        <button type="button" title="حذف المرفق" style={{ width: 22, height: 22, borderRadius: 5, border: "1px solid #FECACA", background: "#FEF2F2", color: "#DC2626", cursor: "pointer", fontSize: "0.7rem", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                      </div>
+                    </div>
+                  );
+                  return (
+                    <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(25,118,210,0.1)", background: "rgba(25,118,210,0.02)" }}>
+                      {editSuccess ? (
+                        <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: 10, padding: "12px 18px", color: "#15803D", fontWeight: 700, fontSize: "0.85rem" }}>
+                          تم حفظ التعديلات بنجاح.
+                          <button type="button" onClick={() => { setEditMode(false); setEditSuccess(false); }} style={{ marginRight: 14, background: "none", border: "none", color: BLUE_M, cursor: "pointer", fontWeight: 700 }}>إغلاق</button>
+                        </div>
+                      ) : (
+                        <form onSubmit={async e => {
+                          e.preventDefault();
+                          if (!(ef.title as string)?.trim()) { setEditErr("عنوان العقد مطلوب"); setEditTab("project"); return; }
+                          if (!(ef.vendorName as string)?.trim()) { setEditErr("اسم الطرف الثاني مطلوب"); setEditTab("vendor"); return; }
+                          setEditSaving(true); setEditErr("");
+                          try {
+                            const updated = await updateContract(contractId, ef);
+                            setContract(updated);
+                            setEditSuccess(true);
+                          } catch { setEditErr("حدث خطأ أثناء الحفظ — يرجى المحاولة مجدداً"); }
+                          finally { setEditSaving(false); }
+                        }}>
+                          {/* Tabs */}
+                          <div style={{ display: "flex", borderBottom: "2px solid #F1F5F9", marginBottom: 14 }}>
+                            {([
+                              { key: "project" as const, label: "بيانات المشروع" },
+                              { key: "vendor"  as const, label: "بيانات الطرف الثاني" },
+                            ]).map(t => (
+                              <button key={t.key} type="button" onClick={() => setEditTab(t.key)} style={{
+                                padding: "9px 18px", border: "none", cursor: "pointer",
+                                background: "none", fontFamily: "'Cairo','Tajawal',sans-serif",
+                                fontSize: "0.78rem", fontWeight: 700,
+                                color: editTab === t.key ? BLUE_M : "#94A3B8",
+                                borderBottom: editTab === t.key ? `3px solid ${BLUE_M}` : "3px solid transparent",
+                                marginBottom: -2, transition: "all 0.15s",
+                              }}>{t.label}</button>
+                            ))}
+                          </div>
+
+                          {/* Tab: بيانات المشروع */}
+                          {editTab === "project" && (
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px,1fr))", gap: "12px 16px", marginBottom: 14 }}>
+                              <EField label="عنوان العقد / موضوع العقد" fkey="title" placeholder="مثال: عقد صيانة الإنارة الخارجية" />
+                              <EField label="اسم المشروع" fkey="projectName" placeholder="مثال: مشروع أتمتة المنشآت" />
+                              <EField label="رقم المشروع" fkey="projectNo" placeholder="PRJ-2024-001" />
+                              <EField label="جهة إصدار الطلب" fkey="issuerEntity" placeholder="الجهة المُصدِرة" />
+                              <ESelect label="نوع الأعمال" fkey="workType" options={WORK_TYPES_CD} />
+                              <ESelect label="نوع العقد" fkey="contractType" options={CONTRACT_TYPES_CD} />
+                              <EField label="قيمة العقد (ريال)" fkey="value" type="number" placeholder="0" />
+                              <EField label="مدة العقد" fkey="contractDuration" placeholder="مثال: 12 شهراً" />
+                              <EField label="تاريخ البداية" fkey="startDate" type="date" />
+                              <EField label="تاريخ النهاية"  fkey="endDate"   type="date" />
+                              <EField label="حالة تحليل السعر" fkey="priceAnalysisStatus" placeholder="معتمد / قيد المراجعة" />
+                              <EField label="القسم المرجعي (تقدير التكلفة)" fkey="costEstimationDept" placeholder="القسم الهندسي / المشتريات" />
+                              <EFilePill label="مقارنة مالية وفنية" />
+                              <EFilePill label="عقد مماثل" />
+                              <EFilePill label="المخططات" />
+                              <EFilePill label="توصيفات" />
+                              <EFilePill label="طلب إصدار العقد — BOQ" />
+                            </div>
+                          )}
+
+                          {/* Tab: بيانات الطرف الثاني */}
+                          {editTab === "vendor" && (
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px,1fr))", gap: "12px 16px", marginBottom: 14 }}>
+                              <EField label="اسم الطرف الثاني" fkey="vendorName" placeholder="اسم الشركة أو المورد" />
+                              <EField label="جهة الاتصال" fkey="vendorContact" placeholder="رقم الهاتف أو اسم المسؤول" />
+                              <EField label="رقم الأيبان (IBAN)" fkey="vendorIban" placeholder="SA00 0000 0000 0000 0000 0000" />
+                              <EField label="رقم / شهادة ضريبة القيمة المضافة" fkey="vendorTaxNo" placeholder="رقم التسجيل الضريبي" />
+                              <EField label="ممثل الطرف الثاني" fkey="vendorDelegate" placeholder="الاسم الكامل للممثل" />
+                              <EField label="صفته (المسمى الوظيفي)" fkey="vendorDelegateTitle" placeholder="المدير العام / المفوض..." />
+                              <EField label="رقم الهوية / الإقامة للمفوض" fkey="vendorDelegateId" placeholder="رقم الهوية أو الإقامة" />
+                              <EField label="البريد الإلكتروني الرسمي للمنشأة" fkey="vendorEmail" type="email" placeholder="info@company.com" />
+                              <EField label="العنوان الوطني" fkey="vendorAddress" placeholder="المدينة، الحي، الشارع" />
+                              <EField label="الرمز البريدي" fkey="vendorPostalCode" placeholder="00000" />
+                              <EField label="نوع المنشأة" fkey="vendorEntityType" placeholder="شركة ذ.م.م / مؤسسة فردية..." />
+                              <EField label="انتهاء السجل التجاري" fkey="vendorRegExpiry" type="date" />
+                              <EFilePill label="السجل التجاري" />
+                              <EFilePill label="عقد التأسيس" />
+                              <EFilePill label="العرض المالي والفني للمنشأة" />
+                              <EFilePill label="طلب أسعار مماثلة — عرض 1" />
+                              <EFilePill label="طلب أسعار مماثلة — عرض 2" />
+                              <EFilePill label="طلب أسعار مماثلة — عرض 3" />
+                            </div>
+                          )}
+
+                          {editErr && <div style={{ marginBottom: 10, color: "#DC2626", fontSize: "0.75rem", fontWeight: 600 }}>{editErr}</div>}
+
+                          <div style={{ display: "flex", gap: 10 }}>
+                            <button type="submit" disabled={editSaving} style={{
+                              padding: "9px 24px", borderRadius: 9, border: "none", cursor: editSaving ? "not-allowed" : "pointer",
+                              background: editSaving ? "#93C5FD" : BLUE_M, color: "#fff",
+                              fontSize: "0.82rem", fontWeight: 700, fontFamily: "'Cairo','Tajawal',sans-serif",
+                            }}>{editSaving ? "جارٍ الحفظ…" : "حفظ التعديلات"}</button>
+                            {editTab === "project" && (
+                              <button type="button" onClick={() => setEditTab("vendor")} style={{ padding: "9px 18px", borderRadius: 9, border: `1.5px solid ${BLUE_M}`, cursor: "pointer", background: "#fff", color: BLUE_M, fontSize: "0.82rem", fontWeight: 700, fontFamily: "'Cairo','Tajawal',sans-serif" }}>بيانات الطرف الثاني</button>
+                            )}
+                            {editTab === "vendor" && (
+                              <button type="button" onClick={() => setEditTab("project")} style={{ padding: "9px 18px", borderRadius: 9, border: `1.5px solid ${BLUE_M}`, cursor: "pointer", background: "#fff", color: BLUE_M, fontSize: "0.82rem", fontWeight: 700, fontFamily: "'Cairo','Tajawal',sans-serif" }}>بيانات المشروع</button>
+                            )}
+                            <button type="button" onClick={() => setEditMode(false)} style={{ padding: "9px 18px", borderRadius: 9, border: "1px solid #E2E8F0", cursor: "pointer", background: "#F8FAFC", color: "#64748B", fontSize: "0.82rem", fontWeight: 700, fontFamily: "'Cairo','Tajawal',sans-serif" }}>إغلاق</button>
+                          </div>
+                        </form>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Column sub-headers — glass style */}
                 <div style={{ display: "grid", gridTemplateColumns: "185px 1fr 185px 1fr" }}>
