@@ -627,24 +627,14 @@ export default function ContractDashboard({ role, actorName, contracts, pendingC
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ width: 4, height: 32, borderRadius: 2, background: `linear-gradient(180deg,${AMBER},rgba(245,166,35,0.4))` }}/>
                   <div>
-                    <div style={{ fontSize: "0.96rem", fontWeight: 900, color: "#FFFFFF" }}>مسار العقود — الهيكل التنظيمي الوظيفي</div>
-                    <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.65)", marginTop: 2 }}>11 مرحلة تصاعدياً · انقر على المرحلة للتفاصيل الكاملة</div>
+                    <div style={{ fontSize: "0.96rem", fontWeight: 900, color: "#FFFFFF" }}>مسار اصدار العقود</div>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  {myRoleInfo && (
-                    <div style={{
-                      background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)",
-                      borderRadius: 20, padding: "5px 14px",
-                      fontSize: "0.6rem", fontWeight: 800, color: "#FFFFFF",
-                    }}>
-                      مرحلتك: {myRoleInfo.stage.map(s => `م${s}`).join("، ")}
-                    </div>
-                  )}
                   <div style={{
                     background: AMBER, borderRadius: 20, padding: "5px 12px",
                     fontSize: "0.58rem", color: "#1A1A1A", fontWeight: 800,
-                  }}>{maxCount} أعلى عدد</div>
+                  }}>{cActive} إجمالي الطلبات النشطة</div>
                 </div>
               </div>
               <div style={{ padding: "8px 22px 14px" }}>
