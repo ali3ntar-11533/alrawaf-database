@@ -92,15 +92,21 @@ function TruncatedBadge({
 }
 
 export default function MainContent({ contractor, allContractors, filteredContractors, isLoading, onSelectId, customPrice, emptyStateMessage }: Props) {
-  // Active stat tab index (0=custom/current, 1=min, 2=avg, 3=max) — resets when contractor changes
+  // Active stat tab index (0=custom/current, 1=min, 2=avg, 3=max)
   const [activeStat, setActiveStat] = useState(0);
-  useEffect(() => { setActiveStat(0); }, [contractor?.id]);
-  // When a custom price is entered, default comparison to the avg tab (index 2)
+  // Prevents resettig activeStat when contractor change was triggered by clicking a stat cell
+  const skipStatReset = useRef(false);
+  useEffect(() => {
+    if (skipStatReset.current) { skipStatReset.current = false; return; }
+    setActiveStat(customPrice && customPrice > 0 ? 2 : 0);
+  }, [contractor?.id]);
+  // When a custom price is entered for the first time, default to avg comparison (index 2)
   const prevCustomPrice = useRef<number | null | undefined>(null);
   useEffect(() => {
     const had = prevCustomPrice.current && prevCustomPrice.current > 0;
     const has  = customPrice && customPrice > 0;
     if (has && !had) setActiveStat(2);
+    if (!has && had) setActiveStat(0);
     prevCustomPrice.current = customPrice;
   }, [customPrice]);
 
@@ -478,15 +484,18 @@ export default function MainContent({ contractor, allContractors, filteredContra
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", width: "100%" }}>
             {footerStats.map((stat, i) => {
               const isActive = activeStat === i;
-              const baseBg   = isActive ? "rgba(255,255,255,0.09)" : "transparent";
+              // Active cell uses the stat's own color as tinted background
+              const colorHex = stat.color.startsWith("#") ? stat.color : "#c5a059";
+              const baseBg   = isActive ? `${colorHex}28` : "transparent";
+              const hoverBg  = isActive ? `${colorHex}38` : `${colorHex}12`;
               return (
                 <div
                   key={i}
                   onClick={() => {
                     setActiveStat(i);
                     if (stat.id != null) {
+                      skipStatReset.current = true; // prevent useEffect from resetting activeStat
                       onSelectId(stat.id);
-                      // Scroll content area back to top so contractor panel is visible
                       requestAnimationFrame(() => {
                         const area = document.querySelector<HTMLElement>(".content-area");
                         if (area) area.scrollTo({ top: 0, behavior: "smooth" });
@@ -496,28 +505,35 @@ export default function MainContent({ contractor, allContractors, filteredContra
                   }}
                   style={{
                     padding: "14px 8px", textAlign: "center",
-                    borderLeft: i < 3 ? "1px solid rgba(255,255,255,0.06)" : "none",
-                    borderTop: isActive ? `2px solid ${stat.color}` : "2px solid transparent",
+                    borderLeft: i < 3 ? `1px solid ${colorHex}22` : "none",
+                    borderTop: isActive ? `2px solid ${stat.color}` : "2px solid rgba(255,255,255,0.05)",
                     background: baseBg,
                     minWidth: 0,
                     overflow: "hidden",
                     cursor: "pointer",
-                    transition: "background 0.18s, border-top 0.18s",
+                    transition: "background 0.2s, border-top 0.2s",
                     position: "relative",
+                    boxShadow: isActive ? `inset 0 -2px 0 ${colorHex}55` : "none",
                   }}
                   title={`${stat.label}: ${stat.value} — ${stat.sub2}`}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.13)")}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.background = hoverBg)}
                   onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.background = baseBg)}
                 >
                   {(stat as any).isBest && (
-                    <div style={{ position: "absolute", top: "4px", right: "4px", fontSize: "0.45rem", color: "#2baa74", background: "rgba(43,170,116,0.15)", borderRadius: "4px", padding: "1px 4px", fontWeight: 700, whiteSpace: "nowrap" }}>
+                    <div style={{ position: "absolute", top: "4px", right: "4px", fontSize: "0.45rem", color: "#2baa74", background: "rgba(43,170,116,0.18)", borderRadius: "4px", padding: "1px 4px", fontWeight: 700, whiteSpace: "nowrap" }}>
                       ✓ الأفضل
                     </div>
                   )}
-                  <div style={{ fontSize: "0.48rem", color: isActive ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.32)", letterSpacing: "0.04em", marginBottom: "5px", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{stat.label}</div>
-                  <div style={{ fontSize: "0.82rem", fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: "4px", direction: "ltr", fontVariantNumeric: "tabular-nums", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{stat.value}</div>
-                  <div style={{ fontSize: "0.45rem", color: "rgba(255,255,255,0.2)", marginBottom: "3px", whiteSpace: "nowrap" }}>ريال سعودي</div>
-                  <div style={{ fontSize: "0.48rem", color: "rgba(255,255,255,0.28)", textAlign: "center", lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{stat.sub2}</div>
+                  {/* Active badge */}
+                  {isActive && customPrice && customPrice > 0 && i > 0 && (
+                    <div style={{ position: "absolute", top: "4px", left: "4px", fontSize: "0.42rem", color: colorHex, background: `${colorHex}22`, borderRadius: "4px", padding: "1px 5px", fontWeight: 700, whiteSpace: "nowrap", border: `1px solid ${colorHex}55` }}>
+                      مرجع المقارنة
+                    </div>
+                  )}
+                  <div style={{ fontSize: "0.48rem", color: isActive ? stat.color : "rgba(255,255,255,0.32)", letterSpacing: "0.04em", marginBottom: "5px", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: isActive ? 700 : 400 }}>{stat.label}</div>
+                  <div style={{ fontSize: "0.82rem", fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: "4px", direction: "ltr", fontVariantNumeric: "tabular-nums", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: isActive ? `0 0 14px ${colorHex}88` : "none" }}>{stat.value}</div>
+                  <div style={{ fontSize: "0.45rem", color: isActive ? `${colorHex}88` : "rgba(255,255,255,0.18)", marginBottom: "3px", whiteSpace: "nowrap" }}>ريال سعودي</div>
+                  <div style={{ fontSize: "0.48rem", color: isActive ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.22)", textAlign: "center", lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{stat.sub2}</div>
                 </div>
               );
             })}
