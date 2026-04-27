@@ -5,6 +5,7 @@ export interface FilterState {
   businessProgram: string;
   workType:        string;
   workCategory:    string;
+  itemPrice:       string;
 }
 
 export const EMPTY_FILTERS: FilterState = {
@@ -14,4 +15,5 @@ export const EMPTY_FILTERS: FilterState = {
   businessProgram: "",
   workType:        "",
   workCategory:    "",
+  itemPrice:       "",
 };

@@ -48,6 +48,7 @@ const FILTER_DEFS: {
   { key: "businessProgram", label: "برنامج الأعمال",     getter: (c) => (c as any).businessProgram ?? "" },
   { key: "workType",        label: "نوع الأعمال",        getter: (c) => c.workType },
   { key: "workCategory",    label: "نوع البند",          getter: (c) => (c as any).workCategory ?? "" },
+  { key: "itemPrice",       label: "سعر البند",          getter: (c) => c.price ? String(c.price) : "" },
 ];
 
 /* ═══════════════════════════════════════════════════════════

@@ -49,6 +49,7 @@ function contractorMatchesFilters(c: Contractor, filters: FilterState): boolean 
   if (filters.businessProgram && normalize((c as any).businessProgram ?? "") !== normalize(filters.businessProgram)) return false;
   if (filters.workType   && normalize(c.workType)   !== normalize(filters.workType))   return false;
   if (filters.workCategory && normalize((c as any).workCategory ?? "") !== normalize(filters.workCategory)) return false;
+  if (filters.itemPrice && String(c.price ?? "") !== filters.itemPrice) return false;
   return true;
 }
 
