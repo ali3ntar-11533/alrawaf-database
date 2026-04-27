@@ -119,11 +119,36 @@ export interface CreateContractPayload {
   contractType?: string;
   projectName?: string;
   createdBy?: string;
+  /* Extended project fields */
+  projectNo?: string;
+  workType?: string;
+  contractDuration?: string;
+  priceAnalysisStatus?: string;
+  issuerEntity?: string;
+  costEstimationDept?: string;
+  /* Second party (vendor) details */
+  vendorIban?: string;
+  vendorTaxNo?: string;
+  vendorDelegate?: string;
+  vendorDelegateTitle?: string;
+  vendorDelegateId?: string;
+  vendorEmail?: string;
+  vendorAddress?: string;
+  vendorPostalCode?: string;
+  vendorRegExpiry?: string;
+  vendorEntityType?: string;
 }
 
 export async function createContract(payload: CreateContractPayload): Promise<Contract> {
   return apiFetch<Contract>("/contracts", {
     method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateContract(id: number, payload: Partial<CreateContractPayload>): Promise<Contract> {
+  return apiFetch<Contract>(`/contracts/${id}`, {
+    method: "PUT",
     body: JSON.stringify(payload),
   });
 }

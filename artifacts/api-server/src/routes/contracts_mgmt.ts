@@ -316,6 +316,27 @@ router.get("/contracts/:id", async (req, res): Promise<void> => {
   res.json(serializeContract(row));
 });
 
+router.put("/contracts/:id", async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const [contract] = await db.select().from(contractsTable).where(eq(contractsTable.id, id));
+  if (!contract) { res.status(404).json({ error: "العقد غير موجود" }); return; }
+  if (contract.currentStage !== 1) {
+    res.status(403).json({ error: "التعديل مقيّد للمرحلة الأولى فقط" }); return;
+  }
+
+  const parsed = CreateContractBody.partial().safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const [updated] = await db.update(contractsTable)
+    .set({ ...parsed.data, updatedAt: new Date() })
+    .where(eq(contractsTable.id, id))
+    .returning();
+
+  res.json(serializeContract(updated));
+});
+
 router.delete("/contracts/:id", async (req, res): Promise<void> => {
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
