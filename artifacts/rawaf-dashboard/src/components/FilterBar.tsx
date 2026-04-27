@@ -361,8 +361,9 @@ function PriceInputPill({
         value={value}
         disabled={disabled}
         onChange={(e) => !disabled && onChange(e.target.value)}
+        className="price-no-spin"
         style={{
-          width:       "72px",
+          width:       "44px",
           background:  "transparent",
           border:      "none",
           outline:     "none",
@@ -372,8 +373,6 @@ function PriceInputPill({
           fontFamily:  "Tajawal, sans-serif",
           direction:   "ltr",
           textAlign:   "right",
-          appearance:  "textfield",
-          MozAppearance: "textfield" as any,
           cursor:      disabled ? "not-allowed" : "text",
         }}
         onFocus={(e) => {
@@ -445,6 +444,9 @@ export default function FilterBar({ filters, onFiltersChange, search = "" }: Fil
         }
         .filter-pill-scroll::-webkit-scrollbar { display: none; }
         .filter-pill-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .price-no-spin::-webkit-inner-spin-button,
+        .price-no-spin::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
+        .price-no-spin { -moz-appearance: textfield; }
       `}</style>
 
       <div style={{ marginTop: "14px", maxWidth: "720px", margin: "14px auto 0" }}>
@@ -490,11 +492,11 @@ export default function FilterBar({ filters, onFiltersChange, search = "" }: Fil
               onClick={clearAll}
               style={{
                 display: "flex", alignItems: "center", gap: "5px",
-                padding: "4px 9px", borderRadius: "20px",
-                border: "1.5px solid rgba(231,76,60,0.4)",
+                padding: "3px 7px", borderRadius: "20px",
+                border: "1px solid rgba(231,76,60,0.4)",
                 background: "rgba(231,76,60,0.10)",
                 color: "rgba(231,76,60,0.85)",
-                fontSize: "0.62rem", fontWeight: 700,
+                fontSize: "0.57rem", fontWeight: 700,
                 fontFamily: "Tajawal, sans-serif",
                 cursor: "pointer", whiteSpace: "nowrap",
                 flexShrink: 0, transition: "all 0.15s",
