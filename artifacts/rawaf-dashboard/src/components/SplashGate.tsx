@@ -331,7 +331,10 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
         {/* CTA Buttons */}
         <div style={{ display: "flex", flexDirection: "column", gap: 14, alignItems: "center", width: "100%" }}>
           <button
-            onClick={() => { setShowLogin(true); setError(""); setUsername(""); setPassword(""); }}
+            onClick={() => {
+              sessionStorage.setItem(CONTRACTS_KEY, "1");
+              setPhase("contracts");
+            }}
             onMouseEnter={() => setBtnHover(true)}
             onMouseLeave={() => setBtnHover(false)}
             style={{
@@ -350,14 +353,11 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
               width: "100%", justifyContent: "center",
             }}
           >
-            الدخول للنظام الآمن
+            نظام إدارة العقود
           </button>
 
           <button
-            onClick={() => {
-              sessionStorage.setItem(CONTRACTS_KEY, "1");
-              setPhase("contracts");
-            }}
+            onClick={() => { setShowLogin(true); setError(""); setUsername(""); setPassword(""); }}
             onMouseEnter={() => setCBtnHover(true)}
             onMouseLeave={() => setCBtnHover(false)}
             style={{
@@ -375,7 +375,7 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
               width: "100%", justifyContent: "center",
             }}
           >
-            نظام إدارة العقود
+            نظام قاعدة البيانات
           </button>
         </div>
 
