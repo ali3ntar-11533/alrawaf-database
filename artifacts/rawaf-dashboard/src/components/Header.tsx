@@ -224,7 +224,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
       </div>
 
       {/* ── Advanced Filter Bar ── */}
-      <FilterBar filters={filters} onFiltersChange={onFiltersChange} />
+      <FilterBar filters={filters} onFiltersChange={onFiltersChange} search={search} />
     </header>
   );
 }

@@ -9,6 +9,7 @@ import { EMPTY_FILTERS } from "./filterTypes";
 interface FilterBarProps {
   filters:         FilterState;
   onFiltersChange: (f: FilterState) => void;
+  search?:         string;
 }
 
 /* ── Arabic normalizer for in-dropdown search ── */
@@ -147,13 +148,13 @@ function FilterDropdown({
   const pillStyle: React.CSSProperties = {
     display:        "flex",
     alignItems:     "center",
-    gap:            "6px",
-    padding:        "7px 14px",
+    gap:            "4px",
+    padding:        "4px 9px",
     borderRadius:   "20px",
     border:         isActive ? "1.5px solid var(--gold)" : "1.5px solid rgba(197,160,89,0.30)",
     background:     isActive ? "rgba(197,160,89,0.18)" : "rgba(255,255,255,0.08)",
     color:          isActive ? "var(--gold)" : "rgba(255,255,255,0.80)",
-    fontSize:       "0.73rem",
+    fontSize:       "0.63rem",
     fontWeight:     isActive ? 700 : 500,
     fontFamily:     "Tajawal, sans-serif",
     cursor:         "pointer",
@@ -330,8 +331,8 @@ function PriceInputPill({
   const pillStyle: React.CSSProperties = {
     display:        "flex",
     alignItems:     "center",
-    gap:            "6px",
-    padding:        "5px 10px 5px 14px",
+    gap:            "4px",
+    padding:        "4px 8px 4px 10px",
     borderRadius:   "20px",
     border:         disabled
       ? "1.5px solid rgba(197,160,89,0.12)"
@@ -349,8 +350,8 @@ function PriceInputPill({
   };
 
   return (
-    <div style={pillStyle} title={disabled ? "يُفعَّل عند تحديد فلتر آخر (نوع البند، المشروع، ...)" : undefined}>
-      <span style={{ fontSize: "0.73rem", color: isActive ? "var(--gold)" : "rgba(255,255,255,0.55)", fontWeight: 600, fontFamily: "Tajawal, sans-serif", flexShrink: 0 }}>
+    <div style={pillStyle} title={disabled ? "يُفعَّل عند كتابة نص في البحث أو تحديد فلتر آخر" : undefined}>
+      <span style={{ fontSize: "0.63rem", color: isActive ? "var(--gold)" : "rgba(255,255,255,0.55)", fontWeight: 600, fontFamily: "Tajawal, sans-serif", flexShrink: 0 }}>
         سعر البند
       </span>
       <input
@@ -361,11 +362,11 @@ function PriceInputPill({
         disabled={disabled}
         onChange={(e) => !disabled && onChange(e.target.value)}
         style={{
-          width:       "90px",
+          width:       "72px",
           background:  "transparent",
           border:      "none",
           outline:     "none",
-          fontSize:    "0.73rem",
+          fontSize:    "0.63rem",
           fontWeight:  isActive ? 700 : 400,
           color:       isActive ? "var(--gold)" : "rgba(255,255,255,0.45)",
           fontFamily:  "Tajawal, sans-serif",
@@ -408,7 +409,7 @@ function PriceInputPill({
 /* ═══════════════════════════════════════════════════════════
    FilterBar — main export
    ═══════════════════════════════════════════════════════════ */
-export default function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
+export default function FilterBar({ filters, onFiltersChange, search = "" }: FilterBarProps) {
   const { data: contractors = [], isLoading } = useContractorsContext();
 
   /* Compute all unique-value lists up-front from cached data */
@@ -422,8 +423,8 @@ export default function FilterBar({ filters, onFiltersChange }: FilterBarProps) 
 
   const activeCount = Object.values(filters).filter(Boolean).length;
 
-  /* "سعر البند" pill is only enabled when at least one other filter is active */
-  const hasOtherFilters = FILTER_DEFS.some((def) => filters[def.key] !== "");
+  /* "سعر البند" pill is enabled when there's a search term OR at least one other filter */
+  const hasOtherFilters = search.trim() !== "" || FILTER_DEFS.some((def) => filters[def.key] !== "");
 
   function setFilter(key: keyof FilterState, value: string) {
     onFiltersChange({ ...filters, [key]: value });
@@ -455,7 +456,7 @@ export default function FilterBar({ filters, onFiltersChange }: FilterBarProps) 
           className="filter-pill-scroll"
           style={{
             display: "flex", alignItems: "center", justifyContent: "center",
-            gap: "8px", overflowX: "auto", flexWrap: "nowrap",
+            gap: "5px", overflowX: "auto", flexWrap: "nowrap",
           }}
         >
           {isLoading ? (
@@ -489,11 +490,11 @@ export default function FilterBar({ filters, onFiltersChange }: FilterBarProps) 
               onClick={clearAll}
               style={{
                 display: "flex", alignItems: "center", gap: "5px",
-                padding: "7px 13px", borderRadius: "20px",
+                padding: "4px 9px", borderRadius: "20px",
                 border: "1.5px solid rgba(231,76,60,0.4)",
                 background: "rgba(231,76,60,0.10)",
                 color: "rgba(231,76,60,0.85)",
-                fontSize: "0.68rem", fontWeight: 700,
+                fontSize: "0.62rem", fontWeight: 700,
                 fontFamily: "Tajawal, sans-serif",
                 cursor: "pointer", whiteSpace: "nowrap",
                 flexShrink: 0, transition: "all 0.15s",
