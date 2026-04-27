@@ -318,12 +318,14 @@ function PriceInputPill({
   value,
   onChange,
   onClear,
+  disabled,
 }: {
   value:    string;
   onChange: (v: string) => void;
   onClear:  () => void;
+  disabled: boolean;
 }) {
-  const isActive = value.trim() !== "";
+  const isActive = !disabled && value.trim() !== "";
 
   const pillStyle: React.CSSProperties = {
     display:        "flex",
@@ -331,17 +333,23 @@ function PriceInputPill({
     gap:            "6px",
     padding:        "5px 10px 5px 14px",
     borderRadius:   "20px",
-    border:         isActive ? "1.5px solid var(--gold)" : "1.5px solid rgba(197,160,89,0.30)",
-    background:     isActive ? "rgba(197,160,89,0.18)" : "rgba(255,255,255,0.08)",
+    border:         disabled
+      ? "1.5px solid rgba(197,160,89,0.12)"
+      : isActive ? "1.5px solid var(--gold)" : "1.5px solid rgba(197,160,89,0.30)",
+    background:     disabled
+      ? "rgba(255,255,255,0.03)"
+      : isActive ? "rgba(197,160,89,0.18)" : "rgba(255,255,255,0.08)",
     backdropFilter: "blur(8px)",
     boxShadow:      isActive ? "0 0 12px rgba(197,160,89,0.22)" : "none",
     transition:     "all 0.18s",
     flexShrink:     0,
     whiteSpace:     "nowrap",
+    opacity:        disabled ? 0.38 : 1,
+    cursor:         disabled ? "not-allowed" : "default",
   };
 
   return (
-    <div style={pillStyle}>
+    <div style={pillStyle} title={disabled ? "يُفعَّل عند تحديد فلتر آخر (نوع البند، المشروع، ...)" : undefined}>
       <span style={{ fontSize: "0.73rem", color: isActive ? "var(--gold)" : "rgba(255,255,255,0.55)", fontWeight: 600, fontFamily: "Tajawal, sans-serif", flexShrink: 0 }}>
         سعر البند
       </span>
@@ -350,7 +358,8 @@ function PriceInputPill({
         min={0}
         placeholder="0"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        onChange={(e) => !disabled && onChange(e.target.value)}
         style={{
           width:       "90px",
           background:  "transparent",
@@ -358,18 +367,21 @@ function PriceInputPill({
           outline:     "none",
           fontSize:    "0.73rem",
           fontWeight:  isActive ? 700 : 400,
-          color:       isActive ? "var(--gold)" : "rgba(255,255,255,0.55)",
+          color:       isActive ? "var(--gold)" : "rgba(255,255,255,0.45)",
           fontFamily:  "Tajawal, sans-serif",
           direction:   "ltr",
           textAlign:   "right",
           appearance:  "textfield",
           MozAppearance: "textfield" as any,
+          cursor:      disabled ? "not-allowed" : "text",
         }}
         onFocus={(e) => {
+          if (disabled) return;
           (e.currentTarget.parentElement as HTMLDivElement).style.borderColor = "rgba(197,160,89,0.75)";
           (e.currentTarget.parentElement as HTMLDivElement).style.background  = "rgba(197,160,89,0.22)";
         }}
         onBlur={(e) => {
+          if (disabled) return;
           (e.currentTarget.parentElement as HTMLDivElement).style.borderColor = isActive ? "var(--gold)" : "rgba(197,160,89,0.30)";
           (e.currentTarget.parentElement as HTMLDivElement).style.background  = isActive ? "rgba(197,160,89,0.18)" : "rgba(255,255,255,0.08)";
         }}
@@ -410,6 +422,9 @@ export default function FilterBar({ filters, onFiltersChange }: FilterBarProps) 
 
   const activeCount = Object.values(filters).filter(Boolean).length;
 
+  /* "سعر البند" pill is only enabled when at least one other filter is active */
+  const hasOtherFilters = FILTER_DEFS.some((def) => filters[def.key] !== "");
+
   function setFilter(key: keyof FilterState, value: string) {
     onFiltersChange({ ...filters, [key]: value });
   }
@@ -435,12 +450,12 @@ export default function FilterBar({ filters, onFiltersChange }: FilterBarProps) 
         {/* Divider */}
         <div style={{ borderTop: "1px solid rgba(197,160,89,0.13)", marginBottom: "12px" }} />
 
-        {/* Pills row */}
+        {/* Pills row — single scrollable line */}
         <div
           className="filter-pill-scroll"
           style={{
             display: "flex", alignItems: "center", justifyContent: "center",
-            gap: "8px", overflowX: "auto", flexWrap: "wrap", rowGap: "6px",
+            gap: "8px", overflowX: "auto", flexWrap: "nowrap",
           }}
         >
           {isLoading ? (
@@ -463,6 +478,7 @@ export default function FilterBar({ filters, onFiltersChange }: FilterBarProps) 
                 value={filters.itemPrice}
                 onChange={(v) => setFilter("itemPrice", v)}
                 onClear={() => clearFilter("itemPrice")}
+                disabled={!hasOtherFilters}
               />
             </>
           )}
