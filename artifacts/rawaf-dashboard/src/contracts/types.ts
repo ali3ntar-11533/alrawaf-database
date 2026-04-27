@@ -59,29 +59,29 @@ export interface ContractStats {
 export type ContractTab = "dashboard" | "requests" | "tracking" | "archive" | "analytics";
 
 export const STAGES: { label: string; role: string; icon: string }[] = [
-  { label: "إنشاء العقد",            role: "مدير المشروع",       icon: "📝" },
-  { label: "مراجعة القطاع",          role: "مدير القطاع",        icon: "🏢" },
-  { label: "مراجعة PMO",             role: "مدير PMO",           icon: "📊" },
-  { label: "المراجعة القانونية",      role: "أخصائي العقود",      icon: "⚖️" },
-  { label: "صياغة البنود",           role: "أدمن العقود",        icon: "✍️" },
-  { label: "رفع مسودة العقد",        role: "أدمن العقود",        icon: "📤" },
-  { label: "اعتماد مدير الإدارة",    role: "مدير الإدارة",       icon: "✅" },
-  { label: "اعتماد نائب الرئيس",     role: "نائب الرئيس",        icon: "🔑" },
-  { label: "الختم الذهبي — CEO",      role: "الرئيس التنفيذي",   icon: "👑" },
-  { label: "رفع النسخة الموقعة",     role: "مسؤول التوقيعات",   icon: "📜" },
-  { label: "الأرشفة والإغلاق",       role: "مسؤول التوقيعات",   icon: "🏦" },
+  { label: "إدارة المشروع",                role: "إدارة المشروع",                icon: "📝" },
+  { label: "إدارة المحفظة",               role: "إدارة المحفظة",               icon: "🏢" },
+  { label: "مراقبة التكاليف - PMO",        role: "مراقبة التكاليف - PMO",        icon: "📊" },
+  { label: "مراجعة الطلب",                role: "مراجعة الطلب",                icon: "⚖️" },
+  { label: "تحرير العقد",                  role: "تحرير العقد",                  icon: "✍️" },
+  { label: "المراجعة الفنية للعقد",        role: "المراجعة الفنية للعقد",        icon: "📤" },
+  { label: "اعتماد مدير الإدارة",          role: "اعتماد مدير الإدارة",          icon: "✅" },
+  { label: "اعتماد نائب الرئيس التنفيذي", role: "اعتماد نائب الرئيس التنفيذي", icon: "🔑" },
+  { label: "اعتماد الرئيس التنفيذي",       role: "اعتماد الرئيس التنفيذي",       icon: "👑" },
+  { label: "التوقيعات والأرشفة",           role: "التوقيعات والأرشفة",           icon: "🏦" },
 ];
 
 export const ROLES: { name: string; icon: string; stage: number[] }[] = [
-  { name: "مدير المشروع",     icon: "👷", stage: [1] },
-  { name: "مدير القطاع",      icon: "🏢", stage: [2] },
-  { name: "مدير PMO",         icon: "📊", stage: [3] },
-  { name: "أخصائي العقود",    icon: "⚖️", stage: [4] },
-  { name: "أدمن العقود",      icon: "✍️", stage: [5, 6] },
-  { name: "مدير الإدارة",     icon: "✅", stage: [7] },
-  { name: "نائب الرئيس",      icon: "🔑", stage: [8] },
-  { name: "الرئيس التنفيذي", icon: "👑", stage: [9] },
-  { name: "مسؤول التوقيعات", icon: "📜", stage: [10, 11] },
+  { name: "إدارة المشروع",                icon: "👷", stage: [1] },
+  { name: "إدارة المحفظة",               icon: "🏢", stage: [2] },
+  { name: "مراقبة التكاليف - PMO",        icon: "📊", stage: [3] },
+  { name: "مراجعة الطلب",                icon: "⚖️", stage: [4] },
+  { name: "تحرير العقد",                  icon: "✍️", stage: [5] },
+  { name: "المراجعة الفنية للعقد",        icon: "📤", stage: [6] },
+  { name: "اعتماد مدير الإدارة",          icon: "✅", stage: [7] },
+  { name: "اعتماد نائب الرئيس التنفيذي", icon: "🔑", stage: [8] },
+  { name: "اعتماد الرئيس التنفيذي",       icon: "👑", stage: [9] },
+  { name: "التوقيعات والأرشفة",           icon: "🏦", stage: [10] },
 ];
 
 export interface ContractComment {

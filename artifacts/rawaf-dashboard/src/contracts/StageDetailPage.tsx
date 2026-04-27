@@ -4,7 +4,7 @@ import { STAGES } from "./types";
 import type { Contract } from "./types";
 import logoImg from "@assets/logo_1776506524686.jpg";
 
-const PM_ROLE = "مدير المشروع";
+const PM_ROLE = "إدارة المشروع";
 const CONTRACT_TYPES = ["خدمات", "مستلزمات", "إنشاءات", "استشارات", "ملحق عقد", "أخرى"];
 const WORK_TYPES    = ["مدني", "كهربائي", "ميكانيكي", "تقنية معلومات", "استشاري", "أمني", "أخرى"];
 

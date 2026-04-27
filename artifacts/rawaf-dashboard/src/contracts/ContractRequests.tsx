@@ -106,8 +106,8 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
       setFormErr("يرجى تعبئة اسم العقد واسم المورد على الأقل");
       return;
     }
-    if (role !== "مدير المشروع") {
-      setFormErr("إنشاء العقد مقيّد لدور مدير المشروع فقط");
+    if (role !== "إدارة المشروع") {
+      setFormErr("إنشاء العقد مقيّد لدور إدارة المشروع فقط");
       return;
     }
     setSaving(true);
@@ -157,7 +157,7 @@ export default function ContractRequests({ role, actorName, onOpenContract, filt
             <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "#0C1427" }}>طلبات العقود</div>
             <div style={{ fontSize: "0.54rem", color: "#64748B", marginTop: 1 }}>إدارة جميع طلبات وعقود الشركة</div>
           </div>
-          {role === "مدير المشروع" && (
+          {role === "إدارة المشروع" && (
             <button
               onClick={() => setShowForm(true)}
               style={{

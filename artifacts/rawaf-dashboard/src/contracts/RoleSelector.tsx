@@ -178,10 +178,10 @@ export default function RoleSelector({ onSelect, pendingByRole }: Props) {
 export function computePendingByRole(contracts: Contract[]): Record<string, number> {
   const result: Record<string, number> = {};
   const stageToRole: Record<number, string> = {
-    1: "مدير المشروع", 2: "مدير القطاع", 3: "مدير PMO", 4: "أخصائي العقود",
-    5: "أدمن العقود", 6: "أدمن العقود", 7: "مدير الإدارة",
-    8: "نائب الرئيس", 9: "الرئيس التنفيذي",
-    10: "مسؤول التوقيعات", 11: "مسؤول التوقيعات",
+    1: "إدارة المشروع",    2: "إدارة المحفظة",              3: "مراقبة التكاليف - PMO",
+    4: "مراجعة الطلب",    5: "تحرير العقد",                 6: "المراجعة الفنية للعقد",
+    7: "اعتماد مدير الإدارة", 8: "اعتماد نائب الرئيس التنفيذي", 9: "اعتماد الرئيس التنفيذي",
+    10: "التوقيعات والأرشفة",
   };
   for (const c of contracts) {
     if (c.status !== "completed") {

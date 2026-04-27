@@ -6,17 +6,16 @@ import { db, contractsTable, contractStageLogTable, contractDocumentsTable, cont
 const router: IRouter = Router();
 
 const STAGE_ROLES: Record<number, string[]> = {
-  1:  ["مدير المشروع"],
-  2:  ["مدير القطاع"],
-  3:  ["مدير PMO"],
-  4:  ["أخصائي العقود"],
-  5:  ["أدمن العقود"],
-  6:  ["أدمن العقود"],
-  7:  ["مدير الإدارة"],
-  8:  ["نائب الرئيس"],
-  9:  ["الرئيس التنفيذي"],
-  10: ["مسؤول التوقيعات"],
-  11: ["مسؤول التوقيعات"],
+  1:  ["إدارة المشروع"],
+  2:  ["إدارة المحفظة"],
+  3:  ["مراقبة التكاليف - PMO"],
+  4:  ["مراجعة الطلب"],
+  5:  ["تحرير العقد"],
+  6:  ["المراجعة الفنية للعقد"],
+  7:  ["اعتماد مدير الإدارة"],
+  8:  ["اعتماد نائب الرئيس التنفيذي"],
+  9:  ["اعتماد الرئيس التنفيذي"],
+  10: ["التوقيعات والأرشفة"],
 };
 
 interface FilterParams {
@@ -109,7 +108,7 @@ const CreateContractBody = z.object({
   endDate:      z.string().default(""),
   contractType: z.string().default("خدمات"),
   projectName:  z.string().default(""),
-  createdBy:    z.string().default("مدير المشروع"),
+  createdBy:    z.string().default("إدارة المشروع"),
   projectNo:            z.string().optional(),
   workType:             z.string().optional(),
   contractDuration:     z.string().optional(),
@@ -380,7 +379,7 @@ router.post("/contracts/:id/documents", async (req, res): Promise<void> => {
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
   const parsed = z.object({
-    stage:      z.number().int().min(1).max(11),
+    stage:      z.number().int().min(1).max(10),
     filename:   z.string().min(1),
     fileType:   z.string().default("pdf"),
     uploadedBy: z.string().default(""),
@@ -456,9 +455,9 @@ router.patch("/contracts/:id/stage", async (req, res): Promise<void> => {
   }
 
   const nextStage = contract.currentStage + 1;
-  const isComplete = nextStage > 11;
+  const isComplete = nextStage > 10;
   const updates: Partial<typeof contractsTable.$inferInsert> = {
-    currentStage: isComplete ? 11 : nextStage,
+    currentStage: isComplete ? 10 : nextStage,
     status: isComplete ? "completed" : "active",
     rejectionReason: undefined,
     updatedAt: new Date(),
@@ -525,18 +524,18 @@ router.post("/contracts/:id/comments", async (req, res): Promise<void> => {
 
 // ── Seed endpoint ──────────────────────────────────────────────────
 const STAGE_ACTOR_ROLES: Record<number, string> = {
-  1: "مدير المشروع", 2: "مدير القطاع", 3: "مدير PMO",
-  4: "أخصائي العقود", 5: "أدمن العقود", 6: "أدمن العقود",
-  7: "مدير الإدارة", 8: "نائب الرئيس", 9: "الرئيس التنفيذي",
-  10: "مسؤول التوقيعات", 11: "مسؤول التوقيعات",
+  1: "إدارة المشروع",   2: "إدارة المحفظة",              3: "مراقبة التكاليف - PMO",
+  4: "مراجعة الطلب",   5: "تحرير العقد",                 6: "المراجعة الفنية للعقد",
+  7: "اعتماد مدير الإدارة", 8: "اعتماد نائب الرئيس التنفيذي", 9: "اعتماد الرئيس التنفيذي",
+  10: "التوقيعات والأرشفة",
 };
 const STAGE_ACTOR_NAMES: Record<number, string> = {
   1: "أحمد المطيري", 2: "سعد العتيبي", 3: "منى الشهري", 4: "عبدالله الحربي",
   5: "سارة القحطاني", 6: "سارة القحطاني", 7: "ناصر الدوسري", 8: "ريم العنزي",
-  9: "خالد المالكي", 10: "هند السبيعي", 11: "هند السبيعي",
+  9: "خالد المالكي", 10: "هند السبيعي",
 };
 
-// active contracts — one per stage 1→11
+// active contracts — one per stage 1→10
 const ACTIVE_CONTRACTS: Array<{
   title: string; vendorName: string; vendorContact: string; value: number;
   contractType: string; projectName: string; createdBy: string;
@@ -609,17 +608,17 @@ const REJECTED_CONTRACTS = [
 // seed sample comments per first few contracts
 const SEED_COMMENTS: { contractIndex: number; comments: Array<{ actorName: string; actorRole: string; message: string }> }[] = [
   { contractIndex: 0, comments: [
-    { actorName: "سعد العتيبي", actorRole: "مدير القطاع", message: "يرجى مراجعة الشروط الفنية قبل الرفع للمرحلة التالية" },
-    { actorName: "أحمد المطيري", actorRole: "مدير المشروع", message: "تم مراجعة الشروط والتحقق من توافقها مع المواصفات المعتمدة" },
+    { actorName: "سعد العتيبي", actorRole: "إدارة المحفظة", message: "يرجى مراجعة الشروط الفنية قبل الرفع للمرحلة التالية" },
+    { actorName: "أحمد المطيري", actorRole: "إدارة المشروع", message: "تم مراجعة الشروط والتحقق من توافقها مع المواصفات المعتمدة" },
   ]},
   { contractIndex: 2, comments: [
-    { actorName: "منى الشهري", actorRole: "مدير PMO", message: "هل تم الحصول على الموافقة المبدئية من الجهة المختصة؟" },
-    { actorName: "سعد العتيبي", actorRole: "مدير القطاع", message: "نعم، تم الحصول على الموافقة رقم 4455/2025 بتاريخ أمس" },
-    { actorName: "منى الشهري", actorRole: "مدير PMO", message: "ممتاز، سيتم إنهاء المراجعة خلال يومي عمل" },
+    { actorName: "منى الشهري", actorRole: "مراقبة التكاليف - PMO", message: "هل تم الحصول على الموافقة المبدئية من الجهة المختصة؟" },
+    { actorName: "سعد العتيبي", actorRole: "إدارة المحفظة", message: "نعم، تم الحصول على الموافقة رقم 4455/2025 بتاريخ أمس" },
+    { actorName: "منى الشهري", actorRole: "مراقبة التكاليف - PMO", message: "ممتاز، سيتم إنهاء المراجعة خلال يومي عمل" },
   ]},
   { contractIndex: 5, comments: [
-    { actorName: "ناصر الدوسري", actorRole: "مدير الإدارة", message: "العقد جاهز للاعتماد، تأكدت من استيفاء جميع الشروط" },
-    { actorName: "ريم العنزي", actorRole: "نائب الرئيس", message: "شكراً، سأقوم بالمراجعة النهائية واتخاذ القرار غداً" },
+    { actorName: "ناصر الدوسري", actorRole: "اعتماد مدير الإدارة", message: "العقد جاهز للاعتماد، تأكدت من استيفاء جميع الشروط" },
+    { actorName: "ريم العنزي", actorRole: "اعتماد نائب الرئيس التنفيذي", message: "شكراً، سأقوم بالمراجعة النهائية واتخاذ القرار غداً" },
   ]},
 ];
 
@@ -643,7 +642,7 @@ router.post("/contracts/seed", async (_req, res): Promise<void> => {
     const [row] = await db.insert(contractsTable).values({ ...fields, currentStage: 1, status: "active" }).returning();
     const contractNo = overrideContractNo ?? generateContractNo(row.id);
     await db.update(contractsTable).set({ contractNo }).where(eq(contractsTable.id, row.id));
-    await db.insert(contractStageLogTable).values({ contractId: row.id, stage: 1, action: "create", actorRole: "مدير المشروع", actorName: fields.createdBy, notes: "إنشاء العقد" });
+    await db.insert(contractStageLogTable).values({ contractId: row.id, stage: 1, action: "create", actorRole: "إدارة المشروع", actorName: fields.createdBy, notes: "إنشاء العقد" });
 
     if (rejectionInfo) {
       // advance up to rejection stage
@@ -658,9 +657,9 @@ router.post("/contracts/seed", async (_req, res): Promise<void> => {
       for (let s = 1; s < targetStage; s++) {
         await db.insert(contractStageLogTable).values({ contractId: row.id, stage: s, action: "advance", actorRole: STAGE_ACTOR_ROLES[s], actorName: STAGE_ACTOR_NAMES[s], notes: `اعتماد المرحلة ${s}` });
         const nextStage = s + 1;
-        const isLast = nextStage > 11;
+        const isLast = nextStage > 10;
         await db.update(contractsTable).set({
-          currentStage: isLast ? 11 : nextStage,
+          currentStage: isLast ? 10 : nextStage,
           status: finalStatus === "completed" && isLast ? "completed" : "active",
           updatedAt: new Date(),
         }).where(eq(contractsTable.id, row.id));
@@ -678,7 +677,7 @@ router.post("/contracts/seed", async (_req, res): Promise<void> => {
     insertedIds.push(id);
   }
   for (const c of COMPLETED_CONTRACTS) {
-    const id = await insertContract(c, 12, "completed");
+    const id = await insertContract(c, 11, "completed");
     insertedIds.push(id);
   }
   for (const c of REJECTED_CONTRACTS) {

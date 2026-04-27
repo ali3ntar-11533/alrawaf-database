@@ -33,7 +33,7 @@ const DASH_STAGES = [
   { label: STAGES[6].label,  sub: STAGES[6].role,   stageNums: [7]      },
   { label: STAGES[7].label,  sub: STAGES[7].role,   stageNums: [8]      },
   { label: STAGES[8].label,  sub: STAGES[8].role,   stageNums: [9]      },
-  { label: "التوقيعات والأرشفة", sub: STAGES[9].role, stageNums: [10, 11] },
+  { label: STAGES[9].label, sub: STAGES[9].role, stageNums: [10] },
 ];
 
 function daysSince(iso: string) {

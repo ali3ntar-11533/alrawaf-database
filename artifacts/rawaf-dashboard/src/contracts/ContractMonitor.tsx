@@ -59,7 +59,7 @@ interface PhaseReport {
 }
 
 const SYSTEM_RECIPIENTS = [
-  "مدير المشروع",
+  "إدارة المشروع",
   "مدير العقود",
   "المدير العام",
   "المشرف الهندسي",

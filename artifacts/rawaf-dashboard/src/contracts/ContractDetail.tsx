@@ -37,29 +37,29 @@ interface Props {
 }
 
 const STAGE_ALLOWED: Record<number, string[]> = {
-  1:  ["مدير المشروع"],
-  2:  ["مدير القطاع"],
-  3:  ["مدير PMO"],
-  4:  ["أخصائي العقود"],
-  5:  ["أدمن العقود"],
-  6:  ["أدمن العقود"],
-  7:  ["مدير الإدارة"],
-  8:  ["نائب الرئيس"],
-  9:  ["الرئيس التنفيذي"],
-  10: ["مسؤول التوقيعات"],
-  11: ["مسؤول التوقيعات"],
+  1:  ["إدارة المشروع"],
+  2:  ["إدارة المحفظة"],
+  3:  ["مراقبة التكاليف - PMO"],
+  4:  ["مراجعة الطلب"],
+  5:  ["تحرير العقد"],
+  6:  ["المراجعة الفنية للعقد"],
+  7:  ["اعتماد مدير الإدارة"],
+  8:  ["اعتماد نائب الرئيس التنفيذي"],
+  9:  ["اعتماد الرئيس التنفيذي"],
+  10: ["التوقيعات والأرشفة"],
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  "مدير المشروع":    "#6c5ce7",
-  "مدير القطاع":     "#0984e3",
-  "مدير PMO":        "#00b894",
-  "أخصائي العقود":   "#e17055",
-  "أدمن العقود":     "#fdcb6e",
-  "مدير الإدارة":    "#a29bfe",
-  "نائب الرئيس":     "#fd79a8",
-  "الرئيس التنفيذي": "#C5A059",
-  "مسؤول التوقيعات": "#55efc4",
+  "إدارة المشروع":                "#6c5ce7",
+  "إدارة المحفظة":               "#0984e3",
+  "مراقبة التكاليف - PMO":        "#00b894",
+  "مراجعة الطلب":                "#e17055",
+  "تحرير العقد":                  "#fdcb6e",
+  "المراجعة الفنية للعقد":        "#e84393",
+  "اعتماد مدير الإدارة":          "#a29bfe",
+  "اعتماد نائب الرئيس التنفيذي": "#fd79a8",
+  "اعتماد الرئيس التنفيذي":       "#C5A059",
+  "التوقيعات والأرشفة":           "#55efc4",
 };
 
 function getInitials(name: string) {
@@ -643,7 +643,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
         action, actorRole: role, actorName,
         notes: action === "reject" ? rejectReason : notes,
       };
-      if (filename && contract.currentStage === 6) payload.wordFilename = filename;
+      if (filename && contract.currentStage === 5) payload.wordFilename = filename;
       if (filename && contract.currentStage === 10) payload.signedFilename = filename;
       const updated = await advanceStage(contractId, payload);
       setContract(updated);
@@ -692,9 +692,9 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
 
   const canAct      = STAGE_ALLOWED[contract.currentStage]?.includes(role);
   const isCompleted = contract.status === "completed";
-  const pct         = isCompleted ? 100 : Math.round(((contract.currentStage - 1) / 11) * 100);
+  const pct         = isCompleted ? 100 : Math.round(((contract.currentStage - 1) / 10) * 100);
   const stage       = STAGES[contract.currentStage - 1];
-  const needsFile   = contract.currentStage === 6 || contract.currentStage === 10;
+  const needsFile   = contract.currentStage === 5 || contract.currentStage === 10;
 
   const formattedDate = contract.createdAt
     ? new Date(contract.createdAt).toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" }) +
@@ -833,21 +833,9 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
             {/* ── LEFT: stage timeline (flex:1) + pct% (fixed) ── */}
             <div className="no-print" style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "row", alignItems: "stretch", gap: 10 }}>
 
-              {/* Stage timeline — beside pct%, last two merged — FIRST in markup = right in RTL */}
+              {/* Stage timeline — beside pct% — FIRST in markup = right in RTL */}
               {(() => {
-                // Build display stages: 1→9 as-is, then merge last two (10+11) into one
-                const lastTwo = STAGES.slice(-2);
-                const mergedLabel = "التوقيعات والأرشفة";
-                const mergedIcon  = "📋";
-                // merged stage status: done if stage 10 is done, current if stage 10 or 11 is current
-                const m10done = isCompleted ? true : 10 < contract.currentStage;
-                const m11done = isCompleted ? true : 11 < contract.currentStage;
-                const mDone   = m10done && m11done;
-                const mCur    = !isCompleted && (contract.currentStage === 10 || contract.currentStage === 11);
-                const displayStages = [
-                  ...STAGES.slice(0, 9).map((s, i) => ({ ...s, sNum: i + 1, merged: false })),
-                  { label: mergedLabel, role: lastTwo[0].role, icon: mergedIcon, sNum: 10, merged: true },
-                ];
+                const displayStages = STAGES.map((s, i) => ({ ...s, sNum: i + 1 }));
                 return (
                   /* expanded card — fills available width, shows role + duration */
                   <div style={{
@@ -866,17 +854,17 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                     }}>
                       {displayStages.map((stg, idx) => {
                         const sNum   = stg.sNum;
-                        const isDone = stg.merged ? mDone  : (isCompleted ? true : sNum < contract.currentStage);
-                        const isCur  = stg.merged ? mCur   : (!isCompleted && sNum === contract.currentStage);
+                        const isDone = isCompleted ? true : sNum < contract.currentStage;
+                        const isCur  = !isCompleted && sNum === contract.currentStage;
                         const dur    = stageDurations[sNum];
                         const isLast = idx === displayStages.length - 1;
                         return (
                           <div key={sNum} style={{ display: "flex", alignItems: "flex-start" }}>
                             {/* Stage node column: pill + role */}
-                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: stg.merged ? 66 : 52 }}>
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 52 }}>
                               {/* Pill node: number/✓ + duration */}
                               <div style={{
-                                width: stg.merged ? 62 : 48, minHeight: 44,
+                                width: 48, minHeight: 44,
                                 borderRadius: 10, flexShrink: 0,
                                 display: "flex", flexDirection: "column",
                                 alignItems: "center", justifyContent: "center",
@@ -917,7 +905,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                                 fontSize: "0.44rem", marginTop: 4, textAlign: "center",
                                 color: isDone ? BLUE : isCur ? BLUE_M : "#9baab8",
                                 fontWeight: isCur ? 800 : 500,
-                                lineHeight: 1.3, maxWidth: stg.merged ? 64 : 50,
+                                lineHeight: 1.3, maxWidth: 50,
                               }}>
                                 {stg.role}
                               </div>
@@ -1058,7 +1046,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                   position: "relative",
                 }}>
                   <span>بيانات الطلب والعقد</span>
-                  {role === "مدير المشروع" && contract.currentStage === 1 && (
+                  {role === "إدارة المشروع" && contract.currentStage === 1 && (
                     <button
                       type="button"
                       onClick={() => { if (editMode) { setEditMode(false); } else { openEdit(contract); } }}
@@ -1079,7 +1067,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                 </div>
 
                 {/* ── Inline edit panel ── */}
-                {editMode && role === "مدير المشروع" && contract.currentStage === 1 && (() => {
+                {editMode && role === "إدارة المشروع" && contract.currentStage === 1 && (() => {
                   const CONTRACT_TYPES_CD = ["خدمات", "مستلزمات", "إنشاءات", "استشارات", "ملحق عقد", "أخرى"];
                   const WORK_TYPES_CD    = ["مدني", "كهربائي", "ميكانيكي", "تقنية معلومات", "استشاري", "أمني", "أخرى"];
                   const ef = editForm;
