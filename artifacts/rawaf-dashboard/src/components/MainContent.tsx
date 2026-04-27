@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Building2, Mail, Phone, FileText, Briefcase, MapPin, DollarSign, Clock } from "lucide-react";
 import type { Contractor } from "../contractors/types";
 
@@ -92,9 +92,17 @@ function TruncatedBadge({
 }
 
 export default function MainContent({ contractor, allContractors, filteredContractors, isLoading, onSelectId, customPrice, emptyStateMessage }: Props) {
-  // Active stat tab index (0=current, 1=min, 2=avg, 3=max) — resets when contractor changes
+  // Active stat tab index (0=custom/current, 1=min, 2=avg, 3=max) — resets when contractor changes
   const [activeStat, setActiveStat] = useState(0);
   useEffect(() => { setActiveStat(0); }, [contractor?.id]);
+  // When a custom price is entered, default comparison to the avg tab (index 2)
+  const prevCustomPrice = useRef<number | null | undefined>(null);
+  useEffect(() => {
+    const had = prevCustomPrice.current && prevCustomPrice.current > 0;
+    const has  = customPrice && customPrice > 0;
+    if (has && !had) setActiveStat(2);
+    prevCustomPrice.current = customPrice;
+  }, [customPrice]);
 
   if (isLoading) {
     return (
@@ -179,6 +187,38 @@ export default function MainContent({ contractor, allContractors, filteredContra
 
   const rating       = (contractor as any).rating as number | null | undefined;
   const localContent = (contractor as any).localContent as string | null | undefined;
+
+  // ── Footer stats array — shared by grid cells AND comparison bar ──
+  const footerStats: Array<{
+    label: string; sub2: string; value: string; color: string;
+    id: number | null; rawPrice: number; isCustom?: boolean; isBest?: boolean;
+  }> = [
+    customPrice && customPrice > 0
+      ? { label: "السعر المقارن", sub2: "مقاول خارج القاعدة", value: formatExact(customPrice), color: "#9b59b6", id: null, isCustom: true, rawPrice: customPrice }
+      : { label: "سعر المقاول الحالي", sub2: contractor.contractor ?? "—", value: formatExact(contractor.price), color: "var(--gold)", id: contractor.id as number | null, isCustom: false, rawPrice: contractor.price },
+    {
+      label: "أدنى سعر لهذا البند", sub2: contractorWithMin?.contractor ?? "—",
+      value: formatExact(minPrice), color: "#2baa74",
+      id: contractorWithMin?.id ?? null, isBest: contractor.price === minPrice, rawPrice: minPrice,
+    },
+    {
+      label: "متوسط الأسعار لهذا البند",
+      sub2: (() => {
+        const names = [...new Set(pricePool.map((c) => c.contractor))];
+        if (names.length === 0) return "—";
+        if (names.length === 1) return names[0];
+        if (names.length === 2) return `${names[0]} + ${names[1]}`;
+        return `${names[0]} + ${names[1]} (+${names.length - 2})`;
+      })(),
+      value: formatExact(Math.round(avgPrice)), color: "#3b8fcc",
+      id: avgContractor?.id ?? null, rawPrice: Math.round(avgPrice),
+    },
+    {
+      label: "أعلى سعر لهذا البند", sub2: contractorWithMax?.contractor ?? "—",
+      value: formatExact(maxPrice), color: "#e74c3c",
+      id: contractorWithMax?.id ?? null, rawPrice: maxPrice,
+    },
+  ];
   const mainActivity = (contractor as any).mainActivity as string | null | undefined;
 
   return (
@@ -436,53 +476,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
 
           {/* 4 stat cells — tab-style: active cell gets a colored top border + brighter bg */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", width: "100%" }}>
-            {[
-              customPrice && customPrice > 0
-                ? {
-                    label: "السعر المقارن",
-                    sub2: "مقاول خارج القاعدة",
-                    value: formatExact(customPrice),
-                    color: "#9b59b6",
-                    id: null as number | null,
-                    isCustom: true,
-                  }
-                : {
-                    label: "سعر المقاول الحالي",
-                    sub2: contractor.contractor ?? "—",
-                    value: formatExact(contractor.price),
-                    color: "var(--gold)",
-                    id: contractor.id as number | null,
-                    isCustom: false,
-                  },
-              {
-                label: "أدنى سعر لهذا البند",
-                sub2: contractorWithMin?.contractor ?? "—",
-                value: formatExact(minPrice),
-                color: "#2baa74",
-                id: contractorWithMin?.id ?? null,
-                isBest: contractor.price === minPrice,
-              },
-              {
-                label: "متوسط الأسعار لهذا البند",
-                sub2: (() => {
-                  const names = [...new Set(pricePool.map((c) => c.contractor))];
-                  if (names.length === 0) return "—";
-                  if (names.length === 1) return names[0];
-                  if (names.length === 2) return `${names[0]} + ${names[1]}`;
-                  return `${names[0]} + ${names[1]} (+${names.length - 2})`;
-                })(),
-                value: formatExact(Math.round(avgPrice)),
-                color: "#3b8fcc",
-                id: avgContractor?.id ?? null,
-              },
-              {
-                label: "أعلى سعر لهذا البند",
-                sub2: contractorWithMax?.contractor ?? "—",
-                value: formatExact(maxPrice),
-                color: "#e74c3c",
-                id: contractorWithMax?.id ?? null,
-              },
-            ].map((stat, i) => {
+            {footerStats.map((stat, i) => {
               const isActive = activeStat === i;
               const baseBg   = isActive ? "rgba(255,255,255,0.09)" : "transparent";
               return (
@@ -529,18 +523,29 @@ export default function MainContent({ contractor, allContractors, filteredContra
             })}
           </div>
 
-          {/* Custom price comparison indicator */}
-          {customPrice && customPrice > 0 && scopePoolSize > 0 && (
-            <div style={{ padding: "8px 16px", borderTop: "1px solid rgba(155,89,182,0.25)", background: "rgba(155,89,182,0.07)", textAlign: "center" }}>
-              <span style={{ fontSize: "0.6rem", color: "rgba(195,155,211,0.9)", fontWeight: 700 }}>
-                {customPrice <= minPrice
-                  ? `✓ السعر المقارن (${formatExact(customPrice)}) أقل من الأدنى في القاعدة — فارق: ${formatExact(minPrice - customPrice)} ر.س`
-                  : customPrice <= avgPrice
-                    ? `السعر المقارن (${formatExact(customPrice)}) أقل من المتوسط بـ ${formatExact(Math.round(avgPrice - customPrice))} ر.س`
-                    : `السعر المقارن (${formatExact(customPrice)}) أعلى من المتوسط بـ ${formatExact(Math.round(customPrice - avgPrice))} ر.س`}
-              </span>
-            </div>
-          )}
+          {/* Custom price comparison indicator — updates live based on clicked stat cell */}
+          {customPrice && customPrice > 0 && scopePoolSize > 0 && (() => {
+            // Use the clicked stat (1=min, 2=avg, 3=max); if index 0 (السعر المقارن itself) fall back to avg
+            const refIdx   = activeStat > 0 && activeStat <= 3 ? activeStat : 2;
+            const refStat  = footerStats[refIdx];
+            const refPrice = refStat?.rawPrice ?? Math.round(avgPrice);
+            const diff     = Math.round(Math.abs(customPrice - refPrice));
+            const pct      = refPrice > 0 ? ((diff / refPrice) * 100).toFixed(1) : "0.0";
+            const isHigher = customPrice > refPrice;
+            const isEqual  = diff === 0;
+            const refColor = refStat?.color ?? "#3b8fcc";
+            const refLabel = refStat?.label ?? "المتوسط";
+            const text = isEqual
+              ? `السعر المقارن (${formatExact(customPrice)}) يساوي ${refLabel}`
+              : isHigher
+                ? `▲ السعر المقارن (${formatExact(customPrice)}) أعلى من ${refLabel} بـ ${formatExact(diff)} ر.س (${pct}%)`
+                : `✓ السعر المقارن (${formatExact(customPrice)}) أقل من ${refLabel} بـ ${formatExact(diff)} ر.س (${pct}%)`;
+            return (
+              <div style={{ padding: "8px 16px", borderTop: `1px solid ${refColor}55`, background: `${refColor}14`, textAlign: "center", transition: "background 0.25s, border-color 0.25s" }}>
+                <span style={{ fontSize: "0.6rem", color: refColor, fontWeight: 700 }}>{text}</span>
+              </div>
+            );
+          })()}
 
           {/* Saving indicator — only shown when current contractor IS the lowest in the pool */}
           {!customPrice && scopePoolSize > 1 && contractor.price === minPrice && (
