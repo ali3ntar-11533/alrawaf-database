@@ -49,7 +49,6 @@ function contractorMatchesFilters(c: Contractor, filters: FilterState): boolean 
   if (filters.businessProgram && normalize((c as any).businessProgram ?? "") !== normalize(filters.businessProgram)) return false;
   if (filters.workType   && normalize(c.workType)   !== normalize(filters.workType))   return false;
   if (filters.workCategory && normalize((c as any).workCategory ?? "") !== normalize(filters.workCategory)) return false;
-  if (filters.itemPrice && String(c.price ?? "") !== filters.itemPrice) return false;
   return true;
 }
 
@@ -114,6 +113,7 @@ export default function MainDashboard({ search, filters, selectedId, onSelectId 
         filteredContractors={filtered.length > 0 ? filtered : allContractors}
         isLoading={isLoading}
         onSelectId={onSelectId}
+        customPrice={filters.itemPrice ? Number(filters.itemPrice) : null}
         emptyStateMessage={hasNoSearchResults ? "لا توجد نتائج مطابقة لهذا البحث أو الفلتر" : undefined}
       />
     </div>

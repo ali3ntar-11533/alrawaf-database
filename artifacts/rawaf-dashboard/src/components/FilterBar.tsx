@@ -48,7 +48,6 @@ const FILTER_DEFS: {
   { key: "businessProgram", label: "برنامج الأعمال",     getter: (c) => (c as any).businessProgram ?? "" },
   { key: "workType",        label: "نوع الأعمال",        getter: (c) => c.workType },
   { key: "workCategory",    label: "نوع البند",          getter: (c) => (c as any).workCategory ?? "" },
-  { key: "itemPrice",       label: "سعر البند",          getter: (c) => c.price ? String(c.price) : "" },
 ];
 
 /* ═══════════════════════════════════════════════════════════
@@ -313,6 +312,88 @@ function FilterDropdown({
 }
 
 /* ═══════════════════════════════════════════════════════════
+   PriceInputPill — inline number entry in the same pill row
+   ═══════════════════════════════════════════════════════════ */
+function PriceInputPill({
+  value,
+  onChange,
+  onClear,
+}: {
+  value:    string;
+  onChange: (v: string) => void;
+  onClear:  () => void;
+}) {
+  const isActive = value.trim() !== "";
+
+  const pillStyle: React.CSSProperties = {
+    display:        "flex",
+    alignItems:     "center",
+    gap:            "6px",
+    padding:        "5px 10px 5px 14px",
+    borderRadius:   "20px",
+    border:         isActive ? "1.5px solid var(--gold)" : "1.5px solid rgba(197,160,89,0.30)",
+    background:     isActive ? "rgba(197,160,89,0.18)" : "rgba(255,255,255,0.08)",
+    backdropFilter: "blur(8px)",
+    boxShadow:      isActive ? "0 0 12px rgba(197,160,89,0.22)" : "none",
+    transition:     "all 0.18s",
+    flexShrink:     0,
+    whiteSpace:     "nowrap",
+  };
+
+  return (
+    <div style={pillStyle}>
+      <span style={{ fontSize: "0.73rem", color: isActive ? "var(--gold)" : "rgba(255,255,255,0.55)", fontWeight: 600, fontFamily: "Tajawal, sans-serif", flexShrink: 0 }}>
+        سعر البند
+      </span>
+      <input
+        type="number"
+        min={0}
+        placeholder="0"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          width:       "90px",
+          background:  "transparent",
+          border:      "none",
+          outline:     "none",
+          fontSize:    "0.73rem",
+          fontWeight:  isActive ? 700 : 400,
+          color:       isActive ? "var(--gold)" : "rgba(255,255,255,0.55)",
+          fontFamily:  "Tajawal, sans-serif",
+          direction:   "ltr",
+          textAlign:   "right",
+          appearance:  "textfield",
+          MozAppearance: "textfield" as any,
+        }}
+        onFocus={(e) => {
+          (e.currentTarget.parentElement as HTMLDivElement).style.borderColor = "rgba(197,160,89,0.75)";
+          (e.currentTarget.parentElement as HTMLDivElement).style.background  = "rgba(197,160,89,0.22)";
+        }}
+        onBlur={(e) => {
+          (e.currentTarget.parentElement as HTMLDivElement).style.borderColor = isActive ? "var(--gold)" : "rgba(197,160,89,0.30)";
+          (e.currentTarget.parentElement as HTMLDivElement).style.background  = isActive ? "rgba(197,160,89,0.18)" : "rgba(255,255,255,0.08)";
+        }}
+      />
+      {isActive && (
+        <span
+          onClick={onClear}
+          style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            width: "16px", height: "16px", borderRadius: "50%",
+            background: "rgba(197,160,89,0.35)", color: "var(--gold)",
+            cursor: "pointer", flexShrink: 0, transition: "background 0.15s",
+          }}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "rgba(197,160,89,0.6)")}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "rgba(197,160,89,0.35)")}
+        >
+          <X size={9} />
+        </span>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
    FilterBar — main export
    ═══════════════════════════════════════════════════════════ */
 export default function FilterBar({ filters, onFiltersChange }: FilterBarProps) {
@@ -367,16 +448,23 @@ export default function FilterBar({ filters, onFiltersChange }: FilterBarProps) 
               جاري تحميل الفلاتر...
             </span>
           ) : (
-            FILTER_DEFS.map((def) => (
-              <FilterDropdown
-                key={def.key}
-                label={def.label}
-                value={filters[def.key]}
-                allOptions={options[def.key] ?? []}
-                onSelect={(v) => setFilter(def.key, v)}
-                onClear={() => clearFilter(def.key)}
+            <>
+              {FILTER_DEFS.map((def) => (
+                <FilterDropdown
+                  key={def.key}
+                  label={def.label}
+                  value={filters[def.key]}
+                  allOptions={options[def.key] ?? []}
+                  onSelect={(v) => setFilter(def.key, v)}
+                  onClear={() => clearFilter(def.key)}
+                />
+              ))}
+              <PriceInputPill
+                value={filters.itemPrice}
+                onChange={(v) => setFilter("itemPrice", v)}
+                onClear={() => clearFilter("itemPrice")}
               />
-            ))
+            </>
           )}
 
           {/* Clear-all button — shown only when at least one filter is active */}
