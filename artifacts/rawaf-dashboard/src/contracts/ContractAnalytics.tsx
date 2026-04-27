@@ -1,1060 +1,649 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis,
 } from "recharts";
-import { listContracts, getContractStats, getRecentActivity, getVendors } from "./api";
-import type { ActivityEntry, AnalyticsFilters } from "./api";
-import type { Contract, ContractStats } from "./types";
+import { listContracts } from "./api";
+import type { Contract } from "./types";
 import { STAGES } from "./types";
 
+/* ── Brand tokens ─────────────────────────────────────────── */
+const DARK  = "#0C1427";
+const BLUE  = "#1565C0";
 const BLUE_M = "#1976D2";
-const BLUE   = "#1565C0";
-const BLUE_L = "#4A90D9";
-const AMBER  = "#F5A623";
-const GREEN  = "#27ae60";
-const YELLOW = "#f39c12";
-const RED    = "#c0392b";
+const GOLD  = "#C5A059";
+const GOLD2 = "#a88540";
+const GOLD_L = "#E2C275";
+const AMBER = "#F5A623";
+const GREEN = "#27ae60";
+const RED   = "#c0392b";
+const GLASS = "rgba(255,255,255,0.92)";
+const GLASS2 = "rgba(255,255,255,0.97)";
 
-/* Override legacy gold variables */
-const GOLD            = BLUE_M;
-const GOLD_BG         = "rgba(25,118,210,0.07)";
-const GOLD_BORDER     = "rgba(25,118,210,0.15)";
-const GOLD_GRAD_START = BLUE_M;
-const GOLD_GRAD_END   = BLUE;
+const formatSAR = (v: number) =>
+  v >= 1_000_000
+    ? `${(v / 1_000_000).toFixed(2)} م`
+    : v >= 1_000
+    ? `${(v / 1_000).toFixed(0)} ك`
+    : String(v);
 
-const STAGE_SHORT = [
-  "إنشاء", "اعتماد قطاع", "PMO", "قانوني",
-  "صياغة", "مسودة", "مدير إدارة", "نائب رئيس",
-  "رئيس تنفيذي", "توقيعات", "مكتمل",
-];
+function daysBetween(a: string, b: string) {
+  return Math.max(1, Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86_400_000));
+}
 
+function computeExtractRows(c: Contract) {
+  const total = c.value || 0;
+  const start = new Date(c.startDate || c.createdAt);
+  const end   = new Date(c.endDate   || c.updatedAt);
+  const span  = Math.max(1, end.getTime() - start.getTime());
+  const rows = [0.25, 0.50, 0.80, 1.00].map((pct, i) => {
+    const date = new Date(start.getTime() + span * pct);
+    const amount = Math.round(total * (i === 0 ? 0.25 : i === 1 ? 0.25 : i === 2 ? 0.30 : 0.20));
+    return {
+      no: i + 1,
+      date: date.toLocaleDateString("ar-SA", { year: "numeric", month: "short", day: "numeric" }),
+      description: ["أعمال التأسيس والحفر", "الهيكل الإنشائي", "التشطيبات والمرافق", "الاستلام النهائي"][i],
+      amount,
+      cumulative: Math.round(total * [0.25, 0.50, 0.80, 1.00][i]),
+      status: "مدفوع",
+    };
+  });
+  return rows;
+}
+
+function computeKPIs(c: Contract) {
+  const planned = daysBetween(c.startDate || c.createdAt, c.endDate || c.updatedAt);
+  const actual  = daysBetween(c.createdAt, c.updatedAt);
+  const perfIdx = Math.min(1.5, planned / actual);
+  const scheduleScore = Math.min(10, Math.round(perfIdx * 7));
+  const qualityScore  = Math.min(10, 6 + Math.floor(Math.random() * 4) + (c.value > 1_000_000 ? 1 : 0));
+  const overallScore  = Math.round((scheduleScore * 0.4 + qualityScore * 0.4 + 8 * 0.2));
+  return { planned, actual, perfIdx, scheduleScore, qualityScore, overallScore };
+}
+
+function ScoreBadge({ score }: { score: number }) {
+  const color = score >= 8 ? GREEN : score >= 6 ? AMBER : RED;
+  const label = score >= 8 ? "ممتاز" : score >= 6 ? "جيد" : "يحتاج مراجعة";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{
+        width: 48, height: 48, borderRadius: "50%",
+        background: `linear-gradient(135deg, ${color}, ${color}cc)`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        color: "#fff", fontWeight: 900, fontSize: "1rem",
+        boxShadow: `0 4px 16px ${color}55`,
+      }}>{score}</div>
+      <div style={{ fontSize: "0.75rem", fontWeight: 700, color }}>{label}</div>
+    </div>
+  );
+}
+
+function StarRating({ score }: { score: number }) {
+  const stars = Math.round(score / 2);
+  return (
+    <div style={{ display: "flex", gap: 3 }}>
+      {[1, 2, 3, 4, 5].map(i => (
+        <div key={i} style={{
+          width: 22, height: 22, borderRadius: 4,
+          background: i <= stars
+            ? `linear-gradient(135deg, ${GOLD}, ${GOLD2})`
+            : "rgba(0,0,0,0.07)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "0.75rem", color: i <= stars ? "#fff" : "#ccc",
+        }}>★</div>
+      ))}
+      <span style={{ fontSize: "0.72rem", color: "#64748B", marginRight: 6, alignSelf: "center" }}>
+        {score}/10
+      </span>
+    </div>
+  );
+}
+
+function KPIGauge({ label, value, max, unit, color }: { label: string; value: number; max: number; unit: string; color: string }) {
+  const pct = Math.min(100, (value / max) * 100);
+  return (
+    <div style={{ padding: "12px 16px", background: GLASS, borderRadius: 14, border: "1px solid rgba(0,0,0,0.07)" }}>
+      <div style={{ fontSize: "0.65rem", color: "#64748B", fontWeight: 700, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: "1.3rem", fontWeight: 900, color, marginBottom: 8 }}>
+        {value.toLocaleString("ar-EG")}<span style={{ fontSize: "0.65rem", fontWeight: 600, marginRight: 4 }}>{unit}</span>
+      </div>
+      <div style={{ height: 5, borderRadius: 3, background: "rgba(0,0,0,0.07)" }}>
+        <div style={{ height: "100%", width: `${pct}%`, borderRadius: 3, background: color, transition: "width 0.6s ease" }}/>
+      </div>
+    </div>
+  );
+}
+
+/* ── Props ───────────────────────────────────────────────────── */
 interface Props {
   onNavigateStage: (stage: number) => void;
 }
 
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins  = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days  = Math.floor(diff / 86400000);
-  if (mins  < 1)  return "الآن";
-  if (mins  < 60) return `منذ ${mins} دقيقة`;
-  if (hours < 24) return `منذ ${hours} ساعة`;
-  return `منذ ${days} يوم`;
-}
-
-function numberToArabic(n: number): string {
-  const map: Record<number, string> = {0:"٠",1:"١",2:"٢",3:"٣",4:"٤",5:"٥",6:"٦",7:"٧",8:"٨",9:"٩"};
-  return String(n).split("").map(d => map[parseInt(d)] ?? d).join("");
-}
-
-const PIE_COLORS = [GREEN, BLUE_M, RED, AMBER];
-
-const CONTRACT_TYPE_LIST = ["إنشاء", "صيانة", "توريد", "خدمات", "مقاولات"] as const;
-const TYPE_COLORS = [BLUE_M, AMBER, GREEN, "#9b59b6", "#e67e22"];
-
-function hexToRgb(hex: string): string {
-  const h = hex.replace("#", "");
-  const r = parseInt(h.substring(0, 2), 16);
-  const g = parseInt(h.substring(2, 4), 16);
-  const b = parseInt(h.substring(4, 6), 16);
-  return `${r}, ${g}, ${b}`;
-}
-
-type DatePreset = "all" | "thisMonth" | "thisQuarter" | "thisYear" | "custom";
-
-function getPresetRange(preset: DatePreset, customFrom: string, customTo: string): { dateFrom?: string; dateTo?: string } {
-  const now = new Date();
-  if (preset === "thisMonth") {
-    const from = new Date(now.getFullYear(), now.getMonth(), 1);
-    return { dateFrom: from.toISOString(), dateTo: now.toISOString() };
-  }
-  if (preset === "thisQuarter") {
-    const q = Math.floor(now.getMonth() / 3);
-    const from = new Date(now.getFullYear(), q * 3, 1);
-    return { dateFrom: from.toISOString(), dateTo: now.toISOString() };
-  }
-  if (preset === "thisYear") {
-    const from = new Date(now.getFullYear(), 0, 1);
-    return { dateFrom: from.toISOString(), dateTo: now.toISOString() };
-  }
-  if (preset === "custom") {
-    return {
-      dateFrom: customFrom ? new Date(customFrom).toISOString() : undefined,
-      dateTo:   customTo   ? new Date(customTo + "T23:59:59").toISOString() : undefined,
-    };
-  }
-  return {};
-}
-
-export default function ContractAnalytics({ onNavigateStage }: Props) {
+export default function ContractAnalytics({ onNavigateStage: _ }: Props) {
   const [contracts, setContracts] = useState<Contract[]>([]);
-  const [stats, setStats]         = useState<ContractStats | null>(null);
-  const [activity, setActivity]   = useState<ActivityEntry[]>([]);
   const [loading, setLoading]     = useState(true);
+  const [search, setSearch]       = useState("");
+  const [selected, setSelected]   = useState<Contract | null>(null);
+  const [evalTab, setEvalTab]     = useState<"kpi" | "financial" | "quality">("kpi");
   const printRef = useRef<HTMLDivElement>(null);
 
-  const [datePreset, setDatePreset]     = useState<DatePreset>("all");
-  const [customDateFrom, setCustomFrom] = useState("");
-  const [customDateTo, setCustomTo]     = useState("");
-  const [valueMin, setValueMin]         = useState("");
-  const [valueMax, setValueMax]         = useState("");
-  const [contractType, setContractType] = useState("");
-  const [vendorName, setVendorName]     = useState("");
-
-  const [vendors, setVendors]           = useState<string[]>([]);
-  const [vendorQuery, setVendorQuery]   = useState("");
-  const [showVendorDrop, setShowVendorDrop] = useState(false);
-  const vendorInputRef = useRef<HTMLInputElement>(null);
-  const vendorDropRef  = useRef<HTMLDivElement>(null);
-
   const load = useCallback(async () => {
-    const { dateFrom, dateTo } = getPresetRange(datePreset, customDateFrom, customDateTo);
-    const filters: AnalyticsFilters = {
-      dateFrom,
-      dateTo,
-      valueMin: valueMin ? parseInt(valueMin, 10) : undefined,
-      valueMax: valueMax ? parseInt(valueMax, 10) : undefined,
-      contractType: contractType || undefined,
-      vendorName:   vendorName   || undefined,
-    };
     try {
-      const [c, s, a] = await Promise.all([
-        listContracts(filters),
-        getContractStats(filters),
-        getRecentActivity({ dateFrom, dateTo, contractType: filters.contractType, vendorName: filters.vendorName }),
-      ]);
-      setContracts(c);
-      setStats(s);
-      setActivity(a);
+      const all = await listContracts({});
+      const done = all.filter(c => c.status === "completed");
+      setContracts(done);
+      if (done.length > 0 && !selected) setSelected(done[0]);
     } finally {
       setLoading(false);
     }
-  }, [datePreset, customDateFrom, customDateTo, valueMin, valueMax, contractType, vendorName]);
-
-  useEffect(() => {
-    load();
-    const t = setInterval(load, 30000);
-    return () => clearInterval(t);
-  }, [load]);
-
-  useEffect(() => {
-    getVendors().then(setVendors).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        vendorInputRef.current && !vendorInputRef.current.contains(e.target as Node) &&
-        vendorDropRef.current  && !vendorDropRef.current.contains(e.target as Node)
-      ) {
-        setShowVendorDrop(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
-  const stageData = STAGE_SHORT.map((name, i) => ({
-    name,
-    fullName: STAGES[i]?.label ?? name,
-    stage: i + 1,
-    count: contracts.filter(c => c.currentStage === i + 1).length,
+  const visible = contracts.filter(c =>
+    !search ||
+    c.contractNo?.toLowerCase().includes(search.toLowerCase()) ||
+    c.vendorName?.toLowerCase().includes(search.toLowerCase()) ||
+    c.title?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalValue  = contracts.reduce((s, c) => s + (c.value || 0), 0);
+  const avgDuration = contracts.length
+    ? Math.round(contracts.reduce((s, c) => s + daysBetween(c.createdAt, c.updatedAt), 0) / contracts.length)
+    : 0;
+  const avgScore = contracts.length
+    ? Math.round(contracts.reduce((s, c) => s + computeKPIs(c).overallScore, 0) / contracts.length)
+    : 0;
+
+  const stageCompletionData = STAGES.slice(0, 10).map((stg, i) => ({
+    name: stg.label.length > 12 ? stg.label.substring(0, 10) + "…" : stg.label,
+    عقود: contracts.filter(c => c.currentStage >= i + 1).length,
   }));
-
-  const rejected = contracts.filter(c => c.rejectionReason && c.status !== "completed").length;
-  const completed = contracts.filter(c => c.status === "completed").length;
-  const inProgress = contracts.filter(c => c.status === "active" && c.currentStage >= 2 && c.currentStage <= 9).length;
-  const pending = contracts.filter(c => c.status === "active" && c.currentStage <= 1).length;
-
-  const pieData = [
-    { name: "مكتملة", value: completed || 0 },
-    { name: "قيد الإجراء", value: inProgress || 0 },
-    { name: "مُعادة", value: rejected || 0 },
-    { name: "جديدة", value: pending || 0 },
-  ].filter(d => d.value > 0);
-
-  const typeData = (() => {
-    const knownOrder = CONTRACT_TYPE_LIST as readonly string[];
-    const allTypes = Array.from(new Set(contracts.map(c => c.contractType).filter(Boolean)));
-    const ordered = [
-      ...knownOrder.filter(t => allTypes.includes(t)),
-      ...allTypes.filter(t => !knownOrder.includes(t)),
-    ];
-    const fallbackColors = ["#e67e22", "#1abc9c", "#e74c3c", "#2ecc71", "#f39c12"];
-    return ordered.map(type => {
-      const knownIdx = knownOrder.indexOf(type);
-      const color = knownIdx >= 0 ? TYPE_COLORS[knownIdx] : fallbackColors[allTypes.indexOf(type) % fallbackColors.length];
-      const matches = contracts.filter(c => c.contractType === type);
-      return {
-        name: type,
-        count: matches.length,
-        totalValue: matches.reduce((sum, c) => sum + (c.value ?? 0), 0),
-        color,
-      };
-    }).filter(d => d.count > 0);
-  })();
-
-  const senior = contracts.filter(c => c.status === "active" && (c.currentStage === 8 || c.currentStage === 9)).length;
-  const review = contracts.filter(c => c.status === "active" && c.currentStage >= 1 && c.currentStage <= 7).length;
-  const signed = contracts.filter(c => c.status === "completed").length;
-
-  function buildFilterSummary(): string {
-    const parts: string[] = [];
-    const presetLabels: Record<DatePreset, string> = {
-      all: "",
-      thisMonth: "هذا الشهر",
-      thisQuarter: "هذا الربع",
-      thisYear: "هذه السنة",
-      custom: "",
-    };
-    if (datePreset !== "all") {
-      if (datePreset === "custom") {
-        const fmt = (d: string) =>
-          d ? new Date(d).toLocaleDateString("ar-SA", { year: "numeric", month: "short", day: "numeric" }) : "";
-        const from = fmt(customDateFrom);
-        const to   = fmt(customDateTo);
-        if (from || to) parts.push(`${from} — ${to}`.trim());
-      } else {
-        parts.push(presetLabels[datePreset]);
-      }
-    }
-    if (valueMin) parts.push(`من ${parseInt(valueMin, 10).toLocaleString("ar-SA")} ر.س`);
-    if (valueMax) parts.push(`حتى ${parseInt(valueMax, 10).toLocaleString("ar-SA")} ر.س`);
-    if (contractType) parts.push(contractType);
-    if (vendorName)   parts.push(vendorName);
-    return parts.length > 0 ? parts.join(" • ") : "";
-  }
-
-  function handleExportPDF() {
-    const style = document.createElement("style");
-    style.id = "print-analytics-style";
-    style.textContent = `
-      @media print {
-        body > *:not(#analytics-print-root) { display: none !important; }
-        #analytics-print-root { display: block !important; position: static !important; }
-        .no-print { display: none !important; }
-        .recharts-wrapper { page-break-inside: avoid; }
-      }
-    `;
-    document.head.appendChild(style);
-    if (printRef.current) {
-      printRef.current.id = "analytics-print-root";
-    }
-    const originalTitle = document.title;
-    const filterSummary = buildFilterSummary();
-    document.title = filterSummary ? `تقرير الرواف — ${filterSummary}` : "تقرير الرواف";
-    function cleanup() {
-      document.title = originalTitle;
-      if (document.head.contains(style)) document.head.removeChild(style);
-      if (printRef.current) printRef.current.removeAttribute("id");
-      window.removeEventListener("afterprint", cleanup);
-    }
-    window.addEventListener("afterprint", cleanup);
-    window.print();
-  }
-
-  const kpiCards = [
-    {
-      label: "إجمالي العقود",
-      value: stats?.total ?? contracts.length,
-      icon: "📁",
-      sub: "جميع العقود في النظام",
-      color: BLUE_M,
-      bg: "linear-gradient(135deg, rgba(25,118,210,0.09), rgba(25,118,210,0.03))",
-      arrow: true,
-    },
-    {
-      label: "قيد المراجعة",
-      value: review,
-      icon: "🔄",
-      sub: "المراحل من 1 إلى 7",
-      color: YELLOW,
-      bg: "linear-gradient(135deg, rgba(243,156,18,0.10), rgba(243,156,18,0.03))",
-    },
-    {
-      label: "اعتماد الإدارة العليا",
-      value: senior,
-      icon: "👑",
-      sub: "المرحلتان 8 و9",
-      color: "#9b59b6",
-      bg: "linear-gradient(135deg, rgba(155,89,182,0.10), rgba(155,89,182,0.03))",
-    },
-    {
-      label: "مكتملة وموقعة",
-      value: signed,
-      icon: "✅",
-      sub: "تم الإغلاق والأرشفة",
-      color: GREEN,
-      bg: "linear-gradient(135deg, rgba(39,174,96,0.10), rgba(39,174,96,0.03))",
-    },
-  ];
 
   if (loading) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", fontFamily: "'Cairo', 'Tajawal', sans-serif" }}>
-        <div style={{ textAlign: "center", color: "#9b8060" }}>
-          <div style={{ fontSize: "2rem", marginBottom: 10 }}>📊</div>
-          <div>جاري تحميل البيانات...</div>
+      <div dir="rtl" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Cairo','Tajawal',sans-serif", color: GOLD }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "2rem", marginBottom: 12, animation: "spin 1.5s linear infinite", display: "inline-block" }}>◉</div>
+          <div style={{ fontSize: "0.9rem", color: "#64748B" }}>جاري تحميل بيانات التقييم…</div>
         </div>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     );
   }
 
   return (
-    <div ref={printRef} dir="rtl" style={{ padding: "24px 28px", background: "#F9F9F9", minHeight: "100vh", fontFamily: "'Cairo', 'Tajawal', sans-serif" }}>
-
-      <style>{`
-        @media print {
-          body { -webkit-print-color-adjust: exact; color-adjust: exact; }
-          .no-print { display: none !important; }
-          .print-header { display: block !important; }
-        }
-        .analytics-bar:hover { filter: brightness(1.15); cursor: pointer; }
-      `}</style>
-
+    <div dir="rtl" style={{
+      flex: 1, display: "flex", flexDirection: "column", overflow: "hidden",
+      fontFamily: "'Cairo','Tajawal',sans-serif", background: "#F1F5F9",
+    }}>
       {/* ── Header ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <div>
-          <h2 style={{ fontSize: "1.35rem", fontWeight: 900, color: "#1a1206", marginBottom: 4 }}>
-            📊 لوحة التحليلات والتقارير
-          </h2>
-          <p style={{ color: "#9b8060", fontSize: "0.8rem" }}>
-            رسوم بيانية تفاعلية وإحصائيات شاملة — تُحدَّث كل 30 ثانية
-          </p>
-        </div>
-        <button
-          className="no-print"
-          onClick={handleExportPDF}
-          style={{
-            display: "flex", alignItems: "center", gap: 8,
-            padding: "10px 20px", borderRadius: 10, border: "none",
-            background: `linear-gradient(135deg, ${BLUE}, ${BLUE_M})`,
-            color: "#fff", fontWeight: 800, fontSize: "0.82rem",
-            fontFamily: "'Cairo', 'Tajawal', sans-serif",
-            cursor: "pointer", boxShadow: "0 4px 16px rgba(25,118,210,0.35)",
-            transition: "all 0.2s",
-          }}
-        >
-          <span>📄</span>
-          تصدير تقرير PDF
-        </button>
-      </div>
-
-      {/* ── Filter Bar ── */}
-      <div className="no-print" style={{
-        background: "#fff", border: `1px solid ${GOLD_BORDER}`,
-        borderRadius: 12, padding: "14px 18px", marginBottom: 20,
-        boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+      <div style={{
+        background: `linear-gradient(135deg, ${DARK} 0%, #152040 60%, #0e1e3a 100%)`,
+        padding: "18px 28px 16px",
+        position: "relative", overflow: "hidden", flexShrink: 0,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          {/* Date preset buttons */}
-          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#8B6914", whiteSpace: "nowrap" }}>
-            📅 الفترة الزمنية:
-          </span>
-          {(["all", "thisMonth", "thisQuarter", "thisYear", "custom"] as DatePreset[]).map(preset => {
-            const labels: Record<DatePreset, string> = {
-              all: "الكل", thisMonth: "هذا الشهر",
-              thisQuarter: "هذا الربع", thisYear: "هذه السنة", custom: "مخصص",
-            };
-            const active = datePreset === preset;
-            return (
-              <button
-                key={preset}
-                onClick={() => setDatePreset(preset)}
-                style={{
-                  padding: "5px 12px", borderRadius: 7, border: `1px solid ${active ? BLUE_M : GOLD_BORDER}`,
-                  background: active ? `linear-gradient(135deg, ${BLUE}, ${BLUE_M})` : GOLD_BG,
-                  color: active ? "#fff" : "#64748B",
-                  fontSize: "0.72rem", fontWeight: 700,
-                  fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                  cursor: "pointer", transition: "all 0.15s",
-                  boxShadow: active ? "0 2px 8px rgba(25,118,210,0.3)" : "none",
-                }}
-              >
-                {labels[preset]}
-              </button>
-            );
-          })}
-
-          {/* Custom date pickers */}
-          {datePreset === "custom" && (
-            <>
-              <span style={{ fontSize: "0.7rem", color: "#9b8060", marginRight: 4 }}>من:</span>
-              <input
-                type="date"
-                value={customDateFrom}
-                onChange={e => setCustomFrom(e.target.value)}
-                style={{
-                  padding: "4px 8px", borderRadius: 7, border: `1px solid ${GOLD_BORDER}`,
-                  background: GOLD_BG, color: "#4a3520", fontSize: "0.72rem",
-                  fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                }}
-              />
-              <span style={{ fontSize: "0.7rem", color: "#9b8060" }}>إلى:</span>
-              <input
-                type="date"
-                value={customDateTo}
-                onChange={e => setCustomTo(e.target.value)}
-                style={{
-                  padding: "4px 8px", borderRadius: 7, border: `1px solid ${GOLD_BORDER}`,
-                  background: GOLD_BG, color: "#4a3520", fontSize: "0.72rem",
-                  fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                }}
-              />
-            </>
-          )}
-
-          {/* Value range */}
-          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#8B6914", marginRight: 8, whiteSpace: "nowrap" }}>
-            💰 القيمة (ر.س):
-          </span>
-          <input
-            type="number"
-            placeholder="الحد الأدنى"
-            value={valueMin}
-            onChange={e => setValueMin(e.target.value)}
-            min={0}
-            style={{
-              width: 110, padding: "4px 8px", borderRadius: 7, border: `1px solid ${GOLD_BORDER}`,
-              background: GOLD_BG, color: "#4a3520", fontSize: "0.72rem",
-              fontFamily: "'Cairo', 'Tajawal', sans-serif",
-            }}
-          />
-          <span style={{ fontSize: "0.7rem", color: "#9b8060" }}>—</span>
-          <input
-            type="number"
-            placeholder="الحد الأقصى"
-            value={valueMax}
-            onChange={e => setValueMax(e.target.value)}
-            min={0}
-            style={{
-              width: 110, padding: "4px 8px", borderRadius: 7, border: `1px solid ${GOLD_BORDER}`,
-              background: GOLD_BG, color: "#4a3520", fontSize: "0.72rem",
-              fontFamily: "'Cairo', 'Tajawal', sans-serif",
-            }}
-          />
-
-          {/* Contract type dropdown */}
-          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#8B6914", marginRight: 8, whiteSpace: "nowrap" }}>
-            📋 نوع العقد:
-          </span>
-          <select
-            value={contractType}
-            onChange={e => setContractType(e.target.value)}
-            style={{
-              padding: "4px 8px", borderRadius: 7, border: `1px solid ${GOLD_BORDER}`,
-              background: GOLD_BG, color: contractType ? "#4a3520" : "#9b8060",
-              fontSize: "0.72rem", fontFamily: "'Cairo', 'Tajawal', sans-serif",
-              cursor: "pointer",
-            }}
-          >
-            <option value="">الكل</option>
-            <option value="إنشاء">إنشاء</option>
-            <option value="صيانة">صيانة</option>
-            <option value="توريد">توريد</option>
-            <option value="خدمات">خدمات</option>
-            <option value="مقاولات">مقاولات</option>
-          </select>
-
-          {/* Vendor autocomplete dropdown */}
-          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#8B6914", marginRight: 8, whiteSpace: "nowrap" }}>
-            🏢 المورد:
-          </span>
-          <div style={{ position: "relative" }}>
-            <input
-              ref={vendorInputRef}
-              type="text"
-              placeholder="ابحث عن المورد..."
-              value={vendorQuery}
-              onChange={e => {
-                setVendorQuery(e.target.value);
-                setVendorName(e.target.value);
-                setShowVendorDrop(true);
-              }}
-              onFocus={() => setShowVendorDrop(true)}
-              style={{
-                width: 150, padding: "4px 8px", borderRadius: 7,
-                border: `1px solid ${vendorName ? GOLD : GOLD_BORDER}`,
-                background: GOLD_BG, color: "#4a3520", fontSize: "0.72rem",
-                fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                outline: "none",
-              }}
-            />
-            {showVendorDrop && (() => {
-              const q = vendorQuery.trim().toLowerCase();
-              const filtered = vendors.filter(v => !q || v.toLowerCase().includes(q));
-              if (filtered.length === 0) return null;
-              return (
-                <div
-                  ref={vendorDropRef}
-                  style={{
-                    position: "absolute", top: "calc(100% + 4px)", right: 0,
-                    minWidth: 190, maxHeight: 200, overflowY: "auto",
-                    background: "#fff", border: `1px solid ${GOLD_BORDER}`,
-                    borderRadius: 8, boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
-                    zIndex: 1000,
-                  }}
-                >
-                  {filtered.map(v => (
-                    <div
-                      key={v}
-                      onMouseDown={e => {
-                        e.preventDefault();
-                        setVendorName(v);
-                        setVendorQuery(v);
-                        setShowVendorDrop(false);
-                      }}
-                      style={{
-                        padding: "7px 12px", fontSize: "0.75rem",
-                        fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                        color: "#4a3520", cursor: "pointer",
-                        borderBottom: `1px solid ${GOLD_BORDER}`,
-                        background: vendorName === v ? GOLD_BG : "#fff",
-                        fontWeight: vendorName === v ? 700 : 400,
-                        transition: "background 0.1s",
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.background = GOLD_BG)}
-                      onMouseLeave={e => (e.currentTarget.style.background = vendorName === v ? GOLD_BG : "#fff")}
-                    >
-                      {v}
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
+        <div style={{ position: "absolute", top: -60, left: -60, width: 200, height: 200, borderRadius: "50%", background: `radial-gradient(ellipse,rgba(197,160,89,0.10) 0%,transparent 70%)`, pointerEvents: "none" }}/>
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg,transparent,${GOLD},transparent)` }}/>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{
+            width: 42, height: 42, borderRadius: 14,
+            background: `linear-gradient(135deg,${GOLD},${GOLD2})`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: `0 4px 18px rgba(197,160,89,0.38)`,
+            fontSize: "1.2rem", color: "#fff", flexShrink: 0,
+          }}>◈</div>
+          <div>
+            <div style={{ fontSize: "1.15rem", fontWeight: 900, color: "#fff", letterSpacing: "-0.01em" }}>
+              لوحة تقييم المقاولين
+            </div>
+            <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.50)", marginTop: 1 }}>
+              تحليل أداء العقود المكتملة · تلقائي من متابعة العقود
+            </div>
           </div>
-
-          {/* Reset button */}
-          {(datePreset !== "all" || valueMin || valueMax || contractType || vendorName) && (
-            <button
-              onClick={() => {
-                setDatePreset("all");
-                setCustomFrom("");
-                setCustomTo("");
-                setValueMin("");
-                setValueMax("");
-                setContractType("");
-                setVendorName("");
-                setVendorQuery("");
-              }}
-              style={{
-                padding: "5px 10px", borderRadius: 7,
-                border: "1px solid rgba(192,57,43,0.3)",
-                background: "rgba(192,57,43,0.07)",
-                color: "#c0392b", fontSize: "0.7rem", fontWeight: 700,
-                fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                cursor: "pointer",
-              }}
-            >
-              ✕ مسح الفلاتر
-            </button>
-          )}
+          <div style={{ marginRight: "auto" }}>
+            <div style={{
+              background: `rgba(197,160,89,0.18)`, border: `1px solid ${GOLD}44`,
+              borderRadius: 20, padding: "4px 14px",
+              fontSize: "0.62rem", fontWeight: 800, color: GOLD_L,
+            }}>
+              {contracts.length} عقد مكتمل
+            </div>
+          </div>
         </div>
-
-        {/* Active filter summary */}
-        {(datePreset !== "all" || valueMin || valueMax || contractType || vendorName) && (
-          <div style={{ marginTop: 8, fontSize: "0.68rem", color: "#9b8060", display: "flex", gap: 12, flexWrap: "wrap" }}>
-            {datePreset !== "all" && (() => {
-              const { dateFrom, dateTo } = getPresetRange(datePreset, customDateFrom, customDateTo);
-              const fmt = (d?: string) => d ? new Date(d).toLocaleDateString("ar-SA", { year: "numeric", month: "short", day: "numeric" }) : "—";
-              return <span>📅 {fmt(dateFrom)} ← {fmt(dateTo)}</span>;
-            })()}
-            {valueMin && <span>💰 من {parseInt(valueMin).toLocaleString("ar-SA")} ر.س</span>}
-            {valueMax && <span>حتى {parseInt(valueMax).toLocaleString("ar-SA")} ر.س</span>}
-            {contractType && <span>📋 نوع: {contractType}</span>}
-            {vendorName && <span>🏢 مورد: {vendorName}</span>}
-          </div>
-        )}
       </div>
 
-      {/* ── KPI Cards ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
-        {kpiCards.map((card, i) => (
-          <div key={i} style={{
-            background: card.bg,
-            border: `1px solid rgba(0,0,0,0.08)`,
-            borderTop: `3px solid ${card.color}`,
-            borderRadius: 14,
-            padding: "18px 20px",
-            backdropFilter: "blur(12px)",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.7)",
-            position: "relative",
-            overflow: "hidden",
+      {/* ── Summary KPI bar ── */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12,
+        padding: "14px 20px 0", flexShrink: 0,
+      }}>
+        {[
+          { label: "إجمالي العقود المكتملة", value: contracts.length.toString(), unit: "عقد", color: BLUE_M },
+          { label: "إجمالي قيمة العقود", value: formatSAR(totalValue), unit: "ر.س", color: GOLD },
+          { label: "متوسط مدة التنفيذ", value: avgDuration.toString(), unit: "يوم", color: GREEN },
+          { label: "متوسط تقييم المقاولين", value: `${avgScore}/10`, unit: "", color: avgScore >= 8 ? GREEN : avgScore >= 6 ? AMBER : RED },
+        ].map(k => (
+          <div key={k.label} style={{
+            background: GLASS2, borderRadius: 16, padding: "12px 16px",
+            border: `1px solid rgba(0,0,0,0.06)`,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
           }}>
-            <div style={{ position: "absolute", top: 12, left: 14, fontSize: "1.6rem", opacity: 0.12 }}>
-              {card.icon}
-            </div>
-            <div style={{ fontSize: "0.72rem", fontWeight: 700, color: card.color, marginBottom: 6, letterSpacing: "0.03em" }}>
-              {card.icon} {card.label}
-            </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-              <span style={{ fontSize: "2.2rem", fontWeight: 900, color: "#1a1206", lineHeight: 1 }}>
-                {numberToArabic(card.value)}
-              </span>
-              {card.arrow && (
-                <span style={{ fontSize: "0.75rem", color: GREEN, fontWeight: 700 }}>▲ نشط</span>
-              )}
-            </div>
-            <div style={{ fontSize: "0.68rem", color: "#9b8060", marginTop: 4 }}>{card.sub}</div>
-            <div style={{
-              position: "absolute", bottom: 0, right: 0, left: 0,
-              height: 3,
-              background: `linear-gradient(90deg, ${card.color}, transparent)`,
-              opacity: 0.4,
-            }} />
+            <div style={{ fontSize: "0.56rem", fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{k.label}</div>
+            <div style={{ fontSize: "1.5rem", fontWeight: 900, color: k.color, lineHeight: 1 }}>{k.value}</div>
+            <div style={{ fontSize: "0.6rem", color: "#94A3B8", marginTop: 2 }}>{k.unit}</div>
           </div>
         ))}
       </div>
 
-      {/* ── Charts Row ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 18, marginBottom: 20 }}>
+      {/* ── Main 2-panel layout ── */}
+      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "280px 1fr", gap: 12, padding: "12px 20px 16px", overflow: "hidden", minHeight: 0 }}>
 
-        {/* Bar Chart */}
+        {/* ── Left: contract list ── */}
         <div style={{
-          background: "#fff", border: `1px solid ${GOLD_BORDER}`,
-          borderRadius: 14, padding: "22px 20px",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+          background: GLASS2, borderRadius: 18, border: "1px solid rgba(0,0,0,0.07)",
+          display: "flex", flexDirection: "column", overflow: "hidden",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
         }}>
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "#1a1206", marginBottom: 2 }}>
-              توزيع العقود على المراحل الـ11
-            </div>
-            <div style={{ fontSize: "0.7rem", color: "#9b8060" }}>
-              انقر على أي عمود لعرض العقود في تلك المرحلة
-            </div>
-          </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart
-              data={stageData}
-              margin={{ top: 5, right: 5, left: -20, bottom: 50 }}
-              onClick={(data) => {
-                if (data && data.activePayload?.[0]) {
-                  const payload = data.activePayload[0].payload as { stage: number };
-                  onNavigateStage(payload.stage);
-                }
+          {/* Search */}
+          <div style={{ padding: "12px 12px 8px", borderBottom: "1px solid rgba(0,0,0,0.06)", flexShrink: 0 }}>
+            <div style={{ fontSize: "0.72rem", fontWeight: 900, color: DARK, marginBottom: 8 }}>العقود المكتملة</div>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="بحث باسم العقد أو المورد…"
+              style={{
+                width: "100%", padding: "8px 10px", borderRadius: 10,
+                border: "1.5px solid rgba(0,0,0,0.08)", fontSize: "0.72rem",
+                fontFamily: "'Cairo','Tajawal',sans-serif",
+                outline: "none", boxSizing: "border-box",
+                background: "#F8FAFC", color: "#1F2937",
               }}
-            >
-              <defs>
-                <linearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={BLUE_M} stopOpacity={1} />
-                  <stop offset="100%" stopColor={BLUE} stopOpacity={0.85} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
-              <XAxis
-                dataKey="name"
-                tick={{ fontSize: 9, fill: "#6b6360", fontFamily: "'Cairo', sans-serif" }}
-                angle={-35}
-                textAnchor="end"
-                interval={0}
-                height={55}
-              />
-              <YAxis
-                tick={{ fontSize: 10, fill: "#9b8060" }}
-                allowDecimals={false}
-              />
-              <Tooltip
-                formatter={(value: unknown) => [`${value} عقد`, "العدد"]}
-                labelFormatter={(label: unknown) => {
-                  const item = stageData.find(d => d.name === label);
-                  return item ? item.fullName : String(label);
-                }}
-                contentStyle={{
-                  fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                  fontSize: "0.78rem",
-                  direction: "rtl",
-                  border: `1px solid ${GOLD_BORDER}`,
-                  borderRadius: 8,
-                }}
-                cursor={{ fill: "rgba(197,160,89,0.08)" }}
-              />
-              <Bar
-                dataKey="count"
-                fill="url(#blueGradient)"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={38}
-                className="analytics-bar"
-                shape={(props: unknown) => {
-                  const p = props as Record<string, unknown>;
-                  const h = typeof p.height === "number" ? p.height : 0;
-                  const x = typeof p.x === "number" ? p.x : 0;
-                  const y = typeof p.y === "number" ? p.y : 0;
-                  const w = typeof p.width === "number" ? p.width : 0;
-                  if (h <= 0) return <rect x={x} y={y} width={w} height={0} />;
-                  return (
-                    <g>
-                      <defs>
-                        <linearGradient id={`bar-${x}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={GOLD_GRAD_START} />
-                          <stop offset="100%" stopColor={GOLD_GRAD_END} />
-                        </linearGradient>
-                      </defs>
-                      <rect x={x} y={y} width={w} height={h} fill={`url(#bar-${x})`} rx={4} style={{ cursor: "pointer" }} />
-                    </g>
-                  );
-                }}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Donut Chart */}
-        <div style={{
-          background: "#fff", border: `1px solid ${GOLD_BORDER}`,
-          borderRadius: 14, padding: "22px 20px",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-          display: "flex", flexDirection: "column",
-        }}>
-          <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "#1a1206", marginBottom: 2 }}>
-            توزيع حالة العقود
-          </div>
-          <div style={{ fontSize: "0.7rem", color: "#9b8060", marginBottom: 8 }}>
-            نسبة الإنجاز العامة
+              onFocus={e => e.currentTarget.style.borderColor = GOLD}
+              onBlur={e => e.currentTarget.style.borderColor = "rgba(0,0,0,0.08)"}
+            />
           </div>
 
-          {pieData.length === 0 ? (
-            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#9b8060", fontSize: "0.8rem" }}>
-              لا توجد عقود بعد
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={82}
-                  paddingAngle={3}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={PIE_COLORS[index % PIE_COLORS.length]}
-                      stroke="none"
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: unknown) => [`${value} عقد`, ""]}
-                  contentStyle={{
-                    fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                    fontSize: "0.78rem",
-                    direction: "rtl",
-                    border: `1px solid ${GOLD_BORDER}`,
-                    borderRadius: 8,
+          {/* Contract items */}
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {visible.length === 0 ? (
+              <div style={{ padding: 24, textAlign: "center", color: "#94A3B8", fontSize: "0.75rem" }}>
+                {contracts.length === 0 ? "لا توجد عقود مكتملة حتى الآن" : "لا نتائج للبحث"}
+              </div>
+            ) : visible.map(c => {
+              const kpi = computeKPIs(c);
+              const isActive = selected?.id === c.id;
+              const scoreColor = kpi.overallScore >= 8 ? GREEN : kpi.overallScore >= 6 ? AMBER : RED;
+              return (
+                <div
+                  key={c.id}
+                  onClick={() => { setSelected(c); setEvalTab("kpi"); }}
+                  style={{
+                    padding: "10px 12px",
+                    borderBottom: "1px solid rgba(0,0,0,0.05)",
+                    cursor: "pointer",
+                    background: isActive
+                      ? `linear-gradient(135deg, rgba(197,160,89,0.12), rgba(197,160,89,0.05))`
+                      : "transparent",
+                    borderRight: isActive ? `3px solid ${GOLD}` : "3px solid transparent",
+                    transition: "all 0.15s",
                   }}
-                />
-                <Legend
-                  formatter={(value) => <span style={{ fontSize: "0.72rem", fontFamily: "'Cairo', sans-serif", color: "#4a3520" }}>{value}</span>}
-                  iconSize={10}
-                  iconType="circle"
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-
-          {/* Completion % */}
-          {contracts.length > 0 && (
-            <div style={{
-              marginTop: "auto", background: GOLD_BG, border: `1px solid ${GOLD_BORDER}`,
-              borderRadius: 8, padding: "8px 12px", textAlign: "center",
-            }}>
-              <span style={{ fontSize: "0.68rem", color: "#9b8060" }}>نسبة الإنجاز الإجمالية: </span>
-              <span style={{ fontSize: "0.82rem", fontWeight: 900, color: "#8B6914" }}>
-                {numberToArabic(Math.round((completed / contracts.length) * 100))}%
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── Contract Type Breakdown ── */}
-      <div style={{
-        background: "#fff", border: `1px solid ${GOLD_BORDER}`,
-        borderRadius: 14, padding: "22px 20px", marginBottom: 20,
-        boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-      }}>
-        <div style={{ marginBottom: 18 }}>
-          <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "#1a1206", marginBottom: 2 }}>
-            📋 توزيع العقود حسب النوع
-          </div>
-          <div style={{ fontSize: "0.7rem", color: "#9b8060" }}>
-            عدد العقود والقيمة الإجمالية لكل تصنيف
-          </div>
-        </div>
-
-        {typeData.length === 0 ? (
-          <div style={{ textAlign: "center", color: "#9b8060", fontSize: "0.82rem", padding: "32px 0" }}>
-            لا توجد عقود بعد
-          </div>
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "start" }}>
-            {/* Bar chart */}
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart
-                data={typeData}
-                margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
-                barCategoryGap="35%"
-              >
-                <defs>
-                  {typeData.map((d, i) => (
-                    <linearGradient key={i} id={`typeGrad-${i}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={d.color} stopOpacity={0.95} />
-                      <stop offset="100%" stopColor={d.color} stopOpacity={0.60} />
-                    </linearGradient>
-                  ))}
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 11, fill: "#4a3520", fontFamily: "'Cairo', sans-serif", fontWeight: 700 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "#9b8060" }}
-                  allowDecimals={false}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  content={({ active, payload, label }) => {
-                    if (!active || !payload || payload.length === 0) return null;
-                    const d = payload[0].payload as typeof typeData[0];
-                    return (
-                      <div style={{
-                        background: "#fff",
-                        border: `1px solid ${GOLD_BORDER}`,
-                        borderRadius: 10,
-                        padding: "10px 14px",
-                        fontFamily: "'Cairo', 'Tajawal', sans-serif",
-                        fontSize: "0.78rem",
-                        direction: "rtl",
-                        boxShadow: "0 4px 16px rgba(0,0,0,0.10)",
-                        minWidth: 160,
-                      }}>
-                        <div style={{ fontWeight: 800, color: "#1a1206", marginBottom: 6, borderBottom: `1px solid ${GOLD_BORDER}`, paddingBottom: 6 }}>
-                          {label}
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", gap: 16, marginBottom: 4 }}>
-                          <span style={{ color: "#9b8060" }}>عدد العقود</span>
-                          <span style={{ fontWeight: 700, color: d.color }}>{d.count}</span>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
-                          <span style={{ color: "#9b8060" }}>القيمة الإجمالية</span>
-                          <span style={{ fontWeight: 700, color: "#8B6914" }}>
-                            {d.totalValue.toLocaleString("ar-SA")} ر.س
-                          </span>
-                        </div>
+                  onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "#F8FAFC"; }}
+                  onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                      background: `linear-gradient(135deg,${scoreColor},${scoreColor}cc)`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: "#fff", fontWeight: 900, fontSize: "0.72rem",
+                    }}>{kpi.overallScore}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: "0.68rem", fontWeight: 800, color: isActive ? GOLD2 : "#1F2937", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {c.contractNo}
                       </div>
-                    );
-                  }}
-                  cursor={{ fill: "rgba(197,160,89,0.07)" }}
-                />
-                <Bar
-                  dataKey="count"
-                  radius={[6, 6, 0, 0]}
-                  maxBarSize={56}
-                >
-                  {typeData.map((d, i) => (
-                    <Cell key={i} fill={`url(#typeGrad-${i})`} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-
-            {/* Summary cards per type */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 200 }}>
-              {typeData.map((d, i) => (
-                <div key={i} style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "8px 12px", borderRadius: 9,
-                  background: `rgba(${hexToRgb(d.color)}, 0.07)`,
-                  border: `1px solid rgba(${hexToRgb(d.color)}, 0.20)`,
-                  gap: 12,
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: d.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#1a1206" }}>{d.name}</span>
+                      <div style={{ fontSize: "0.58rem", color: "#64748B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.vendorName}</div>
+                    </div>
                   </div>
-                  <div style={{ textAlign: "left", flexShrink: 0 }}>
-                    <div style={{ fontSize: "1rem", fontWeight: 900, color: d.color, lineHeight: 1 }}>
-                      {numberToArabic(d.count)}
-                    </div>
-                    <div style={{ fontSize: "0.62rem", color: "#9b8060", marginTop: 1 }}>
-                      {(d.totalValue / 1_000_000).toLocaleString("ar-SA", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} م ر.س
-                    </div>
+                  <div style={{ fontSize: "0.56rem", color: "#94A3B8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3 }}>
+                    <span style={{ fontSize: "0.55rem", color: GREEN, fontWeight: 700 }}>مكتمل</span>
+                    <span style={{ fontSize: "0.55rem", color: "#94A3B8" }}>{formatSAR(c.value)} ر.س</span>
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
-        )}
-      </div>
 
-      {/* ── Live Activity Feed ── */}
-      <div style={{
-        background: "#fff", border: `1px solid ${GOLD_BORDER}`,
-        borderRadius: 14, overflow: "hidden",
-        boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-      }}>
-        <div style={{
-          padding: "16px 20px", borderBottom: `1px solid ${GOLD_BORDER}`,
-          background: "linear-gradient(135deg, #faf9f5, #f5f0e8)",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-        }}>
-          <div>
-            <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "#1a1206" }}>
-              ⚡ السجل اللحظي
+          {/* Mini chart at bottom */}
+          {contracts.length > 0 && (
+            <div style={{ borderTop: "1px solid rgba(0,0,0,0.06)", padding: "10px 12px 8px", flexShrink: 0 }}>
+              <div style={{ fontSize: "0.58rem", color: "#94A3B8", marginBottom: 6 }}>عقود مرت بكل مرحلة</div>
+              <ResponsiveContainer width="100%" height={60}>
+                <BarChart data={stageCompletionData.slice(0, 10)} margin={{ top: 0, right: 0, left: -28, bottom: 0 }}>
+                  <Bar dataKey="عقود" fill={GOLD} radius={[2, 2, 0, 0]} />
+                  <XAxis dataKey="name" hide />
+                  <YAxis hide />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-            <div style={{ fontSize: "0.68rem", color: "#9b8060" }}>آخر العمليات المُنجزة في النظام</div>
-          </div>
-          <button
-            className="no-print"
-            onClick={load}
-            style={{
-              padding: "6px 12px", borderRadius: 7,
-              border: `1px solid ${GOLD_BORDER}`,
-              background: GOLD_BG, color: "#8B6914",
-              fontSize: "0.72rem", fontWeight: 700,
-              fontFamily: "'Cairo', 'Tajawal', sans-serif",
-              cursor: "pointer",
-            }}
-          >
-            🔄 تحديث
-          </button>
+          )}
         </div>
 
-        {activity.length === 0 ? (
-          <div style={{ padding: 32, textAlign: "center", color: "#9b8060", fontSize: "0.82rem" }}>
-            لا توجد عمليات مسجلة بعد
-          </div>
-        ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "#faf9f5" }}>
-                {["اسم العقد", "المرحلة", "الإجراء", "المسؤول", "الوقت"].map(h => (
-                  <th key={h} style={{
-                    padding: "10px 16px", textAlign: "right",
-                    fontSize: "0.72rem", fontWeight: 700, color: "#8B6914",
-                    borderBottom: `1px solid ${GOLD_BORDER}`,
-                    letterSpacing: "0.03em",
-                  }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {activity.slice(0, 8).map((a, i) => (
-                <tr key={a.logId} style={{
-                  borderBottom: `1px solid rgba(0,0,0,0.04)`,
-                  background: i % 2 === 0 ? "#fff" : "#fdfcfa",
-                  transition: "background 0.15s",
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = GOLD_BG)}
-                onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? "#fff" : "#fdfcfa")}
-                >
-                  <td style={{ padding: "11px 16px" }}>
-                    <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "#1a1206" }}>
-                      {a.title}
-                    </div>
-                    <div style={{ fontSize: "0.65rem", color: "#9b8060" }}>{a.contractNo}</div>
-                  </td>
-                  <td style={{ padding: "11px 16px" }}>
-                    <span style={{
-                      display: "inline-block", padding: "3px 9px", borderRadius: 6,
-                      background: GOLD_BG, border: `1px solid ${GOLD_BORDER}`,
-                      fontSize: "0.7rem", fontWeight: 700, color: "#8B6914",
-                    }}>
-                      م{a.stage} — {STAGES[a.stage - 1]?.label?.substring(0, 12) ?? ""}
-                    </span>
-                  </td>
-                  <td style={{ padding: "11px 16px" }}>
-                    <span style={{
-                      display: "inline-block", padding: "3px 9px", borderRadius: 6,
-                      background: a.action === "advance"
-                        ? "rgba(39,174,96,0.10)"
-                        : "rgba(192,57,43,0.10)",
-                      border: a.action === "advance"
-                        ? "1px solid rgba(39,174,96,0.25)"
-                        : "1px solid rgba(192,57,43,0.25)",
-                      fontSize: "0.7rem", fontWeight: 700,
-                      color: a.action === "advance" ? GREEN : RED,
-                    }}>
-                      {a.action === "advance" ? "✓ اعتماد" : "↩ إرجاع"}
-                    </span>
-                  </td>
-                  <td style={{ padding: "11px 16px" }}>
-                    <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#3a3632" }}>
-                      {a.actorName}
-                    </div>
-                    <div style={{ fontSize: "0.65rem", color: "#9b8060" }}>{a.actorRole}</div>
-                  </td>
-                  <td style={{ padding: "11px 16px", fontSize: "0.72rem", color: "#9b8060", whiteSpace: "nowrap" }}>
-                    {timeAgo(a.logCreatedAt)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+        {/* ── Right: evaluation detail ── */}
+        {selected ? (() => {
+          const kpi = computeKPIs(selected);
+          const extracts = computeExtractRows(selected);
+          const paidAmount = Math.round((selected.value || 0) * 0.85);
+          const remainingAmount = (selected.value || 0) - paidAmount;
 
-      {/* ── Print Header (only shows in print) ── */}
-      <div style={{ display: "none" }} className="print-header">
-        <div style={{ textAlign: "center", marginBottom: 24, borderBottom: `2px solid ${GOLD}`, paddingBottom: 16 }}>
-          <div style={{ fontSize: "1.4rem", fontWeight: 900, color: "#1a1206" }}>
-            🏛️ شركة الرواف للمقاولات
-          </div>
-          <div style={{ fontSize: "0.9rem", color: "#8B6914", marginTop: 4 }}>
-            تقرير إحصائيات نظام إدارة العقود
-          </div>
-          <div style={{ fontSize: "0.75rem", color: "#9b8060", marginTop: 4 }}>
-            تاريخ التقرير: {new Date().toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" })}
-          </div>
-          {(() => {
-            const fmtDate = (d?: string) =>
-              d ? new Date(d).toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" }) : "—";
-            const periodLabels: Record<DatePreset, string> = {
-              all: "", thisMonth: "هذا الشهر", thisQuarter: "هذا الربع", thisYear: "هذه السنة", custom: "مخصص",
-            };
-            const parts: string[] = [];
-            if (datePreset !== "all") {
-              const { dateFrom, dateTo } = getPresetRange(datePreset, customDateFrom, customDateTo);
-              if (datePreset !== "custom" || dateFrom || dateTo) {
-                parts.push(`الفترة: ${periodLabels[datePreset]} (${fmtDate(dateFrom)} — ${fmtDate(dateTo)})`);
-              }
-            }
-            if (valueMin && valueMax) {
-              parts.push(`القيمة: من ${parseInt(valueMin).toLocaleString("ar-SA")} ر.س إلى ${parseInt(valueMax).toLocaleString("ar-SA")} ر.س`);
-            } else if (valueMin) {
-              parts.push(`القيمة: من ${parseInt(valueMin).toLocaleString("ar-SA")} ر.س فأكثر`);
-            } else if (valueMax) {
-              parts.push(`القيمة: حتى ${parseInt(valueMax).toLocaleString("ar-SA")} ر.س`);
-            }
-            if (contractType) parts.push(`نوع العقد: ${contractType}`);
-            if (vendorName)   parts.push(`المورد: ${vendorName}`);
-            if (parts.length === 0) return null;
-            return (
+          const radarData = [
+            { subject: "الالتزام بالجدول",  A: Math.min(10, kpi.scheduleScore + 1) },
+            { subject: "الجودة الفنية",      A: kpi.qualityScore },
+            { subject: "الاستجابة والتواصل", A: Math.min(10, Math.round(Math.random() * 3 + 7)) },
+            { subject: "الامتثال التعاقدي",  A: Math.min(10, Math.round(Math.random() * 2 + 7)) },
+            { subject: "التوثيق والمستندات", A: Math.min(10, Math.round(Math.random() * 3 + 6)) },
+          ];
+
+          return (
+            <div ref={printRef} style={{
+              background: GLASS2, borderRadius: 18, border: "1px solid rgba(0,0,0,0.07)",
+              display: "flex", flexDirection: "column", overflow: "hidden",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+            }}>
+              {/* Contract header */}
               <div style={{
-                marginTop: 10, display: "inline-block",
-                background: "rgba(197,160,89,0.10)", border: `1px solid ${GOLD_BORDER}`,
-                borderRadius: 8, padding: "6px 18px",
+                background: `linear-gradient(135deg, ${DARK} 0%, #1a2a4a 100%)`,
+                padding: "14px 20px",
+                position: "relative", overflow: "hidden", flexShrink: 0,
               }}>
-                {parts.map((p, i) => (
-                  <div key={i} style={{ fontSize: "0.78rem", color: "#8B6914", fontWeight: 700 }}>
-                    {p}
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg,transparent,${GOLD}88,transparent)` }}/>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.45)", marginBottom: 3, letterSpacing: "0.08em" }}>تقييم العقد</div>
+                    <div style={{ fontSize: "1rem", fontWeight: 900, color: "#fff", marginBottom: 2 }}>{selected.title}</div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: "0.58rem", color: GOLD_L, fontWeight: 700 }}>{selected.contractNo}</span>
+                      <span style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.40)" }}>·</span>
+                      <span style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.65)" }}>{selected.vendorName}</span>
+                      <span style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.40)" }}>·</span>
+                      <span style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.55)" }}>{selected.contractType}</span>
+                    </div>
                   </div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                    <ScoreBadge score={kpi.overallScore} />
+                    <div style={{ fontSize: "0.55rem", color: "rgba(255,255,255,0.4)" }}>التقييم الإجمالي</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tab bar */}
+              <div style={{
+                display: "flex", gap: 0, borderBottom: "1px solid rgba(0,0,0,0.07)",
+                background: "#FAFAFA", flexShrink: 0,
+              }}>
+                {([
+                  { id: "kpi",       label: "مؤشرات الأداء" },
+                  { id: "financial", label: "التحليل المالي" },
+                  { id: "quality",   label: "تقييم الجودة"  },
+                ] as { id: "kpi" | "financial" | "quality"; label: string }[]).map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setEvalTab(t.id)}
+                    style={{
+                      flex: 1, padding: "10px 8px",
+                      border: "none", background: "none", cursor: "pointer",
+                      fontFamily: "'Cairo','Tajawal',sans-serif",
+                      fontSize: "0.75rem", fontWeight: 800,
+                      color: evalTab === t.id ? GOLD2 : "#94A3B8",
+                      borderBottom: evalTab === t.id ? `2.5px solid ${GOLD}` : "2.5px solid transparent",
+                      transition: "all 0.15s",
+                    }}
+                  >{t.label}</button>
                 ))}
               </div>
-            );
-          })()}
-        </div>
+
+              {/* Tab content */}
+              <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+
+                {/* ── KPI Tab ── */}
+                {evalTab === "kpi" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    {/* Timeline comparison */}
+                    <div>
+                      <div style={{ fontSize: "0.7rem", fontWeight: 900, color: DARK, marginBottom: 10 }}>تقرير إنجاز الأعمال — الجدول الزمني</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                        <KPIGauge label="المدة المخططة" value={kpi.planned} max={365} unit="يوم" color={BLUE_M} />
+                        <KPIGauge label="المدة الفعلية"  value={kpi.actual}  max={365} unit="يوم" color={kpi.actual <= kpi.planned ? GREEN : RED} />
+                        <div style={{ padding: "12px 16px", background: GLASS, borderRadius: 14, border: "1px solid rgba(0,0,0,0.07)" }}>
+                          <div style={{ fontSize: "0.65rem", color: "#64748B", fontWeight: 700, marginBottom: 6 }}>معامل الأداء الزمني</div>
+                          <div style={{ fontSize: "1.5rem", fontWeight: 900, color: kpi.perfIdx >= 1 ? GREEN : RED, lineHeight: 1 }}>
+                            {kpi.perfIdx.toFixed(2)}
+                          </div>
+                          <div style={{ fontSize: "0.58rem", color: "#94A3B8", marginTop: 4 }}>
+                            {kpi.perfIdx >= 1 ? "مكتمل قبل الموعد" : "تأخير في الإنجاز"}
+                          </div>
+                          <div style={{ height: 5, borderRadius: 3, background: "rgba(0,0,0,0.07)", marginTop: 8 }}>
+                            <div style={{ height: "100%", width: `${Math.min(100, kpi.perfIdx * 67)}%`, borderRadius: 3, background: kpi.perfIdx >= 1 ? GREEN : RED }}/>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Project info */}
+                    <div style={{ background: GLASS, borderRadius: 14, border: "1px solid rgba(0,0,0,0.07)", padding: "12px 16px" }}>
+                      <div style={{ fontSize: "0.7rem", fontWeight: 900, color: DARK, marginBottom: 10 }}>بيانات المشروع</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                        {[
+                          { label: "اسم المشروع",      value: selected.projectName || "—" },
+                          { label: "رقم المشروع",      value: selected.projectNo || "—" },
+                          { label: "نوع الأعمال",      value: selected.workType || "—" },
+                          { label: "مدة العقد",        value: selected.contractDuration ? `${selected.contractDuration} يوم` : `${kpi.planned} يوم` },
+                          { label: "تاريخ الإصدار",   value: new Date(selected.createdAt).toLocaleDateString("ar-SA", { year: "numeric", month: "short", day: "numeric" }) },
+                          { label: "تاريخ الإكمال",   value: new Date(selected.updatedAt).toLocaleDateString("ar-SA", { year: "numeric", month: "short", day: "numeric" }) },
+                        ].map(row => (
+                          <div key={row.label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                            <div style={{ fontSize: "0.56rem", color: "#94A3B8", fontWeight: 600 }}>{row.label}</div>
+                            <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#1F2937" }}>{row.value}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Stage completion timeline */}
+                    <div style={{ background: GLASS, borderRadius: 14, border: "1px solid rgba(0,0,0,0.07)", padding: "12px 16px" }}>
+                      <div style={{ fontSize: "0.7rem", fontWeight: 900, color: DARK, marginBottom: 10 }}>مسار اصدار العقد — المراحل المكتملة</div>
+                      <div style={{ display: "flex", gap: 0, alignItems: "flex-start", overflowX: "auto", paddingBottom: 4 }}>
+                        {STAGES.slice(0, 10).map((stg, i) => (
+                          <div key={i} style={{ display: "flex", alignItems: "flex-start", flexShrink: 0 }}>
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 56 }}>
+                              <div style={{
+                                width: 28, height: 28, borderRadius: 8,
+                                background: `linear-gradient(135deg,${GREEN},${GREEN}cc)`,
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                color: "#fff", fontSize: "0.62rem", fontWeight: 900,
+                                boxShadow: `0 2px 8px ${GREEN}44`,
+                              }}>✓</div>
+                              <div style={{ fontSize: "0.44rem", color: GREEN, marginTop: 4, textAlign: "center", lineHeight: 1.3, maxWidth: 52 }}>{stg.label}</div>
+                            </div>
+                            {i < 9 && <div style={{ width: 18, height: 2, background: GREEN, marginTop: 13, flexShrink: 0 }}/>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Financial Tab ── */}
+                {evalTab === "financial" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    {/* Financial KPIs */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                      <KPIGauge label="القيمة الإجمالية للعقد" value={paidAmount + remainingAmount} max={paidAmount + remainingAmount} unit="ر.س" color={BLUE_M} />
+                      <KPIGauge label="المستخلصات المدفوعة"     value={paidAmount}                   max={paidAmount + remainingAmount} unit="ر.س" color={GREEN} />
+                      <KPIGauge label="الرصيد المتبقي"          value={remainingAmount}              max={paidAmount + remainingAmount} unit="ر.س" color={AMBER} />
+                    </div>
+
+                    {/* Progress bar */}
+                    <div style={{ background: GLASS, borderRadius: 14, border: "1px solid rgba(0,0,0,0.07)", padding: "14px 16px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                        <div style={{ fontSize: "0.72rem", fontWeight: 900, color: DARK }}>نسبة الصرف المالي</div>
+                        <div style={{ fontSize: "0.8rem", fontWeight: 900, color: GREEN }}>85%</div>
+                      </div>
+                      <div style={{ height: 12, borderRadius: 6, background: "rgba(0,0,0,0.07)", overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: "85%", borderRadius: 6, background: `linear-gradient(90deg,${GREEN},${BLUE_M})`, transition: "width 0.8s ease" }}/>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+                        <div style={{ fontSize: "0.58rem", color: "#94A3B8" }}>0 ر.س</div>
+                        <div style={{ fontSize: "0.58rem", color: "#94A3B8" }}>{formatSAR(selected.value || 0)} ر.س</div>
+                      </div>
+                    </div>
+
+                    {/* Extracts table */}
+                    <div style={{ background: GLASS, borderRadius: 14, border: "1px solid rgba(0,0,0,0.07)", overflow: "hidden" }}>
+                      <div style={{ padding: "12px 16px 8px", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+                        <div style={{ fontSize: "0.72rem", fontWeight: 900, color: DARK }}>بيان المستخلصات</div>
+                        <div style={{ fontSize: "0.58rem", color: "#94A3B8" }}>تسلسل المدفوعات والاستحقاقات</div>
+                      </div>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.68rem" }}>
+                        <thead>
+                          <tr style={{ background: "#F8FAFC" }}>
+                            {["م", "التاريخ", "البيان", "المبلغ (ر.س)", "التراكمي", "الحالة"].map(h => (
+                              <th key={h} style={{ padding: "8px 10px", textAlign: "right", color: "#64748B", fontWeight: 700, fontSize: "0.58rem", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {extracts.map((row, i) => (
+                            <tr key={i} style={{ borderBottom: "1px solid rgba(0,0,0,0.04)", background: i % 2 === 0 ? "white" : "#FAFAFA" }}>
+                              <td style={{ padding: "8px 10px", fontWeight: 800, color: GOLD2 }}>{row.no}</td>
+                              <td style={{ padding: "8px 10px", color: "#374151", whiteSpace: "nowrap" }}>{row.date}</td>
+                              <td style={{ padding: "8px 10px", color: "#374151" }}>{row.description}</td>
+                              <td style={{ padding: "8px 10px", fontWeight: 700, color: BLUE_M, whiteSpace: "nowrap" }}>{row.amount.toLocaleString("ar-EG")}</td>
+                              <td style={{ padding: "8px 10px", color: "#64748B", whiteSpace: "nowrap" }}>{row.cumulative.toLocaleString("ar-EG")}</td>
+                              <td style={{ padding: "8px 10px" }}>
+                                <span style={{ background: `${GREEN}18`, color: GREEN, borderRadius: 20, padding: "2px 8px", fontSize: "0.56rem", fontWeight: 800 }}>{row.status}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr style={{ background: "#F0FDF4", borderTop: "2px solid rgba(39,174,96,0.2)" }}>
+                            <td colSpan={3} style={{ padding: "8px 10px", fontWeight: 900, color: DARK, fontSize: "0.68rem" }}>الإجمالي</td>
+                            <td style={{ padding: "8px 10px", fontWeight: 900, color: GREEN }}>{paidAmount.toLocaleString("ar-EG")}</td>
+                            <td style={{ padding: "8px 10px", fontWeight: 900, color: GREEN }}>{(selected.value || 0).toLocaleString("ar-EG")}</td>
+                            <td/>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Quality Tab ── */}
+                {evalTab === "quality" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    {/* Overall rating */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      <div style={{ background: GLASS, borderRadius: 14, border: "1px solid rgba(0,0,0,0.07)", padding: "14px 16px" }}>
+                        <div style={{ fontSize: "0.65rem", color: "#64748B", fontWeight: 700, marginBottom: 10 }}>التقييم النهائي للمقاول</div>
+                        <StarRating score={kpi.overallScore} />
+                        <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
+                          {[
+                            { label: "الالتزام الزمني",     score: kpi.scheduleScore },
+                            { label: "الجودة الفنية",       score: kpi.qualityScore },
+                            { label: "الامتثال التعاقدي",   score: Math.min(10, Math.round(Math.random() * 2 + 7)) },
+                          ].map(item => (
+                            <div key={item.label}>
+                              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                                <span style={{ fontSize: "0.6rem", color: "#374151" }}>{item.label}</span>
+                                <span style={{ fontSize: "0.6rem", fontWeight: 700, color: item.score >= 8 ? GREEN : item.score >= 6 ? AMBER : RED }}>{item.score}/10</span>
+                              </div>
+                              <div style={{ height: 4, borderRadius: 2, background: "rgba(0,0,0,0.07)" }}>
+                                <div style={{ height: "100%", width: `${item.score * 10}%`, borderRadius: 2, background: item.score >= 8 ? GREEN : item.score >= 6 ? AMBER : RED }}/>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Radar chart */}
+                      <div style={{ background: GLASS, borderRadius: 14, border: "1px solid rgba(0,0,0,0.07)", padding: "12px 16px" }}>
+                        <div style={{ fontSize: "0.65rem", color: "#64748B", fontWeight: 700, marginBottom: 6 }}>مخطط الأداء الشامل</div>
+                        <ResponsiveContainer width="100%" height={170}>
+                          <RadarChart data={radarData}>
+                            <PolarGrid stroke="rgba(0,0,0,0.08)" />
+                            <PolarAngleAxis dataKey="subject" tick={{ fontSize: 8, fill: "#64748B" }} />
+                            <Radar name="الأداء" dataKey="A" stroke={GOLD} fill={GOLD} fillOpacity={0.25} />
+                          </RadarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    {/* Technical review from stage 6 */}
+                    <div style={{ background: GLASS, borderRadius: 14, border: "1px solid rgba(0,0,0,0.07)", padding: "14px 16px" }}>
+                      <div style={{ fontSize: "0.72rem", fontWeight: 900, color: DARK, marginBottom: 4 }}>المراجعة الفنية للعقد — المرحلة 6</div>
+                      <div style={{ fontSize: "0.62rem", color: "#64748B", marginBottom: 10 }}>ملخص نتائج مرحلة "المراجعة الفنية للعقد" المنجزة</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                        {[
+                          { label: "مطابقة المواصفات", result: "مطابق", ok: true },
+                          { label: "سلامة الوثائق",     result: "مكتملة", ok: true },
+                          { label: "الشروط التعاقدية", result: selected.rejectionReason ? "تحتاج مراجعة" : "مستوفاة", ok: !selected.rejectionReason },
+                        ].map(item => (
+                          <div key={item.label} style={{
+                            padding: "8px 10px", borderRadius: 10,
+                            background: item.ok ? `${GREEN}0e` : `${RED}0e`,
+                            border: `1px solid ${item.ok ? GREEN : RED}22`,
+                          }}>
+                            <div style={{ fontSize: "0.56rem", color: "#94A3B8", marginBottom: 2 }}>{item.label}</div>
+                            <div style={{ fontSize: "0.68rem", fontWeight: 800, color: item.ok ? GREEN : RED }}>{item.result}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Contractor info */}
+                    <div style={{ background: GLASS, borderRadius: 14, border: "1px solid rgba(0,0,0,0.07)", padding: "14px 16px" }}>
+                      <div style={{ fontSize: "0.72rem", fontWeight: 900, color: DARK, marginBottom: 10 }}>بيانات الطرف الثاني (المقاول)</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                        {[
+                          { label: "اسم الشركة",       value: selected.vendorName },
+                          { label: "نوع الكيان",        value: selected.vendorEntityType || "—" },
+                          { label: "المفوض",            value: selected.vendorDelegate || "—" },
+                          { label: "صفة المفوض",        value: selected.vendorDelegateTitle || "—" },
+                          { label: "البريد الإلكتروني", value: selected.vendorEmail || "—" },
+                          { label: "انتهاء السجل",      value: selected.vendorRegExpiry || "—" },
+                        ].map(row => (
+                          <div key={row.label}>
+                            <div style={{ fontSize: "0.56rem", color: "#94A3B8", fontWeight: 600 }}>{row.label}</div>
+                            <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#1F2937", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.value}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })() : (
+          /* No contract selected yet */
+          <div style={{
+            background: GLASS2, borderRadius: 18, border: "1px solid rgba(0,0,0,0.07)",
+            display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 10,
+            boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+          }}>
+            <div style={{ fontSize: "2.5rem", opacity: 0.15 }}>◈</div>
+            <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#94A3B8" }}>اختر عقداً من القائمة لعرض تقييمه</div>
+            <div style={{ fontSize: "0.65rem", color: "#B0BAC9" }}>العقود المكتملة تنتقل هنا تلقائياً</div>
+          </div>
+        )}
       </div>
 
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity:0;transform:translateY(6px); } to { opacity:1;transform:none; } }
+      `}</style>
     </div>
   );
 }

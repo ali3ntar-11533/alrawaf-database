@@ -56,7 +56,7 @@ const TABS: { id: ContractTab; label: string }[] = [
   { id: "dashboard",  label: "لوحة القيادة"         },
   { id: "requests",   label: "طلبات العقود"          },
   { id: "tracking",   label: "متابعة العقود"         },
-  { id: "analytics",  label: "التحليلات والتقارير"   },
+  { id: "analytics",  label: "التقييم"                },
 ];
 
 export default function ContractSidebar({
