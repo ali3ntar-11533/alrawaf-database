@@ -332,7 +332,7 @@ function PriceInputPill({
     display:        "flex",
     alignItems:     "center",
     gap:            "4px",
-    padding:        "4px 8px 4px 10px",
+    padding:        "2px 7px 2px 8px",
     borderRadius:   "20px",
     border:         disabled
       ? "1.5px solid rgba(197,160,89,0.12)"
@@ -351,7 +351,7 @@ function PriceInputPill({
 
   return (
     <div style={pillStyle} title={disabled ? "يُفعَّل عند كتابة نص في البحث أو تحديد فلتر آخر" : undefined}>
-      <span style={{ fontSize: "0.63rem", color: isActive ? "var(--gold)" : "rgba(255,255,255,0.55)", fontWeight: 600, fontFamily: "Tajawal, sans-serif", flexShrink: 0 }}>
+      <span style={{ fontSize: "0.57rem", color: isActive ? "var(--gold)" : "rgba(255,255,255,0.55)", fontWeight: 600, fontFamily: "Tajawal, sans-serif", flexShrink: 0 }}>
         سعر البند
       </span>
       <input
@@ -363,11 +363,11 @@ function PriceInputPill({
         onChange={(e) => !disabled && onChange(e.target.value)}
         className="price-no-spin"
         style={{
-          width:       "44px",
+          width:       "40px",
           background:  "transparent",
           border:      "none",
           outline:     "none",
-          fontSize:    "0.63rem",
+          fontSize:    "0.57rem",
           fontWeight:  isActive ? 700 : 400,
           color:       isActive ? "var(--gold)" : "rgba(255,255,255,0.45)",
           fontFamily:  "Tajawal, sans-serif",
@@ -492,11 +492,11 @@ export default function FilterBar({ filters, onFiltersChange, search = "" }: Fil
               onClick={clearAll}
               style={{
                 display: "flex", alignItems: "center", gap: "5px",
-                padding: "3px 7px", borderRadius: "20px",
+                padding: "2px 5px", borderRadius: "20px",
                 border: "1px solid rgba(231,76,60,0.4)",
                 background: "rgba(231,76,60,0.10)",
                 color: "rgba(231,76,60,0.85)",
-                fontSize: "0.57rem", fontWeight: 700,
+                fontSize: "0.52rem", fontWeight: 700,
                 fontFamily: "Tajawal, sans-serif",
                 cursor: "pointer", whiteSpace: "nowrap",
                 flexShrink: 0, transition: "all 0.15s",
