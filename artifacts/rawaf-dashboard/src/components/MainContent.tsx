@@ -96,14 +96,16 @@ export default function MainContent({ contractor, allContractors, filteredContra
   const [activeStat, setActiveStat] = useState(0);
   // Prevents resetting activeStat when contractor change was triggered by clicking a stat cell
   const skipStatReset = useRef(false);
-  // Cycle indices for min/max cells — cycling through same-price contractors
+  // Cycle indices for min / avg / max cells
   const [minCycleIdx, setMinCycleIdx] = useState(0);
+  const [avgCycleIdx, setAvgCycleIdx] = useState(0);
   const [maxCycleIdx, setMaxCycleIdx] = useState(0);
 
   useEffect(() => {
     if (skipStatReset.current) { skipStatReset.current = false; return; }
     setActiveStat(customPrice && customPrice > 0 ? 2 : 0);
     setMinCycleIdx(0);
+    setAvgCycleIdx(0);
     setMaxCycleIdx(0);
   }, [contractor?.id]);
   // When a custom price is entered for the first time, default to avg comparison (index 2)
@@ -238,14 +240,16 @@ export default function MainContent({ contractor, allContractors, filteredContra
     {
       label: "متوسط الأسعار لهذا البند",
       sub2: (() => {
-        const names = [...new Set(pricePool.map((c) => c.contractor))];
-        if (names.length === 0) return "—";
-        if (names.length === 1) return names[0];
-        if (names.length === 2) return `${names[0]} + ${names[1]}`;
-        return `${names[0]} + ${names[1]} (+${names.length - 2})`;
+        const n = validPricePool.length;
+        if (n === 0) return "—";
+        const current = validPricePool[avgCycleIdx % n];
+        if (n === 1) return current?.contractor ?? "—";
+        return `${current?.contractor ?? "—"} (${avgCycleIdx % n + 1}/${n})`;
       })(),
       value: formatExact(Math.round(avgPrice)), color: "#3b8fcc",
-      id: avgContractor?.id ?? null, rawPrice: Math.round(avgPrice),
+      id: validPricePool.length > 0 ? (validPricePool[avgCycleIdx % validPricePool.length]?.id ?? null) : null,
+      rawPrice: Math.round(avgPrice),
+      cycleCount: validPricePool.length, cyclePos: avgCycleIdx,
     },
     {
       label: "أعلى سعر لهذا البند",
@@ -352,11 +356,17 @@ export default function MainContent({ contractor, allContractors, filteredContra
           </p>
         </div>
 
-        {/* Grid: نوع الأعمال — نوع العمل — الوحدة — برنامج الأعمال */}
+        {/* Grid: برنامج الأعمال — نوع الأعمال — نوع العمل — الوحدة */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "10px" }}>
           <div style={{ background: "linear-gradient(135deg, rgba(197,160,89,0.07), rgba(197,160,89,0.02))", border: "1px solid rgba(197,160,89,0.2)", borderRadius: "9px", padding: "12px 14px", minWidth: 0, overflow: "hidden" }}>
-            <div style={{ fontSize: "0.55rem", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>نوع الأعمال</div>
+            <div style={{ fontSize: "0.55rem", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>برنامج الأعمال</div>
             <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)", minWidth: 0, overflow: "hidden" }}>
+              <TruncatedBadge value={(contractor as any).businessProgram || "—"} title={(contractor as any).businessProgram || "—"} />
+            </div>
+          </div>
+          <div style={{ background: "linear-gradient(135deg, rgba(58,54,50,0.04), rgba(58,54,50,0.01))", border: "1px solid rgba(58,54,50,0.1)", borderRadius: "9px", padding: "12px 14px" }}>
+            <div style={{ fontSize: "0.55rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>نوع الأعمال</div>
+            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>
               <TruncatedBadge value={contractor.workType || "—"} title={contractor.workType || "—"} />
             </div>
           </div>
@@ -370,12 +380,6 @@ export default function MainContent({ contractor, allContractors, filteredContra
             <div style={{ fontSize: "0.55rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>الوحدة</div>
             <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>
               <TruncatedBadge value={(contractor as any).unit || "—"} title={(contractor as any).unit || "—"} />
-            </div>
-          </div>
-          <div style={{ background: "linear-gradient(135deg, rgba(58,54,50,0.04), rgba(58,54,50,0.01))", border: "1px solid rgba(58,54,50,0.1)", borderRadius: "9px", padding: "12px 14px" }}>
-            <div style={{ fontSize: "0.55rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>برنامج الأعمال</div>
-            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>
-              <TruncatedBadge value={(contractor as any).businessProgram || "—"} title={(contractor as any).businessProgram || "—"} />
             </div>
           </div>
         </div>
@@ -525,17 +529,27 @@ export default function MainContent({ contractor, allContractors, filteredContra
                   key={i}
                   onClick={() => {
                     setActiveStat(i);
-                    // ── Cycling logic for min (i=1) and max (i=3) cells ──
+                    const scrollToTop = () => requestAnimationFrame(() => {
+                      const area = document.querySelector<HTMLElement>(".content-area");
+                      if (area) area.scrollTo({ top: 0, behavior: "smooth" });
+                      else window.scrollTo({ top: 0, behavior: "smooth" });
+                    });
+
+                    // ── Cycling logic for min (i=1), avg (i=2), max (i=3) ──
                     if (i === 1 && contractorsAtMin.length > 1) {
                       const nextIdx = (minCycleIdx + 1) % contractorsAtMin.length;
                       setMinCycleIdx(nextIdx);
                       skipStatReset.current = true;
                       onSelectId(contractorsAtMin[nextIdx].id);
-                      requestAnimationFrame(() => {
-                        const area = document.querySelector<HTMLElement>(".content-area");
-                        if (area) area.scrollTo({ top: 0, behavior: "smooth" });
-                        else window.scrollTo({ top: 0, behavior: "smooth" });
-                      });
+                      scrollToTop();
+                      return;
+                    }
+                    if (i === 2 && validPricePool.length > 1) {
+                      const nextIdx = (avgCycleIdx + 1) % validPricePool.length;
+                      setAvgCycleIdx(nextIdx);
+                      skipStatReset.current = true;
+                      onSelectId(validPricePool[nextIdx].id);
+                      scrollToTop();
                       return;
                     }
                     if (i === 3 && contractorsAtMax.length > 1) {
@@ -543,22 +557,14 @@ export default function MainContent({ contractor, allContractors, filteredContra
                       setMaxCycleIdx(nextIdx);
                       skipStatReset.current = true;
                       onSelectId(contractorsAtMax[nextIdx].id);
-                      requestAnimationFrame(() => {
-                        const area = document.querySelector<HTMLElement>(".content-area");
-                        if (area) area.scrollTo({ top: 0, behavior: "smooth" });
-                        else window.scrollTo({ top: 0, behavior: "smooth" });
-                      });
+                      scrollToTop();
                       return;
                     }
                     // Default: navigate to the stat's contractor
                     if (stat.id != null) {
                       skipStatReset.current = true;
                       onSelectId(stat.id);
-                      requestAnimationFrame(() => {
-                        const area = document.querySelector<HTMLElement>(".content-area");
-                        if (area) area.scrollTo({ top: 0, behavior: "smooth" });
-                        else window.scrollTo({ top: 0, behavior: "smooth" });
-                      });
+                      scrollToTop();
                     }
                   }}
                   style={{
