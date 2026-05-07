@@ -128,26 +128,25 @@ export default function MainContent({ contractor, allContractors, filteredContra
     );
   }
 
-  // ── Global price pool: ALL records sharing the same نوع الأعمال + برنامج الأعمال ──
-  // Both workType AND businessProgram must match (if businessProgram is set on the selected record).
-  // This gives a focused, meaningful price comparison for the same work category.
+  // ── Price pool: scoped to filteredContractors (current search/filter context)
+  //    + same نوع الأعمال + برنامج الأعمال as the selected contractor.
+  //    filteredContractors = allContractors when no search/filter is active.
   const workTypeKey        = contractor ? normalize(contractor.workType) : "";
   const businessProgramKey = contractor ? normalize((contractor as any).businessProgram ?? "") : "";
 
   const globalPricePool: Contractor[] = contractor && workTypeKey.length > 0
-    ? allContractors.filter((c) => {
+    ? filteredContractors.filter((c) => {
         const typeMatch = normalize(c.workType) === workTypeKey;
         if (!businessProgramKey) return typeMatch;
-        // Also match businessProgram when the selected contractor has one
         return typeMatch && normalize((c as any).businessProgram ?? "") === businessProgramKey;
       })
     : contractor ? [contractor] : [];
 
-  // Fallback: if pool is empty (no match on both fields), widen to workType only
+  // Fallback: if pool is empty (no match on both fields), widen to workType only within filtered set
   const pricePool = globalPricePool.length > 0
     ? globalPricePool
     : contractor && workTypeKey.length > 0
-      ? allContractors.filter((c) => normalize(c.workType) === workTypeKey)
+      ? filteredContractors.filter((c) => normalize(c.workType) === workTypeKey)
       : contractor ? [contractor] : [];
   const scopePoolSize = pricePool.length;
 

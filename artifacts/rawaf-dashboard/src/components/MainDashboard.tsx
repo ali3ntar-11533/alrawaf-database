@@ -90,6 +90,11 @@ export default function MainDashboard({ search, filters, selectedId, onSelectId 
       ? (allContractors.find((c: Contractor) => c.id === selectedId) ?? null)
       : filtered[0] ?? null;
 
+  // Is the selected contractor part of the current filter result?
+  // If not (e.g. navigated via work-history from outside the filter),
+  // fall back to allContractors so price comparison stays meaningful.
+  const selectedInFiltered = selected != null && filtered.some((c: Contractor) => c.id === selected.id);
+
   const hasNoSearchResults = (hasSearch || hasFilters) && filtered.length === 0;
 
   // Show welcome only when truly idle — no search, no filters, no direct selection
@@ -110,7 +115,7 @@ export default function MainDashboard({ search, filters, selectedId, onSelectId 
       <MainContent
         contractor={selected}
         allContractors={allContractors}
-        filteredContractors={filtered.length > 0 ? filtered : allContractors}
+        filteredContractors={(hasSearch || hasFilters) && selectedInFiltered ? filtered : allContractors}
         isLoading={isLoading}
         onSelectId={onSelectId}
         customPrice={filters.itemPrice ? Number(filters.itemPrice) : null}
