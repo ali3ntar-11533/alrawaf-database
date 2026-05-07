@@ -94,11 +94,17 @@ function TruncatedBadge({
 export default function MainContent({ contractor, allContractors, filteredContractors, isLoading, onSelectId, customPrice, emptyStateMessage }: Props) {
   // Active stat tab index (0=custom/current, 1=min, 2=avg, 3=max)
   const [activeStat, setActiveStat] = useState(0);
-  // Prevents resettig activeStat when contractor change was triggered by clicking a stat cell
+  // Prevents resetting activeStat when contractor change was triggered by clicking a stat cell
   const skipStatReset = useRef(false);
+  // Cycle indices for min/max cells — cycling through same-price contractors
+  const [minCycleIdx, setMinCycleIdx] = useState(0);
+  const [maxCycleIdx, setMaxCycleIdx] = useState(0);
+
   useEffect(() => {
     if (skipStatReset.current) { skipStatReset.current = false; return; }
     setActiveStat(customPrice && customPrice > 0 ? 2 : 0);
+    setMinCycleIdx(0);
+    setMaxCycleIdx(0);
   }, [contractor?.id]);
   // When a custom price is entered for the first time, default to avg comparison (index 2)
   const prevCustomPrice = useRef<number | null | undefined>(null);
@@ -120,16 +126,28 @@ export default function MainContent({ contractor, allContractors, filteredContra
     );
   }
 
-  // ── Global price pool: ALL records sharing the same نوع الأعمال (workType) ──
-  // This ensures every registered price for the same category is included without exception.
-  const workTypeKey = contractor ? normalize(contractor.workType) : "";
+  // ── Global price pool: ALL records sharing the same نوع الأعمال + برنامج الأعمال ──
+  // Both workType AND businessProgram must match (if businessProgram is set on the selected record).
+  // This gives a focused, meaningful price comparison for the same work category.
+  const workTypeKey        = contractor ? normalize(contractor.workType) : "";
+  const businessProgramKey = contractor ? normalize((contractor as any).businessProgram ?? "") : "";
+
   const globalPricePool: Contractor[] = contractor && workTypeKey.length > 0
-    ? allContractors.filter((c) => normalize(c.workType) === workTypeKey)
+    ? allContractors.filter((c) => {
+        const typeMatch = normalize(c.workType) === workTypeKey;
+        if (!businessProgramKey) return typeMatch;
+        // Also match businessProgram when the selected contractor has one
+        return typeMatch && normalize((c as any).businessProgram ?? "") === businessProgramKey;
+      })
     : contractor ? [contractor] : [];
 
-  // Fallback: if for some reason the pool is empty (workType blank), include at least the selected contractor.
-  const pricePool     = globalPricePool.length > 0 ? globalPricePool : contractor ? [contractor] : [];
-  const scopePoolSize = globalPricePool.length; // total records matching this workType
+  // Fallback: if pool is empty (no match on both fields), widen to workType only
+  const pricePool = globalPricePool.length > 0
+    ? globalPricePool
+    : contractor && workTypeKey.length > 0
+      ? allContractors.filter((c) => normalize(c.workType) === workTypeKey)
+      : contractor ? [contractor] : [];
+  const scopePoolSize = pricePool.length;
 
   // Only consider records with a valid price > 0 for min/max/avg calculations
   const validPricePool = pricePool.filter((c) => c.price > 0);
@@ -138,8 +156,13 @@ export default function MainContent({ contractor, allContractors, filteredContra
   const minPrice       = allPrices.length > 0 ? Math.min(...allPrices) : 0;
   const avgPrice       = avg(allPrices);
 
-  const contractorWithMin = validPricePool.find((c) => c.price === minPrice);
-  const contractorWithMax = validPricePool.find((c) => c.price === maxPrice);
+  // All contractors sharing the exact min / max price (for cycling)
+  const contractorsAtMin = validPricePool.filter((c) => c.price === minPrice);
+  const contractorsAtMax = validPricePool.filter((c) => c.price === maxPrice);
+
+  // Current cycle position for min/max — wraps around
+  const contractorWithMin = contractorsAtMin[minCycleIdx % Math.max(1, contractorsAtMin.length)] ?? contractorsAtMin[0];
+  const contractorWithMax = contractorsAtMax[maxCycleIdx % Math.max(1, contractorsAtMax.length)] ?? contractorsAtMax[0];
 
   // Find contractor closest to the average price (excluding min/max to avoid duplicate labels)
   const _sortedByAvgDiff = [...validPricePool].sort(
@@ -198,14 +221,19 @@ export default function MainContent({ contractor, allContractors, filteredContra
   const footerStats: Array<{
     label: string; sub2: string; value: string; color: string;
     id: number | null; rawPrice: number; isCustom?: boolean; isBest?: boolean;
+    cycleCount?: number; cyclePos?: number;
   }> = [
     customPrice && customPrice > 0
       ? { label: "السعر المقارن", sub2: "مقاول خارج القاعدة", value: formatExact(customPrice), color: "#9b59b6", id: null, isCustom: true, rawPrice: customPrice }
       : { label: "سعر المقاول الحالي", sub2: contractor.contractor ?? "—", value: formatExact(contractor.price), color: "var(--gold)", id: contractor.id as number | null, isCustom: false, rawPrice: contractor.price },
     {
-      label: "أدنى سعر لهذا البند", sub2: contractorWithMin?.contractor ?? "—",
+      label: "أدنى سعر لهذا البند",
+      sub2: contractorsAtMin.length > 1
+        ? `${contractorWithMin?.contractor ?? "—"} (${minCycleIdx % contractorsAtMin.length + 1}/${contractorsAtMin.length})`
+        : contractorWithMin?.contractor ?? "—",
       value: formatExact(minPrice), color: "#2baa74",
       id: contractorWithMin?.id ?? null, isBest: contractor.price === minPrice, rawPrice: minPrice,
+      cycleCount: contractorsAtMin.length, cyclePos: minCycleIdx,
     },
     {
       label: "متوسط الأسعار لهذا البند",
@@ -220,9 +248,13 @@ export default function MainContent({ contractor, allContractors, filteredContra
       id: avgContractor?.id ?? null, rawPrice: Math.round(avgPrice),
     },
     {
-      label: "أعلى سعر لهذا البند", sub2: contractorWithMax?.contractor ?? "—",
+      label: "أعلى سعر لهذا البند",
+      sub2: contractorsAtMax.length > 1
+        ? `${contractorWithMax?.contractor ?? "—"} (${maxCycleIdx % contractorsAtMax.length + 1}/${contractorsAtMax.length})`
+        : contractorWithMax?.contractor ?? "—",
       value: formatExact(maxPrice), color: "#e74c3c",
       id: contractorWithMax?.id ?? null, rawPrice: maxPrice,
+      cycleCount: contractorsAtMax.length, cyclePos: maxCycleIdx,
     },
   ];
   const mainActivity = (contractor as any).mainActivity as string | null | undefined;
@@ -471,12 +503,12 @@ export default function MainContent({ contractor, allContractors, filteredContra
           }}
         >
           {/* Context header */}
-          <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.6rem", color: "rgba(197,160,89,0.75)", fontWeight: 700, letterSpacing: "0.06em" }}>
-              تحليل أسعار نوع الأعمال • {contractor?.workType || "—"}
+          <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "0.6rem", color: "rgba(197,160,89,0.75)", fontWeight: 700, letterSpacing: "0.06em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+              تحليل الأسعار • {contractor?.technicalScope || contractor?.workType || "—"}
             </span>
-            <span style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.28)", background: "rgba(255,255,255,0.06)", borderRadius: "5px", padding: "2px 9px" }}>
-              {scopePoolSize > 1 ? `${scopePoolSize} سجل مطابق لنوع الأعمال` : "سجل واحد — لا توجد مقارنة بعد"}
+            <span style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.28)", background: "rgba(255,255,255,0.06)", borderRadius: "5px", padding: "2px 9px", flexShrink: 0 }}>
+              {scopePoolSize > 1 ? `${scopePoolSize} سجل مطابق` : "سجل واحد — لا توجد مقارنة بعد"}
             </span>
           </div>
 
@@ -493,8 +525,34 @@ export default function MainContent({ contractor, allContractors, filteredContra
                   key={i}
                   onClick={() => {
                     setActiveStat(i);
+                    // ── Cycling logic for min (i=1) and max (i=3) cells ──
+                    if (i === 1 && contractorsAtMin.length > 1) {
+                      const nextIdx = (minCycleIdx + 1) % contractorsAtMin.length;
+                      setMinCycleIdx(nextIdx);
+                      skipStatReset.current = true;
+                      onSelectId(contractorsAtMin[nextIdx].id);
+                      requestAnimationFrame(() => {
+                        const area = document.querySelector<HTMLElement>(".content-area");
+                        if (area) area.scrollTo({ top: 0, behavior: "smooth" });
+                        else window.scrollTo({ top: 0, behavior: "smooth" });
+                      });
+                      return;
+                    }
+                    if (i === 3 && contractorsAtMax.length > 1) {
+                      const nextIdx = (maxCycleIdx + 1) % contractorsAtMax.length;
+                      setMaxCycleIdx(nextIdx);
+                      skipStatReset.current = true;
+                      onSelectId(contractorsAtMax[nextIdx].id);
+                      requestAnimationFrame(() => {
+                        const area = document.querySelector<HTMLElement>(".content-area");
+                        if (area) area.scrollTo({ top: 0, behavior: "smooth" });
+                        else window.scrollTo({ top: 0, behavior: "smooth" });
+                      });
+                      return;
+                    }
+                    // Default: navigate to the stat's contractor
                     if (stat.id != null) {
-                      skipStatReset.current = true; // prevent useEffect from resetting activeStat
+                      skipStatReset.current = true;
                       onSelectId(stat.id);
                       requestAnimationFrame(() => {
                         const area = document.querySelector<HTMLElement>(".content-area");
@@ -528,6 +586,12 @@ export default function MainContent({ contractor, allContractors, filteredContra
                   {isActive && customPrice && customPrice > 0 && i > 0 && (
                     <div style={{ position: "absolute", top: "4px", left: "4px", fontSize: "0.42rem", color: colorHex, background: `${colorHex}22`, borderRadius: "4px", padding: "1px 5px", fontWeight: 700, whiteSpace: "nowrap", border: `1px solid ${colorHex}55` }}>
                       مرجع المقارنة
+                    </div>
+                  )}
+                  {/* Cycling badge — shown when multiple contractors share the same price */}
+                  {(stat.cycleCount ?? 0) > 1 && !(isActive && customPrice && customPrice > 0) && (
+                    <div style={{ position: "absolute", top: "4px", left: "4px", fontSize: "0.42rem", color: colorHex, background: `${colorHex}18`, borderRadius: "4px", padding: "1px 5px", fontWeight: 700, whiteSpace: "nowrap", border: `1px solid ${colorHex}33` }}>
+                      ↻ {stat.cycleCount}
                     </div>
                   )}
                   <div style={{ fontSize: "0.48rem", color: isActive ? stat.color : "rgba(255,255,255,0.32)", letterSpacing: "0.04em", marginBottom: "5px", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: isActive ? 700 : 400 }}>{stat.label}</div>
