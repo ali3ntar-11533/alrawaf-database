@@ -251,9 +251,12 @@ export default function MainContent({ contractor, allContractors, filteredContra
         if (n > 1) return `${contractorAtAvgCycle?.contractor ?? "—"} (${avgCycleIdx % n + 1}/${n})`;
         return contractorAtAvgCycle?.contractor ?? "—";
       })(),
-      value: formatExact(avgPriceRounded), color: "#3b8fcc",
+      // Show the actual contractor price (the one you navigate to) — not the arithmetic mean.
+      // This prevents the mismatch where clicking "12" takes you to a contractor priced "15".
+      value: formatExact(contractorAtAvgCycle?.price ?? avgPriceRounded),
+      color: "#3b8fcc",
       id: contractorAtAvgCycle?.id ?? null,
-      rawPrice: avgPriceRounded,
+      rawPrice: contractorAtAvgCycle?.price ?? avgPriceRounded,
       cycleCount: contractorsAtAvgPrice.length, cyclePos: avgCycleIdx,
     },
     {
