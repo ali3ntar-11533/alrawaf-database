@@ -103,13 +103,59 @@ function parsePasted(text: string): RowData[] {
   });
 }
 
+/* ─── Full-record duplicate detection ───────────────────────
+   A record is a duplicate ONLY when ALL key columns match an
+   existing DB record exactly (localContent & rating excluded).
+   ──────────────────────────────────────────────────────────── */
+function norm(s: string): string {
+  return (s ?? "").replace(/[\u064B-\u065F]/g, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").toLowerCase().trim();
+}
+
+/** Canonical signature for a DB row — excludes localContent & rating */
+function dbSignature(c: Contractor): string {
+  return [
+    norm(c.contractNo),
+    norm(c.contractor),
+    norm(c.project),
+    norm(c.portfolio),
+    norm((c as any).mainActivity    ?? ""),
+    norm((c as any).businessProgram ?? ""),
+    norm(c.workType),
+    norm(c.technicalScope),
+    norm((c as any).workCategory    ?? ""),
+    norm((c as any).unit            ?? ""),
+    String(c.price),
+    norm(c.phone),
+    norm(c.email),
+  ].join("\x00");
+}
+
+/** Canonical signature for a grid input row — excludes localContent & rating */
+function rowSignature(d: RowData): string {
+  return [
+    norm(d.contractNo),
+    norm(d.contractor),
+    norm(d.project),
+    norm(d.portfolio),
+    norm(d.mainActivity),
+    norm(d.businessProgram),
+    norm(d.workType),
+    norm(d.technicalScope),
+    norm(d.workCategory),
+    norm(d.unit),
+    String(Math.round(parseFloat(d.price) || 0)),
+    norm(d.phone),
+    norm(d.email),
+  ].join("\x00");
+}
+
 /* ─── Status Badge ──────────────────────────────────────── */
 function StatusBadge({ status, error }: { status: RowStatus; error?: string }) {
   if (status === "idle")      return null;
   if (status === "saving")    return <Loader size={14} style={{ color: "#3b8fcc", animation: "spin-loader 0.9s linear infinite" }} />;
   if (status === "saved")     return <CheckCircle size={14} style={{ color: "#2baa74" }} />;
   if (status === "duplicate") return (
-    <span title="رقم العقد موجود مسبقاً">
+    <span title="سجل مطابق تماماً موجود في القاعدة — تم التخطي">
       <AlertCircle size={14} style={{ color: "#e67e22" }} />
     </span>
   );
@@ -129,7 +175,8 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
   const [pasteText, setPasteText] = useState("");
   const pasteAreaRef = useRef<HTMLTextAreaElement>(null);
 
-  const existingNos = new Set(existingContractors.map((c) => c.contractNo.trim().toLowerCase()));
+  /* Full-record signatures built from existing DB rows (localContent & rating excluded) */
+  const existingSignatures = new Set(existingContractors.map(dbSignature));
 
   /* ── Update a single cell ── */
   const updateCell = useCallback((rowId: string, key: keyof RowData, value: string) => {
@@ -170,12 +217,11 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
     setIsSaving(true);
     setSummary(null);
 
-    /* Mark duplicates before saving */
+    /* Mark duplicates before saving — full-record comparison */
     setRows((prev) =>
       prev.map((r) => {
         if (isRowEmpty(r.data)) return r;
-        const no = r.data.contractNo.trim().toLowerCase();
-        if (no && existingNos.has(no)) return { ...r, status: "duplicate" };
+        if (existingSignatures.has(rowSignature(r.data))) return { ...r, status: "duplicate" };
         return { ...r, status: "saving" };
       })
     );
@@ -184,8 +230,8 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
 
     /* Save each non-duplicate row sequentially */
     for (const row of toSave) {
-      const no = row.data.contractNo.trim().toLowerCase();
-      if (no && existingNos.has(no)) {
+      const sig = rowSignature(row.data);
+      if (existingSignatures.has(sig)) {
         duplicates++;
         continue;
       }
@@ -209,8 +255,8 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
           workDescription: null,
           workScopeText:   null,
         });
-        /* Mark as saved + add to in-memory set so duplicates within the batch are caught */
-        if (no) existingNos.add(no);
+        /* Add saved signature to the in-memory set so within-batch duplicates are caught */
+        existingSignatures.add(sig);
         saved++;
         setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: "saved" } : r));
       } catch (e: unknown) {
@@ -344,7 +390,7 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
       }}>
         <span>💡 انقر على أي خلية لتعديلها مباشرة</span>
         <span>📋 استخدم "لصق من Excel" لإدخال بيانات ضخمة دفعة واحدة</span>
-        <span>🔒 رقم العقد المكرر يُتخطى تلقائياً دون حذف البيانات الموجودة</span>
+        <span>🔒 السجل المكرر بجميع بياناته يُتخطى — الاختلاف في أي عمود يُعامَل كسجل جديد</span>
         <span>☁️ البيانات تُرفع فور الضغط على "حفظ"</span>
       </div>
 
