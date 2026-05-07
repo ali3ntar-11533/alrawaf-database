@@ -519,12 +519,12 @@ export default function MainContent({ contractor, allContractors, filteredContra
           }}
         >
           {/* Context header */}
-          <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "0.6rem", color: "rgba(197,160,89,0.75)", fontWeight: 700, letterSpacing: "0.06em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
-              تحليل الأسعار • {contractor?.technicalScope || contractor?.workType || "—"}
+          <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px", minWidth: 0 }}>
+            <span style={{ fontSize: "0.62rem", color: "rgba(197,160,89,0.85)", fontWeight: 700, letterSpacing: "0.05em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
+              تحليل الأسعار • {contractor?.workType || "—"}
             </span>
-            <span style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.28)", background: "rgba(255,255,255,0.06)", borderRadius: "5px", padding: "2px 9px", flexShrink: 0 }}>
-              {scopePoolSize > 1 ? `${scopePoolSize} سجل مطابق` : "سجل واحد — لا توجد مقارنة بعد"}
+            <span style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.07)", borderRadius: "5px", padding: "2px 10px", flexShrink: 0, whiteSpace: "nowrap" }}>
+              {scopePoolSize > 1 ? `${scopePoolSize} سجل مطابق` : "سجل واحد"}
             </span>
           </div>
 
@@ -591,7 +591,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
                     }
                   }}
                   style={{
-                    padding: "14px 8px", textAlign: "center",
+                    padding: "16px 10px", textAlign: "center",
                     borderLeft: i < 3 ? `1px solid ${colorHex}22` : "none",
                     borderTop: isActive ? `2px solid ${stat.color}` : "2px solid rgba(255,255,255,0.05)",
                     background: baseBg,
@@ -623,10 +623,10 @@ export default function MainContent({ contractor, allContractors, filteredContra
                       ↻ {stat.cycleCount}
                     </div>
                   )}
-                  <div style={{ fontSize: "0.48rem", color: isActive ? stat.color : "rgba(255,255,255,0.32)", letterSpacing: "0.04em", marginBottom: "5px", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: isActive ? 700 : 400 }}>{stat.label}</div>
-                  <div style={{ fontSize: "0.82rem", fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: "4px", direction: "ltr", fontVariantNumeric: "tabular-nums", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: isActive ? `0 0 14px ${colorHex}88` : "none" }}>{stat.value}</div>
-                  <div style={{ fontSize: "0.45rem", color: isActive ? `${colorHex}88` : "rgba(255,255,255,0.18)", marginBottom: "3px", whiteSpace: "nowrap" }}>ريال سعودي</div>
-                  <div style={{ fontSize: "0.48rem", color: isActive ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.22)", textAlign: "center", lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{stat.sub2}</div>
+                  <div style={{ fontSize: "0.6rem", color: isActive ? stat.color : "rgba(255,255,255,0.45)", letterSpacing: "0.02em", marginBottom: "6px", lineHeight: 1.4, fontWeight: isActive ? 700 : 400, wordBreak: "keep-all", overflowWrap: "break-word" }}>{stat.label}</div>
+                  <div style={{ fontSize: "1rem", fontWeight: 900, color: stat.color, lineHeight: 1, marginBottom: "3px", direction: "ltr", fontVariantNumeric: "tabular-nums", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textShadow: isActive ? `0 0 14px ${colorHex}88` : "none" }}>{stat.value}</div>
+                  <div style={{ fontSize: "0.56rem", color: isActive ? `${colorHex}99` : "rgba(255,255,255,0.25)", marginBottom: "5px" }}>ريال سعودي</div>
+                  <div style={{ fontSize: "0.56rem", color: isActive ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.28)", textAlign: "center", lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{stat.sub2}</div>
                 </div>
               );
             })}
