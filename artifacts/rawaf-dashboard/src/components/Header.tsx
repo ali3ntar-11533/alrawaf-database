@@ -147,7 +147,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
       </div>
 
       {/* ── Unified Search Bar ── */}
-      <div style={{ marginTop: "16px" }}>
+      <div style={{ marginTop: "12px" }}>
         <div
           style={{
             position: "relative",
@@ -215,11 +215,6 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
               ×
             </button>
           )}
-        </div>
-        <div style={{ textAlign: "center", marginTop: "8px" }}>
-          <span style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.3)", letterSpacing: "0.04em" }}>
-            البحث الشامل يعمل في وقت حقيقي عبر جميع حقول قاعدة البيانات
-          </span>
         </div>
       </div>
 

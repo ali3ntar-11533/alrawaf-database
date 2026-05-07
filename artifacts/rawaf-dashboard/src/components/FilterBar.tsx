@@ -489,9 +489,9 @@ export default function FilterBar({ filters, onFiltersChange, search = "" }: Fil
         .price-no-spin { -moz-appearance: textfield; }
       `}</style>
 
-      <div style={{ maxWidth: "720px", margin: "12px auto 0" }}>
+      <div style={{ maxWidth: "720px", margin: "8px auto 0" }}>
         {/* Divider */}
-        <div style={{ borderTop: "1px solid rgba(197,160,89,0.13)", marginBottom: "12px" }} />
+        <div style={{ borderTop: "1px solid rgba(197,160,89,0.13)", marginBottom: "8px" }} />
 
         {/* Pills row — single scrollable line */}
         <div
@@ -560,14 +560,6 @@ export default function FilterBar({ filters, onFiltersChange, search = "" }: Fil
           )}
         </div>
 
-        {/* Status hint */}
-        <div style={{ textAlign: "center", marginTop: "8px" }}>
-          <span style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.22)", letterSpacing: "0.04em", fontFamily: "Tajawal, sans-serif" }}>
-            {activeCount > 0
-              ? `${activeCount} فلتر نشط — النتائج تتحدث تلقائياً`
-              : "اختر فلتراً لتضييق نطاق البحث"}
-          </span>
-        </div>
       </div>
     </>
   );

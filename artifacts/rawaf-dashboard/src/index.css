@@ -73,8 +73,8 @@ body {
   background:
     linear-gradient(160deg, rgba(26,22,18,0.82) 0%, rgba(58,54,50,0.70) 50%, rgba(26,22,18,0.88) 100%),
     url('https://alrawaf.sa/assets/images/slider/1.jpg') center/cover no-repeat;
-  min-height: 190px;
-  padding: 22px 40px 68px;
+  min-height: 160px;
+  padding: 16px 40px 52px;
   border-bottom: 3px solid var(--gold);
   position: relative;
 }
@@ -97,7 +97,7 @@ body {
   grid-template-columns: 280px 1fr;
   gap: 18px;
   max-width: 1440px;
-  margin: -50px auto 40px;
+  margin: -36px auto 40px;
   padding: 0 20px;
   align-items: start;
 }
