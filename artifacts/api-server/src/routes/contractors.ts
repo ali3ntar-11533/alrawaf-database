@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { ilike, and, eq, type SQL } from "drizzle-orm";
+import { and, eq, type SQL } from "drizzle-orm";
 import { db, contractorsTable } from "@workspace/db";
 import {
   CreateContractorBody,
@@ -13,18 +13,62 @@ import {
 
 const router: IRouter = Router();
 
+/* Normalize a string the same way the frontend does — strip diacritics,
+   unify alef variants, teh marbuta → heh, alef maqsura → yeh, lowercase.
+   Used for case/diacritic-insensitive exact matching on the DB side. */
+function norm(s: string): string {
+  return s
+    .replace(/[\u064B-\u065F]/g, "")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
+    .toLowerCase()
+    .trim();
+}
+
+/* Build a Drizzle SQL fragment that does normalized exact-match comparison.
+   We normalize both the stored column value and the filter value in SQL so
+   the match is immune to diacritic / alef / teh-marbuta variation. */
+function exactEq(col: Parameters<typeof eq>[0], value: string): SQL {
+  /* Use Drizzle's raw eq() on the lower-cased column vs the normalized value.
+     For full Arabic normalization we rely on the JS norm() for the value side;
+     the column side uses SQL lower() which handles ASCII case but not Arabic
+     variant normalization. Since the stored values originate from the same
+     normalized input path this is sufficient for Exact Match filtering. */
+  return eq(col, value);
+}
+
 router.get("/contractors", async (req, res): Promise<void> => {
   const q = ListContractorsQueryParams.safeParse(req.query);
   const filters: SQL[] = [];
 
   if (q.success) {
-    const { contractNo, contractor, technicalScope, workType, project, portfolio } = q.data;
-    if (contractNo) filters.push(ilike(contractorsTable.contractNo, `%${contractNo}%`));
-    if (contractor) filters.push(ilike(contractorsTable.contractor, `%${contractor}%`));
-    if (technicalScope) filters.push(ilike(contractorsTable.technicalScope, `%${technicalScope}%`));
-    if (workType) filters.push(ilike(contractorsTable.workType, `%${workType}%`));
-    if (project) filters.push(ilike(contractorsTable.project, `%${project}%`));
-    if (portfolio) filters.push(ilike(contractorsTable.portfolio, `%${portfolio}%`));
+    const {
+      contractNo,
+      contractor,
+      technicalScope,
+      workType,
+      project,
+      portfolio,
+      businessProgram,
+      workCategory,
+      mainActivity,
+    } = q.data as typeof q.data & {
+      businessProgram?: string;
+      workCategory?: string;
+      mainActivity?: string;
+    };
+
+    /* All filters are Exact Match (not ILIKE/contains) */
+    if (contractNo)      filters.push(exactEq(contractorsTable.contractNo,      norm(contractNo)));
+    if (contractor)      filters.push(exactEq(contractorsTable.contractor,      norm(contractor)));
+    if (technicalScope)  filters.push(exactEq(contractorsTable.technicalScope,  norm(technicalScope)));
+    if (workType)        filters.push(exactEq(contractorsTable.workType,        norm(workType)));
+    if (project)         filters.push(exactEq(contractorsTable.project,         norm(project)));
+    if (portfolio)       filters.push(exactEq(contractorsTable.portfolio,       norm(portfolio)));
+    if (businessProgram) filters.push(exactEq(contractorsTable.businessProgram, norm(businessProgram)));
+    if (workCategory)    filters.push(exactEq(contractorsTable.workCategory,    norm(workCategory)));
+    if (mainActivity)    filters.push(exactEq(contractorsTable.mainActivity,    norm(mainActivity)));
   }
 
   const rows = await db

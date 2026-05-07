@@ -54,6 +54,15 @@ paths:
         - name: portfolio
           in: query
           schema: { type: string }
+        - name: businessProgram
+          in: query
+          schema: { type: string }
+        - name: workCategory
+          in: query
+          schema: { type: string }
+        - name: mainActivity
+          in: query
+          schema: { type: string }
       responses:
         "200":
           description: List of contractors

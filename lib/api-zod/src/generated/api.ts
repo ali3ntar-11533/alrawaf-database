@@ -25,6 +25,9 @@ export const ListContractorsQueryParams = zod.object({
   workType: zod.coerce.string().optional(),
   project: zod.coerce.string().optional(),
   portfolio: zod.coerce.string().optional(),
+  businessProgram: zod.coerce.string().optional(),
+  workCategory: zod.coerce.string().optional(),
+  mainActivity: zod.coerce.string().optional(),
 });
 
 export const ListContractorsResponseItem = zod.object({

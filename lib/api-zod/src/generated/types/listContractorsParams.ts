@@ -13,4 +13,7 @@ export type ListContractorsParams = {
   workType?: string;
   project?: string;
   portfolio?: string;
+  businessProgram?: string;
+  workCategory?: string;
+  mainActivity?: string;
 };

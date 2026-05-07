@@ -108,11 +108,19 @@ function buildPutData(f: FormData, rating?: number | null): Omit<Contractor, "id
 }
 
 function normalize(s: string) {
-  return s.replace(/[\u064B-\u065F]/g, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").toLowerCase().trim();
+  return (s ?? "").replace(/[\u064B-\u065F]/g, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").toLowerCase().trim();
 }
-function exactMatch(haystack: string, needle: string): boolean {
+
+/* Used for free-text search bar — partial/contains matching */
+function containsMatch(haystack: string, needle: string): boolean {
   if (!needle) return true;
   return normalize(haystack).includes(normalize(needle));
+}
+
+/* Used for filter dropdowns — strict normalized equality (Exact Match) */
+function strictMatch(haystack: string, needle: string): boolean {
+  if (!needle) return true;
+  return normalize(haystack) === normalize(needle);
 }
 
 /* ─── Sub-components ───────────────────────────── */
@@ -283,34 +291,41 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
   const { data: contractors = [], isLoading, isError, refetch } = useContractorsContext();
   const [isSaving, setIsSaving] = useState(false);
 
-  /* Exact-match filter + sort by contractor name then ID */
+  /* Filter + sort by contractor name then ID */
   const filtered = contractors
     .filter((c: Contractor) => {
-      /* ── Main search bar ── */
+      /* ── Main search bar: partial/contains matching across all text fields ── */
       const matchesSearch = !search || (
-        exactMatch(c.contractNo, search)                     ||
-        exactMatch(c.contractor, search)                     ||
-        exactMatch(c.project, search)                        ||
-        exactMatch(c.portfolio, search)                      ||
-        exactMatch(c.technicalScope, search)                 ||
-        exactMatch(c.workType, search)                       ||
-        exactMatch((c as any).mainActivity ?? "", search)    ||
-        exactMatch((c as any).businessProgram ?? "", search) ||
-        exactMatch((c as any).workCategory ?? "", search)    ||
-        exactMatch((c as any).unit ?? "", search)            ||
-        exactMatch(c.phone, search)                          ||
-        exactMatch(c.email, search)
+        containsMatch(c.contractNo,                          search) ||
+        containsMatch(c.contractor,                          search) ||
+        containsMatch(c.project,                             search) ||
+        containsMatch(c.portfolio,                           search) ||
+        containsMatch(c.technicalScope,                      search) ||
+        containsMatch(c.workType,                            search) ||
+        containsMatch((c as any).mainActivity    ?? "",      search) ||
+        containsMatch((c as any).businessProgram ?? "",      search) ||
+        containsMatch((c as any).workCategory    ?? "",      search) ||
+        containsMatch((c as any).unit            ?? "",      search) ||
+        containsMatch(c.phone,                               search) ||
+        containsMatch(c.email,                               search)
       );
-      /* ── Advanced filters (all active ones must match) ── */
-      const matchesFilters =
-        (!filters.contractor      || exactMatch(c.contractor,                        filters.contractor))      &&
-        (!filters.portfolio       || exactMatch(c.portfolio,                         filters.portfolio))       &&
-        (!filters.project         || exactMatch(c.project,                           filters.project))         &&
-        (!filters.businessProgram || exactMatch((c as any).businessProgram ?? "",    filters.businessProgram)) &&
-        (!filters.workType        || exactMatch(c.workType,                          filters.workType))        &&
-        (!filters.workCategory    || exactMatch((c as any).workCategory ?? "",       filters.workCategory));
 
-      return matchesSearch && matchesFilters;
+      /* ── Dropdown filters: STRICT Exact Match (normalized equality) ──
+         A record is shown only if its field value matches the selected
+         filter value exactly (after diacritic / alef normalization).   */
+      const matchesFilters =
+        strictMatch(c.contractor,                       filters.contractor)      &&
+        strictMatch(c.portfolio,                        filters.portfolio)       &&
+        strictMatch(c.project,                          filters.project)         &&
+        strictMatch((c as any).businessProgram ?? "",   filters.businessProgram) &&
+        strictMatch(c.workType,                         filters.workType)        &&
+        strictMatch((c as any).workCategory    ?? "",   filters.workCategory);
+
+      /* ── itemPrice filter: exact price match when a value is entered ── */
+      const priceFilter = filters.itemPrice.trim();
+      const matchesPrice = !priceFilter || c.price === parseInt(priceFilter, 10);
+
+      return matchesSearch && matchesFilters && matchesPrice;
     })
     .sort((a: Contractor, b: Contractor) => {
       const nameA = a.contractor.trim().toLowerCase();
