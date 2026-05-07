@@ -469,7 +469,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
 
   /* ── Main Table View ── */
   return (
-    <div style={{ padding: "20px 16px", width: "100%" }}>
+    <div style={{ padding: "20px 24px", width: "100%" }}>
 
       {/* Actions row */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
@@ -694,7 +694,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                   </div>
                 ))}
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={{ ...labelStyle, color: "#c5a059" }}>١٤. التقييم</label>
+                  <label style={{ ...labelStyle, color: "#c5a059" }}>١٥. التقييم</label>
                   <div style={{ marginTop: "6px" }}><StarPicker value={editRating} onChange={setEditRating} /></div>
                 </div>
               </div>
@@ -740,7 +740,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                   </div>
                 ))}
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={{ ...labelStyle, color: "#c5a059" }}>١٤. التقييم</label>
+                  <label style={{ ...labelStyle, color: "#c5a059" }}>١٥. التقييم</label>
                   <div style={{ marginTop: "6px" }}><StarPicker value={addRating} onChange={setAddRating} /></div>
                 </div>
               </div>

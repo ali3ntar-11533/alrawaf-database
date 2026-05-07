@@ -70,7 +70,7 @@ const FILTER_DEFS: {
   { key: "project",         label: "المشروع",            getter: (c) => c.project },
   { key: "businessProgram", label: "برنامج الأعمال",     getter: (c) => (c as any).businessProgram ?? "" },
   { key: "workType",        label: "نوع الأعمال",        getter: (c) => c.workType },
-  { key: "workCategory",    label: "نوع البند",          getter: (c) => (c as any).workCategory ?? "" },
+  { key: "workCategory",    label: "نوع العمل",           getter: (c) => (c as any).workCategory ?? "" },
 ];
 
 /* ═══════════════════════════════════════════════════════════
@@ -489,7 +489,7 @@ export default function FilterBar({ filters, onFiltersChange, search = "" }: Fil
         .price-no-spin { -moz-appearance: textfield; }
       `}</style>
 
-      <div style={{ marginTop: "14px", maxWidth: "720px", margin: "14px auto 0" }}>
+      <div style={{ maxWidth: "720px", margin: "12px auto 0" }}>
         {/* Divider */}
         <div style={{ borderTop: "1px solid rgba(197,160,89,0.13)", marginBottom: "12px" }} />
 

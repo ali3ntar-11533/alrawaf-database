@@ -73,8 +73,8 @@ body {
   background:
     linear-gradient(160deg, rgba(26,22,18,0.82) 0%, rgba(58,54,50,0.70) 50%, rgba(26,22,18,0.88) 100%),
     url('https://alrawaf.sa/assets/images/slider/1.jpg') center/cover no-repeat;
-  min-height: 260px;
-  padding: 32px 48px 96px;
+  min-height: 190px;
+  padding: 22px 40px 68px;
   border-bottom: 3px solid var(--gold);
   position: relative;
 }
@@ -94,11 +94,11 @@ body {
 /* ── Grid Layout ── */
 .main-grid {
   display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 22px;
-  max-width: 1560px;
-  margin: -72px auto 48px;
-  padding: 0 24px;
+  grid-template-columns: 280px 1fr;
+  gap: 18px;
+  max-width: 1440px;
+  margin: -50px auto 40px;
+  padding: 0 20px;
   align-items: start;
 }
 
@@ -109,8 +109,8 @@ body {
   border-radius: 14px;
   box-shadow: 0 4px 20px rgba(58,54,50,0.08), 0 1px 3px rgba(58,54,50,0.05);
   position: sticky;
-  top: 20px;
-  max-height: calc(100vh - 100px);
+  top: 16px;
+  max-height: calc(100vh - 80px);
   overflow: hidden;
   display: flex;
   flex-direction: column;

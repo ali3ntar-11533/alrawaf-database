@@ -6,7 +6,7 @@ export default function WelcomeHero() {
       className="animate-fade-up"
       style={{
         maxWidth: "860px",
-        margin: "40px auto 60px",
+        margin: "28px auto 48px",
         padding: "0 24px",
         textAlign: "center",
       }}

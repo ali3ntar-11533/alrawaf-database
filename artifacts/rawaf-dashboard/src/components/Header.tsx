@@ -41,7 +41,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
             onMouseLeave={() => setLogoHover(false)}
             title="تسجيل الخروج من النظام"
             style={{
-              width: "68px", height: "68px",
+              width: "60px", height: "60px",
               background: "#fff",
               borderRadius: "12px",
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -90,7 +90,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
           <div>
             <h1
               style={{
-                fontSize: "clamp(1.05rem, 2.5vw, 1.6rem)",
+                fontSize: "clamp(0.95rem, 2.2vw, 1.45rem)",
                 fontWeight: 800, color: "#ffffff",
                 lineHeight: 1.25, letterSpacing: "-0.01em",
                 textShadow: "0 2px 12px rgba(0,0,0,0.4)",
@@ -147,7 +147,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
       </div>
 
       {/* ── Unified Search Bar ── */}
-      <div style={{ marginTop: "22px" }}>
+      <div style={{ marginTop: "16px" }}>
         <div
           style={{
             position: "relative",
