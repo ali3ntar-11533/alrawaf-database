@@ -429,71 +429,77 @@ export default function MainContent({ contractor, allContractors, filteredContra
         </div>
       )}
 
-      {/* ── 4. أفضل 5 أسعار ── */}
-      {best5.length > 0 && (
-        <div className="card animate-fade-up" style={{ marginBottom: "16px", animationDelay: "0.15s" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-            <h3 style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--charcoal)", display: "flex", alignItems: "center", gap: "7px" }}>
-              <DollarSign size={13} style={{ color: "var(--gold)" }} />
-              مقارنة الأسعار
-            </h3>
-            <span style={{ fontSize: "0.62rem", color: "#bbb", background: "#f5f0e8", borderRadius: "4px", padding: "2px 7px" }}>
-              أفضل {best5.length} قيمة • سعر + تقييم مدمجان
-            </span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>
-            {best5.map((c, i) => {
-              const isCurrent     = contractor && c.id === contractor.id;
-              const cRating       = Math.max(0, Math.min(5, Math.round(Number((c as any).rating ?? 0))));
-              const barColor      = isCurrent
-                ? "linear-gradient(90deg, var(--gold), #e8c870)"
-                : i === 0 ? "linear-gradient(90deg, #2baa74, #36c786)" : BAR_COLORS[i % BAR_COLORS.length];
-              const maxBest5Price = Math.max(...best5.map((x) => x.price), 1);
-              return (
-                <div
-                  key={c.id}
-                  onClick={() => onSelectId(c.id)}
-                  style={{ display: "flex", flexDirection: "column", gap: "4px", cursor: "pointer" }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <div style={{ width: "18px", height: "18px", borderRadius: "5px", background: i === 0 ? "#2baa74" : isCurrent ? "var(--gold)" : "#e0dbd0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <span style={{ fontSize: "0.55rem", fontWeight: 800, color: i === 0 || isCurrent ? "#fff" : "#aaa" }}>{i + 1}</span>
-                    </div>
-                    <div style={{ flex: 1, fontSize: "0.7rem", color: isCurrent ? "var(--gold)" : "var(--charcoal)", fontWeight: isCurrent ? 800 : 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {c.contractor}
-                    </div>
-                    {cRating > 0 && (
+      {/* ── 4. مقارنة الأسعار — مرتبة حسب أفضل قيمة (نفس مجموعة البند: برنامج الأعمال + نوع الأعمال) ── */}
+      {best5.length > 0 && (() => {
+        const maxBestScore = Math.max(...best5.map((x) => (x as any)._bestValueScore ?? 0), 0.001);
+        return (
+          <div className="card animate-fade-up" style={{ marginBottom: "16px", animationDelay: "0.15s" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+              <h3 style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--charcoal)", display: "flex", alignItems: "center", gap: "7px" }}>
+                <DollarSign size={13} style={{ color: "var(--gold)" }} />
+                مقارنة الأسعار
+              </h3>
+              <span style={{ fontSize: "0.58rem", color: "#bbb", background: "#f5f0e8", borderRadius: "4px", padding: "2px 7px", textAlign: "left" }}>
+                أفضل {best5.length} قيمة • سعر + تقييم مدمجان
+              </span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>
+              {best5.map((c, i) => {
+                const isCurrent   = contractor && c.id === contractor.id;
+                const cRating     = Math.max(0, Math.min(5, Math.round(Number((c as any).rating ?? 0))));
+                const score       = (c as any)._bestValueScore ?? 0;
+                const barWidthPct = (score / maxBestScore) * 100;
+                const barColor    = isCurrent
+                  ? "linear-gradient(90deg, var(--gold), #e8c870)"
+                  : i === 0 ? "linear-gradient(90deg, #2baa74, #36c786)" : BAR_COLORS[i % BAR_COLORS.length];
+                return (
+                  <div
+                    key={c.id}
+                    onClick={() => onSelectId(c.id)}
+                    style={{ display: "flex", flexDirection: "column", gap: "4px", cursor: "pointer" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <div style={{ width: "18px", height: "18px", borderRadius: "5px", background: i === 0 ? "#2baa74" : isCurrent ? "var(--gold)" : "#e0dbd0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <span style={{ fontSize: "0.55rem", fontWeight: 800, color: i === 0 || isCurrent ? "#fff" : "#aaa" }}>{i + 1}</span>
+                      </div>
+                      <div style={{ flex: 1, fontSize: "0.7rem", color: isCurrent ? "var(--gold)" : "var(--charcoal)", fontWeight: isCurrent ? 800 : 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {c.contractor}
+                      </div>
+                      {/* Rating stars */}
                       <span style={{ display: "inline-flex", gap: "1px", flexShrink: 0 }}>
                         {[1, 2, 3, 4, 5].map((s) => (
                           <span key={s} style={{ fontSize: "0.6rem", color: s <= cRating ? "#f5c518" : "#e0dbd0", lineHeight: 1 }}>★</span>
                         ))}
                       </span>
-                    )}
-                    <span style={{ fontSize: "0.68rem", fontWeight: 800, color: i === 0 ? "#2baa74" : isCurrent ? "var(--gold)" : "#888", flexShrink: 0, direction: "ltr" }}>
-                      {formatExact(c.price)}
-                    </span>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 800, color: i === 0 ? "#2baa74" : isCurrent ? "var(--gold)" : "#888", flexShrink: 0, direction: "ltr" }}>
+                        {formatExact(c.price)}
+                      </span>
+                    </div>
+                    {/* Bar width = best-value score so rank #1 always gets the widest bar */}
+                    <div style={{ background: "#f5f0e8", borderRadius: "5px", overflow: "hidden", height: "7px" }}>
+                      <div
+                        style={{
+                          width: `${barWidthPct}%`,
+                          height: "100%",
+                          background: barColor,
+                          borderRadius: "5px",
+                          transition: "width 0.8s ease",
+                          boxShadow: isCurrent ? "0 0 6px rgba(197,160,89,0.35)" : i === 0 ? "0 0 6px rgba(43,170,116,0.3)" : "none",
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div style={{ background: "#f5f0e8", borderRadius: "5px", overflow: "hidden", height: "7px" }}>
-                    <div
-                      style={{
-                        width: `${(c.price / maxBest5Price) * 100}%`,
-                        height: "100%",
-                        background: barColor,
-                        borderRadius: "5px",
-                        transition: "width 0.8s ease",
-                        boxShadow: isCurrent ? "0 0 6px rgba(197,160,89,0.35)" : i === 0 ? "0 0 6px rgba(43,170,116,0.3)" : "none",
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+            <div style={{ marginTop: "10px", fontSize: "0.6rem", color: "#bbb", textAlign: "center" }}>
+              مرتبة حسب أفضل قيمة (60% سعر + 40% تقييم) • مقارنة داخل مجموعة البند الحالي فقط • اضغط لعرض بيانات أي مقاول
+            </div>
           </div>
-          <div style={{ marginTop: "10px", fontSize: "0.6rem", color: "#bbb", textAlign: "center" }}>
-            مرتبة حسب أفضل قيمة (60% سعر + 40% تقييم) • اضغط على أي مقاول لعرض بياناته
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── 5. Footer Stats — مقارنة أسعار البند في كامل قاعدة البيانات ── */}
       {allPrices.length > 0 && (
