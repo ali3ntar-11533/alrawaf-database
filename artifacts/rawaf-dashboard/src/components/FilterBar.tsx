@@ -37,6 +37,28 @@ function getUnique(contractors: Contractor[], getter: (c: Contractor) => string)
   return result.sort((a, b) => a.localeCompare(b, "ar"));
 }
 
+/* ── Exact-match (for filter pills) ── */
+function strictMatch(haystack: string, needle: string): boolean {
+  if (!needle) return true;
+  return normalize(haystack) === normalize(needle);
+}
+
+/* ── Contains-match (for the global search bar) ── */
+function matchesSearch(c: Contractor, q: string): boolean {
+  if (!q) return true;
+  const n = normalize(q);
+  return [
+    c.contractNo, c.contractor, c.project, c.portfolio,
+    c.workType, c.technicalScope,
+    (c as any).businessProgram ?? "",
+    (c as any).workCategory    ?? "",
+    (c as any).mainActivity    ?? "",
+    (c as any).unit            ?? "",
+    String(c.price ?? ""),
+    c.phone ?? "", c.email ?? "",
+  ].some((field) => normalize(String(field)).includes(n));
+}
+
 /* ── Filter → DB column mapping ── */
 const FILTER_DEFS: {
   key:    keyof FilterState;
@@ -411,14 +433,32 @@ function PriceInputPill({
 export default function FilterBar({ filters, onFiltersChange, search = "" }: FilterBarProps) {
   const { data: contractors = [], isLoading } = useContractorsContext();
 
-  /* Compute all unique-value lists up-front from cached data */
+  /* ── Cascading / faceted options ──────────────────────────────────────────
+     For each dropdown, options are derived from contractors that:
+       1. Match the global search bar text (if any)
+       2. Match ALL OTHER currently active filter selections (not self)
+     This means: typing in the search bar narrows every dropdown, and
+     selecting one filter narrows the options available in all others.
+  ───────────────────────────────────────────────────────────────────────── */
   const options = useMemo((): Record<keyof FilterState, string[]> => {
+    const all = contractors as Contractor[];
     const map = {} as Record<keyof FilterState, string[]>;
     for (const def of FILTER_DEFS) {
-      map[def.key] = getUnique(contractors as Contractor[], def.getter);
+      const pool = all.filter((c) => {
+        // Must match the global search text
+        if (!matchesSearch(c, search)) return false;
+        // Must match every OTHER active filter (strict equality)
+        for (const other of FILTER_DEFS) {
+          if (other.key === def.key) continue;        // skip self
+          const activeVal = filters[other.key];
+          if (activeVal && !strictMatch(other.getter(c), activeVal)) return false;
+        }
+        return true;
+      });
+      map[def.key] = getUnique(pool, def.getter);
     }
     return map;
-  }, [contractors]);
+  }, [contractors, filters, search]);
 
   const activeCount = Object.values(filters).filter(Boolean).length;
 
