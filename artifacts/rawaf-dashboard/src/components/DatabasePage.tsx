@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { X, Plus, Trash2, Pencil, Lock, Download, Copy } from "lucide-react";
+import { X, Plus, Trash2, Pencil, Lock, Download, Copy, Cloud } from "lucide-react";
+import CloudSyncModal from "./CloudSyncModal";
 import type { FilterState } from "./filterTypes";
 import logoImg from "@assets/logo_1776506524686.jpg";
 import * as XLSX from "xlsx";
@@ -222,6 +223,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
   const [cloneLocalContent, setCloneLocalContent] = useState("");
 
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [showCloudSync, setShowCloudSync] = useState(false);
 
   const [editError, setEditError]     = useState<string | null>(null);
   const [addError, setAddError]       = useState<string | null>(null);
@@ -463,6 +465,13 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
           </span>
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <button onClick={() => setShowCloudSync(true)}
+            style={{ display: "flex", alignItems: "center", gap: "6px", background: "linear-gradient(135deg, #1e6fa8, #3b8fcc)", color: "#fff", border: "none", borderRadius: "10px", padding: "9px 16px", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif", boxShadow: "0 3px 12px rgba(59,143,204,0.35)" }}
+            title="إدخال بيانات ضخمة مباشرةً إلى قاعدة البيانات السحابية"
+          >
+            <Cloud size={14} />
+            إدخال بيانات سحابي (Excel Online Sync)
+          </button>
           <button onClick={() => exportToExcel(filtered)}
             style={{ display: "flex", alignItems: "center", gap: "6px", background: "linear-gradient(135deg, #1d7a45, #27ae60)", color: "#fff", border: "none", borderRadius: "10px", padding: "9px 16px", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif", boxShadow: "0 3px 12px rgba(39,174,96,0.3)" }}
             title="تصدير البيانات الحالية إلى ملف Excel"
@@ -729,6 +738,15 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
             </form>
           </div>
         </div>
+      )}
+
+      {/* ── Cloud Sync Modal ── */}
+      {showCloudSync && (
+        <CloudSyncModal
+          existingContractors={contractors}
+          onClose={() => setShowCloudSync(false)}
+          onSaved={() => { refetch(); }}
+        />
       )}
 
       {/* ── Clone Modal ("+") ── */}
