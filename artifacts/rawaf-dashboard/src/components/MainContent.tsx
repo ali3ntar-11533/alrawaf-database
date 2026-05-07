@@ -548,8 +548,13 @@ export default function MainContent({ contractor, allContractors, filteredContra
                     });
 
                     // ── Cycling logic for min (i=1), avg (i=2), max (i=3) ──
+                    // First click on the cell → navigate to what is currently displayed.
+                    // Repeated clicks on the SAME active cell → advance to the next contractor.
                     if (i === 1 && contractorsAtMin.length > 1) {
-                      const nextIdx = (minCycleIdx + 1) % contractorsAtMin.length;
+                      const curIdx  = minCycleIdx % contractorsAtMin.length;
+                      const nextIdx = activeStat === 1
+                        ? (curIdx + 1) % contractorsAtMin.length  // already active → advance
+                        : curIdx;                                   // first click → show current
                       setMinCycleIdx(nextIdx);
                       skipStatReset.current = true;
                       onSelectId(contractorsAtMin[nextIdx].id);
@@ -557,7 +562,10 @@ export default function MainContent({ contractor, allContractors, filteredContra
                       return;
                     }
                     if (i === 2 && contractorsAtAvgPrice.length > 1) {
-                      const nextIdx = (avgCycleIdx + 1) % contractorsAtAvgPrice.length;
+                      const curIdx  = avgCycleIdx % contractorsAtAvgPrice.length;
+                      const nextIdx = activeStat === 2
+                        ? (curIdx + 1) % contractorsAtAvgPrice.length
+                        : curIdx;
                       setAvgCycleIdx(nextIdx);
                       skipStatReset.current = true;
                       onSelectId(contractorsAtAvgPrice[nextIdx].id);
@@ -565,14 +573,17 @@ export default function MainContent({ contractor, allContractors, filteredContra
                       return;
                     }
                     if (i === 3 && contractorsAtMax.length > 1) {
-                      const nextIdx = (maxCycleIdx + 1) % contractorsAtMax.length;
+                      const curIdx  = maxCycleIdx % contractorsAtMax.length;
+                      const nextIdx = activeStat === 3
+                        ? (curIdx + 1) % contractorsAtMax.length
+                        : curIdx;
                       setMaxCycleIdx(nextIdx);
                       skipStatReset.current = true;
                       onSelectId(contractorsAtMax[nextIdx].id);
                       scrollToTop();
                       return;
                     }
-                    // Default: navigate to the stat's contractor
+                    // Default: navigate to the stat's contractor (single contractor or avg fallback)
                     if (stat.id != null) {
                       skipStatReset.current = true;
                       onSelectId(stat.id);
