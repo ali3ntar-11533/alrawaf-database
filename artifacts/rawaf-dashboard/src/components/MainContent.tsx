@@ -236,8 +236,9 @@ export default function MainContent({ contractor, allContractors, filteredContra
       id: contractorWithMin?.id ?? null, isBest: contractor.price === minPrice, rawPrice: minPrice,
       cycleCount: contractorsAtMin.length, cyclePos: minCycleIdx,
     },
-    // When only 1 contractor exists in the pool, min = max = avg — show avg as empty
-    validPricePool.length >= 2
+    // Need at least 3 data points for a meaningful middle value; with 1 or 2 the avg
+    // collapses to the same value as min or max — show empty instead.
+    validPricePool.length >= 3
       ? {
           label: "متوسط الأسعار لهذا البند",
           sub2: (() => {
