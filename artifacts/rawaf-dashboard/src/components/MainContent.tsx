@@ -153,6 +153,10 @@ export default function MainContent({ contractor, allContractors, filteredContra
   const contractorsAtMin = validPricePool.filter((c) => c.price === minPrice);
   const contractorsAtMax = validPricePool.filter((c) => c.price === maxPrice);
 
+  // A meaningful average only exists when at least one contractor has a price
+  // strictly BETWEEN min and max (not equal to either extreme).
+  const hasMidContractor = validPricePool.some((c) => c.price > minPrice && c.price < maxPrice);
+
   // Current cycle position for min/max — wraps around
   const contractorWithMin = contractorsAtMin[minCycleIdx % Math.max(1, contractorsAtMin.length)] ?? contractorsAtMin[0];
   const contractorWithMax = contractorsAtMax[maxCycleIdx % Math.max(1, contractorsAtMax.length)] ?? contractorsAtMax[0];
@@ -236,9 +240,9 @@ export default function MainContent({ contractor, allContractors, filteredContra
       id: contractorWithMin?.id ?? null, isBest: contractor.price === minPrice, rawPrice: minPrice,
       cycleCount: contractorsAtMin.length, cyclePos: minCycleIdx,
     },
-    // Need at least 3 data points for a meaningful middle value; with 1 or 2 the avg
-    // collapses to the same value as min or max — show empty instead.
-    validPricePool.length >= 3
+    // Show avg only when at least one contractor has a price strictly between min and max.
+    // Without a true middle value the avg collapses to the same price as min or max.
+    hasMidContractor
       ? {
           label: "متوسط الأسعار لهذا البند",
           sub2: (() => {
