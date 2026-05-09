@@ -236,21 +236,29 @@ export default function MainContent({ contractor, allContractors, filteredContra
       id: contractorWithMin?.id ?? null, isBest: contractor.price === minPrice, rawPrice: minPrice,
       cycleCount: contractorsAtMin.length, cyclePos: minCycleIdx,
     },
-    {
-      label: "متوسط الأسعار لهذا البند",
-      sub2: (() => {
-        const n = contractorsAtAvgPrice.length;
-        if (n > 1) return `${contractorAtAvgCycle?.contractor ?? "—"} (${avgCycleIdx % n + 1}/${n})`;
-        return contractorAtAvgCycle?.contractor ?? "—";
-      })(),
-      // Show the actual contractor price (the one you navigate to) — not the arithmetic mean.
-      // This prevents the mismatch where clicking "12" takes you to a contractor priced "15".
-      value: formatExact(contractorAtAvgCycle?.price ?? avgPriceRounded),
-      color: "#3b8fcc",
-      id: contractorAtAvgCycle?.id ?? null,
-      rawPrice: contractorAtAvgCycle?.price ?? avgPriceRounded,
-      cycleCount: contractorsAtAvgPrice.length, cyclePos: avgCycleIdx,
-    },
+    // When only 1 contractor exists in the pool, min = max = avg — show avg as empty
+    validPricePool.length >= 2
+      ? {
+          label: "متوسط الأسعار لهذا البند",
+          sub2: (() => {
+            const n = contractorsAtAvgPrice.length;
+            if (n > 1) return `${contractorAtAvgCycle?.contractor ?? "—"} (${avgCycleIdx % n + 1}/${n})`;
+            return contractorAtAvgCycle?.contractor ?? "—";
+          })(),
+          value: formatExact(contractorAtAvgCycle?.price ?? avgPriceRounded),
+          color: "#3b8fcc",
+          id: contractorAtAvgCycle?.id ?? null,
+          rawPrice: contractorAtAvgCycle?.price ?? avgPriceRounded,
+          cycleCount: contractorsAtAvgPrice.length, cyclePos: avgCycleIdx,
+        }
+      : {
+          label: "متوسط الأسعار لهذا البند",
+          sub2: "لا يوجد سعر متوسط",
+          value: "—",
+          color: "#3b8fcc",
+          id: null,
+          rawPrice: 0,
+        },
     {
       label: "أعلى سعر لهذا البند",
       sub2: contractorsAtMax.length > 1
