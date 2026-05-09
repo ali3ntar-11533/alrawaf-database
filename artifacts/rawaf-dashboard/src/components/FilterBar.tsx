@@ -489,17 +489,20 @@ export default function FilterBar({ filters, onFiltersChange, search = "" }: Fil
         .price-no-spin { -moz-appearance: textfield; }
       `}</style>
 
-      <div style={{ maxWidth: "720px", margin: "8px auto 0" }}>
+      {/* Break out of the hero-banner's 40px left/right padding so the scroll
+          strip spans the full header width — prevents pills from being clipped */}
+      <div style={{ margin: "8px -40px 0" }}>
         {/* Divider */}
-        <div style={{ borderTop: "1px solid rgba(197,160,89,0.13)", marginBottom: "8px" }} />
+        <div style={{ borderTop: "1px solid rgba(197,160,89,0.13)", marginBottom: "8px", marginInline: "40px" }} />
 
-        {/* Pills row — single scrollable line */}
+        {/* Pills row — edge-to-edge scroll container with inner padding */}
         <div
           className="filter-pill-scroll"
           style={{
             display: "flex", alignItems: "center",
-            gap: "5px", overflowX: "auto", flexWrap: "nowrap",
-            paddingBottom: "2px",
+            gap: "6px", overflowX: "auto", flexWrap: "nowrap",
+            paddingInline: "40px", paddingBottom: "4px",
+            WebkitOverflowScrolling: "touch",
           }}
         >
           {isLoading ? (
