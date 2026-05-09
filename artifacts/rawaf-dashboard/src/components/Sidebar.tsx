@@ -25,6 +25,10 @@ const TYPE_ICON: Record<string, string> = {
   "صيانة":    "🔧",
 };
 
+function formatPrice(value: number): string {
+  if (value == null || value === 0) return "—";
+  return value.toLocaleString("en");
+}
 
 export default function Sidebar({
   filtered,
@@ -137,6 +141,11 @@ export default function Sidebar({
                         );
                       })()}
                       <span style={{ fontSize: "0.6rem", color: "#bbb", whiteSpace: "nowrap", flexShrink: 0 }}>{c.portfolio}</span>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "left", flexShrink: 0 }}>
+                    <div style={{ fontSize: "0.7rem", fontWeight: 800, color, direction: "ltr" }}>
+                      {formatPrice(c.price)}
                     </div>
                   </div>
                 </div>
