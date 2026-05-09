@@ -67,14 +67,6 @@ function TruncatedBadge({
   return (
     <span
       title={title ?? value}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.whiteSpace = "normal";
-        e.currentTarget.style.overflow = "visible";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.whiteSpace = "nowrap";
-        e.currentTarget.style.overflow = "hidden";
-      }}
       style={{
         display: "block",
         minWidth: 0,
