@@ -356,32 +356,40 @@ export default function MainContent({ contractor, allContractors, filteredContra
           </p>
         </div>
 
-        {/* Grid: برنامج الأعمال — نوع الأعمال — نوع العمل — الوحدة */}
+        {/* Grid: برنامج الأعمال — نوع الأعمال — نوع العمل — الوحدة — fixed height, no expand */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "10px" }}>
-          <div style={{ background: "linear-gradient(135deg, rgba(197,160,89,0.07), rgba(197,160,89,0.02))", border: "1px solid rgba(197,160,89,0.2)", borderRadius: "9px", padding: "12px 14px", minWidth: 0, overflow: "hidden" }}>
-            <div style={{ fontSize: "0.55rem", color: "var(--gold)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>برنامج الأعمال</div>
-            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)", minWidth: 0, overflow: "hidden" }}>
-              <TruncatedBadge value={(contractor as any).businessProgram || "—"} title={(contractor as any).businessProgram || "—"} />
+          {[
+            { label: "برنامج الأعمال", value: (contractor as any).businessProgram || "—", gold: true },
+            { label: "نوع الأعمال",    value: contractor.workType || "—",                 gold: false },
+            { label: "نوع العمل",      value: (contractor as any).workCategory || "—",    gold: false },
+            { label: "الوحدة",         value: (contractor as any).unit || "—",            gold: false },
+          ].map(({ label, value, gold }) => (
+            <div
+              key={label}
+              title={value}
+              style={{
+                background: gold
+                  ? "linear-gradient(135deg, rgba(197,160,89,0.07), rgba(197,160,89,0.02))"
+                  : "linear-gradient(135deg, rgba(58,54,50,0.04), rgba(58,54,50,0.01))",
+                border: `1px solid ${gold ? "rgba(197,160,89,0.2)" : "rgba(58,54,50,0.1)"}`,
+                borderRadius: "9px",
+                padding: "10px 12px",
+                minWidth: 0,
+                overflow: "hidden",
+                height: "58px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+              }}
+            >
+              <div style={{ fontSize: "0.52rem", color: gold ? "var(--gold)" : "#aaa", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px", fontWeight: 700, flexShrink: 0 }}>
+                {label}
+              </div>
+              <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "var(--charcoal)", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", minWidth: 0 }}>
+                {value}
+              </div>
             </div>
-          </div>
-          <div style={{ background: "linear-gradient(135deg, rgba(58,54,50,0.04), rgba(58,54,50,0.01))", border: "1px solid rgba(58,54,50,0.1)", borderRadius: "9px", padding: "12px 14px" }}>
-            <div style={{ fontSize: "0.55rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>نوع الأعمال</div>
-            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>
-              <TruncatedBadge value={contractor.workType || "—"} title={contractor.workType || "—"} />
-            </div>
-          </div>
-          <div style={{ background: "linear-gradient(135deg, rgba(58,54,50,0.04), rgba(58,54,50,0.01))", border: "1px solid rgba(58,54,50,0.1)", borderRadius: "9px", padding: "12px 14px" }}>
-            <div style={{ fontSize: "0.55rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>نوع العمل</div>
-            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>
-              <TruncatedBadge value={(contractor as any).workCategory || "—"} title={(contractor as any).workCategory || "—"} />
-            </div>
-          </div>
-          <div style={{ background: "linear-gradient(135deg, rgba(58,54,50,0.04), rgba(58,54,50,0.01))", border: "1px solid rgba(58,54,50,0.1)", borderRadius: "9px", padding: "12px 14px" }}>
-            <div style={{ fontSize: "0.55rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "4px", fontWeight: 700 }}>الوحدة</div>
-            <div style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--charcoal)" }}>
-              <TruncatedBadge value={(contractor as any).unit || "—"} title={(contractor as any).unit || "—"} />
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
