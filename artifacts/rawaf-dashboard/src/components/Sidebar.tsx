@@ -25,10 +25,6 @@ const TYPE_ICON: Record<string, string> = {
   "صيانة":    "🔧",
 };
 
-function formatPrice(value: number): string {
-  if (value == null || value === 0) return "—";
-  return value.toLocaleString("en");
-}
 
 export default function Sidebar({
   filtered,
@@ -143,11 +139,6 @@ export default function Sidebar({
                       <span style={{ fontSize: "0.6rem", color: "#bbb", whiteSpace: "nowrap", flexShrink: 0 }}>{c.portfolio}</span>
                     </div>
                   </div>
-                  <div style={{ textAlign: "left", flexShrink: 0 }}>
-                    <div style={{ fontSize: "0.7rem", fontWeight: 800, color, direction: "ltr" }}>
-                      {formatPrice(c.price)}
-                    </div>
-                  </div>
                 </div>
               );
             })}
@@ -157,11 +148,8 @@ export default function Sidebar({
 
       {/* Bottom summary — only when there are results */}
       {hasFilter && filtered.length > 0 && (
-        <div style={{ padding: "10px 14px", borderTop: "1px solid rgba(197,160,89,0.15)", background: "#faf8f4", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ padding: "10px 14px", borderTop: "1px solid rgba(197,160,89,0.15)", background: "#faf8f4", flexShrink: 0 }}>
           <span style={{ fontSize: "0.62rem", color: "#aaa" }}>{filtered.length} متخصص</span>
-          <span style={{ fontSize: "0.62rem", color: "var(--gold)", fontWeight: 700 }}>
-            {formatPrice(filtered.reduce((s, c) => s + c.price, 0))}
-          </span>
         </div>
       )}
     </aside>
