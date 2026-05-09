@@ -69,7 +69,7 @@ const FILTER_DEFS: {
   { key: "portfolio",       label: "المحفظة",            getter: (c) => c.portfolio },
   { key: "project",         label: "المشروع",            getter: (c) => c.project },
   { key: "businessProgram", label: "برنامج الأعمال",     getter: (c) => (c as any).businessProgram ?? "" },
-  { key: "workType",        label: "نوع الأعمال",        getter: (c) => c.workType },
+  { key: "workType",        label: "نوع التعاقد",        getter: (c) => c.workType },
   { key: "workCategory",    label: "نوع العمل",           getter: (c) => (c as any).workCategory ?? "" },
 ];
 

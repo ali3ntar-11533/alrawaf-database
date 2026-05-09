@@ -437,7 +437,7 @@ export default function ContractAnalytics({ onNavigateStage: _ }: Props) {
                         {[
                           { label: "اسم المشروع",      value: selected.projectName || "—" },
                           { label: "رقم المشروع",      value: selected.projectNo || "—" },
-                          { label: "نوع الأعمال",      value: selected.workType || "—" },
+                          { label: "نوع التعاقد",      value: selected.workType || "—" },
                           { label: "مدة العقد",        value: selected.contractDuration ? `${selected.contractDuration} يوم` : `${kpi.planned} يوم` },
                           { label: "تاريخ الإصدار",   value: new Date(selected.createdAt).toLocaleDateString("ar-SA", { year: "numeric", month: "short", day: "numeric" }) },
                           { label: "تاريخ الإكمال",   value: new Date(selected.updatedAt).toLocaleDateString("ar-SA", { year: "numeric", month: "short", day: "numeric" }) },

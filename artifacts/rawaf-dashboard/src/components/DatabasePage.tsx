@@ -53,7 +53,7 @@ const FORM_FIELDS: { key: keyof FormData; label: string; type?: string; wide?: b
   { key: "portfolio",      label: "٤. المحفظة" },
   { key: "mainActivity",    label: "٥. النشاط الرئيسي" },
   { key: "businessProgram", label: "٦. برنامج الأعمال" },
-  { key: "workType",        label: "٧. نوع الأعمال" },
+  { key: "workType",        label: "٧. نوع التعاقد" },
   { key: "technicalScope", label: "٨. الوصف الفني للبند", wide: true, rows: 3 },
   { key: "workCategory",   label: "٩. نوع العمل (تصنيف)" },
   { key: "unit",           label: "١٠. الوحدة" },
@@ -158,7 +158,7 @@ function exportToExcel(data: Contractor[]) {
     "المحفظة":              c.portfolio,
     "النشاط الرئيسي":       (c as any).mainActivity ?? "",
     "برنامج الأعمال":       (c as any).businessProgram ?? "",
-    "نوع الأعمال":          c.workType,
+    "نوع التعاقد":          c.workType,
     "الوصف الفني للبند":    c.technicalScope,
     "نوع العمل":            (c as any).workCategory ?? "",
     "الوحدة":               (c as any).unit ?? "",
@@ -528,7 +528,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
               <tr style={{ background: "var(--charcoal)" }}>
                 {[
                   "رقم العقد", "المقاول / المورد", "المشروع", "المحفظة",
-                  "النشاط الرئيسي", "برنامج الأعمال", "نوع الأعمال", "الوصف الفني للبند",
+                  "النشاط الرئيسي", "برنامج الأعمال", "نوع التعاقد", "الوصف الفني للبند",
                   "نوع العمل", "الوحدة", "السعر", "المحتوى المحلي", "التواصل", "التقييم", "إجراءات"
                 ].map((h, i) => (
                   <th key={i} style={{ padding: "12px 10px", textAlign: i >= 13 ? "center" : "right", fontSize: "0.63rem", fontWeight: 700, color: "rgba(197,160,89,0.9)", letterSpacing: "0.05em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", borderBottom: "2px solid rgba(197,160,89,0.2)" }}>
@@ -783,7 +783,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                   { label: "المشروع", value: cloneSource.project },
                   { label: "المحفظة", value: cloneSource.portfolio },
                   { label: "النشاط الرئيسي", value: (cloneSource as any).mainActivity || "—" },
-                  { label: "نوع الأعمال", value: cloneSource.workType },
+                  { label: "نوع التعاقد", value: cloneSource.workType },
                   { label: "نوع العمل", value: (cloneSource as any).workCategory || "—" },
                   { label: "رقم التواصل", value: cloneSource.phone },
                 ].map((item) => (

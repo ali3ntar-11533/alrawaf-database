@@ -441,7 +441,7 @@ export default function StageDetailPage({ stageNum, stageNums, hideBack, role, a
                       <Field label="اسم المشروع" fkey="projectName" placeholder="مثال: مشروع أتمتة المنشآت" />
                       <Field label="رقم المشروع" fkey="projectNo" placeholder="مثال: PRJ-2024-001" />
                       <Field label="جهة إصدار الطلب" fkey="issuerEntity" placeholder="الجهة المُصدِرة" />
-                      <SelectField label="نوع الأعمال" fkey="workType" options={WORK_TYPES} />
+                      <SelectField label="نوع التعاقد" fkey="workType" options={WORK_TYPES} />
                       <SelectField label="نوع العقد" fkey="contractType" options={CONTRACT_TYPES} required />
                       <Field label="قيمة العقد (ريال)" fkey="value" type="number" placeholder="0" />
                       <Field label="مدة العقد" fkey="contractDuration" placeholder="مثال: 12 شهراً" />
@@ -736,7 +736,7 @@ export default function StageDetailPage({ stageNum, stageNums, hideBack, role, a
                         <AField label="اسم المشروع" fkey="projectName" placeholder="اسم المشروع" />
                         <AField label="رقم المشروع" fkey="projectNo" placeholder="PRJ-2024-001" />
                         <AField label="جهة إصدار الطلب" fkey="issuerEntity" placeholder="الجهة المُصدِرة" />
-                        <ASelect label="نوع الأعمال" fkey="workType" options={WORK_TYPES} />
+                        <ASelect label="نوع التعاقد" fkey="workType" options={WORK_TYPES} />
                         <AField label="قيمة الملحق (ريال)" fkey="value" type="number" placeholder="0" />
                         <AField label="مدة العقد" fkey="contractDuration" placeholder="مثال: 12 شهراً" />
                         <AField label="تاريخ البداية" fkey="startDate" type="date" />

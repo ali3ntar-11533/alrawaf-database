@@ -369,7 +369,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
         <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 0.65fr 0.65fr", gap: "10px" }}>
           {[
             { label: "برنامج الأعمال", value: (contractor as any).businessProgram || "—", gold: true },
-            { label: "نوع الأعمال",    value: contractor.workType || "—",                 gold: false },
+            { label: "نوع التعاقد",    value: contractor.workType || "—",                 gold: false },
             { label: "نوع العمل",      value: (contractor as any).workCategory || "—",    gold: false },
             { label: "الوحدة",         value: (contractor as any).unit || "—",            gold: false },
           ].map(({ label, value, gold }) => (

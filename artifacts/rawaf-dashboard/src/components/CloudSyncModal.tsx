@@ -45,7 +45,7 @@ const COLUMNS: { key: keyof RowData; label: string; width: number; type?: "numbe
   { key: "portfolio",       label: "المحفظة",               width: 90  },
   { key: "mainActivity",    label: "النشاط الرئيسي",        width: 120 },
   { key: "businessProgram", label: "برنامج الأعمال",        width: 100 },
-  { key: "workType",        label: "نوع الأعمال",           width: 90  },
+  { key: "workType",        label: "نوع التعاقد",           width: 90  },
   { key: "technicalScope",  label: "الوصف الفني للبند",     width: 200 },
   { key: "workCategory",    label: "نوع العمل",             width: 90  },
   { key: "unit",            label: "الوحدة",                width: 70  },

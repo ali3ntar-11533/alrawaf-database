@@ -1011,7 +1011,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
             { r: "رقم الآيبان",                              rv: { text: contract.vendorIban, hasAttach: true },             l: "جهة إصدار الطلب",          lv: contract.issuerEntity },
             { r: "الرقم / شهادة ضريبة القيمة المضافة",       rv: { text: contract.vendorTaxNo, hasAttach: true },            l: "اسم المشروع",              lv: contract.projectName },
             { r: "ممثل الطرف الثاني",                        rv: contract.vendorDelegate,      l: "رقم المشروع",              lv: contract.projectNo },
-            { r: "صفته",                                     rv: contract.vendorDelegateTitle, l: "نوع الأعمال",              lv: contract.workType },
+            { r: "صفته",                                     rv: contract.vendorDelegateTitle, l: "نوع التعاقد",              lv: contract.workType },
             { r: "رقم الهوية / الإقامة للمفوض",              rv: contract.vendorDelegateId,    l: "نوع العقد",                lv: contract.contractType },
             { r: "رقم التواصل الرسمي للمنشأة",               rv: contract.vendorContact,       l: "قيمة العقد",               lv: contract.value > 0 ? `${contract.value.toLocaleString("ar-SA")} ريال` : null },
             { r: "البريد الإلكتروني الرسمي للمنشأة",          rv: contract.vendorEmail,         l: "مدة العقد",                lv: contract.contractDuration ? `${contract.contractDuration} يوماً` : null },
@@ -1149,7 +1149,7 @@ export default function ContractDetail({ contractId, role, actorName, onBack }: 
                               <EField label="اسم المشروع" fkey="projectName" placeholder="مثال: مشروع أتمتة المنشآت" />
                               <EField label="رقم المشروع" fkey="projectNo" placeholder="PRJ-2024-001" />
                               <EField label="جهة إصدار الطلب" fkey="issuerEntity" placeholder="الجهة المُصدِرة" />
-                              <ESelect label="نوع الأعمال" fkey="workType" options={WORK_TYPES_CD} />
+                              <ESelect label="نوع التعاقد" fkey="workType" options={WORK_TYPES_CD} />
                               <ESelect label="نوع العقد" fkey="contractType" options={CONTRACT_TYPES_CD} />
                               <EField label="قيمة العقد (ريال)" fkey="value" type="number" placeholder="0" />
                               <EField label="مدة العقد" fkey="contractDuration" placeholder="مثال: 12 شهراً" />
