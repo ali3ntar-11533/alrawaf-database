@@ -489,20 +489,20 @@ export default function FilterBar({ filters, onFiltersChange, search = "" }: Fil
         .price-no-spin { -moz-appearance: textfield; }
       `}</style>
 
-      {/* Break out of the hero-banner's 40px left/right padding so the scroll
-          strip spans the full header width — prevents pills from being clipped */}
-      <div style={{ margin: "8px -40px 0" }}>
-        {/* Divider */}
-        <div style={{ borderTop: "1px solid rgba(197,160,89,0.13)", marginBottom: "8px", marginInline: "40px" }} />
+      <div style={{ margin: "8px 0 0" }}>
+        {/* Divider — aligned with search bar */}
+        <div style={{ borderTop: "1px solid rgba(197,160,89,0.13)", marginBottom: "8px" }} />
 
-        {/* Pills row — edge-to-edge scroll container with inner padding */}
+        {/* Outer scroll viewport — full width, hides scrollbar, allows horizontal scroll */}
         <div
           className="filter-pill-scroll"
-          style={{
-            display: "flex", alignItems: "center",
-            gap: "6px", overflowX: "auto", flexWrap: "nowrap",
-            paddingInline: "40px", paddingBottom: "4px",
-            WebkitOverflowScrolling: "touch",
+          style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: "4px" }}
+        >
+          {/* Inner flex row — centered when pills fit, expands to min-width when they overflow */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "center",
+            gap: "6px", flexWrap: "nowrap", minWidth: "max-content",
+            paddingInline: "8px",
           }}
         >
           {isLoading ? (
@@ -562,7 +562,8 @@ export default function FilterBar({ filters, onFiltersChange, search = "" }: Fil
               مسح الكل ({activeCount})
             </button>
           )}
-        </div>
+          </div>{/* end inner flex row */}
+        </div>{/* end outer scroll viewport */}
 
       </div>
     </>
