@@ -497,8 +497,9 @@ export default function FilterBar({ filters, onFiltersChange, search = "" }: Fil
         <div
           className="filter-pill-scroll"
           style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
+            display: "flex", alignItems: "center",
             gap: "5px", overflowX: "auto", flexWrap: "nowrap",
+            paddingBottom: "2px",
           }}
         >
           {isLoading ? (
