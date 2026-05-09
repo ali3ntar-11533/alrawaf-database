@@ -357,7 +357,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
         </div>
 
         {/* Grid: برنامج الأعمال — نوع الأعمال — نوع العمل — الوحدة — fixed height, no expand */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "10px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 0.65fr 0.65fr", gap: "10px" }}>
           {[
             { label: "برنامج الأعمال", value: (contractor as any).businessProgram || "—", gold: true },
             { label: "نوع الأعمال",    value: contractor.workType || "—",                 gold: false },
