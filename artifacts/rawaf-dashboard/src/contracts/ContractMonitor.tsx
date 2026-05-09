@@ -767,7 +767,7 @@ export default function ContractMonitor({ contract, role }: { contract: Contract
         <StatBox label="اسم المشروع"          value={contract.projectName || "—"} />
         <StatBox label="اسم المورد / المقاول" value={contract.vendorName} />
         <StatBox label="رقم العقد"            value={contract.contractNo} />
-        <StatBox label="نوع التعاقد"          value={contract.contractType || "—"} />
+        <StatBox label="نوع الأعمال"          value={contract.contractType || "—"} />
         <StatBox label="تاريخ البداية"         value={contract.startDate || "—"} />
         <StatBox label="تاريخ النهاية"         value={contract.endDate || "—"} />
         {(() => { const st = contractStatus(contract.endDate); return (

@@ -76,7 +76,7 @@ export default function Sidebar({
           <div style={{ textAlign: "center", padding: "32px 16px" }}>
             <div style={{ fontSize: "2.5rem", marginBottom: "12px", opacity: 0.35 }}>🔍</div>
             <p style={{ fontSize: "0.75rem", color: "#ccc", lineHeight: 1.7, margin: 0 }}>
-              استخدم فلتر "نوع التعاقد" أو أي بحث آخر لعرض المتخصصين المرتبطين بالعمل المطلوب
+              استخدم فلتر "نوع الأعمال" أو أي بحث آخر لعرض المتخصصين المرتبطين بالعمل المطلوب
             </p>
           </div>
         ) : filtered.length === 0 ? (

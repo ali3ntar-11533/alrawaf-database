@@ -167,7 +167,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
           </div>
           <input
             type="text"
-            placeholder="ابحث بأي معلومة: اسم المقاول، المشروع، نوع التعاقد، المحفظة، رقم العقد..."
+            placeholder="ابحث بأي معلومة: اسم المقاول، المشروع، نوع الأعمال، المحفظة، رقم العقد..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             style={{
