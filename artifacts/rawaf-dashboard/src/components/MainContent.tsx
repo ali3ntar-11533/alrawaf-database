@@ -274,7 +274,16 @@ export default function MainContent({ contractor, allContractors, filteredContra
       cycleCount: contractorsAtMax.length, cyclePos: maxCycleIdx,
     },
   ];
-  const mainActivity = (contractor as any).mainActivity as string | null | undefined;
+  // النشاط الرئيسي: يُعطى الأولوية لقيمة السجل الحالي، وإذا كانت فارغة
+  // نبحث عن أي سجل آخر لنفس المقاول يحتوي على النشاط الرئيسي.
+  const rawMainActivity = (contractor as any).mainActivity as string | null | undefined;
+  const mainActivity: string | null | undefined = rawMainActivity || (() => {
+    const cName = normalize(contractor.contractor);
+    const found = allContractors.find(
+      (c) => normalize(c.contractor) === cName && !!(c as any).mainActivity
+    );
+    return found ? ((found as any).mainActivity as string) : undefined;
+  })();
 
   return (
     <main className="content-area">
