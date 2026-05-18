@@ -126,7 +126,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--gold)", flexShrink: 0, boxShadow: "0 0 6px var(--gold)" }} />
                 <p style={{ fontSize: "0.82rem", color: "rgba(232,213,163,0.9)", fontWeight: 500, margin: 0 }}>
-                  إدارة سلاسل الإمداد — شركة الرواف للمقاولات
+                  إدارة المشتريات والعقود — شركة الرواف للمقاولات
                 </p>
               </div>
             </div>
