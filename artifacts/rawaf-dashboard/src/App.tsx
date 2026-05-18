@@ -41,11 +41,18 @@ function App() {
       if (user.role !== "admin") setActiveTab("main");
     };
     const onLogout = () => setCurrentUser(null);
-    window.addEventListener("rawaf-login",  onLogin  as EventListener);
-    window.addEventListener("rawaf-logout", onLogout as EventListener);
+    const onProfileUpdated = (e: Event) => {
+      const user = (e as CustomEvent<CurrentUser>).detail;
+      setCurrentUser(user);
+      sessionStorage.setItem("rawaf_current_user", JSON.stringify(user));
+    };
+    window.addEventListener("rawaf-login",           onLogin          as EventListener);
+    window.addEventListener("rawaf-logout",          onLogout         as EventListener);
+    window.addEventListener("rawaf-profile-updated", onProfileUpdated as EventListener);
     return () => {
-      window.removeEventListener("rawaf-login",  onLogin  as EventListener);
-      window.removeEventListener("rawaf-logout", onLogout as EventListener);
+      window.removeEventListener("rawaf-login",           onLogin          as EventListener);
+      window.removeEventListener("rawaf-logout",          onLogout         as EventListener);
+      window.removeEventListener("rawaf-profile-updated", onProfileUpdated as EventListener);
     };
   }, []);
 

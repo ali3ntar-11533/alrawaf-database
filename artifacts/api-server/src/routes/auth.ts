@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, usersTable, userLogsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { verifyPassword, seedAdminUser } from "../lib/auth-utils";
+import { verifyPassword, hashPassword, seedAdminUser } from "../lib/auth-utils";
 
 void seedAdminUser();
 
@@ -33,6 +33,25 @@ router.post("/auth/heartbeat", async (req, res): Promise<void> => {
   if (!loginName) { res.status(400).json({ error: "loginName required" }); return; }
   await db.update(usersTable).set({ lastActive: new Date() }).where(eq(usersTable.loginName, loginName));
   res.json({ ok: true });
+});
+
+router.put("/auth/profile", async (req, res): Promise<void> => {
+  const { userId, name, jobTitle, loginName, password } = req.body as Record<string, string>;
+  const id = parseInt(userId, 10);
+  if (!id || !name?.trim() || !loginName?.trim()) {
+    res.status(400).json({ error: "userId, name, loginName مطلوبة" });
+    return;
+  }
+  const updates: Partial<typeof usersTable.$inferInsert> = {
+    name:      name.trim(),
+    jobTitle:  jobTitle?.trim() ?? "",
+    loginName: loginName.trim(),
+  };
+  if (password) updates.passwordHash = hashPassword(password);
+  const [row] = await db.update(usersTable).set(updates).where(eq(usersTable.id, id)).returning();
+  if (!row) { res.status(404).json({ error: "المستخدم غير موجود" }); return; }
+  const { passwordHash: _h, ...safeUser } = row;
+  res.json({ ...safeUser, lastActive: safeUser.lastActive?.toISOString() ?? null, createdAt: safeUser.createdAt.toISOString() });
 });
 
 export default router;

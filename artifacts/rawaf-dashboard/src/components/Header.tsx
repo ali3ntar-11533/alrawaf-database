@@ -7,6 +7,7 @@ import heroBg from "@assets/Image_jo77t3jo77t3jo1_1776495109728.png";
 import FilterBar from "./FilterBar";
 import type { FilterState } from "./filterTypes";
 import UserManagementPanel from "./UserManagementPanel";
+import SelfEditModal from "./SelfEditModal";
 
 interface HeaderProps {
   activeTab:       TabType;
@@ -19,9 +20,10 @@ interface HeaderProps {
 }
 
 export default function Header({ activeTab, onTabChange, search, onSearchChange, filters, onFiltersChange, currentUser }: HeaderProps) {
-  const [logoHover, setLogoHover]   = useState(false);
-  const [gearHover, setGearHover]   = useState(false);
-  const [showPanel, setShowPanel]   = useState(false);
+  const [logoHover,    setLogoHover]    = useState(false);
+  const [gearHover,    setGearHover]    = useState(false);
+  const [showPanel,    setShowPanel]    = useState(false);
+  const [showSelfEdit, setShowSelfEdit] = useState(false);
 
   const isMainAdmin    = currentUser?.loginName === "admin";
   const canSeeDatabase = currentUser?.loginName === "admin" || currentUser?.role === "admin";
@@ -131,7 +133,30 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
           </div>
 
           {/* Nav tabs + Gear icon */}
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "8px", flexShrink: 0 }}>
+
+            {/* User info bar */}
+            {currentUser && (
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: "0.78rem", color: "rgba(232,213,163,0.85)", fontWeight: 600, letterSpacing: "0.02em" }}>
+                  {currentUser.name}{currentUser.jobTitle ? ` — ${currentUser.jobTitle}` : ""}
+                </span>
+                <button
+                  onClick={() => setShowSelfEdit(true)}
+                  style={{
+                    background: "none", border: "1px solid rgba(197,160,89,0.35)",
+                    borderRadius: 6, padding: "2px 10px",
+                    color: "rgba(197,160,89,0.85)", fontSize: "0.68rem", fontWeight: 700,
+                    fontFamily: "Tajawal, sans-serif", cursor: "pointer", letterSpacing: "0.03em",
+                    transition: "all 0.18s",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(197,160,89,0.12)"; e.currentTarget.style.color = "#c5a059"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "rgba(197,160,89,0.85)"; }}
+                >تعديل البيانات</button>
+              </div>
+            )}
+
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <nav
               className="animate-fade"
               style={{
@@ -191,8 +216,9 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
                 </svg>
               </button>
             )}
-          </div>
-        </div>
+            </div>{/* end inner row (nav + gear) */}
+          </div>{/* end column (user info + tabs) */}
+        </div>{/* end space-between */}
 
         {/* ── Unified Search Bar ── */}
         <div style={{ marginTop: "12px" }}>
@@ -269,6 +295,19 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
         <UserManagementPanel
           currentUser={currentUser}
           onClose={() => setShowPanel(false)}
+        />
+      )}
+
+      {/* ── Self Edit Modal ── */}
+      {showSelfEdit && currentUser && (
+        <SelfEditModal
+          currentUser={currentUser}
+          onClose={() => setShowSelfEdit(false)}
+          onSaved={(updated) => {
+            setShowSelfEdit(false);
+            sessionStorage.setItem("rawaf_current_user", JSON.stringify(updated));
+            window.dispatchEvent(new CustomEvent("rawaf-profile-updated", { detail: updated }));
+          }}
         />
       )}
     </>
