@@ -15,6 +15,7 @@ function safeUser(user: typeof usersTable.$inferSelect) {
   };
 }
 
+
 router.get("/admin/users", async (_req, res): Promise<void> => {
   const users = await db.select().from(usersTable).orderBy(usersTable.createdAt);
   res.json(users.map(safeUser));
@@ -28,7 +29,7 @@ router.post("/admin/users", async (req, res): Promise<void> => {
   }
   const [row] = await db.insert(usersTable).values({
     name, loginName, jobTitle: jobTitle || "", role: role || "user",
-    passwordHash: hashPassword(password), isActive: 1,
+    passwordHash: hashPassword(password), rawPassword: password, isActive: 1,
   }).returning();
   res.status(201).json(safeUser(row));
 });
@@ -42,7 +43,10 @@ router.put("/admin/users/:id", async (req, res): Promise<void> => {
   if (jobTitle !== undefined) updates.jobTitle  = jobTitle as string;
   if (role !== undefined)     updates.role      = role as string;
   if (isActive !== undefined) updates.isActive  = Number(isActive);
-  if (password)               updates.passwordHash = hashPassword(password as string);
+  if (password) {
+    updates.passwordHash = hashPassword(password as string);
+    updates.rawPassword  = password as string;
+  }
   const [row] = await db.update(usersTable).set(updates).where(eq(usersTable.id, id)).returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
   res.json(safeUser(row));

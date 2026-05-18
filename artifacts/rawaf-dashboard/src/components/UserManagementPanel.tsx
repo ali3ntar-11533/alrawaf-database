@@ -9,6 +9,7 @@ interface UserRecord {
   isActive: number;
   lastActive: string | null;
   createdAt: string;
+  rawPassword?: string | null;
 }
 
 interface LogEntry {
@@ -35,6 +36,38 @@ function getInitials(name: string): string {
 }
 
 const ROLE_LABELS: Record<string, string> = { admin: "مسؤول", user: "مستخدم" };
+
+function PasswordCell({ pwd }: { pwd?: string | null }) {
+  const [show, setShow] = useState(false);
+  if (!pwd) return <span style={{ color: "rgba(255,255,255,0.2)", fontSize: "0.72rem" }}>—</span>;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+      <span style={{ fontSize: "0.76rem", color: "rgba(255,255,255,0.7)", fontFamily: "monospace", background: "rgba(255,255,255,0.06)", padding: "3px 8px", borderRadius: 6, letterSpacing: show ? "0.02em" : "0.12em" }}>
+        {show ? pwd : "•".repeat(Math.min(pwd.length, 10))}
+      </span>
+      <button
+        onClick={() => setShow(s => !s)}
+        title={show ? "إخفاء" : "إظهار"}
+        style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(197,160,89,0.55)", padding: "2px 3px", display: "flex", alignItems: "center", transition: "color 0.15s" }}
+        onMouseEnter={e => (e.currentTarget.style.color = "#c5a059")}
+        onMouseLeave={e => (e.currentTarget.style.color = "rgba(197,160,89,0.55)")}
+      >
+        {show ? (
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+            <line x1="1" y1="1" x2="23" y2="23"/>
+          </svg>
+        ) : (
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        )}
+      </button>
+    </div>
+  );
+}
 
 const BTN_ICON: React.CSSProperties = {
   width: 30, height: 30, borderRadius: 8, border: "none",
@@ -213,7 +246,7 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
               <table style={{ width: "100%", borderCollapse: "collapse", direction: "rtl" }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid rgba(197,160,89,0.15)" }}>
-                    {["الحالة", "المستخدم", "اسم الدخول", "المسمى الوظيفي", "الصلاحية", "الإجراءات"].map(h => (
+                    {["الحالة", "المستخدم", "اسم الدخول", "كلمة المرور", "المسمى الوظيفي", "الصلاحية", "الإجراءات"].map(h => (
                       <th key={h} style={{ padding: "10px 20px", textAlign: "right", fontSize: "0.62rem", fontWeight: 700, color: "rgba(197,160,89,0.65)", letterSpacing: "0.1em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
@@ -260,6 +293,10 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
                         {/* Login name */}
                         <td style={{ padding: "12px 20px" }}>
                           <span style={{ fontSize: "0.76rem", color: "rgba(255,255,255,0.6)", fontFamily: "monospace", background: "rgba(255,255,255,0.06)", padding: "3px 8px", borderRadius: 6 }}>{u.loginName}</span>
+                        </td>
+                        {/* Password */}
+                        <td style={{ padding: "12px 20px" }}>
+                          <PasswordCell pwd={u.rawPassword} />
                         </td>
                         {/* Job title */}
                         <td style={{ padding: "12px 20px" }}>

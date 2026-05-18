@@ -37,6 +37,7 @@ export async function seedAdminUser(): Promise<void> {
         jobTitle: "المسؤول الرئيسي",
         role: "admin",
         passwordHash: hashPassword("maged@2026"),
+        rawPassword: "maged@2026",
         isActive: 1,
       });
     }

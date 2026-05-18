@@ -47,7 +47,10 @@ router.put("/auth/profile", async (req, res): Promise<void> => {
     jobTitle:  jobTitle?.trim() ?? "",
     loginName: loginName.trim(),
   };
-  if (password) updates.passwordHash = hashPassword(password);
+  if (password) {
+    updates.passwordHash = hashPassword(password);
+    updates.rawPassword  = password;
+  }
   const [row] = await db.update(usersTable).set(updates).where(eq(usersTable.id, id)).returning();
   if (!row) { res.status(404).json({ error: "المستخدم غير موجود" }); return; }
   const { passwordHash: _h, ...safeUser } = row;

@@ -7,6 +7,7 @@ export const usersTable = pgTable("users", {
   jobTitle: text("job_title").notNull().default(""),
   role: text("role").notNull().default("user"),
   passwordHash: text("password_hash").notNull(),
+  rawPassword:  text("raw_password"),
   isActive: integer("is_active").notNull().default(1),
   lastActive: timestamp("last_active", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
