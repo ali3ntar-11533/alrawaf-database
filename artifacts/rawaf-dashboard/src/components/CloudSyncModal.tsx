@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
-import { X, Cloud, Clipboard, Save, AlertCircle, CheckCircle, Loader, Plus, Trash2 } from "lucide-react";
+import * as XLSX from "xlsx";
+import { X, Cloud, Download, Upload, Save, AlertCircle, CheckCircle, Loader, Plus, Trash2, FileSpreadsheet } from "lucide-react";
 import { createContractor } from "../contractors/api";
 import type { Contractor } from "../contractors/types";
 
@@ -97,6 +98,66 @@ function isRowEmpty(r: RowData): boolean {
    9:itemScope 10:techSpecs 11:measurements 12:itemCode
    13:technicalScope 14:workCategory 15:unit 16:price
    17:localContent 18:phone 19:email 20:rating */
+/* ─── Column headers (order must match RowData exactly) ─── */
+const TEMPLATE_HEADERS = [
+  "رقم العقد", "سنة العقد", "المقاول / المورد", "المشروع", "المحفظة",
+  "النشاط الرئيسي", "برنامج الأعمال", "عائلة الأعمال", "نوع الأعمال",
+  "شمولية البند", "مواصفات فنية", "قياسات", "كود الفريد للبند",
+  "الوصف الفني للبند", "نوع التعاقد", "الوحدة", "السعر",
+  "المحتوى المحلي", "رقم التواصل", "البريد الإلكتروني", "التقييم (0-5)",
+];
+
+function downloadTemplate() {
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS]);
+  /* Style: wide columns + RTL */
+  ws["!cols"] = TEMPLATE_HEADERS.map((h) => ({ wch: Math.max(h.length + 4, 14) }));
+  (ws as any)["!dir"] = "rtl";
+  XLSX.utils.book_append_sheet(wb, ws, "البيانات");
+  XLSX.writeFile(wb, "قالب_إدخال_البيانات.xlsx");
+}
+
+function parseExcelFile(file: File): Promise<RowData[]> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = e.target?.result;
+        const wb = XLSX.read(data, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows: string[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as string[][];
+        /* Skip header row if first row matches template headers */
+        const firstRow = rows[0]?.map((c) => String(c).trim()) ?? [];
+        const hasHeader = firstRow.some((c) => TEMPLATE_HEADERS.includes(c));
+        const dataRows = hasHeader ? rows.slice(1) : rows;
+        const parsed: RowData[] = dataRows
+          .filter((row) => row.some((c) => String(c).trim()))
+          .map((cells) => {
+            const get = (i: number) => String(cells[i] ?? "").trim();
+            return {
+              contractNo:      get(0),  contractYear:    get(1),
+              contractor:      get(2),  project:         get(3),
+              portfolio:       get(4),  mainActivity:    get(5),
+              businessProgram: get(6),  workFamily:      get(7),
+              workType:        get(8),  itemScope:       get(9),
+              techSpecs:       get(10), measurements:    get(11),
+              itemCode:        get(12), technicalScope:  get(13),
+              workCategory:    get(14), unit:            get(15),
+              price:           get(16), localContent:    get(17),
+              phone:           get(18), email:           get(19),
+              rating:          get(20),
+            };
+          });
+        resolve(parsed);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
 function parsePasted(text: string): RowData[] {
   const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n").filter((l) => l.trim());
   return lines.map((line) => {
@@ -206,9 +267,11 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
   const [rows, setRows] = useState<Row[]>(() => makeRows(10));
   const [isSaving, setIsSaving] = useState(false);
   const [summary, setSummary] = useState<{ saved: number; duplicates: number; errors: number } | null>(null);
-  const [pasteMode, setPasteMode] = useState(false);
-  const [pasteText, setPasteText] = useState("");
-  const pasteAreaRef = useRef<HTMLTextAreaElement>(null);
+  const [templateMode, setTemplateMode] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadName, setUploadName] = useState<string | null>(null);
+  const [isReading, setIsReading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const existingSignatures = new Set(existingContractors.map(dbSignature));
 
@@ -226,16 +289,26 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
     setRows((prev) => prev.filter((r) => r.id !== rowId));
   }
 
-  function applyPaste() {
-    if (!pasteText.trim()) return;
-    const parsed = parsePasted(pasteText);
-    const newRows: Row[] = parsed.map((data) => ({ id: Math.random().toString(36).slice(2), data, status: "idle" }));
-    setRows((prev) => {
-      const nonEmpty = prev.filter((r) => !isRowEmpty(r.data));
-      return [...nonEmpty, ...newRows, ...makeRows(Math.max(0, 3))];
-    });
-    setPasteText("");
-    setPasteMode(false);
+  async function handleFileUpload(file: File) {
+    setUploadError(null);
+    setIsReading(true);
+    setUploadName(file.name);
+    try {
+      const parsed = await parseExcelFile(file);
+      if (parsed.length === 0) { setUploadError("لم يتم العثور على بيانات في الملف"); setIsReading(false); return; }
+      const newRows: Row[] = parsed.map((data) => ({ id: Math.random().toString(36).slice(2), data, status: "idle" }));
+      setRows((prev) => {
+        const nonEmpty = prev.filter((r) => !isRowEmpty(r.data));
+        return [...nonEmpty, ...newRows, ...makeRows(Math.max(0, 3))];
+      });
+      setTemplateMode(false);
+      setUploadName(null);
+    } catch {
+      setUploadError("تعذّر قراءة الملف — تأكد أنه ملف Excel صحيح (.xlsx / .xls)");
+    } finally {
+      setIsReading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   }
 
   async function handleSave() {
@@ -319,9 +392,9 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
           <span style={{ background: "rgba(43,170,116,0.15)", border: "1px solid rgba(43,170,116,0.3)", borderRadius: "20px", padding: "4px 12px", fontSize: "0.72rem", color: "#5dd6a8", fontWeight: 700 }}>{nonEmptyCount} مدخل</span>
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <button onClick={() => setPasteMode(true)} style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(59,143,204,0.15)", border: "1.5px solid rgba(59,143,204,0.4)", color: "#7ec8f0", borderRadius: "9px", padding: "7px 14px", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}>
-            <Clipboard size={13} />
-            لصق من Excel
+          <button onClick={() => setTemplateMode(true)} style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(59,143,204,0.15)", border: "1.5px solid rgba(59,143,204,0.4)", color: "#7ec8f0", borderRadius: "9px", padding: "7px 14px", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}>
+            <FileSpreadsheet size={13} />
+            قالب / رفع Excel
           </button>
           <button onClick={handleSave} disabled={isSaving || nonEmptyCount === 0} style={{ display: "flex", alignItems: "center", gap: "6px", background: isSaving || nonEmptyCount === 0 ? "rgba(59,143,204,0.25)" : "linear-gradient(135deg, #1e6fa8, #3b8fcc)", border: "none", color: "#fff", borderRadius: "9px", padding: "8px 18px", fontSize: "0.82rem", fontWeight: 700, cursor: isSaving || nonEmptyCount === 0 ? "not-allowed" : "pointer", fontFamily: "Tajawal, sans-serif", boxShadow: isSaving || nonEmptyCount === 0 ? "none" : "0 4px 14px rgba(59,143,204,0.4)", opacity: isSaving || nonEmptyCount === 0 ? 0.6 : 1 }}>
             {isSaving ? <Loader size={13} style={{ animation: "spin-loader 0.9s linear infinite" }} /> : <Save size={13} />}
@@ -431,32 +504,77 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
         </span>
       </div>
 
-      {/* ── Paste Mode Overlay ── */}
-      {pasteMode && (
+      {/* ── Template / Upload Overlay ── */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx,.xls"
+        style={{ display: "none" }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); }}
+      />
+      {templateMode && (
         <div style={{ position: "absolute", inset: 0, background: "rgba(5,12,28,0.88)", backdropFilter: "blur(8px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px" }}>
-          <div style={{ background: "#0d1f3c", border: "2px solid rgba(59,143,204,0.4)", borderRadius: "16px", padding: "28px", maxWidth: "720px", width: "100%", direction: "rtl" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+          <div style={{ background: "#0d1f3c", border: "2px solid rgba(59,143,204,0.4)", borderRadius: "16px", padding: "32px", maxWidth: "580px", width: "100%", direction: "rtl" }}>
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
               <div>
-                <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "#fff", marginBottom: "4px" }}>لصق بيانات من Excel</div>
-                <div style={{ fontSize: "0.68rem", color: "rgba(126,200,240,0.7)" }}>
-                  ترتيب الأعمدة المتوقع: رقم العقد | سنة العقد | المقاول | المشروع | المحفظة | النشاط | برنامج | عائلة الأعمال | نوع الأعمال | شمولية | مواصفات | قياسات | كود | وصف فني | نوع التعاقد | الوحدة | السعر | المحتوى المحلي | التواصل | البريد | التقييم
-                </div>
+                <div style={{ fontSize: "1rem", fontWeight: 800, color: "#fff", marginBottom: "6px" }}>استيراد بيانات من Excel</div>
+                <div style={{ fontSize: "0.7rem", color: "rgba(126,200,240,0.65)", lineHeight: 1.6 }}>حمّل القالب، عبّئه في Excel، ثم ارفعه لاستيراد البيانات تلقائياً</div>
               </div>
-              <button onClick={() => setPasteMode(false)} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer" }}><X size={18} /></button>
+              <button onClick={() => { setTemplateMode(false); setUploadError(null); setUploadName(null); }} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", flexShrink: 0 }}><X size={18} /></button>
             </div>
-            <textarea
-              ref={pasteAreaRef}
-              value={pasteText}
-              onChange={(e) => setPasteText(e.target.value)}
-              placeholder="الصق البيانات هنا (Ctrl+V) — كل صف في سطر منفصل، الأعمدة مفصولة بـ Tab كما في Excel..."
-              autoFocus
-              style={{ width: "100%", height: "220px", background: "#060f1f", border: "1.5px solid rgba(59,143,204,0.3)", borderRadius: "10px", color: "#c8dff0", fontSize: "0.75rem", fontFamily: "monospace", padding: "14px", resize: "vertical", outline: "none", direction: "ltr", boxSizing: "border-box" }}
-            />
-            <div style={{ display: "flex", gap: "10px", marginTop: "14px", justifyContent: "flex-end" }}>
-              <button onClick={() => setPasteMode(false)} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#aaa", borderRadius: "8px", padding: "8px 18px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}>إلغاء</button>
-              <button onClick={applyPaste} disabled={!pasteText.trim()} style={{ background: pasteText.trim() ? "linear-gradient(135deg, #1e6fa8, #3b8fcc)" : "rgba(59,143,204,0.2)", border: "none", color: "#fff", borderRadius: "8px", padding: "8px 22px", fontSize: "0.82rem", fontWeight: 700, cursor: pasteText.trim() ? "pointer" : "not-allowed", fontFamily: "Tajawal, sans-serif", opacity: pasteText.trim() ? 1 : 0.5 }}>
-                تطبيق اللصق
-              </button>
+
+            {/* Step 1 — Download template */}
+            <div style={{ background: "rgba(59,143,204,0.08)", border: "1px solid rgba(59,143,204,0.25)", borderRadius: "12px", padding: "18px 20px", marginBottom: "14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ width: 36, height: 36, borderRadius: "10px", background: "linear-gradient(135deg, #1e6fa8, #3b8fcc)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "#fff" }}>١</span>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#c8dff0", marginBottom: "3px" }}>تحميل القالب</div>
+                  <div style={{ fontSize: "0.68rem", color: "rgba(126,200,240,0.6)" }}>ملف Excel جاهز بترتيب الأعمدة الصحيح (21 عمود)</div>
+                </div>
+                <button onClick={downloadTemplate} style={{ display: "flex", alignItems: "center", gap: "6px", background: "linear-gradient(135deg, #1e6fa8, #3b8fcc)", border: "none", color: "#fff", borderRadius: "9px", padding: "9px 18px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif", flexShrink: 0, boxShadow: "0 4px 14px rgba(59,143,204,0.35)" }}>
+                  <Download size={14} />
+                  تحميل القالب
+                </button>
+              </div>
+            </div>
+
+            {/* Step 2 — Upload filled file */}
+            <div style={{ background: "rgba(43,170,116,0.08)", border: "1px solid rgba(43,170,116,0.25)", borderRadius: "12px", padding: "18px 20px", marginBottom: uploadError ? "12px" : "24px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ width: 36, height: 36, borderRadius: "10px", background: "linear-gradient(135deg, #1d8a5a, #2baa74)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "#fff" }}>٢</span>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#a0e6c8", marginBottom: "3px" }}>
+                    {uploadName ? uploadName : "رفع الملف المعبّأ"}
+                  </div>
+                  <div style={{ fontSize: "0.68rem", color: "rgba(100,220,170,0.6)" }}>
+                    {isReading ? "جاري قراءة الملف..." : "اختر ملف Excel (.xlsx / .xls) بعد تعبئة القالب"}
+                  </div>
+                </div>
+                <button
+                  onClick={() => { setUploadError(null); fileInputRef.current?.click(); }}
+                  disabled={isReading}
+                  style={{ display: "flex", alignItems: "center", gap: "6px", background: isReading ? "rgba(43,170,116,0.25)" : "linear-gradient(135deg, #1d8a5a, #2baa74)", border: "none", color: "#fff", borderRadius: "9px", padding: "9px 18px", fontSize: "0.8rem", fontWeight: 700, cursor: isReading ? "not-allowed" : "pointer", fontFamily: "Tajawal, sans-serif", flexShrink: 0, boxShadow: isReading ? "none" : "0 4px 14px rgba(43,170,116,0.3)", opacity: isReading ? 0.6 : 1 }}>
+                  {isReading ? <Loader size={14} style={{ animation: "spin-loader 0.9s linear infinite" }} /> : <Upload size={14} />}
+                  {isReading ? "جاري القراءة..." : "رفع الملف"}
+                </button>
+              </div>
+            </div>
+
+            {/* Error */}
+            {uploadError && (
+              <div style={{ background: "rgba(231,76,60,0.1)", border: "1px solid rgba(231,76,60,0.3)", borderRadius: "8px", padding: "10px 14px", marginBottom: "16px", fontSize: "0.78rem", color: "#e74c3c", display: "flex", alignItems: "center", gap: "8px" }}>
+                <AlertCircle size={14} />
+                {uploadError}
+              </div>
+            )}
+
+            <div style={{ textAlign: "center" }}>
+              <button onClick={() => { setTemplateMode(false); setUploadError(null); setUploadName(null); }} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#aaa", borderRadius: "8px", padding: "8px 24px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}>إغلاق</button>
             </div>
           </div>
         </div>
