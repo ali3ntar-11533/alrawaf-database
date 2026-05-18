@@ -73,7 +73,7 @@ export default function SelfEditModal({ currentUser, onClose, onSaved }: Props) 
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <h2 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>
-            تعديل بياناتي الشخصية
+            تعديل اسم المستخدم وكلمة المرور
           </h2>
           <button
             onClick={onClose}
