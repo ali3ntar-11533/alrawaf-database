@@ -554,30 +554,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
       {/* Table */}
       <div className="card" style={{ padding: 0, overflow: "hidden", width: "100%" }}>
         <div style={{ overflowX: "auto", width: "100%" }}>
-          <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", direction: "rtl", minWidth: "1800px" }}>
-            <colgroup>
-              <col style={{ width: "80px" }} />
-              <col style={{ width: "65px" }} />
-              <col style={{ width: "130px" }} />
-              <col style={{ width: "100px" }} />
-              <col style={{ width: "70px" }} />
-              <col style={{ width: "90px" }} />
-              <col style={{ width: "90px" }} />
-              <col style={{ width: "90px" }} />
-              <col style={{ width: "80px" }} />
-              <col style={{ width: "90px" }} />
-              <col style={{ width: "90px" }} />
-              <col style={{ width: "70px" }} />
-              <col style={{ width: "90px" }} />
-              <col style={{ width: "130px" }} />
-              <col style={{ width: "80px" }} />
-              <col style={{ width: "55px" }} />
-              <col style={{ width: "80px" }} />
-              <col style={{ width: "70px" }} />
-              <col style={{ width: "90px" }} />
-              <col style={{ width: "75px" }} />
-              <col style={{ width: "90px" }} />
-            </colgroup>
+          <table style={{ tableLayout: "auto", borderCollapse: "collapse", direction: "rtl", minWidth: "2400px", width: "max-content" }}>
             <thead>
               <tr style={{ background: "var(--charcoal)" }}>
                 {[

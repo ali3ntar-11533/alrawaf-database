@@ -6,12 +6,18 @@ import type { Contractor } from "../contractors/types";
 /* ─── Types ─────────────────────────────────────────────── */
 interface RowData {
   contractNo:      string;
+  contractYear:    string;
   contractor:      string;
   project:         string;
   portfolio:       string;
   mainActivity:    string;
   businessProgram: string;
+  workFamily:      string;
   workType:        string;
+  itemScope:       string;
+  techSpecs:       string;
+  measurements:    string;
+  itemCode:        string;
   technicalScope:  string;
   workCategory:    string;
   unit:            string;
@@ -37,23 +43,29 @@ interface Props {
   onSaved:             () => void;
 }
 
-/* ─── Columns definition ─────────────────────────────────── */
+/* ─── Columns definition — order matches the main table ─── */
 const COLUMNS: { key: keyof RowData; label: string; width: number; type?: "number" | "dropdown"; options?: string[] }[] = [
-  { key: "contractNo",      label: "رقم العقد",             width: 110 },
-  { key: "contractor",      label: "المقاول / المورد",      width: 160 },
-  { key: "project",         label: "المشروع",               width: 140 },
-  { key: "portfolio",       label: "المحفظة",               width: 90  },
-  { key: "mainActivity",    label: "النشاط الرئيسي",        width: 120 },
-  { key: "businessProgram", label: "برنامج الأعمال",        width: 100 },
-  { key: "workType",        label: "نوع الأعمال",           width: 90  },
-  { key: "technicalScope",  label: "الوصف الفني للبند",     width: 200 },
-  { key: "workCategory",    label: "نوع التعاقد",           width: 90  },
-  { key: "unit",            label: "الوحدة",                width: 70  },
-  { key: "price",           label: "السعر",                  width: 100, type: "number" },
-  { key: "localContent",    label: "المحتوى المحلي",        width: 100, type: "dropdown", options: ["", "مسجل", "غير مسجل"] },
-  { key: "phone",           label: "رقم التواصل",           width: 120 },
-  { key: "email",           label: "البريد الإلكتروني",     width: 160 },
-  { key: "rating",          label: "التقييم (0-5)",         width: 80, type: "number" },
+  { key: "contractNo",      label: "رقم العقد",           width: 105 },
+  { key: "contractYear",    label: "سنة العقد",           width: 75  },
+  { key: "contractor",      label: "المقاول / المورد",    width: 155 },
+  { key: "project",         label: "المشروع",             width: 130 },
+  { key: "portfolio",       label: "المحفظة",             width: 80  },
+  { key: "mainActivity",    label: "النشاط الرئيسي",      width: 110 },
+  { key: "businessProgram", label: "برنامج الأعمال",      width: 100 },
+  { key: "workFamily",      label: "عائلة الأعمال",       width: 100 },
+  { key: "workType",        label: "نوع الأعمال",         width: 95  },
+  { key: "itemScope",       label: "شمولية البند",        width: 100 },
+  { key: "techSpecs",       label: "مواصفات فنية",        width: 100 },
+  { key: "measurements",    label: "قياسات",              width: 80  },
+  { key: "itemCode",        label: "كود الفريد للبند",    width: 105 },
+  { key: "technicalScope",  label: "الوصف الفني للبند",   width: 195 },
+  { key: "workCategory",    label: "نوع التعاقد",         width: 90  },
+  { key: "unit",            label: "الوحدة",              width: 65  },
+  { key: "price",           label: "السعر",               width: 95, type: "number" },
+  { key: "localContent",    label: "المحتوى المحلي",      width: 100, type: "dropdown", options: ["", "مسجل", "غير مسجل"] },
+  { key: "phone",           label: "رقم التواصل",         width: 115 },
+  { key: "email",           label: "البريد الإلكتروني",   width: 155 },
+  { key: "rating",          label: "التقييم (0-5)",       width: 75, type: "number" },
 ];
 
 /* ─── Helpers ───────────────────────────────────────────── */
@@ -62,10 +74,11 @@ function emptyRow(): Row {
     id: Math.random().toString(36).slice(2),
     status: "idle",
     data: {
-      contractNo: "", contractor: "", project: "", portfolio: "",
-      mainActivity: "", businessProgram: "", workType: "", technicalScope: "",
-      workCategory: "", unit: "", price: "", localContent: "",
-      phone: "", email: "", rating: "",
+      contractNo: "", contractYear: "", contractor: "", project: "", portfolio: "",
+      mainActivity: "", businessProgram: "", workFamily: "",
+      workType: "", itemScope: "", techSpecs: "", measurements: "", itemCode: "",
+      technicalScope: "", workCategory: "", unit: "", price: "",
+      localContent: "", phone: "", email: "", rating: "",
     },
   };
 }
@@ -78,6 +91,12 @@ function isRowEmpty(r: RowData): boolean {
   return Object.values(r).every((v) => !v.trim());
 }
 
+/* Column order in paste must match table column order exactly:
+   0:contractNo 1:contractYear 2:contractor 3:project 4:portfolio
+   5:mainActivity 6:businessProgram 7:workFamily 8:workType
+   9:itemScope 10:techSpecs 11:measurements 12:itemCode
+   13:technicalScope 14:workCategory 15:unit 16:price
+   17:localContent 18:phone 19:email 20:rating */
 function parsePasted(text: string): RowData[] {
   const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n").filter((l) => l.trim());
   return lines.map((line) => {
@@ -85,20 +104,26 @@ function parsePasted(text: string): RowData[] {
     const get = (i: number) => cells[i] ?? "";
     return {
       contractNo:      get(0),
-      contractor:      get(1),
-      project:         get(2),
-      portfolio:       get(3),
-      mainActivity:    get(4),
-      businessProgram: get(5),
-      workType:        get(6),
-      technicalScope:  get(7),
-      workCategory:    get(8),
-      unit:            get(9),
-      price:           get(10),
-      localContent:    get(11),
-      phone:           get(12),
-      email:           get(13),
-      rating:          get(14),
+      contractYear:    get(1),
+      contractor:      get(2),
+      project:         get(3),
+      portfolio:       get(4),
+      mainActivity:    get(5),
+      businessProgram: get(6),
+      workFamily:      get(7),
+      workType:        get(8),
+      itemScope:       get(9),
+      techSpecs:       get(10),
+      measurements:    get(11),
+      itemCode:        get(12),
+      technicalScope:  get(13),
+      workCategory:    get(14),
+      unit:            get(15),
+      price:           get(16),
+      localContent:    get(17),
+      phone:           get(18),
+      email:           get(19),
+      rating:          get(20),
     };
   });
 }
@@ -111,35 +136,45 @@ function norm(s: string): string {
   return (s ?? "").replace(/[\u064B-\u065F]/g, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").toLowerCase().trim();
 }
 
-/** Canonical signature for a DB row — excludes localContent & rating */
 function dbSignature(c: Contractor): string {
   return [
     norm(c.contractNo),
+    norm(c.contractYear     ?? ""),
     norm(c.contractor),
     norm(c.project),
     norm(c.portfolio),
-    norm((c as any).mainActivity    ?? ""),
-    norm((c as any).businessProgram ?? ""),
+    norm(c.mainActivity     ?? ""),
+    norm(c.businessProgram  ?? ""),
+    norm(c.workFamily       ?? ""),
     norm(c.workType),
+    norm(c.itemScope        ?? ""),
+    norm(c.techSpecs        ?? ""),
+    norm(c.measurements     ?? ""),
+    norm(c.itemCode         ?? ""),
     norm(c.technicalScope),
-    norm((c as any).workCategory    ?? ""),
-    norm((c as any).unit            ?? ""),
+    norm(c.workCategory     ?? ""),
+    norm(c.unit             ?? ""),
     String(c.price),
     norm(c.phone),
     norm(c.email),
   ].join("\x00");
 }
 
-/** Canonical signature for a grid input row — excludes localContent & rating */
 function rowSignature(d: RowData): string {
   return [
     norm(d.contractNo),
+    norm(d.contractYear),
     norm(d.contractor),
     norm(d.project),
     norm(d.portfolio),
     norm(d.mainActivity),
     norm(d.businessProgram),
+    norm(d.workFamily),
     norm(d.workType),
+    norm(d.itemScope),
+    norm(d.techSpecs),
+    norm(d.measurements),
+    norm(d.itemCode),
     norm(d.technicalScope),
     norm(d.workCategory),
     norm(d.unit),
@@ -175,32 +210,26 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
   const [pasteText, setPasteText] = useState("");
   const pasteAreaRef = useRef<HTMLTextAreaElement>(null);
 
-  /* Full-record signatures built from existing DB rows (localContent & rating excluded) */
   const existingSignatures = new Set(existingContractors.map(dbSignature));
 
-  /* ── Update a single cell ── */
   const updateCell = useCallback((rowId: string, key: keyof RowData, value: string) => {
     setRows((prev) => prev.map((r) =>
       r.id === rowId ? { ...r, data: { ...r.data, [key]: value }, status: "idle", error: undefined } : r
     ));
   }, []);
 
-  /* ── Add empty rows ── */
   function addRows(n = 5) {
     setRows((prev) => [...prev, ...makeRows(n)]);
   }
 
-  /* ── Remove a row ── */
   function removeRow(rowId: string) {
     setRows((prev) => prev.filter((r) => r.id !== rowId));
   }
 
-  /* ── Parse and apply pasted text ── */
   function applyPaste() {
     if (!pasteText.trim()) return;
     const parsed = parsePasted(pasteText);
     const newRows: Row[] = parsed.map((data) => ({ id: Math.random().toString(36).slice(2), data, status: "idle" }));
-    // Append after current non-empty rows or replace all empty
     setRows((prev) => {
       const nonEmpty = prev.filter((r) => !isRowEmpty(r.data));
       return [...nonEmpty, ...newRows, ...makeRows(Math.max(0, 3))];
@@ -209,7 +238,6 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
     setPasteMode(false);
   }
 
-  /* ── Save all non-empty rows ── */
   async function handleSave() {
     const toSave = rows.filter((r) => !isRowEmpty(r.data));
     if (toSave.length === 0) return;
@@ -217,7 +245,6 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
     setIsSaving(true);
     setSummary(null);
 
-    /* Mark duplicates before saving — full-record comparison */
     setRows((prev) =>
       prev.map((r) => {
         if (isRowEmpty(r.data)) return r;
@@ -228,34 +255,35 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
 
     let saved = 0, duplicates = 0, errors = 0;
 
-    /* Save each non-duplicate row sequentially */
     for (const row of toSave) {
       const sig = rowSignature(row.data);
-      if (existingSignatures.has(sig)) {
-        duplicates++;
-        continue;
-      }
+      if (existingSignatures.has(sig)) { duplicates++; continue; }
       try {
         await createContractor({
           contractNo:      row.data.contractNo.trim(),
+          contractYear:    row.data.contractYear.trim()    || null,
           contractor:      row.data.contractor.trim(),
           project:         row.data.project.trim(),
           portfolio:       row.data.portfolio.trim(),
-          workType:        row.data.workType.trim(),
-          technicalScope:  row.data.technicalScope.trim(),
-          price:           Math.min(Math.round(parseFloat(row.data.price) || 0), 2_000_000_000),
-          phone:           row.data.phone.trim(),
-          email:           row.data.email.trim(),
           mainActivity:    row.data.mainActivity.trim()    || null,
           businessProgram: row.data.businessProgram.trim() || null,
+          workFamily:      row.data.workFamily.trim()      || null,
+          workType:        row.data.workType.trim(),
+          itemScope:       row.data.itemScope.trim()       || null,
+          techSpecs:       row.data.techSpecs.trim()       || null,
+          measurements:    row.data.measurements.trim()    || null,
+          itemCode:        row.data.itemCode.trim()        || null,
+          technicalScope:  row.data.technicalScope.trim(),
           workCategory:    row.data.workCategory.trim()    || null,
           unit:            row.data.unit.trim()            || null,
+          price:           Math.min(Math.round(parseFloat(row.data.price) || 0), 2_000_000_000),
           localContent:    row.data.localContent.trim()    || null,
+          phone:           row.data.phone.trim(),
+          email:           row.data.email.trim(),
           rating:          row.data.rating ? Math.min(5, Math.max(0, Math.round(parseFloat(row.data.rating)))) : null,
           workDescription: null,
           workScopeText:   null,
         });
-        /* Add saved signature to the in-memory set so within-batch duplicates are caught */
         existingSignatures.add(sig);
         saved++;
         setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: "saved" } : r));
@@ -274,77 +302,28 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
   const nonEmptyCount = rows.filter((r) => !isRowEmpty(r.data)).length;
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 2000,
-      background: "rgba(10,8,5,0.72)", backdropFilter: "blur(6px)",
-      display: "flex", flexDirection: "column",
-    }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(10,8,5,0.72)", backdropFilter: "blur(6px)", display: "flex", flexDirection: "column" }}>
       {/* ── Header ── */}
-      <div style={{
-        background: "linear-gradient(135deg, #0d1f3c 0%, #1a3a5c 100%)",
-        borderBottom: "2px solid rgba(59,143,204,0.4)",
-        padding: "14px 24px",
-        display: "flex", alignItems: "center", gap: "14px", flexShrink: 0,
-        direction: "rtl",
-      }}>
+      <div style={{ background: "linear-gradient(135deg, #0d1f3c 0%, #1a3a5c 100%)", borderBottom: "2px solid rgba(59,143,204,0.4)", padding: "14px 24px", display: "flex", alignItems: "center", gap: "14px", flexShrink: 0, direction: "rtl" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: "10px",
-            background: "linear-gradient(135deg, #1e6fa8, #3b8fcc)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 14px rgba(59,143,204,0.4)",
-          }}>
+          <div style={{ width: 36, height: 36, borderRadius: "10px", background: "linear-gradient(135deg, #1e6fa8, #3b8fcc)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(59,143,204,0.4)" }}>
             <Cloud size={18} color="#fff" />
           </div>
           <div>
-            <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "#fff", lineHeight: 1.2 }}>
-              إدخال بيانات سحابي
-            </div>
-            <div style={{ fontSize: "0.62rem", color: "rgba(59,143,204,0.85)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-              Excel Online Sync · Cloud Database Entry
-            </div>
+            <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "#fff", lineHeight: 1.2 }}>إدخال بيانات سحابي</div>
+            <div style={{ fontSize: "0.62rem", color: "rgba(59,143,204,0.85)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Excel Online Sync · Cloud Database Entry — 21 عموداً</div>
           </div>
         </div>
-
-        {/* Stat pills */}
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <span style={{ background: "rgba(59,143,204,0.18)", border: "1px solid rgba(59,143,204,0.35)", borderRadius: "20px", padding: "4px 12px", fontSize: "0.72rem", color: "#7ec8f0", fontWeight: 700 }}>
-            {rows.length} صف
-          </span>
-          <span style={{ background: "rgba(43,170,116,0.15)", border: "1px solid rgba(43,170,116,0.3)", borderRadius: "20px", padding: "4px 12px", fontSize: "0.72rem", color: "#5dd6a8", fontWeight: 700 }}>
-            {nonEmptyCount} مدخل
-          </span>
+          <span style={{ background: "rgba(59,143,204,0.18)", border: "1px solid rgba(59,143,204,0.35)", borderRadius: "20px", padding: "4px 12px", fontSize: "0.72rem", color: "#7ec8f0", fontWeight: 700 }}>{rows.length} صف</span>
+          <span style={{ background: "rgba(43,170,116,0.15)", border: "1px solid rgba(43,170,116,0.3)", borderRadius: "20px", padding: "4px 12px", fontSize: "0.72rem", color: "#5dd6a8", fontWeight: 700 }}>{nonEmptyCount} مدخل</span>
         </div>
-
-        {/* Actions */}
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <button
-            onClick={() => setPasteMode(true)}
-            style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              background: "rgba(59,143,204,0.15)", border: "1.5px solid rgba(59,143,204,0.4)",
-              color: "#7ec8f0", borderRadius: "9px", padding: "7px 14px",
-              fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif",
-            }}
-          >
+          <button onClick={() => setPasteMode(true)} style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(59,143,204,0.15)", border: "1.5px solid rgba(59,143,204,0.4)", color: "#7ec8f0", borderRadius: "9px", padding: "7px 14px", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}>
             <Clipboard size={13} />
             لصق من Excel
           </button>
-          <button
-            onClick={handleSave}
-            disabled={isSaving || nonEmptyCount === 0}
-            style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              background: isSaving || nonEmptyCount === 0
-                ? "rgba(59,143,204,0.25)"
-                : "linear-gradient(135deg, #1e6fa8, #3b8fcc)",
-              border: "none", color: "#fff", borderRadius: "9px", padding: "8px 18px",
-              fontSize: "0.82rem", fontWeight: 700, cursor: isSaving || nonEmptyCount === 0 ? "not-allowed" : "pointer",
-              fontFamily: "Tajawal, sans-serif",
-              boxShadow: isSaving || nonEmptyCount === 0 ? "none" : "0 4px 14px rgba(59,143,204,0.4)",
-              opacity: isSaving || nonEmptyCount === 0 ? 0.6 : 1,
-            }}
-          >
+          <button onClick={handleSave} disabled={isSaving || nonEmptyCount === 0} style={{ display: "flex", alignItems: "center", gap: "6px", background: isSaving || nonEmptyCount === 0 ? "rgba(59,143,204,0.25)" : "linear-gradient(135deg, #1e6fa8, #3b8fcc)", border: "none", color: "#fff", borderRadius: "9px", padding: "8px 18px", fontSize: "0.82rem", fontWeight: 700, cursor: isSaving || nonEmptyCount === 0 ? "not-allowed" : "pointer", fontFamily: "Tajawal, sans-serif", boxShadow: isSaving || nonEmptyCount === 0 ? "none" : "0 4px 14px rgba(59,143,204,0.4)", opacity: isSaving || nonEmptyCount === 0 ? 0.6 : 1 }}>
             {isSaving ? <Loader size={13} style={{ animation: "spin-loader 0.9s linear infinite" }} /> : <Save size={13} />}
             {isSaving ? "جاري الحفظ..." : `حفظ (${nonEmptyCount})`}
           </button>
@@ -356,68 +335,35 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
 
       {/* ── Summary Banner ── */}
       {summary && (
-        <div style={{
-          background: summary.errors > 0
-            ? "rgba(231,76,60,0.12)"
-            : summary.duplicates > 0
-              ? "rgba(230,126,34,0.12)"
-              : "rgba(43,170,116,0.12)",
-          borderBottom: `1px solid ${summary.errors > 0 ? "rgba(231,76,60,0.3)" : summary.duplicates > 0 ? "rgba(230,126,34,0.3)" : "rgba(43,170,116,0.3)"}`,
-          padding: "10px 24px",
-          fontSize: "0.8rem",
-          fontWeight: 700,
-          color: summary.errors > 0 ? "#e74c3c" : summary.duplicates > 0 ? "#e67e22" : "#2baa74",
-          display: "flex", gap: "20px", alignItems: "center", direction: "rtl", flexShrink: 0,
-        }}>
+        <div style={{ background: summary.errors > 0 ? "rgba(231,76,60,0.12)" : summary.duplicates > 0 ? "rgba(230,126,34,0.12)" : "rgba(43,170,116,0.12)", borderBottom: `1px solid ${summary.errors > 0 ? "rgba(231,76,60,0.3)" : summary.duplicates > 0 ? "rgba(230,126,34,0.3)" : "rgba(43,170,116,0.3)"}`, padding: "10px 24px", fontSize: "0.8rem", fontWeight: 700, color: summary.errors > 0 ? "#e74c3c" : summary.duplicates > 0 ? "#e67e22" : "#2baa74", display: "flex", gap: "20px", alignItems: "center", direction: "rtl", flexShrink: 0 }}>
           <span>✅ تم حفظ {summary.saved} سجل</span>
           {summary.duplicates > 0 && <span>⚠️ {summary.duplicates} مكرر (تم تخطيه)</span>}
           {summary.errors > 0 && <span>❌ {summary.errors} خطأ في الحفظ</span>}
-          {summary.saved > 0 && (
-            <span style={{ marginRight: "auto", fontSize: "0.72rem", color: "#aaa", fontWeight: 400 }}>
-              تم تحديث قاعدة البيانات السحابية بنجاح
-            </span>
-          )}
+          {summary.saved > 0 && <span style={{ marginRight: "auto", fontSize: "0.72rem", color: "#aaa", fontWeight: 400 }}>تم تحديث قاعدة البيانات السحابية بنجاح</span>}
         </div>
       )}
 
       {/* ── Instructions bar ── */}
-      <div style={{
-        background: "#0a1628",
-        padding: "8px 24px",
-        fontSize: "0.68rem", color: "rgba(126,200,240,0.7)",
-        display: "flex", gap: "20px", alignItems: "center", direction: "rtl", flexShrink: 0,
-        borderBottom: "1px solid rgba(59,143,204,0.15)",
-      }}>
+      <div style={{ background: "#0a1628", padding: "8px 24px", fontSize: "0.68rem", color: "rgba(126,200,240,0.7)", display: "flex", gap: "20px", alignItems: "center", direction: "rtl", flexShrink: 0, borderBottom: "1px solid rgba(59,143,204,0.15)" }}>
         <span>💡 انقر على أي خلية لتعديلها مباشرة</span>
-        <span>📋 استخدم "لصق من Excel" لإدخال بيانات ضخمة دفعة واحدة</span>
-        <span>🔒 السجل المكرر بجميع بياناته يُتخطى — الاختلاف في أي عمود يُعامَل كسجل جديد</span>
-        <span>☁️ البيانات تُرفع فور الضغط على "حفظ"</span>
+        <span>📋 الترتيب عند اللصق: رقم العقد | سنة العقد | المقاول | المشروع | المحفظة | النشاط | برنامج | عائلة | نوع الأعمال | شمولية | مواصفات | قياسات | كود | وصف فني | تعاقد | وحدة | سعر | محتوى محلي | تواصل | بريد | تقييم</span>
+        <span>🔒 السجل المكرر بجميع بياناته يُتخطى</span>
       </div>
 
       {/* ── Grid ── */}
       <div style={{ flex: 1, overflowY: "auto", overflowX: "auto", background: "#0d1a2e" }}>
-        <table style={{
-          borderCollapse: "collapse", tableLayout: "fixed", direction: "rtl",
-          minWidth: COLUMNS.reduce((s, c) => s + c.width, 0) + 90,
-          width: "100%",
-        }}>
-          {/* ColGroup */}
+        <table style={{ borderCollapse: "collapse", tableLayout: "fixed", direction: "rtl", minWidth: COLUMNS.reduce((s, c) => s + c.width, 0) + 90, width: "100%" }}>
           <colgroup>
-            <col style={{ width: 36 }} /> {/* row number */}
+            <col style={{ width: 36 }} />
             {COLUMNS.map((c) => <col key={c.key} style={{ width: c.width }} />)}
-            <col style={{ width: 54 }} /> {/* status + delete */}
+            <col style={{ width: 54 }} />
           </colgroup>
 
-          {/* Header */}
           <thead style={{ position: "sticky", top: 0, zIndex: 10 }}>
             <tr style={{ background: "#0a1525", borderBottom: "2px solid rgba(59,143,204,0.35)" }}>
               <th style={{ padding: "9px 6px", fontSize: "0.6rem", color: "rgba(59,143,204,0.5)", textAlign: "center", borderLeft: "1px solid rgba(59,143,204,0.1)" }}>#</th>
               {COLUMNS.map((c) => (
-                <th key={c.key} style={{
-                  padding: "9px 8px", fontSize: "0.62rem", fontWeight: 700, color: "rgba(59,143,204,0.9)",
-                  textAlign: "right", letterSpacing: "0.04em", whiteSpace: "nowrap",
-                  borderLeft: "1px solid rgba(59,143,204,0.12)",
-                }}>
+                <th key={c.key} style={{ padding: "9px 8px", fontSize: "0.62rem", fontWeight: 700, color: "rgba(59,143,204,0.9)", textAlign: "right", letterSpacing: "0.04em", whiteSpace: "nowrap", borderLeft: "1px solid rgba(59,143,204,0.12)" }}>
                   {c.label}
                 </th>
               ))}
@@ -428,84 +374,36 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
           <tbody>
             {rows.map((row, idx) => {
               const isEmpty = isRowEmpty(row.data);
-              const isDup = row.status === "duplicate";
+              const isDup   = row.status === "duplicate";
               const isSaved = row.status === "saved";
-              const isErr = row.status === "error";
-              const rowBg = isSaved
-                ? "rgba(43,170,116,0.07)"
-                : isDup
-                  ? "rgba(230,126,34,0.07)"
-                  : isErr
-                    ? "rgba(231,76,60,0.07)"
-                    : idx % 2 === 0 ? "#0f1f38" : "#0d1b33";
-
+              const isErr   = row.status === "error";
+              const rowBg   = isSaved ? "rgba(43,170,116,0.07)" : isDup ? "rgba(230,126,34,0.07)" : isErr ? "rgba(231,76,60,0.07)" : idx % 2 === 0 ? "#0f1f38" : "#0d1b33";
               return (
                 <tr key={row.id} style={{ background: rowBg, borderBottom: "1px solid rgba(59,143,204,0.08)" }}>
-                  {/* Row number */}
                   <td style={{ padding: "3px 6px", fontSize: "0.6rem", color: "rgba(59,143,204,0.4)", textAlign: "center", borderLeft: "1px solid rgba(59,143,204,0.08)", verticalAlign: "middle" }}>
                     {isEmpty ? <span style={{ color: "rgba(59,143,204,0.2)" }}>·</span> : idx + 1}
                   </td>
-
-                  {/* Data cells */}
                   {COLUMNS.map((col) => (
                     <td key={col.key} style={{ padding: "2px 3px", borderLeft: "1px solid rgba(59,143,204,0.08)", verticalAlign: "middle" }}>
                       {col.type === "dropdown" ? (
-                        <select
-                          value={row.data[col.key]}
-                          onChange={(e) => updateCell(row.id, col.key, e.target.value)}
-                          disabled={isSaved}
-                          style={{
-                            width: "100%", background: "transparent", border: "none",
-                            color: isSaved ? "#2baa74" : isDup ? "#e67e22" : "#c8dff0",
-                            fontSize: "0.72rem", fontFamily: "Tajawal, sans-serif",
-                            outline: "none", cursor: isSaved ? "not-allowed" : "pointer",
-                            padding: "5px 4px", direction: "rtl",
-                          }}
-                        >
-                          {(col.options ?? []).map((opt) => (
-                            <option key={opt} value={opt} style={{ background: "#0d1f3c" }}>
-                              {opt || "— اختر —"}
-                            </option>
-                          ))}
+                        <select value={row.data[col.key]} onChange={(e) => updateCell(row.id, col.key, e.target.value)} disabled={isSaved}
+                          style={{ width: "100%", background: "transparent", border: "none", color: isSaved ? "#2baa74" : isDup ? "#e67e22" : "#c8dff0", fontSize: "0.72rem", fontFamily: "Tajawal, sans-serif", outline: "none", cursor: isSaved ? "not-allowed" : "pointer", padding: "5px 4px", direction: "rtl" }}>
+                          {(col.options ?? []).map((opt) => <option key={opt} value={opt} style={{ background: "#0d1f3c" }}>{opt || "— اختر —"}</option>)}
                         </select>
                       ) : (
-                        <input
-                          type={col.type === "number" ? "number" : "text"}
-                          value={row.data[col.key]}
-                          onChange={(e) => updateCell(row.id, col.key, e.target.value)}
-                          disabled={isSaved}
-                          min={col.type === "number" ? 0 : undefined}
-                          style={{
-                            width: "100%", background: "transparent", border: "none",
-                            color: isSaved ? "#2baa74" : isDup ? "#e67e22" : isErr ? "#e74c3c" : "#c8dff0",
-                            fontSize: "0.72rem", fontFamily: "Tajawal, sans-serif",
-                            outline: "none", padding: "5px 6px", direction: "rtl",
-                            cursor: isSaved ? "not-allowed" : "text",
-                          }}
-                          onFocus={(e) => {
-                            if (!isSaved) {
-                              (e.target.parentElement as HTMLElement).style.background = "rgba(59,143,204,0.12)";
-                              (e.target.parentElement as HTMLElement).style.borderRadius = "4px";
-                            }
-                          }}
-                          onBlur={(e) => {
-                            (e.target.parentElement as HTMLElement).style.background = "";
-                          }}
+                        <input type={col.type === "number" ? "number" : "text"} value={row.data[col.key]} onChange={(e) => updateCell(row.id, col.key, e.target.value)} disabled={isSaved} min={col.type === "number" ? 0 : undefined}
+                          style={{ width: "100%", background: "transparent", border: "none", color: isSaved ? "#2baa74" : isDup ? "#e67e22" : isErr ? "#e74c3c" : "#c8dff0", fontSize: "0.72rem", fontFamily: "Tajawal, sans-serif", outline: "none", padding: "5px 6px", direction: "rtl", cursor: isSaved ? "not-allowed" : "text" }}
+                          onFocus={(e) => { if (!isSaved) { (e.target.parentElement as HTMLElement).style.background = "rgba(59,143,204,0.12)"; (e.target.parentElement as HTMLElement).style.borderRadius = "4px"; } }}
+                          onBlur={(e) => { (e.target.parentElement as HTMLElement).style.background = ""; }}
                         />
                       )}
                     </td>
                   ))}
-
-                  {/* Status + delete */}
                   <td style={{ padding: "3px 6px", textAlign: "center", verticalAlign: "middle", borderLeft: "1px solid rgba(59,143,204,0.08)" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
                       <StatusBadge status={row.status} error={row.error} />
                       {!isSaved && (
-                        <button
-                          onClick={() => removeRow(row.id)}
-                          style={{ background: "none", border: "none", color: "rgba(231,76,60,0.4)", cursor: "pointer", padding: "2px", display: "flex", alignItems: "center" }}
-                          title="حذف الصف"
-                        >
+                        <button onClick={() => removeRow(row.id)} style={{ background: "none", border: "none", color: "rgba(231,76,60,0.4)", cursor: "pointer", padding: "2px", display: "flex", alignItems: "center" }} title="حذف الصف">
                           <Trash2 size={11} />
                         </button>
                       )}
@@ -516,114 +414,48 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
             })}
           </tbody>
         </table>
+      </div>
 
-        {/* Add more rows */}
-        <div style={{ padding: "12px 24px", display: "flex", gap: "10px", direction: "rtl" }}>
-          <button
-            onClick={() => addRows(5)}
-            style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              background: "rgba(59,143,204,0.1)", border: "1px dashed rgba(59,143,204,0.35)",
-              color: "rgba(59,143,204,0.7)", borderRadius: "8px", padding: "7px 16px",
-              fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif",
-            }}
-          >
-            <Plus size={13} />
-            إضافة 5 صفوف
-          </button>
-          <button
-            onClick={() => addRows(20)}
-            style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              background: "rgba(59,143,204,0.1)", border: "1px dashed rgba(59,143,204,0.35)",
-              color: "rgba(59,143,204,0.7)", borderRadius: "8px", padding: "7px 16px",
-              fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif",
-            }}
-          >
-            <Plus size={13} />
-            إضافة 20 صفاً
-          </button>
-        </div>
+      {/* ── Footer ── */}
+      <div style={{ background: "#0a1525", borderTop: "1px solid rgba(59,143,204,0.2)", padding: "10px 24px", display: "flex", gap: "12px", alignItems: "center", direction: "rtl", flexShrink: 0 }}>
+        <button onClick={() => addRows(5)} style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(59,143,204,0.12)", border: "1px solid rgba(59,143,204,0.3)", color: "#7ec8f0", borderRadius: "8px", padding: "7px 14px", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}>
+          <Plus size={13} />
+          إضافة 5 صفوف
+        </button>
+        <button onClick={() => addRows(20)} style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(59,143,204,0.08)", border: "1px solid rgba(59,143,204,0.2)", color: "rgba(126,200,240,0.7)", borderRadius: "8px", padding: "7px 14px", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}>
+          <Plus size={13} />
+          إضافة 20 صفاً
+        </button>
+        <span style={{ marginRight: "auto", fontSize: "0.68rem", color: "rgba(59,143,204,0.5)" }}>
+          {rows.filter((r) => r.status === "saved").length} محفوظ · {rows.filter((r) => r.status === "duplicate").length} مكرر · {rows.filter((r) => r.status === "error").length} خطأ
+        </span>
       </div>
 
       {/* ── Paste Mode Overlay ── */}
       {pasteMode && (
-        <div style={{
-          position: "absolute", inset: 0, zIndex: 3000,
-          background: "rgba(5,10,20,0.85)", backdropFilter: "blur(8px)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          padding: "40px", direction: "rtl",
-        }}>
-          <div style={{
-            background: "#0d1f3c", borderRadius: "16px",
-            border: "1.5px solid rgba(59,143,204,0.4)",
-            padding: "32px", maxWidth: "700px", width: "100%",
-            boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
-              <Clipboard size={20} color="#3b8fcc" />
+        <div style={{ position: "absolute", inset: 0, background: "rgba(5,12,28,0.88)", backdropFilter: "blur(8px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px" }}>
+          <div style={{ background: "#0d1f3c", border: "2px solid rgba(59,143,204,0.4)", borderRadius: "16px", padding: "28px", maxWidth: "720px", width: "100%", direction: "rtl" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
               <div>
-                <div style={{ fontSize: "1rem", fontWeight: 800, color: "#fff" }}>لصق بيانات من Excel</div>
-                <div style={{ fontSize: "0.7rem", color: "rgba(59,143,204,0.7)", marginTop: "2px" }}>
-                  حدد الخلايا في Excel ثم انسخها (Ctrl+C) والصقها هنا (Ctrl+V)
+                <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "#fff", marginBottom: "4px" }}>لصق بيانات من Excel</div>
+                <div style={{ fontSize: "0.68rem", color: "rgba(126,200,240,0.7)" }}>
+                  ترتيب الأعمدة المتوقع: رقم العقد | سنة العقد | المقاول | المشروع | المحفظة | النشاط | برنامج | عائلة الأعمال | نوع الأعمال | شمولية | مواصفات | قياسات | كود | وصف فني | نوع التعاقد | الوحدة | السعر | المحتوى المحلي | التواصل | البريد | التقييم
                 </div>
               </div>
+              <button onClick={() => setPasteMode(false)} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer" }}><X size={18} /></button>
             </div>
-
-            {/* Column order hint */}
-            <div style={{
-              background: "rgba(59,143,204,0.08)", border: "1px solid rgba(59,143,204,0.2)",
-              borderRadius: "10px", padding: "10px 14px", marginBottom: "16px", fontSize: "0.65rem",
-              color: "rgba(59,143,204,0.8)", lineHeight: 1.8,
-            }}>
-              <div style={{ fontWeight: 700, marginBottom: "4px", color: "#7ec8f0" }}>ترتيب الأعمدة المتوقع من Excel:</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-                {COLUMNS.map((c, i) => (
-                  <span key={c.key} style={{
-                    background: "rgba(59,143,204,0.15)", borderRadius: "4px", padding: "2px 7px",
-                    fontSize: "0.63rem", color: "#7ec8f0",
-                  }}>
-                    {i + 1}. {c.label}
-                  </span>
-                ))}
-              </div>
-            </div>
-
             <textarea
               ref={pasteAreaRef}
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
-              placeholder="الصق البيانات هنا (Ctrl+V)..."
+              placeholder="الصق البيانات هنا (Ctrl+V) — كل صف في سطر منفصل، الأعمدة مفصولة بـ Tab كما في Excel..."
               autoFocus
-              style={{
-                width: "100%", height: "200px", background: "#07111f",
-                border: "1.5px solid rgba(59,143,204,0.3)", borderRadius: "10px",
-                color: "#c8dff0", fontSize: "0.72rem", fontFamily: "monospace",
-                padding: "12px", direction: "ltr", resize: "vertical",
-                outline: "none", boxSizing: "border-box",
-              }}
-              onFocus={(e) => (e.target.style.borderColor = "#3b8fcc")}
-              onBlur={(e) => (e.target.style.borderColor = "rgba(59,143,204,0.3)")}
+              style={{ width: "100%", height: "220px", background: "#060f1f", border: "1.5px solid rgba(59,143,204,0.3)", borderRadius: "10px", color: "#c8dff0", fontSize: "0.75rem", fontFamily: "monospace", padding: "14px", resize: "vertical", outline: "none", direction: "ltr", boxSizing: "border-box" }}
             />
-            <div style={{ fontSize: "0.65rem", color: "rgba(59,143,204,0.5)", marginTop: "6px" }}>
-              {pasteText ? `✅ ${pasteText.split("\n").filter((l) => l.trim()).length} صف مكتشف` : "في انتظار البيانات..."}
-            </div>
-
-            <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
-              <button onClick={() => { setPasteMode(false); setPasteText(""); }}
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#aaa", borderRadius: "9px", padding: "10px 20px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}>
-                إلغاء
-              </button>
-              <button
-                onClick={applyPaste}
-                disabled={!pasteText.trim()}
-                style={{
-                  flex: 1, background: pasteText.trim() ? "linear-gradient(135deg, #1e6fa8, #3b8fcc)" : "rgba(59,143,204,0.2)",
-                  border: "none", color: "#fff", borderRadius: "9px", padding: "10px",
-                  fontSize: "0.85rem", fontWeight: 700, cursor: pasteText.trim() ? "pointer" : "not-allowed",
-                  fontFamily: "Tajawal, sans-serif", opacity: pasteText.trim() ? 1 : 0.5,
-                }}>
-                تطبيق البيانات ({pasteText.split("\n").filter((l) => l.trim()).length} صف)
+            <div style={{ display: "flex", gap: "10px", marginTop: "14px", justifyContent: "flex-end" }}>
+              <button onClick={() => setPasteMode(false)} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#aaa", borderRadius: "8px", padding: "8px 18px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}>إلغاء</button>
+              <button onClick={applyPaste} disabled={!pasteText.trim()} style={{ background: pasteText.trim() ? "linear-gradient(135deg, #1e6fa8, #3b8fcc)" : "rgba(59,143,204,0.2)", border: "none", color: "#fff", borderRadius: "8px", padding: "8px 22px", fontSize: "0.82rem", fontWeight: 700, cursor: pasteText.trim() ? "pointer" : "not-allowed", fontFamily: "Tajawal, sans-serif", opacity: pasteText.trim() ? 1 : 0.5 }}>
+                تطبيق اللصق
               </button>
             </div>
           </div>
