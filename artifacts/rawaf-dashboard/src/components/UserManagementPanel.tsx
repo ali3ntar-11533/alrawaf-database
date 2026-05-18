@@ -473,16 +473,16 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
               <span style={{ fontSize: "0.7rem", color: isOnline(selectedUserForLog.lastActive) ? "#2baa74" : "rgba(255,255,255,0.38)", fontWeight: 700 }}>
                 {isOnline(selectedUserForLog.lastActive) ? "متصل الآن" : selectedUserForLog.lastActive ? `آخر ظهور: ${new Date(selectedUserForLog.lastActive).toLocaleString("ar-SA")}` : "لم يسجل دخولاً"}
               </span>
-              <span style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.28)", marginRight: "auto" }}>{logs.length} عملية دخول في 7 أيام</span>
+              <span style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.28)", marginRight: "auto" }}>{logs.length} عملية دخول في 30 يوم</span>
             </div>
             {/* Log entries */}
-            <div style={{ overflowY: "auto", flex: 1, padding: "4px 0" }}>
+            <div className="no-scrollbar" style={{ overflowY: "auto", flex: 1, padding: "4px 0" }}>
               {logsLoading ? (
                 <div style={{ display: "flex", justifyContent: "center", padding: 50 }}>
                   <div style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid rgba(197,160,89,0.3)", borderTop: "2px solid #c5a059", animation: "sg-spin 0.8s linear infinite" }} />
                 </div>
               ) : logs.length === 0 ? (
-                <div style={{ textAlign: "center", padding: 50, color: "rgba(255,255,255,0.22)", fontSize: "0.82rem" }}>لا توجد عمليات دخول خلال آخر 7 أيام</div>
+                <div style={{ textAlign: "center", padding: 50, color: "rgba(255,255,255,0.22)", fontSize: "0.82rem" }}>لا توجد عمليات دخول خلال آخر 30 يوماً</div>
               ) : logs.map((log, i) => {
                 const dt = new Date(log.loginAt);
                 return (

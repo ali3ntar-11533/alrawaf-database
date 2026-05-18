@@ -410,3 +410,5 @@ body {
 @media (max-width: 540px) {
   .filter-row { grid-template-columns: repeat(2, 1fr); }
 }
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
