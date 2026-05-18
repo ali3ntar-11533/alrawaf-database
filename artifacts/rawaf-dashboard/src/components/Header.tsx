@@ -139,7 +139,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
             {currentUser && (
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: "0.78rem", color: "rgba(232,213,163,0.85)", fontWeight: 600, letterSpacing: "0.02em" }}>
-                  {currentUser.name}{currentUser.jobTitle ? ` — ${currentUser.jobTitle}` : ""}
+                  {currentUser.jobTitle ? `${currentUser.jobTitle} — ` : ""}{currentUser.name}
                 </span>
                 <button
                   onClick={() => setShowSelfEdit(true)}
