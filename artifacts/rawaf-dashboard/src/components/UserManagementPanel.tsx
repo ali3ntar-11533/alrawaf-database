@@ -414,7 +414,7 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
               <div>
                 <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "#fff" }}>سجل نشاط المستخدم</h3>
                 <p style={{ margin: "3px 0 0", fontSize: "0.7rem", color: "rgba(197,160,89,0.75)" }}>
-                  {selectedUserForLog.name} · {selectedUserForLog.loginName} · آخر 7 أيام
+                  {selectedUserForLog.name} · {selectedUserForLog.loginName} · آخر 30 يوماً
                 </p>
               </div>
               <button

@@ -58,7 +58,7 @@ router.delete("/admin/users/:id", async (req, res): Promise<void> => {
 
 router.get("/admin/users/:id/logs", async (req, res): Promise<void> => {
   const userId = parseInt(req.params.id, 10);
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const sevenDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const logs = await db.select().from(userLogsTable)
     .where(and(eq(userLogsTable.userId, userId), gte(userLogsTable.loginAt, sevenDaysAgo)))
     .orderBy(desc(userLogsTable.loginAt));
