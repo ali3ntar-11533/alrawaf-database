@@ -139,9 +139,9 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
               }}
             >
               {([
-                { key: "main"     as TabType, label: "لوحة التنسيق الفني" },
-                { key: "database" as TabType, label: "قاعدة البيانات"     },
-              ]).map((tab) => (
+                { key: "main"     as TabType, label: "لوحة التنسيق الفني", adminOnly: false },
+                { key: "database" as TabType, label: "قاعدة البيانات",     adminOnly: true  },
+              ]).filter(tab => !tab.adminOnly || isAdmin).map((tab) => (
                 <span
                   key={tab.key}
                   className={`nav-tab ${activeTab === tab.key ? "active" : "inactive"}`}

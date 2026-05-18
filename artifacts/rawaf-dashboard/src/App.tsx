@@ -38,6 +38,7 @@ function App() {
     const onLogin = (e: Event) => {
       const user = (e as CustomEvent<CurrentUser>).detail;
       setCurrentUser(user);
+      if (user.role !== "admin") setActiveTab("main");
     };
     const onLogout = () => setCurrentUser(null);
     window.addEventListener("rawaf-login",  onLogin  as EventListener);
