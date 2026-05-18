@@ -208,7 +208,7 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
               </div>
               <div>
                 <h2 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "#fff" }}>إدارة المستخدمين</h2>
-                <p style={{ margin: 0, fontSize: "0.65rem", color: "rgba(197,160,89,0.75)", letterSpacing: "0.06em" }}>USER MANAGEMENT — ALRAWAF SYSTEM</p>
+                <p style={{ margin: 0, fontSize: "0.65rem", color: "rgba(197,160,89,0.75)", letterSpacing: "0.06em" }}>USER MANAGEMENT</p>
               </div>
               {/* Online badge */}
               <div style={{ display: "flex", alignItems: "center", gap: 7, background: "rgba(43,170,116,0.1)", border: "1px solid rgba(43,170,116,0.28)", borderRadius: 20, padding: "5px 12px" }}>
