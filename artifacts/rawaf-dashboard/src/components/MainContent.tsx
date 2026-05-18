@@ -485,19 +485,19 @@ export default function MainContent({ contractor, allContractors, filteredContra
                 <div style={{ width: "34px", height: "34px", borderRadius: "8px", background: `${BAR_COLORS[i % BAR_COLORS.length]}18`, border: `1.5px solid ${BAR_COLORS[i % BAR_COLORS.length]}28`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <Building2 size={15} style={{ color: BAR_COLORS[i % BAR_COLORS.length] }} />
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
                   <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--charcoal)", marginBottom: "3px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {w.project}
                   </div>
-                  <div style={{ display: "flex", gap: "5px", alignItems: "center", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", gap: "5px", alignItems: "center", flexWrap: "nowrap", overflow: "hidden", minWidth: 0 }}>
                     {w.workType && (
-                      <span style={{ fontSize: "0.56rem", background: "rgba(197,160,89,0.1)", border: "1px solid rgba(197,160,89,0.2)", borderRadius: "4px", padding: "1px 6px", color: "var(--gold)", fontWeight: 700, whiteSpace: "nowrap" }}>{w.workType}</span>
+                      <span title={w.workType} style={{ fontSize: "0.56rem", background: "rgba(197,160,89,0.1)", border: "1px solid rgba(197,160,89,0.2)", borderRadius: "4px", padding: "1px 6px", color: "var(--gold)", fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0, maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", display: "inline-block" }}>{w.workType}</span>
                     )}
                     {w.itemCode && (
-                      <span style={{ fontSize: "0.56rem", background: "rgba(59,143,204,0.08)", border: "1px solid rgba(59,143,204,0.2)", borderRadius: "4px", padding: "1px 6px", color: "#3b8fcc", fontWeight: 700, whiteSpace: "nowrap", fontFamily: "monospace" }}>{w.itemCode}</span>
+                      <span style={{ fontSize: "0.56rem", background: "rgba(59,143,204,0.08)", border: "1px solid rgba(59,143,204,0.2)", borderRadius: "4px", padding: "1px 6px", color: "#3b8fcc", fontWeight: 700, whiteSpace: "nowrap", fontFamily: "monospace", flexShrink: 0 }}>{w.itemCode}</span>
                     )}
                     {!w.itemCode && w.technicalScope && (
-                      <span style={{ fontSize: "0.58rem", color: "#bbb", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "160px" }}>{w.technicalScope}</span>
+                      <span title={w.technicalScope} style={{ fontSize: "0.58rem", color: "#bbb", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "1 1 0", minWidth: 0 }}>{w.technicalScope}</span>
                     )}
                   </div>
                 </div>
@@ -505,8 +505,11 @@ export default function MainContent({ contractor, allContractors, filteredContra
                   <div style={{ fontSize: "0.72rem", fontWeight: 800, color: BAR_COLORS[i % BAR_COLORS.length], direction: "ltr" }}>
                     {formatExact(w.price)} ر.س
                   </div>
-                  <div style={{ fontSize: "0.56rem", color: "#bbb", direction: "ltr", marginTop: "2px" }}>
-                    {w.contractNo}{w.contractYear ? ` · ${w.contractYear}` : ""}
+                  <div style={{ fontSize: "0.56rem", color: "#bbb", direction: "ltr", marginTop: "2px", whiteSpace: "nowrap" }}>
+                    {w.contractNo}
+                    {w.contractYear && (
+                      <span style={{ color: "var(--gold)", fontWeight: 700, marginRight: "4px" }}> · {w.contractYear}</span>
+                    )}
                   </div>
                 </div>
               </div>
