@@ -364,6 +364,8 @@ components:
           type: integer
         contractNo:
           type: string
+        contractYear:
+          type: ["string", "null"]
         contractor:
           type: string
         project:
@@ -374,6 +376,16 @@ components:
           type: string
         workType:
           type: string
+        workFamily:
+          type: ["string", "null"]
+        itemScope:
+          type: ["string", "null"]
+        techSpecs:
+          type: ["string", "null"]
+        measurements:
+          type: ["string", "null"]
+        itemCode:
+          type: ["string", "null"]
         price:
           type: integer
         phone:
@@ -416,6 +428,8 @@ components:
       properties:
         contractNo:
           type: string
+        contractYear:
+          type: ["string", "null"]
         contractor:
           type: string
         project:
@@ -426,6 +440,16 @@ components:
           type: string
         workType:
           type: string
+        workFamily:
+          type: ["string", "null"]
+        itemScope:
+          type: ["string", "null"]
+        techSpecs:
+          type: ["string", "null"]
+        measurements:
+          type: ["string", "null"]
+        itemCode:
+          type: ["string", "null"]
         price:
           type: integer
         phone:

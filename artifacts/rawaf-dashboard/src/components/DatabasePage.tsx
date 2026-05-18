@@ -18,12 +18,18 @@ const SESSION_KEY = "rawaf_db_auth";
 /* ─── Form Data ───────────────────────────────── */
 interface FormData {
   contractNo:      string;
+  contractYear:    string;
   contractor:      string;
   project:         string;
   portfolio:       string;
   mainActivity:    string;
   businessProgram: string;
+  workFamily:      string;
   workType:        string;
+  itemScope:       string;
+  techSpecs:       string;
+  measurements:    string;
+  itemCode:        string;
   technicalScope:  string;
   workCategory:    string;
   unit:            string;
@@ -37,9 +43,10 @@ interface FormData {
 }
 
 const EMPTY_FORM: FormData = {
-  contractNo: "", contractor: "", project: "", portfolio: "",
-  mainActivity: "", businessProgram: "", workType: "", technicalScope: "",
-  workCategory: "", unit: "", price: "", phone: "", email: "",
+  contractNo: "", contractYear: "", contractor: "", project: "", portfolio: "",
+  mainActivity: "", businessProgram: "", workFamily: "",
+  workType: "", itemScope: "", techSpecs: "", measurements: "", itemCode: "",
+  technicalScope: "", workCategory: "", unit: "", price: "", phone: "", email: "",
   localContent: "", workDescription: "", workScopeText: "",
 };
 
@@ -47,53 +54,71 @@ const LOCAL_CONTENT_OPTIONS = ["", "مسجل", "غير مسجل"];
 
 /* Column order matches the table exactly */
 const FORM_FIELDS: { key: keyof FormData; label: string; type?: string; wide?: boolean; rows?: number; options?: string[] }[] = [
-  { key: "contractNo",     label: "١. رقم العقد" },
-  { key: "contractor",     label: "٢. اسم المقاول / المورد" },
-  { key: "project",        label: "٣. المشروع" },
-  { key: "portfolio",      label: "٤. المحفظة" },
-  { key: "mainActivity",    label: "٥. النشاط الرئيسي" },
-  { key: "businessProgram", label: "٦. برنامج الأعمال" },
-  { key: "workType",        label: "٧. نوع الأعمال" },
-  { key: "technicalScope", label: "٨. الوصف الفني للبند", wide: true, rows: 3 },
-  { key: "workCategory",   label: "٩. نوع التعاقد" },
-  { key: "unit",           label: "١٠. الوحدة" },
-  { key: "price",          label: "١١. السعر (ريال)", type: "number" },
-  { key: "localContent",   label: "١٢. المحتوى المحلي", type: "dropdown", options: LOCAL_CONTENT_OPTIONS },
-  { key: "phone",          label: "١٣. رقم التواصل" },
-  { key: "email",          label: "١٤. البريد الإلكتروني" },
+  { key: "contractNo",      label: "١. رقم العقد" },
+  { key: "contractYear",    label: "٢. سنة العقد" },
+  { key: "contractor",      label: "٣. اسم المقاول / المورد" },
+  { key: "project",         label: "٤. المشروع" },
+  { key: "portfolio",       label: "٥. المحفظة" },
+  { key: "mainActivity",    label: "٦. النشاط الرئيسي" },
+  { key: "businessProgram", label: "٧. برنامج الأعمال" },
+  { key: "workFamily",      label: "٨. عائلة الأعمال" },
+  { key: "workType",        label: "٩. نوع الأعمال" },
+  { key: "itemScope",       label: "١٠. شمولية البند" },
+  { key: "techSpecs",       label: "١١. مواصفات فنية" },
+  { key: "measurements",    label: "١٢. قياسات" },
+  { key: "itemCode",        label: "١٣. كود الفريد للبند" },
+  { key: "technicalScope",  label: "١٤. الوصف الفني للبند", wide: true, rows: 3 },
+  { key: "workCategory",    label: "١٥. نوع التعاقد" },
+  { key: "unit",            label: "١٦. الوحدة" },
+  { key: "price",           label: "١٧. السعر (ريال)", type: "number" },
+  { key: "localContent",    label: "١٨. المحتوى المحلي", type: "dropdown", options: LOCAL_CONTENT_OPTIONS },
+  { key: "phone",           label: "١٩. رقم التواصل" },
+  { key: "email",           label: "٢٠. البريد الإلكتروني" },
 ];
 
 /* ─── Helpers ───────────────────────────────── */
 function contractorToForm(c: Contractor): FormData {
   return {
     contractNo:      c.contractNo,
+    contractYear:    c.contractYear ?? "",
     contractor:      c.contractor,
     project:         c.project,
     portfolio:       c.portfolio,
-    mainActivity:    (c as any).mainActivity ?? "",
-    businessProgram: (c as any).businessProgram ?? "",
+    mainActivity:    c.mainActivity ?? "",
+    businessProgram: c.businessProgram ?? "",
+    workFamily:      c.workFamily ?? "",
     workType:        c.workType,
+    itemScope:       c.itemScope ?? "",
+    techSpecs:       c.techSpecs ?? "",
+    measurements:    c.measurements ?? "",
+    itemCode:        c.itemCode ?? "",
     technicalScope:  c.technicalScope,
-    workCategory:    (c as any).workCategory ?? "",
-    unit:            (c as any).unit ?? "",
+    workCategory:    c.workCategory ?? "",
+    unit:            c.unit ?? "",
     price:           String(c.price),
     phone:           c.phone,
     email:           c.email,
-    localContent:    (c as any).localContent ?? "",
-    workDescription: (c as any).workDescription ?? "",
-    workScopeText:   (c as any).workScopeText ?? "",
+    localContent:    c.localContent ?? "",
+    workDescription: c.workDescription ?? "",
+    workScopeText:   c.workScopeText ?? "",
   };
 }
 
 function buildPutData(f: FormData, rating?: number | null): Omit<Contractor, "id"> {
   return {
     contractNo:      f.contractNo,
+    contractYear:    f.contractYear.trim()    || null,
     contractor:      f.contractor,
     project:         f.project,
     portfolio:       f.portfolio,
     mainActivity:    f.mainActivity.trim()    || null,
     businessProgram: f.businessProgram.trim() || null,
+    workFamily:      f.workFamily.trim()      || null,
     workType:        f.workType,
+    itemScope:       f.itemScope.trim()       || null,
+    techSpecs:       f.techSpecs.trim()       || null,
+    measurements:    f.measurements.trim()    || null,
+    itemCode:        f.itemCode.trim()        || null,
     technicalScope:  f.technicalScope,
     workCategory:    f.workCategory.trim()    || null,
     unit:            f.unit.trim()            || null,
@@ -152,29 +177,36 @@ function StarPicker({ value, onChange }: { value: number; onChange: (n: number) 
 
 function exportToExcel(data: Contractor[]) {
   const rows = data.map((c) => ({
-    "رقم العقد":            c.contractNo,
-    "المقاول / المورد":     c.contractor,
-    "المشروع":              c.project,
-    "المحفظة":              c.portfolio,
-    "النشاط الرئيسي":       (c as any).mainActivity ?? "",
-    "برنامج الأعمال":       (c as any).businessProgram ?? "",
-    "نوع الأعمال":          c.workType,
-    "الوصف الفني للبند":    c.technicalScope,
-    "نوع التعاقد":          (c as any).workCategory ?? "",
-    "الوحدة":               (c as any).unit ?? "",
-    "السعر (ريال)":         c.price,
-    "المحتوى المحلي":       (c as any).localContent ?? "",
-    "رقم التواصل":          c.phone,
-    "البريد الإلكتروني":    c.email,
-    "التقييم":              (c as any).rating ?? 0,
+    "رقم العقد":              c.contractNo,
+    "سنة العقد":              c.contractYear ?? "",
+    "المقاول / المورد":       c.contractor,
+    "المشروع":                c.project,
+    "المحفظة":                c.portfolio,
+    "النشاط الرئيسي":         c.mainActivity ?? "",
+    "برنامج الأعمال":         c.businessProgram ?? "",
+    "عائلة الأعمال":          c.workFamily ?? "",
+    "نوع الأعمال":            c.workType,
+    "شمولية البند":           c.itemScope ?? "",
+    "مواصفات فنية":           c.techSpecs ?? "",
+    "قياسات":                 c.measurements ?? "",
+    "كود الفريد للبند":       c.itemCode ?? "",
+    "الوصف الفني للبند":      c.technicalScope,
+    "نوع التعاقد":            c.workCategory ?? "",
+    "الوحدة":                 c.unit ?? "",
+    "السعر (ريال)":           c.price,
+    "المحتوى المحلي":         c.localContent ?? "",
+    "رقم التواصل":            c.phone,
+    "البريد الإلكتروني":      c.email,
+    "التقييم":                c.rating ?? 0,
   }));
   const ws = XLSX.utils.json_to_sheet(rows, { skipHeader: false });
   if (!ws["!views"]) ws["!views"] = [];
   (ws["!views"] as any[])[0] = { rightToLeft: true };
   ws["!cols"] = [
-    { wch: 14 }, { wch: 28 }, { wch: 24 }, { wch: 12 },
-    { wch: 18 }, { wch: 14 }, { wch: 36 }, { wch: 14 },
-    { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 28 }, { wch: 8 },
+    { wch: 14 }, { wch: 10 }, { wch: 28 }, { wch: 22 }, { wch: 12 },
+    { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
+    { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 36 }, { wch: 14 },
+    { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 28 }, { wch: 8 },
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "المقاولون");
@@ -306,18 +338,24 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
     .filter((c: Contractor) => {
       /* ── Main search bar: partial/contains matching across all text fields ── */
       const matchesSearch = !search || (
-        containsMatch(c.contractNo,                          search) ||
-        containsMatch(c.contractor,                          search) ||
-        containsMatch(c.project,                             search) ||
-        containsMatch(c.portfolio,                           search) ||
-        containsMatch(c.technicalScope,                      search) ||
-        containsMatch(c.workType,                            search) ||
-        containsMatch((c as any).mainActivity    ?? "",      search) ||
-        containsMatch((c as any).businessProgram ?? "",      search) ||
-        containsMatch((c as any).workCategory    ?? "",      search) ||
-        containsMatch((c as any).unit            ?? "",      search) ||
-        containsMatch(c.phone,                               search) ||
-        containsMatch(c.email,                               search)
+        containsMatch(c.contractNo,                search) ||
+        containsMatch(c.contractYear       ?? "",  search) ||
+        containsMatch(c.contractor,                search) ||
+        containsMatch(c.project,                   search) ||
+        containsMatch(c.portfolio,                 search) ||
+        containsMatch(c.technicalScope,            search) ||
+        containsMatch(c.workType,                  search) ||
+        containsMatch(c.mainActivity       ?? "",  search) ||
+        containsMatch(c.businessProgram    ?? "",  search) ||
+        containsMatch(c.workFamily         ?? "",  search) ||
+        containsMatch(c.itemScope          ?? "",  search) ||
+        containsMatch(c.techSpecs          ?? "",  search) ||
+        containsMatch(c.measurements       ?? "",  search) ||
+        containsMatch(c.itemCode           ?? "",  search) ||
+        containsMatch(c.workCategory       ?? "",  search) ||
+        containsMatch(c.unit               ?? "",  search) ||
+        containsMatch(c.phone,                     search) ||
+        containsMatch(c.email,                     search)
       );
 
       /* ── Dropdown filters: STRICT Exact Match (normalized equality) ──
@@ -516,32 +554,40 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
       {/* Table */}
       <div className="card" style={{ padding: 0, overflow: "hidden", width: "100%" }}>
         <div style={{ overflowX: "auto", width: "100%" }}>
-          <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", direction: "rtl", minWidth: "900px" }}>
+          <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", direction: "rtl", minWidth: "1800px" }}>
             <colgroup>
-              <col style={{ width: "5%" }} />
-              <col style={{ width: "11%" }} />
-              <col style={{ width: "9%" }} />
-              <col style={{ width: "4%" }} />
-              <col style={{ width: "6%" }} />
-              <col style={{ width: "6%" }} />
-              <col style={{ width: "5%" }} />
-              <col style={{ width: "12%" }} />
-              <col style={{ width: "6%" }} />
-              <col style={{ width: "4%" }} />
-              <col style={{ width: "6%" }} />
-              <col style={{ width: "5%" }} />
-              <col style={{ width: "6%" }} />
-              <col style={{ width: "6%" }} />
-              <col style={{ width: "9%" }} />
+              <col style={{ width: "80px" }} />
+              <col style={{ width: "65px" }} />
+              <col style={{ width: "130px" }} />
+              <col style={{ width: "100px" }} />
+              <col style={{ width: "70px" }} />
+              <col style={{ width: "90px" }} />
+              <col style={{ width: "90px" }} />
+              <col style={{ width: "90px" }} />
+              <col style={{ width: "80px" }} />
+              <col style={{ width: "90px" }} />
+              <col style={{ width: "90px" }} />
+              <col style={{ width: "70px" }} />
+              <col style={{ width: "90px" }} />
+              <col style={{ width: "130px" }} />
+              <col style={{ width: "80px" }} />
+              <col style={{ width: "55px" }} />
+              <col style={{ width: "80px" }} />
+              <col style={{ width: "70px" }} />
+              <col style={{ width: "90px" }} />
+              <col style={{ width: "75px" }} />
+              <col style={{ width: "90px" }} />
             </colgroup>
             <thead>
               <tr style={{ background: "var(--charcoal)" }}>
                 {[
-                  "رقم العقد", "المقاول / المورد", "المشروع", "المحفظة",
-                  "النشاط الرئيسي", "برنامج الأعمال", "نوع الأعمال", "الوصف الفني للبند",
-                  "نوع التعاقد", "الوحدة", "السعر", "المحتوى المحلي", "التواصل", "التقييم", "إجراءات"
+                  "رقم العقد", "سنة العقد", "المقاول / المورد", "المشروع", "المحفظة",
+                  "النشاط الرئيسي", "برنامج الأعمال", "عائلة الأعمال", "نوع الأعمال",
+                  "شمولية البند", "مواصفات فنية", "قياسات", "كود الفريد للبند",
+                  "الوصف الفني للبند", "نوع التعاقد", "الوحدة", "السعر",
+                  "المحتوى المحلي", "التواصل", "التقييم", "إجراءات"
                 ].map((h, i) => (
-                  <th key={i} style={{ padding: "12px 10px", textAlign: i >= 13 ? "center" : "right", fontSize: "0.63rem", fontWeight: 700, color: "rgba(197,160,89,0.9)", letterSpacing: "0.05em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", borderBottom: "2px solid rgba(197,160,89,0.2)" }}>
+                  <th key={i} style={{ padding: "12px 10px", textAlign: i >= 19 ? "center" : "right", fontSize: "0.63rem", fontWeight: 700, color: "rgba(197,160,89,0.9)", letterSpacing: "0.05em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", borderBottom: "2px solid rgba(197,160,89,0.2)" }}>
                     {h}
                   </th>
                 ))}
@@ -549,14 +595,14 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={15} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>
+                <tr><td colSpan={21} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
                     <div style={{ width: 32, height: 32, border: "3px solid rgba(197,160,89,0.2)", borderTopColor: "var(--gold)", borderRadius: "50%", animation: "spin-loader 0.9s linear infinite" }} />
                     جاري تحميل البيانات...
                   </div>
                 </td></tr>
               ) : isError ? (
-                <tr><td colSpan={15} style={{ textAlign: "center", padding: "50px" }}>
+                <tr><td colSpan={21} style={{ textAlign: "center", padding: "50px" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
                     <div style={{ fontSize: "2rem" }}>⚠️</div>
                     <div style={{ fontSize: "0.85rem", color: "#e74c3c", fontWeight: 700 }}>تعذّر تحميل البيانات</div>
@@ -568,10 +614,11 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                   </div>
                 </td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={15} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>لا توجد سجلات مطابقة للبحث</td></tr>
+                <tr><td colSpan={21} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>لا توجد سجلات مطابقة للبحث</td></tr>
               ) : filtered.map((c: Contractor, idx: number) => (
                 <tr key={c.id} style={{ background: idx % 2 === 0 ? "#fff" : "#faf8f4", borderBottom: "1px solid #f0ebe0" }}>
                   <td style={tdStyle} title={c.contractNo}>{c.contractNo}</td>
+                  <td style={{ ...tdStyle, fontSize: "0.7rem", color: "#888" }} title={c.contractYear || "—"}>{c.contractYear || "—"}</td>
                   {/* Contractor name — clickable → navigate to main tab */}
                   <td
                     style={{ ...tdStyle, fontWeight: 700, cursor: "pointer", color: "var(--charcoal)" }}
@@ -582,28 +629,18 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                   >{c.contractor}</td>
                   <td style={tdStyle} title={c.project}>{c.project}</td>
                   <td style={tdStyle} title={c.portfolio}>{c.portfolio}</td>
-                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#3b8fcc" }} title={(c as any).mainActivity || "—"}>{(c as any).mainActivity || "—"}</td>
-                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={(c as any).businessProgram || "—"}>{(c as any).businessProgram || "—"}</td>
-                  <td style={{ ...tdStyle, minWidth: 0, overflow: "hidden" }} title={(c as any).workType || "—"}>
-                    <span
-                      style={{
-                        display: "inline-block",
-                        maxWidth: "100%",
-                        background: "rgba(197,160,89,0.1)",
-                        color: "var(--gold)",
-                        borderRadius: "6px",
-                        padding: "2px 8px",
-                        fontSize: "0.7rem",
-                        fontWeight: 700,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        verticalAlign: "middle",
-                      }}
-                    >
+                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#3b8fcc" }} title={c.mainActivity || "—"}>{c.mainActivity || "—"}</td>
+                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={c.businessProgram || "—"}>{c.businessProgram || "—"}</td>
+                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={c.workFamily || "—"}>{c.workFamily || "—"}</td>
+                  <td style={{ ...tdStyle, minWidth: 0, overflow: "hidden" }} title={c.workType || "—"}>
+                    <span style={{ display: "inline-block", maxWidth: "100%", background: "rgba(197,160,89,0.1)", color: "var(--gold)", borderRadius: "6px", padding: "2px 8px", fontSize: "0.7rem", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", verticalAlign: "middle" }}>
                       {c.workType}
                     </span>
                   </td>
+                  <td style={{ ...tdStyle, fontSize: "0.7rem", color: "#555" }} title={c.itemScope || "—"}>{c.itemScope || "—"}</td>
+                  <td style={{ ...tdStyle, fontSize: "0.7rem", color: "#555" }} title={c.techSpecs || "—"}>{c.techSpecs || "—"}</td>
+                  <td style={{ ...tdStyle, fontSize: "0.7rem", color: "#555" }} title={c.measurements || "—"}>{c.measurements || "—"}</td>
+                  <td style={{ ...tdStyle, fontSize: "0.7rem", color: "#555", fontFamily: "monospace" }} title={c.itemCode || "—"}>{c.itemCode || "—"}</td>
                   {/* Technical scope — clickable → search in main tab */}
                   <td
                     style={{ ...tdStyle, cursor: "pointer", color: "var(--charcoal)" }}
@@ -612,19 +649,14 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#3b8fcc"; (e.currentTarget as HTMLElement).style.textDecoration = "underline"; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--charcoal)"; (e.currentTarget as HTMLElement).style.textDecoration = ""; }}
                   >{c.technicalScope}</td>
-                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={(c as any).workCategory || "—"}>{(c as any).workCategory || "—"}</td>
-                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={(c as any).unit || "—"}>{(c as any).unit || "—"}</td>
+                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={c.workCategory || "—"}>{c.workCategory || "—"}</td>
+                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={c.unit || "—"}>{c.unit || "—"}</td>
                   <td style={{ ...tdStyle, fontWeight: 700, color: "var(--gold)", fontSize: "0.75rem", direction: "ltr", textAlign: "right" }} title={c.price.toLocaleString("en")}>
                     {c.price.toLocaleString("en")}
                   </td>
-                  <td style={tdStyle} title={(c as any).localContent || "—"}>
-                    {(c as any).localContent ? (
-                      <span style={{
-                        background: (c as any).localContent === "مسجل" ? "rgba(43,170,116,0.12)" : "rgba(200,200,200,0.18)",
-                        color: (c as any).localContent === "مسجل" ? "#1d8a5a" : "#888",
-                        border: `1px solid ${(c as any).localContent === "مسجل" ? "rgba(43,170,116,0.3)" : "rgba(180,180,180,0.3)"}`,
-                        borderRadius: "6px", padding: "2px 9px", fontSize: "0.7rem", fontWeight: 700
-                      }}>{(c as any).localContent}</span>
+                  <td style={tdStyle} title={c.localContent || "—"}>
+                    {c.localContent ? (
+                      <span style={{ background: c.localContent === "مسجل" ? "rgba(43,170,116,0.12)" : "rgba(200,200,200,0.18)", color: c.localContent === "مسجل" ? "#1d8a5a" : "#888", border: `1px solid ${c.localContent === "مسجل" ? "rgba(43,170,116,0.3)" : "rgba(180,180,180,0.3)"}`, borderRadius: "6px", padding: "2px 9px", fontSize: "0.7rem", fontWeight: 700 }}>{c.localContent}</span>
                     ) : <span style={{ color: "#ccc", fontSize: "0.7rem" }}>—</span>}
                   </td>
                   <td style={tdStyle} title={`${c.phone} | ${c.email}`}>
@@ -634,7 +666,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                     </div>
                   </td>
                   <td style={{ ...tdStyle, textAlign: "center", verticalAlign: "middle" }}>
-                    <StarDisplay rating={(c as any).rating} />
+                    <StarDisplay rating={c.rating} />
                   </td>
                   <td style={{ ...tdStyle, textAlign: "center", verticalAlign: "middle" }}>
                     <div style={{ display: "flex", gap: "6px", flexWrap: "nowrap", alignItems: "center", justifyContent: "center", minWidth: 0 }}>

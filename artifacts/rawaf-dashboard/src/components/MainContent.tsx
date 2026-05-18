@@ -378,41 +378,38 @@ export default function MainContent({ contractor, allContractors, filteredContra
           </p>
         </div>
 
-        {/* Grid: برنامج الأعمال — نوع الأعمال — نوع العمل — الوحدة — fixed height, no expand */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 0.65fr 0.65fr", gap: "10px" }}>
+        {/* Row 1: برنامج الأعمال — عائلة الأعمال — نوع الأعمال — نوع التعاقد — الوحدة */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 0.8fr 0.6fr", gap: "10px", marginBottom: "10px" }}>
           {[
             { label: "برنامج الأعمال", value: (contractor as any).businessProgram || "—", gold: true },
-            { label: "نوع الأعمال",    value: contractor.workType || "—",                 gold: false },
-            { label: "نوع التعاقد",    value: (contractor as any).workCategory || "—",    gold: false },
-            { label: "الوحدة",         value: (contractor as any).unit || "—",            gold: false },
+            { label: "عائلة الأعمال",  value: (contractor as any).workFamily      || "—", gold: true },
+            { label: "نوع الأعمال",    value: contractor.workType                 || "—", gold: false },
+            { label: "نوع التعاقد",    value: (contractor as any).workCategory    || "—", gold: false },
+            { label: "الوحدة",         value: (contractor as any).unit            || "—", gold: false },
           ].map(({ label, value, gold }) => (
-            <div
-              key={label}
-              title={value}
-              style={{
-                background: gold
-                  ? "linear-gradient(135deg, rgba(197,160,89,0.07), rgba(197,160,89,0.02))"
-                  : "linear-gradient(135deg, rgba(58,54,50,0.04), rgba(58,54,50,0.01))",
-                border: `1px solid ${gold ? "rgba(197,160,89,0.2)" : "rgba(58,54,50,0.1)"}`,
-                borderRadius: "9px",
-                padding: "10px 12px",
-                minWidth: 0,
-                overflow: "hidden",
-                height: "58px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-              }}
-            >
-              <div style={{ fontSize: "0.52rem", color: gold ? "var(--gold)" : "#aaa", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px", fontWeight: 700, flexShrink: 0 }}>
-                {label}
-              </div>
-              <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "var(--charcoal)", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", minWidth: 0 }}>
-                {value}
-              </div>
+            <div key={label} title={value} style={{ background: gold ? "linear-gradient(135deg, rgba(197,160,89,0.07), rgba(197,160,89,0.02))" : "linear-gradient(135deg, rgba(58,54,50,0.04), rgba(58,54,50,0.01))", border: `1px solid ${gold ? "rgba(197,160,89,0.2)" : "rgba(58,54,50,0.1)"}`, borderRadius: "9px", padding: "10px 12px", minWidth: 0, overflow: "hidden", height: "58px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <div style={{ fontSize: "0.52rem", color: gold ? "var(--gold)" : "#aaa", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px", fontWeight: 700, flexShrink: 0 }}>{label}</div>
+              <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "var(--charcoal)", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", minWidth: 0 }}>{value}</div>
             </div>
           ))}
         </div>
+        {/* Row 2: الأعمدة الجديدة — شمولية البند — مواصفات فنية — قياسات — كود الفريد للبند — سنة العقد */}
+        {((contractor as any).itemScope || (contractor as any).techSpecs || (contractor as any).measurements || (contractor as any).itemCode || (contractor as any).contractYear) && (
+          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.2fr 0.8fr 1fr 0.6fr", gap: "10px" }}>
+            {[
+              { label: "شمولية البند",       value: (contractor as any).itemScope    || "—", blue: false },
+              { label: "مواصفات فنية",        value: (contractor as any).techSpecs   || "—", blue: false },
+              { label: "قياسات",              value: (contractor as any).measurements || "—", blue: false },
+              { label: "كود الفريد للبند",    value: (contractor as any).itemCode    || "—", mono: true },
+              { label: "سنة العقد",           value: (contractor as any).contractYear || "—", blue: false },
+            ].map(({ label, value, mono }) => (
+              <div key={label} title={value} style={{ background: "linear-gradient(135deg, rgba(59,143,204,0.04), rgba(59,143,204,0.01))", border: "1px solid rgba(59,143,204,0.12)", borderRadius: "9px", padding: "9px 12px", minWidth: 0, overflow: "hidden", height: "54px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                <div style={{ fontSize: "0.5rem", color: "#3b8fcc", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "3px", fontWeight: 700, flexShrink: 0 }}>{label}</div>
+                <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--charcoal)", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", minWidth: 0, fontFamily: mono ? "monospace" : undefined }}>{value}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── 3. سجل الأعمال المنفذة سابقاً ── */}

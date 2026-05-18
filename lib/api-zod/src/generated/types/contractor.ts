@@ -9,11 +9,23 @@
 export interface Contractor {
   id: number;
   contractNo: string;
+  /** @nullable */
+  contractYear?: string | null;
   contractor: string;
   project: string;
   portfolio: string;
   technicalScope: string;
   workType: string;
+  /** @nullable */
+  workFamily?: string | null;
+  /** @nullable */
+  itemScope?: string | null;
+  /** @nullable */
+  techSpecs?: string | null;
+  /** @nullable */
+  measurements?: string | null;
+  /** @nullable */
+  itemCode?: string | null;
   price: number;
   phone: string;
   email: string;
