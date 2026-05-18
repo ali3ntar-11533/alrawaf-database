@@ -140,7 +140,6 @@ export default function Sidebar({
                           </span>
                         );
                       })()}
-                      <span style={{ fontSize: "0.6rem", color: "#bbb", whiteSpace: "nowrap", flexShrink: 0 }}>{c.portfolio}</span>
                     </div>
                   </div>
                   <div style={{ textAlign: "left", flexShrink: 0 }}>
