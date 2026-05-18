@@ -272,7 +272,7 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
                             background: u.role === "admin" ? "rgba(197,160,89,0.14)" : "rgba(100,120,255,0.1)",
                             border: `1px solid ${u.role === "admin" ? "rgba(197,160,89,0.4)" : "rgba(100,120,255,0.22)"}`,
                             color: u.role === "admin" ? "#c5a059" : "rgba(150,160,255,0.9)",
-                          }}>{ROLE_LABELS[u.role] ?? u.role}</span>
+                          }}>{u.loginName === "admin" ? "مسؤول النظام" : (ROLE_LABELS[u.role] ?? u.role)}</span>
                         </td>
                         {/* Actions */}
                         <td style={{ padding: "12px 20px" }}>
