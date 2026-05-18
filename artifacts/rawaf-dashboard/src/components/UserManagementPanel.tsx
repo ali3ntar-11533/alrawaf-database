@@ -311,7 +311,7 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
                             background: u.role === "admin" ? "rgba(197,160,89,0.14)" : "rgba(100,120,255,0.1)",
                             border: `1px solid ${u.role === "admin" ? "rgba(197,160,89,0.4)" : "rgba(100,120,255,0.22)"}`,
                             color: u.role === "admin" ? "#c5a059" : "rgba(150,160,255,0.9)",
-                          }}>{u.loginName === "admin" ? "مسؤول النظام" : (ROLE_LABELS[u.role] ?? u.role)}</span>
+                          }}>{u.role === "admin" ? "مسؤول النظام" : (ROLE_LABELS[u.role] ?? u.role)}</span>
                         </td>
                         {/* Actions */}
                         <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
@@ -322,14 +322,14 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
                               onMouseEnter={e => (e.currentTarget.style.background = "rgba(197,160,89,0.22)")}
                               onMouseLeave={e => (e.currentTarget.style.background = "rgba(197,160,89,0.1)")}
                             >✏️</button>
-                            {u.loginName !== "admin" && (
+                            {u.role !== "admin" && (
                               <button
                                 onClick={() => void toggleActive(u)}
                                 title={u.isActive ? "تعطيل الحساب" : "تفعيل الحساب"}
                                 style={{ ...BTN_ICON, background: u.isActive ? "rgba(255,90,90,0.08)" : "rgba(43,170,116,0.1)", color: u.isActive ? "#ff6464" : "#2baa74", border: `1px solid ${u.isActive ? "rgba(255,90,90,0.25)" : "rgba(43,170,116,0.25)"}` }}
                               >{u.isActive ? "🚫" : "✅"}</button>
                             )}
-                            {u.loginName !== "admin" ? (
+                            {u.role !== "admin" ? (
                               <button
                                 onClick={() => setDeleteConfirm(u)} title="حذف"
                                 style={{ ...BTN_ICON, background: "rgba(200,40,40,0.08)", color: "#e05555", border: "1px solid rgba(200,40,40,0.22)" }}
@@ -403,7 +403,7 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
                   />
                 </div>
               ))}
-              {editingUser?.loginName !== "admin" && (
+              {editingUser?.role !== "admin" && (
                 <div>
                   <label style={{ display: "block", fontSize: "0.63rem", color: "rgba(197,160,89,0.82)", fontWeight: 700, marginBottom: 5, letterSpacing: "0.05em" }}>الصلاحية</label>
                   <select
