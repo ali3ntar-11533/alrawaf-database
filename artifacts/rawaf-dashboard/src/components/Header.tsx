@@ -23,7 +23,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
   const [gearHover, setGearHover]   = useState(false);
   const [showPanel, setShowPanel]   = useState(false);
 
-  const isAdmin = currentUser?.role === "admin";
+  const isAdmin = currentUser?.loginName === "admin";
 
   function handleLogoClick() {
     window.dispatchEvent(new CustomEvent("rawaf-logout"));
