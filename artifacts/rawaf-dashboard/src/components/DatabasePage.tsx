@@ -222,7 +222,7 @@ const modalTitleStyle: React.CSSProperties = { fontSize: "0.95rem", fontWeight: 
 const labelStyle: React.CSSProperties = { fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.04em" };
 const inputStyle: React.CSSProperties = { width: "100%", padding: "9px 12px", border: "1.5px solid #e8e0d0", borderRadius: "8px", fontSize: "0.8rem", fontFamily: "Tajawal, sans-serif", direction: "rtl", outline: "none", background: "#faf8f4", boxSizing: "border-box", transition: "border-color 0.18s" };
 const textareaStyle: React.CSSProperties = { ...inputStyle, resize: "vertical", lineHeight: 1.6 };
-const iconBtnStyle = (color: string): React.CSSProperties => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "28px", height: "28px", borderRadius: "6px", background: `${color}12`, border: `1.5px solid ${color}35`, color, cursor: "pointer", transition: "background 0.15s, box-shadow 0.15s", flexShrink: 0 });
+const iconBtnStyle = (color: string): React.CSSProperties => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "22px", height: "22px", borderRadius: "4px", background: "transparent", border: "none", color, cursor: "pointer", transition: "background 0.15s", flexShrink: 0, padding: 0 });
 const submitBtnStyle: React.CSSProperties = { flex: 1, background: "linear-gradient(135deg, var(--gold), #a88540)", color: "#fff", border: "none", borderRadius: "10px", padding: "12px", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" };
 const cancelBtnStyle: React.CSSProperties = { background: "#f5f0e8", color: "var(--charcoal)", border: "none", borderRadius: "10px", padding: "12px 20px", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" };
 const roFieldStyle: React.CSSProperties = { ...inputStyle, background: "#f0ece4", color: "#888", cursor: "not-allowed" };
@@ -572,8 +572,8 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
               <col style={{ width: "9%" }}   />{/* الوصف الفني — نصوص طويلة */}
               <col style={{ width: "3.2%" }} />{/* نوع التعاقد — قصير */}
               <col style={{ width: "2.5%" }} />{/* الوحدة — قصير */}
-              <col style={{ width: "4%" }}   />{/* السعر — أرقام */}
-              <col style={{ width: "3.2%" }} />{/* المحتوى المحلي */}
+              <col style={{ width: "3%" }}   />{/* السعر — أرقام */}
+              <col style={{ width: "4.5%" }} />{/* المحتوى المحلي */}
               <col style={{ width: "4.5%" }} />{/* التواصل */}
               <col style={{ width: "3.5%" }} />{/* التقييم */}
               <col style={{ width: "3.8%" }} />{/* إجراءات */}
