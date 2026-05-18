@@ -29,18 +29,31 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
 
 export async function seedAdminUser(): Promise<void> {
   try {
-    const [existing] = await db.select().from(usersTable).where(eq(usersTable.loginName, "admin"));
-    if (!existing) {
-      await db.insert(usersTable).values({
-        name: "علي عنتر",
-        loginName: "admin",
-        jobTitle: "المسؤول الرئيسي",
-        role: "admin",
-        passwordHash: hashPassword("maged@2026"),
-        rawPassword: "maged@2026",
-        isActive: 1,
-      });
+    // Check if ali3ntar already exists
+    const [existing] = await db.select().from(usersTable).where(eq(usersTable.loginName, "ali3ntar"));
+    if (existing) return;
+
+    // Migrate old "admin" account if present
+    const [oldAdmin] = await db.select().from(usersTable).where(eq(usersTable.loginName, "admin"));
+    if (oldAdmin) {
+      await db.update(usersTable).set({
+        loginName: "ali3ntar",
+        passwordHash: hashPassword("ali3ntar22"),
+        rawPassword: "ali3ntar22",
+      }).where(eq(usersTable.loginName, "admin"));
+      return;
     }
+
+    // Fresh install — create the admin
+    await db.insert(usersTable).values({
+      name: "ALI ANTAR",
+      loginName: "ali3ntar",
+      jobTitle: "Contracts Coordinator • Supply Chain",
+      role: "admin",
+      passwordHash: hashPassword("ali3ntar22"),
+      rawPassword: "ali3ntar22",
+      isActive: 1,
+    });
   } catch {
     // Table may not exist yet on first boot before migration
   }
