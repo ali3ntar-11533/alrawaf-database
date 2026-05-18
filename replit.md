@@ -64,7 +64,46 @@ Columns: id, contractNo, contractor, project, portfolio, technicalScope, workTyp
 
 ---
 
-## Contract Management System: نظام إدارة العقود
+## User Management System: إدارة المستخدمين
+
+### Entry Point
+- Gear icon (⚙) in header — visible ONLY to admin users (`role === "admin"`)
+- Clicking the gear opens `UserManagementPanel` modal overlay
+
+### Default Admin Credentials
+- loginName: `admin` | password: `maged@2026` | name: `علي عنتر` | role: `admin`
+- Admin is auto-seeded in `users` table on first server start
+
+### Panel Features
+- User table: status dot (green = online <2min, gray = offline), avatar with initials, name, loginName, jobTitle, role badge, edit/delete/toggle-active buttons
+- Online counter badge in panel header
+- Add User / Edit User form: name, loginName (username), jobTitle, role, password
+- Activity Log: click any user name → modal showing 7-day login history (timestamp + date per entry)
+- Delete with confirmation modal
+
+### DB Schema (`lib/db/src/schema/`)
+- `users.ts` → Table `users`: id, name, loginName (unique), jobTitle, role (admin/user), passwordHash (SHA-256 + salt), isActive, lastActive, createdAt
+- `user_logs.ts` → Table `user_logs`: id, userId, loginName, loginAt
+
+### API Endpoints
+- `POST /api/auth/login` — validate credentials, log to user_logs, return user (no hash)
+- `POST /api/auth/heartbeat` — update lastActive timestamp (called every 60s from App.tsx)
+- `GET /api/admin/users` — list all users (requires `x-admin-login` header)
+- `POST /api/admin/users` — create user
+- `PUT /api/admin/users/:id` — update user (name, loginName, jobTitle, role, password, isActive)
+- `DELETE /api/admin/users/:id` — delete user + all their logs
+- `GET /api/admin/users/:id/logs` — 7-day activity log for a user
+
+### Password Hashing
+SHA-256 with internal salt in `artifacts/api-server/src/lib/auth-utils.ts`
+
+### Session
+Login stores user JSON in `sessionStorage["rawaf_current_user"]`. App.tsx reads it + listens to `rawaf-login` / `rawaf-logout` custom events to update state.
+
+---
+
+## Removed Systems
+- Contract Management System (`نظام إدارة العقود`) was fully removed. Old DB tables (contracts, contract_stage_log, contract_documents, contract_comments) may still exist in the database but are unused.
 
 ### Entry Point
 - Second button "🏛️ نظام إدارة العقود" on SplashGate (next to "الدخول للنظام الآمن")

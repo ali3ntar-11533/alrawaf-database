@@ -108,6 +108,7 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
 
   const handleLogout = useCallback(() => {
     sessionStorage.removeItem(GATE_KEY);
+    sessionStorage.removeItem("rawaf_current_user");
     setPhase("splash");
     setShowLogin(false);
     setSlideIdx(0);
@@ -127,17 +128,32 @@ export default function SplashGate({ children }: { children: React.ReactNode }) 
     e.preventDefault();
     if (busy) return;
     setBusy(true); setError("");
-    setTimeout(() => {
-      if (username.trim() === "admin" && password === "maged@2026") {
-        sessionStorage.setItem(GATE_KEY, "1");
-        setPhase("app");
-      } else {
-        setError("بيانات الدخول غير صحيحة");
+    fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ loginName: username.trim(), password }),
+    })
+      .then(async (res) => {
+        if (res.ok) {
+          const user = await res.json() as Record<string, unknown>;
+          sessionStorage.setItem(GATE_KEY, "1");
+          sessionStorage.setItem("rawaf_current_user", JSON.stringify(user));
+          window.dispatchEvent(new CustomEvent("rawaf-login", { detail: user }));
+          setPhase("app");
+        } else {
+          const j = await res.json() as { error?: string };
+          setError(j.error ?? "بيانات الدخول غير صحيحة");
+          setBusy(false);
+          setShake(true);
+          setTimeout(() => setShake(false), 600);
+        }
+      })
+      .catch(() => {
+        setError("تعذر الاتصال بالخادم، حاول مجدداً");
         setBusy(false);
         setShake(true);
         setTimeout(() => setShake(false), 600);
-      }
-    }, 700);
+      });
   }
 
   return (

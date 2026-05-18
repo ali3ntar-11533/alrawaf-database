@@ -1,12 +1,14 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
 import contractorsRouter from "./contractors";
-import contractsMgmtRouter from "./contracts_mgmt";
+import authRouter from "./auth";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(contractorsRouter);
-router.use(contractsMgmtRouter);
+router.use(authRouter);
+router.use(adminRouter);
 
 export default router;
