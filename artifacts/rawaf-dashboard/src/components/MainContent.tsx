@@ -322,14 +322,15 @@ export default function MainContent({ contractor, allContractors, filteredContra
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", borderBottom: "1px solid #f0ebe0" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #f0ebe0" }}>
           {[
-            { icon: <MapPin size={12} />,    label: "المحفظة", value: contractor.portfolio },
-            { icon: <Building2 size={12} />, label: "المشروع", value: contractor.project },
+            { icon: <MapPin size={12} />,    label: "المحفظة",        value: contractor.portfolio },
+            { icon: <Building2 size={12} />, label: "المشروع",        value: contractor.project },
+            { icon: <Briefcase size={12} />, label: "النشاط الرئيسي", value: mainActivity || "—" },
           ].map((item, i) => (
             <div
               key={i}
-              style={{ padding: "12px 16px", borderLeft: i < 1 ? "1px solid #f0ebe0" : "none", transition: "background 0.18s" }}
+              style={{ padding: "12px 16px", borderLeft: i < 2 ? "1px solid #f0ebe0" : "none", transition: "background 0.18s" }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(197,160,89,0.04)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "")}
             >
@@ -405,19 +406,17 @@ export default function MainContent({ contractor, allContractors, filteredContra
             </div>
           ))}
         </div>
-        {/* Row 2: الأعمدة الجديدة — شمولية البند — مواصفات فنية — قياسات — كود الفريد للبند — سنة العقد */}
-        {((contractor as any).itemScope || (contractor as any).techSpecs || (contractor as any).measurements || (contractor as any).itemCode || (contractor as any).contractYear) && (
-          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.2fr 0.8fr 1fr 0.6fr", gap: "10px" }}>
+        {/* Row 2: شمولية البند — مواصفات فنية — قياسات */}
+        {(contractor.itemScope || contractor.techSpecs || contractor.measurements) && (
+          <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.2fr 0.8fr", gap: "10px" }}>
             {[
-              { label: "شمولية البند",       value: (contractor as any).itemScope    || "—", blue: false },
-              { label: "مواصفات فنية",        value: (contractor as any).techSpecs   || "—", blue: false },
-              { label: "قياسات",              value: (contractor as any).measurements || "—", blue: false },
-              { label: "كود الفريد للبند",    value: (contractor as any).itemCode    || "—", mono: true },
-              { label: "سنة العقد",           value: (contractor as any).contractYear || "—", blue: false },
-            ].map(({ label, value, mono }) => (
+              { label: "شمولية البند",  value: contractor.itemScope    || "—" },
+              { label: "مواصفات فنية",  value: contractor.techSpecs    || "—" },
+              { label: "قياسات",        value: contractor.measurements || "—" },
+            ].map(({ label, value }) => (
               <div key={label} title={value} style={{ background: "linear-gradient(135deg, rgba(59,143,204,0.04), rgba(59,143,204,0.01))", border: "1px solid rgba(59,143,204,0.12)", borderRadius: "9px", padding: "9px 12px", minWidth: 0, overflow: "hidden", height: "54px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                 <div style={{ fontSize: "0.5rem", color: "#3b8fcc", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "3px", fontWeight: 700, flexShrink: 0 }}>{label}</div>
-                <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--charcoal)", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", minWidth: 0, fontFamily: mono ? "monospace" : undefined }}>{value}</div>
+                <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--charcoal)", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", minWidth: 0 }}>{value}</div>
               </div>
             ))}
           </div>
