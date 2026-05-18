@@ -45,27 +45,27 @@ interface Props {
 
 /* ─── Columns definition — order matches the main table ─── */
 const COLUMNS: { key: keyof RowData; label: string; width: number; type?: "number" | "dropdown"; options?: string[] }[] = [
-  { key: "contractNo",      label: "رقم العقد",           width: 90  },
-  { key: "contractYear",    label: "سنة العقد",           width: 55  },
-  { key: "contractor",      label: "المقاول / المورد",    width: 165 },
-  { key: "project",         label: "المشروع",             width: 140 },
-  { key: "portfolio",       label: "المحفظة",             width: 65  },
-  { key: "mainActivity",    label: "النشاط الرئيسي",      width: 115 },
-  { key: "businessProgram", label: "برنامج الأعمال",      width: 105 },
-  { key: "workFamily",      label: "عائلة الأعمال",       width: 105 },
-  { key: "workType",        label: "نوع الأعمال",         width: 95  },
-  { key: "itemScope",       label: "شمولية البند",        width: 95  },
-  { key: "techSpecs",       label: "مواصفات فنية",        width: 95  },
-  { key: "measurements",    label: "قياسات",              width: 55  },
-  { key: "itemCode",        label: "كود الفريد للبند",    width: 100 },
-  { key: "technicalScope",  label: "الوصف الفني للبند",   width: 185 },
-  { key: "workCategory",    label: "نوع التعاقد",         width: 70  },
-  { key: "unit",            label: "الوحدة",              width: 50  },
-  { key: "price",           label: "السعر",               width: 85, type: "number" },
-  { key: "localContent",    label: "المحتوى المحلي",      width: 80, type: "dropdown", options: ["", "مسجل", "غير مسجل"] },
-  { key: "phone",           label: "رقم التواصل",         width: 105 },
-  { key: "email",           label: "البريد الإلكتروني",   width: 145 },
-  { key: "rating",          label: "التقييم",             width: 55, type: "number" },
+  { key: "contractNo",      label: "رقم العقد",        width: 55  },
+  { key: "contractYear",    label: "سنة",              width: 34  },
+  { key: "contractor",      label: "المقاول / المورد", width: 100 },
+  { key: "project",         label: "المشروع",          width: 85  },
+  { key: "portfolio",       label: "المحفظة",          width: 40  },
+  { key: "mainActivity",    label: "النشاط",           width: 70  },
+  { key: "businessProgram", label: "برنامج",           width: 65  },
+  { key: "workFamily",      label: "عائلة",            width: 65  },
+  { key: "workType",        label: "نوع الأعمال",      width: 60  },
+  { key: "itemScope",       label: "شمولية",           width: 60  },
+  { key: "techSpecs",       label: "مواصفات",          width: 60  },
+  { key: "measurements",    label: "قياسات",           width: 35  },
+  { key: "itemCode",        label: "الكود",            width: 60  },
+  { key: "technicalScope",  label: "الوصف الفني",      width: 110 },
+  { key: "workCategory",    label: "تعاقد",            width: 42  },
+  { key: "unit",            label: "وحدة",             width: 30  },
+  { key: "price",           label: "السعر",            width: 52, type: "number" },
+  { key: "localContent",    label: "محتوى محلي",       width: 50, type: "dropdown", options: ["", "مسجل", "غير مسجل"] },
+  { key: "phone",           label: "التواصل",          width: 65  },
+  { key: "email",           label: "البريد",           width: 88  },
+  { key: "rating",          label: "تقييم",            width: 34, type: "number" },
 ];
 
 /* ─── Helpers ───────────────────────────────────────────── */
@@ -363,7 +363,7 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
             <tr style={{ background: "#0a1525", borderBottom: "2px solid rgba(59,143,204,0.35)" }}>
               <th style={{ padding: "9px 6px", fontSize: "0.6rem", color: "rgba(59,143,204,0.5)", textAlign: "center", borderLeft: "1px solid rgba(59,143,204,0.1)" }}>#</th>
               {COLUMNS.map((c) => (
-                <th key={c.key} style={{ padding: "9px 8px", fontSize: "0.62rem", fontWeight: 700, color: "rgba(59,143,204,0.9)", textAlign: "right", letterSpacing: "0.04em", whiteSpace: "nowrap", borderLeft: "1px solid rgba(59,143,204,0.12)" }}>
+                <th key={c.key} style={{ padding: "6px 4px", fontSize: "0.58rem", fontWeight: 700, color: "rgba(59,143,204,0.9)", textAlign: "right", letterSpacing: "0.02em", whiteSpace: "normal", wordBreak: "break-word", lineHeight: 1.2, verticalAlign: "bottom", borderLeft: "1px solid rgba(59,143,204,0.12)" }}>
                   {c.label}
                 </th>
               ))}
