@@ -556,27 +556,27 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
         <div style={{ width: "100%", overflowX: "hidden" }}>
           <table style={{ tableLayout: "fixed", borderCollapse: "collapse", direction: "rtl", width: "100%" }}>
             <colgroup>
-              <col style={{ width: "5%" }}   />{/* رقم العقد */}
-              <col style={{ width: "3.5%" }} />{/* سنة العقد */}
-              <col style={{ width: "8%" }}   />{/* المقاول */}
-              <col style={{ width: "5.5%" }} />{/* المشروع */}
-              <col style={{ width: "4%" }}   />{/* المحفظة */}
-              <col style={{ width: "5%" }}   />{/* النشاط */}
-              <col style={{ width: "4.5%" }} />{/* برنامج */}
-              <col style={{ width: "4.5%" }} />{/* عائلة */}
+              <col style={{ width: "4.5%" }} />{/* رقم العقد */}
+              <col style={{ width: "2.8%" }} />{/* سنة العقد — أرقام */}
+              <col style={{ width: "9%" }}   />{/* المقاول — نصوص طويلة */}
+              <col style={{ width: "6.5%" }} />{/* المشروع — نصوص طويلة */}
+              <col style={{ width: "3.2%" }} />{/* المحفظة — قصيرة */}
+              <col style={{ width: "5.5%" }} />{/* النشاط */}
+              <col style={{ width: "5%" }}   />{/* برنامج */}
+              <col style={{ width: "5%" }}   />{/* عائلة */}
               <col style={{ width: "4.5%" }} />{/* نوع الأعمال */}
               <col style={{ width: "4.5%" }} />{/* شمولية */}
               <col style={{ width: "4.5%" }} />{/* مواصفات */}
-              <col style={{ width: "3.5%" }} />{/* قياسات */}
+              <col style={{ width: "2.8%" }} />{/* قياسات — أرقام */}
               <col style={{ width: "4.5%" }} />{/* كود */}
-              <col style={{ width: "8%" }}   />{/* الوصف الفني */}
-              <col style={{ width: "4%" }}   />{/* نوع التعاقد */}
-              <col style={{ width: "3%" }}   />{/* الوحدة */}
-              <col style={{ width: "4.5%" }} />{/* السعر */}
-              <col style={{ width: "4%" }}   />{/* المحتوى المحلي */}
-              <col style={{ width: "5%" }}   />{/* التواصل */}
-              <col style={{ width: "4%" }}   />{/* التقييم */}
-              <col style={{ width: "5%" }}   />{/* إجراءات */}
+              <col style={{ width: "9%" }}   />{/* الوصف الفني — نصوص طويلة */}
+              <col style={{ width: "3.2%" }} />{/* نوع التعاقد — قصير */}
+              <col style={{ width: "2.5%" }} />{/* الوحدة — قصير */}
+              <col style={{ width: "4%" }}   />{/* السعر — أرقام */}
+              <col style={{ width: "3.2%" }} />{/* المحتوى المحلي */}
+              <col style={{ width: "4.5%" }} />{/* التواصل */}
+              <col style={{ width: "3.5%" }} />{/* التقييم */}
+              <col style={{ width: "3.8%" }} />{/* إجراءات */}
             </colgroup>
             <thead>
               <tr style={{ background: "var(--charcoal)" }}>
@@ -670,9 +670,9 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                   </td>
                   <td style={{ ...tdStyle, textAlign: "center", verticalAlign: "middle" }}>
                     <div style={{ display: "flex", gap: "6px", flexWrap: "nowrap", alignItems: "center", justifyContent: "center", minWidth: 0 }}>
-                      <button onClick={(e) => { e.stopPropagation(); openEdit(c); }} style={iconBtnStyle("#c5a059")} title="تعديل البيانات"><Pencil size={13} /></button>
-                      <button onClick={(e) => { e.stopPropagation(); openClone(c); }} style={iconBtnStyle("#2baa74")} title="إضافة بند جديد لنفس الشركة (تكرار)"><Copy size={13} /></button>
-                      <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(c.id); }} style={iconBtnStyle("#e74c3c")} title="حذف السجل"><Trash2 size={13} /></button>
+                      <button onClick={(e) => { e.stopPropagation(); openEdit(c); }} style={iconBtnStyle("#c5a059")} title="تعديل البيانات"><Pencil size={10} /></button>
+                      <button onClick={(e) => { e.stopPropagation(); openClone(c); }} style={iconBtnStyle("#2baa74")} title="إضافة بند جديد لنفس الشركة (تكرار)"><Copy size={10} /></button>
+                      <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(c.id); }} style={iconBtnStyle("#e74c3c")} title="حذف السجل"><Trash2 size={10} /></button>
                     </div>
                   </td>
                 </tr>
