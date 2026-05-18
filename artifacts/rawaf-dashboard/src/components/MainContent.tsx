@@ -120,27 +120,70 @@ export default function MainContent({ contractor, allContractors, filteredContra
     );
   }
 
-  // ── Price pool: scoped to filteredContractors (current search/filter context)
-  //    + same نوع الأعمال + برنامج الأعمال as the selected contractor.
-  //    filteredContractors = allContractors when no search/filter is active.
-  const workTypeKey        = contractor ? normalize(contractor.workType) : "";
-  const businessProgramKey = contractor ? normalize((contractor as any).businessProgram ?? "") : "";
+  // ── Price pool: 4-level match — most precise first ──
+  // L1: itemCode exact match         → same unique item code
+  // L2: workType + workFamily + itemScope → triple-field item group
+  // L3: workType + workFamily         → double-field group
+  // L4: workType only                 → widest fallback
 
-  const globalPricePool: Contractor[] = contractor && workTypeKey.length > 0
-    ? filteredContractors.filter((c) => {
-        const typeMatch = normalize(c.workType) === workTypeKey;
-        if (!businessProgramKey) return typeMatch;
-        return typeMatch && normalize((c as any).businessProgram ?? "") === businessProgramKey;
-      })
-    : contractor ? [contractor] : [];
+  type PoolMethod = "itemCode" | "type+family+scope" | "type+family" | "type";
 
-  // Fallback: if pool is empty (no match on both fields), widen to workType only within filtered set
-  const pricePool = globalPricePool.length > 0
-    ? globalPricePool
-    : contractor && workTypeKey.length > 0
-      ? filteredContractors.filter((c) => normalize(c.workType) === workTypeKey)
-      : contractor ? [contractor] : [];
+  const itemCodeKey   = contractor ? normalize(contractor.itemCode   ?? "") : "";
+  const workTypeKey   = contractor ? normalize(contractor.workType        ) : "";
+  const workFamilyKey = contractor ? normalize(contractor.workFamily ?? "") : "";
+  const itemScopeKey  = contractor ? normalize(contractor.itemScope  ?? "") : "";
+
+  let pricePool:   Contractor[] = [];
+  let poolMethod:  PoolMethod   = "type";
+
+  if (contractor) {
+    if (itemCodeKey.length > 0) {
+      const pool = filteredContractors.filter(
+        (c) => normalize(c.itemCode ?? "") === itemCodeKey
+      );
+      if (pool.length > 0) { pricePool = pool; poolMethod = "itemCode"; }
+    }
+    if (pricePool.length === 0 && workTypeKey.length > 0 && workFamilyKey.length > 0 && itemScopeKey.length > 0) {
+      const pool = filteredContractors.filter(
+        (c) =>
+          normalize(c.workType)         === workTypeKey &&
+          normalize(c.workFamily  ?? "") === workFamilyKey &&
+          normalize(c.itemScope   ?? "") === itemScopeKey
+      );
+      if (pool.length > 0) { pricePool = pool; poolMethod = "type+family+scope"; }
+    }
+    if (pricePool.length === 0 && workTypeKey.length > 0 && workFamilyKey.length > 0) {
+      const pool = filteredContractors.filter(
+        (c) =>
+          normalize(c.workType)         === workTypeKey &&
+          normalize(c.workFamily  ?? "") === workFamilyKey
+      );
+      if (pool.length > 0) { pricePool = pool; poolMethod = "type+family"; }
+    }
+    if (pricePool.length === 0 && workTypeKey.length > 0) {
+      pricePool  = filteredContractors.filter((c) => normalize(c.workType) === workTypeKey);
+      poolMethod = "type";
+    }
+    if (pricePool.length === 0) pricePool = [contractor];
+  }
+
   const scopePoolSize = pricePool.length;
+
+  // Human-readable label describing the comparison scope used
+  const poolLabel: string = (() => {
+    if (!contractor) return "—";
+    switch (poolMethod) {
+      case "itemCode":
+        return `كود البند: ${contractor.itemCode}`;
+      case "type+family+scope":
+        return `${contractor.workType} › ${contractor.workFamily} › ${contractor.itemScope}`;
+      case "type+family":
+        return `${contractor.workType} › ${contractor.workFamily}`;
+      case "type":
+      default:
+        return contractor.workType || "—";
+    }
+  })();
 
   // Only consider records with a valid price > 0 for min/max/avg calculations
   const validPricePool = pricePool.filter((c) => c.price > 0);
@@ -443,19 +486,27 @@ export default function MainContent({ contractor, allContractors, filteredContra
                   <Building2 size={15} style={{ color: BAR_COLORS[i % BAR_COLORS.length] }} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--charcoal)", marginBottom: "2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--charcoal)", marginBottom: "3px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {w.project}
                   </div>
-                  <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                    <span style={{ fontSize: "0.62rem", color: "#aaa" }}>{w.technicalScope}</span>
+                  <div style={{ display: "flex", gap: "5px", alignItems: "center", flexWrap: "wrap" }}>
+                    {w.workType && (
+                      <span style={{ fontSize: "0.56rem", background: "rgba(197,160,89,0.1)", border: "1px solid rgba(197,160,89,0.2)", borderRadius: "4px", padding: "1px 6px", color: "var(--gold)", fontWeight: 700, whiteSpace: "nowrap" }}>{w.workType}</span>
+                    )}
+                    {w.itemCode && (
+                      <span style={{ fontSize: "0.56rem", background: "rgba(59,143,204,0.08)", border: "1px solid rgba(59,143,204,0.2)", borderRadius: "4px", padding: "1px 6px", color: "#3b8fcc", fontWeight: 700, whiteSpace: "nowrap", fontFamily: "monospace" }}>{w.itemCode}</span>
+                    )}
+                    {!w.itemCode && w.technicalScope && (
+                      <span style={{ fontSize: "0.58rem", color: "#bbb", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "160px" }}>{w.technicalScope}</span>
+                    )}
                   </div>
                 </div>
                 <div style={{ textAlign: "left", flexShrink: 0 }}>
-                  <div style={{ fontSize: "0.7rem", fontWeight: 800, color: BAR_COLORS[i % BAR_COLORS.length], direction: "ltr" }}>
+                  <div style={{ fontSize: "0.72rem", fontWeight: 800, color: BAR_COLORS[i % BAR_COLORS.length], direction: "ltr" }}>
                     {formatExact(w.price)} ر.س
                   </div>
-                  <div style={{ fontSize: "0.58rem", color: "#bbb", direction: "ltr", marginTop: "3px" }}>
-                    {w.contractNo}
+                  <div style={{ fontSize: "0.56rem", color: "#bbb", direction: "ltr", marginTop: "2px" }}>
+                    {w.contractNo}{w.contractYear ? ` · ${w.contractYear}` : ""}
                   </div>
                 </div>
               </div>
@@ -474,8 +525,8 @@ export default function MainContent({ contractor, allContractors, filteredContra
                 <DollarSign size={13} style={{ color: "var(--gold)" }} />
                 مقارنة الأسعار
               </h3>
-              <span style={{ fontSize: "0.58rem", color: "#bbb", background: "#f5f0e8", borderRadius: "4px", padding: "2px 7px", textAlign: "left" }}>
-                أفضل {best5.length} قيمة • سعر + تقييم مدمجان
+              <span style={{ fontSize: "0.58rem", color: "#bbb", background: "#f5f0e8", borderRadius: "4px", padding: "2px 7px", textAlign: "left" }} title={`نطاق المقارنة: ${poolLabel}`}>
+                أفضل {best5.length} قيمة • {poolMethod === "itemCode" ? `كود: ${contractor?.itemCode}` : poolMethod === "type+family+scope" ? "نوع + عائلة + شمولية" : poolMethod === "type+family" ? "نوع + عائلة" : "نوع الأعمال"} • سعر + تقييم
               </span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>
@@ -499,16 +550,26 @@ export default function MainContent({ contractor, allContractors, filteredContra
                       <div style={{ width: "18px", height: "18px", borderRadius: "5px", background: i === 0 ? "#2baa74" : isCurrent ? "var(--gold)" : "#e0dbd0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <span style={{ fontSize: "0.55rem", fontWeight: 800, color: i === 0 || isCurrent ? "#fff" : "#aaa" }}>{i + 1}</span>
                       </div>
-                      <div style={{ flex: 1, fontSize: "0.7rem", color: isCurrent ? "var(--gold)" : "var(--charcoal)", fontWeight: isCurrent ? 800 : 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {c.contractor}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "0.7rem", color: isCurrent ? "var(--gold)" : "var(--charcoal)", fontWeight: isCurrent ? 800 : 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {c.contractor}
+                        </div>
+                        <div style={{ display: "flex", gap: "4px", alignItems: "center", marginTop: "1px" }}>
+                          {c.project && (
+                            <span style={{ fontSize: "0.54rem", color: "#aaa", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "120px" }}>{c.project}</span>
+                          )}
+                          {c.itemCode && (
+                            <span style={{ fontSize: "0.52rem", background: "rgba(59,143,204,0.07)", border: "1px solid rgba(59,143,204,0.18)", borderRadius: "3px", padding: "0px 4px", color: "#3b8fcc", fontFamily: "monospace", flexShrink: 0, whiteSpace: "nowrap" }}>{c.itemCode}</span>
+                          )}
+                        </div>
                       </div>
                       {/* Rating stars */}
-                      <span style={{ display: "inline-flex", gap: "1px", flexShrink: 0 }}>
+                      <span style={{ display: "inline-flex", gap: "1px", flexShrink: 0, alignSelf: "flex-start", marginTop: "2px" }}>
                         {[1, 2, 3, 4, 5].map((s) => (
                           <span key={s} style={{ fontSize: "0.6rem", color: s <= cRating ? "#f5c518" : "#e0dbd0", lineHeight: 1 }}>★</span>
                         ))}
                       </span>
-                      <span style={{ fontSize: "0.68rem", fontWeight: 800, color: i === 0 ? "#2baa74" : isCurrent ? "var(--gold)" : "#888", flexShrink: 0, direction: "ltr" }}>
+                      <span style={{ fontSize: "0.68rem", fontWeight: 800, color: i === 0 ? "#2baa74" : isCurrent ? "var(--gold)" : "#888", flexShrink: 0, direction: "ltr", alignSelf: "flex-start", marginTop: "2px" }}>
                         {formatExact(c.price)}
                       </span>
                     </div>
@@ -550,9 +611,11 @@ export default function MainContent({ contractor, allContractors, filteredContra
           {/* Context header */}
           <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px", minWidth: 0 }}>
             <span style={{ fontSize: "0.62rem", color: "rgba(197,160,89,0.85)", fontWeight: 700, letterSpacing: "0.05em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
-              تحليل الأسعار • {contractor?.workType || "—"}
+              تحليل الأسعار • {poolLabel}
             </span>
-            <span style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.07)", borderRadius: "5px", padding: "2px 10px", flexShrink: 0, whiteSpace: "nowrap" }}>
+            <span
+              title={poolMethod === "itemCode" ? "تطابق دقيق بكود البند" : poolMethod === "type+family+scope" ? "تطابق: نوع + عائلة + شمولية" : poolMethod === "type+family" ? "تطابق: نوع + عائلة" : "تطابق: نوع الأعمال فقط"}
+              style={{ fontSize: "0.6rem", color: poolMethod === "itemCode" ? "rgba(59,143,204,0.85)" : "rgba(255,255,255,0.35)", background: poolMethod === "itemCode" ? "rgba(59,143,204,0.18)" : "rgba(255,255,255,0.07)", borderRadius: "5px", padding: "2px 10px", flexShrink: 0, whiteSpace: "nowrap", border: poolMethod === "itemCode" ? "1px solid rgba(59,143,204,0.3)" : "none" }}>
               {scopePoolSize > 1 ? `${scopePoolSize} سجل مطابق` : "سجل واحد"}
             </span>
           </div>
