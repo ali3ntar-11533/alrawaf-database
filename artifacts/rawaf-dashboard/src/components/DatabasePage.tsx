@@ -263,6 +263,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
   const [clonePrice, setClonePrice]               = useState("");
   const [cloneUnit, setCloneUnit]                 = useState("");
   const [cloneLocalContent, setCloneLocalContent] = useState("");
+  const [cloneItemCode, setCloneItemCode]         = useState("");
 
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [showCloudSync, setShowCloudSync] = useState(false);
@@ -406,6 +407,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
     setClonePrice(String(c.price));
     setCloneUnit((c as any).unit ?? "");
     setCloneLocalContent((c as any).localContent ?? "");
+    setCloneItemCode((c as any).itemCode ?? "");
   }
 
   async function handleEditSubmit(e: React.FormEvent) {
@@ -450,7 +452,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
       const baseForm = contractorToForm(cloneSource);
       await createContractor(
         buildPutData(
-          { ...baseForm, technicalScope: cloneTechScope, price: clonePrice, unit: cloneUnit, localContent: cloneLocalContent },
+          { ...baseForm, technicalScope: cloneTechScope, price: clonePrice, unit: cloneUnit, localContent: cloneLocalContent, itemCode: cloneItemCode },
           (cloneSource as any).rating ?? null,
         ),
       );
@@ -853,7 +855,8 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px 14px", marginBottom: "18px" }}>
                 <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: "4px" }}>
                   <label style={{ ...labelStyle, color: "#c5a059" }}>١٣. كود الفريد للبند الجديد</label>
-                  <input type="text" value={(cloneSource as any).itemCode ?? ""} readOnly style={{ ...inputStyle, background: "#f0ece4", color: "#888", cursor: "not-allowed" }} />
+                  <input type="text" value={cloneItemCode} onChange={(e) => setCloneItemCode(e.target.value)} style={inputStyle}
+                    onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")} />
                 </div>
                 <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: "4px" }}>
                   <label style={{ ...labelStyle, color: "#c5a059" }}>١٤. الوصف الفني للبند الجديد</label>
