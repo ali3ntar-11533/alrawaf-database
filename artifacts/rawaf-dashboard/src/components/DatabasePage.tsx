@@ -53,7 +53,7 @@ const EMPTY_FORM: FormData = {
 const LOCAL_CONTENT_OPTIONS = ["", "مسجل", "غير مسجل"];
 
 /* Column order matches the table exactly */
-const FORM_FIELDS: { key: keyof FormData; label: string; type?: string; wide?: boolean; rows?: number; options?: string[] }[] = [
+const FORM_FIELDS: { key: keyof FormData; label: string; type?: string; wide?: boolean; fullRow?: boolean; rows?: number; options?: string[] }[] = [
   { key: "contractNo",      label: "١. رقم العقد" },
   { key: "contractYear",    label: "٢. سنة العقد" },
   { key: "contractor",      label: "٣. اسم المقاول / المورد" },
@@ -66,7 +66,7 @@ const FORM_FIELDS: { key: keyof FormData; label: string; type?: string; wide?: b
   { key: "itemScope",       label: "١٠. شمولية البند" },
   { key: "techSpecs",       label: "١١. مواصفات فنية" },
   { key: "measurements",    label: "١٢. قياسات" },
-  { key: "itemCode",        label: "١٣. كود الفريد للبند" },
+  { key: "itemCode",        label: "١٣. كود الفريد للبند", fullRow: true },
   { key: "technicalScope",  label: "١٤. الوصف الفني للبند", wide: true, rows: 3 },
   { key: "workCategory",    label: "١٥. نوع التعاقد" },
   { key: "unit",            label: "١٦. الوحدة" },
@@ -216,7 +216,7 @@ function exportToExcel(data: Contractor[]) {
 /* ─── Styles ───────────────────────────────── */
 const tdStyle: React.CSSProperties = { padding: "7px 4px", fontSize: "0.7rem", color: "#555", verticalAlign: "middle", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
 const overlayStyle: React.CSSProperties = { position: "fixed", inset: 0, background: "rgba(30,25,20,0.55)", backdropFilter: "blur(4px)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" };
-const modalStyle: React.CSSProperties = { width: "100%", maxWidth: "680px", maxHeight: "88vh", overflowY: "auto", padding: "28px 28px", position: "relative" };
+const modalStyle: React.CSSProperties = { width: "100%", maxWidth: "960px", maxHeight: "90vh", overflowY: "auto", padding: "28px 32px", position: "relative" };
 const closeBtnStyle: React.CSSProperties = { position: "absolute", top: "16px", left: "16px", background: "none", border: "none", cursor: "pointer", color: "#aaa", padding: "4px" };
 const modalTitleStyle: React.CSSProperties = { fontSize: "0.95rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "6px" };
 const labelStyle: React.CSSProperties = { fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.04em" };
@@ -718,9 +718,9 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
               </div>
             )}
             <form onSubmit={handleEditSubmit}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px 14px", marginBottom: "16px" }}>
                 {FORM_FIELDS.map((f) => (
-                  <div key={f.key} style={{ display: "flex", flexDirection: "column", gap: "4px", gridColumn: f.wide ? "1 / -1" : undefined }}>
+                  <div key={f.key} style={{ display: "flex", flexDirection: "column", gap: "4px", gridColumn: (f.wide || f.fullRow) ? "1 / -1" : undefined }}>
                     <label style={{ ...labelStyle, color: "#c5a059" }}>{f.label}</label>
                     {f.wide ? (
                       <textarea rows={f.rows ?? 2} value={editForm[f.key]} onChange={(e) => setEditForm((p) => ({ ...p, [f.key]: e.target.value }))} style={textareaStyle}
@@ -736,7 +736,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                   </div>
                 ))}
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={{ ...labelStyle, color: "#c5a059" }}>١٥. التقييم</label>
+                  <label style={{ ...labelStyle, color: "#c5a059" }}>٢١. التقييم</label>
                   <div style={{ marginTop: "6px" }}><StarPicker value={editRating} onChange={setEditRating} /></div>
                 </div>
               </div>
@@ -764,9 +764,9 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
               </div>
             )}
             <form onSubmit={handleAddSubmit}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px 14px", marginBottom: "16px" }}>
                 {FORM_FIELDS.map((f) => (
-                  <div key={f.key} style={{ display: "flex", flexDirection: "column", gap: "4px", gridColumn: f.wide ? "1 / -1" : undefined }}>
+                  <div key={f.key} style={{ display: "flex", flexDirection: "column", gap: "4px", gridColumn: (f.wide || f.fullRow) ? "1 / -1" : undefined }}>
                     <label style={{ ...labelStyle, color: "#c5a059" }}>{f.label}</label>
                     {f.wide ? (
                       <textarea rows={f.rows ?? 2} value={addForm[f.key]} onChange={(e) => setAddForm((p) => ({ ...p, [f.key]: e.target.value }))} style={textareaStyle}
@@ -782,7 +782,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                   </div>
                 ))}
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={{ ...labelStyle, color: "#c5a059" }}>١٥. التقييم</label>
+                  <label style={{ ...labelStyle, color: "#c5a059" }}>٢١. التقييم</label>
                   <div style={{ marginTop: "6px" }}><StarPicker value={addRating} onChange={setAddRating} /></div>
                 </div>
               </div>
@@ -809,29 +809,36 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
       {/* ── Clone Modal ("+") ── */}
       {cloneSource && (
         <div style={overlayStyle} onClick={() => { setCloneSource(null); setCloneError(null); }}>
-          <div className="card animate-fade-up" style={{ ...modalStyle, maxWidth: "560px" }} onClick={(e) => e.stopPropagation()}>
+          <div className="card animate-fade-up" style={modalStyle} onClick={(e) => e.stopPropagation()}>
             <button onClick={() => { setCloneSource(null); setCloneError(null); }} style={closeBtnStyle}><X size={16} /></button>
             <h3 style={modalTitleStyle}>إضافة بند جديد لنفس الشركة</h3>
-            <p style={{ fontSize: "0.72rem", color: "#aaa", marginBottom: "18px" }}>
+            <p style={{ fontSize: "0.72rem", color: "#aaa", marginBottom: "14px" }}>
               سيتم نسخ بيانات الشركة كما هي — عدّل الوصف الفني والسعر فقط ثم احفظ كسجل جديد مستقل
             </p>
             {/* Read-only source info */}
-            <div style={{ background: "#f9f7f3", borderRadius: "10px", padding: "12px 16px", marginBottom: "18px", border: "1px solid #ede8de" }}>
-              <div style={{ fontSize: "0.6rem", color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>بيانات منقولة تلقائياً (للقراءة فقط)</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+            <div style={{ background: "#f9f7f3", borderRadius: "10px", padding: "12px 16px", marginBottom: "16px", border: "1px solid #ede8de" }}>
+              <div style={{ fontSize: "0.6rem", color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>بيانات منقولة تلقائياً (للقراءة فقط)</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px 14px" }}>
                 {[
-                  { label: "اسم الشركة", value: cloneSource.contractor },
-                  { label: "رقم العقد الأصلي", value: cloneSource.contractNo },
-                  { label: "المشروع", value: cloneSource.project },
-                  { label: "المحفظة", value: cloneSource.portfolio },
-                  { label: "النشاط الرئيسي", value: (cloneSource as any).mainActivity || "—" },
-                  { label: "نوع التعاقد", value: cloneSource.workType },
-                  { label: "نوع التعاقد", value: (cloneSource as any).workCategory || "—" },
-                  { label: "رقم التواصل", value: cloneSource.phone },
-                ].map((item) => (
-                  <div key={item.label}>
+                  { label: "١. رقم العقد",         value: cloneSource.contractNo },
+                  { label: "٢. سنة العقد",          value: (cloneSource as any).contractYear || "—" },
+                  { label: "٣. اسم المقاول / المورد", value: cloneSource.contractor },
+                  { label: "٤. المشروع",             value: cloneSource.project },
+                  { label: "٥. المحفظة",             value: cloneSource.portfolio },
+                  { label: "٦. النشاط الرئيسي",     value: (cloneSource as any).mainActivity || "—" },
+                  { label: "٧. برنامج الأعمال",      value: (cloneSource as any).businessProgram || "—" },
+                  { label: "٨. عائلة الأعمال",       value: (cloneSource as any).workFamily || "—" },
+                  { label: "٩. نوع الأعمال",         value: cloneSource.workType },
+                  { label: "١٠. شمولية البند",       value: (cloneSource as any).itemScope || "—" },
+                  { label: "١١. مواصفات فنية",       value: (cloneSource as any).techSpecs || "—" },
+                  { label: "١٢. قياسات",             value: (cloneSource as any).measurements || "—" },
+                  { label: "١٥. نوع التعاقد",        value: (cloneSource as any).workCategory || "—" },
+                  { label: "١٩. رقم التواصل",        value: cloneSource.phone },
+                  { label: "٢٠. البريد الإلكتروني",  value: cloneSource.email || "—" },
+                ].map((item, idx) => (
+                  <div key={idx}>
                     <div style={{ fontSize: "0.57rem", color: "#bbb", marginBottom: "2px" }}>{item.label}</div>
-                    <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#888" }}>{item.value}</div>
+                    <div style={{ fontSize: "0.73rem", fontWeight: 600, color: "#777", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.value}</div>
                   </div>
                 ))}
               </div>
@@ -843,30 +850,34 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
               </div>
             )}
             <form onSubmit={handleCloneSubmit}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "18px" }}>
-                <div>
-                  <label style={{ ...labelStyle, color: "#c5a059", display: "block", marginBottom: "5px" }}>الوصف الفني للبند الجديد</label>
-                  <textarea rows={4} value={cloneTechScope} onChange={(e) => setCloneTechScope(e.target.value)} style={textareaStyle}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px 14px", marginBottom: "18px" }}>
+                <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label style={{ ...labelStyle, color: "#c5a059" }}>١٣. كود الفريد للبند الجديد</label>
+                  <input type="text" value={(cloneSource as any).itemCode ?? ""} readOnly style={{ ...inputStyle, background: "#f0ece4", color: "#888", cursor: "not-allowed" }} />
+                </div>
+                <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label style={{ ...labelStyle, color: "#c5a059" }}>١٤. الوصف الفني للبند الجديد</label>
+                  <textarea rows={3} value={cloneTechScope} onChange={(e) => setCloneTechScope(e.target.value)} style={textareaStyle}
                     onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")}
                     placeholder="أدخل وصف الأعمال للبند الجديد..."
                   />
                 </div>
-                <div>
-                  <label style={{ ...labelStyle, color: "#c5a059", display: "block", marginBottom: "5px" }}>السعر الجديد (ريال)</label>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label style={{ ...labelStyle, color: "#c5a059" }}>١٦. الوحدة</label>
+                  <input type="text" value={cloneUnit} onChange={(e) => setCloneUnit(e.target.value)} style={inputStyle}
+                    onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")}
+                    placeholder="م2، م3، م.ط..."
+                  />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label style={{ ...labelStyle, color: "#c5a059" }}>١٧. السعر الجديد (ريال)</label>
                   <input type="number" value={clonePrice} onChange={(e) => setClonePrice(e.target.value)} style={inputStyle}
                     onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")}
                     placeholder="0" min="0"
                   />
                 </div>
-                <div>
-                  <label style={{ ...labelStyle, color: "#c5a059", display: "block", marginBottom: "5px" }}>الوحدة</label>
-                  <input type="text" value={cloneUnit} onChange={(e) => setCloneUnit(e.target.value)} style={inputStyle}
-                    onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")}
-                    placeholder="م2، م3، م.ط، نقطة..."
-                  />
-                </div>
-                <div>
-                  <label style={{ ...labelStyle, color: "#c5a059", display: "block", marginBottom: "5px" }}>المحتوى المحلي</label>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label style={{ ...labelStyle, color: "#c5a059" }}>١٨. المحتوى المحلي</label>
                   <select value={cloneLocalContent} onChange={(e) => setCloneLocalContent(e.target.value)} style={{ ...inputStyle, cursor: "pointer", appearance: "auto" }}>
                     {LOCAL_CONTENT_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt || "— اختر —"}</option>)}
                   </select>
