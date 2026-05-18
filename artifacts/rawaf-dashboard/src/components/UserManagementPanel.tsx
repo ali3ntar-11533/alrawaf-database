@@ -13,6 +13,7 @@ interface UserRecord {
 }
 
 interface LogEntry {
+  ipAddress?: string | null;
   id: number;
   userId: number;
   loginName: string;
@@ -495,7 +496,9 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
                       <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(197,160,89,0.09)", border: "1px solid rgba(197,160,89,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.85rem" }}>🔑</div>
                       <div>
                         <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "#fff" }}>تسجيل دخول</div>
-                        <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.35)" }}>ID #{log.id}</div>
+                        <div style={{ fontSize: "0.6rem", color: "rgba(197,160,89,0.55)", fontFamily: "monospace", direction: "ltr" }}>
+                          {log.ipAddress ?? "—"}
+                        </div>
                       </div>
                     </div>
                     <div style={{ textAlign: "left", direction: "ltr" }}>

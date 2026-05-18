@@ -4,6 +4,7 @@ export const userLogsTable = pgTable("user_logs", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   loginName: text("login_name").notNull(),
+  ipAddress: text("ip_address"),
   loginAt: timestamp("login_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

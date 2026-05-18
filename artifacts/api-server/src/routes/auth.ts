@@ -23,7 +23,8 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
   await db.update(usersTable).set({ lastActive: new Date() }).where(eq(usersTable.id, user.id));
-  await db.insert(userLogsTable).values({ userId: user.id, loginName: user.loginName });
+  const ip = (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim() ?? req.socket.remoteAddress ?? null;
+  await db.insert(userLogsTable).values({ userId: user.id, loginName: user.loginName, ipAddress: ip });
   const { passwordHash: _h, ...safeUser } = user;
   res.json({ ...safeUser, lastActive: safeUser.lastActive?.toISOString() ?? null, createdAt: safeUser.createdAt.toISOString() });
 });
