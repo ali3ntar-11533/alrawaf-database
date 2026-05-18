@@ -669,7 +669,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                     <StarDisplay rating={c.rating} />
                   </td>
                   <td style={{ ...tdStyle, textAlign: "center", verticalAlign: "middle" }}>
-                    <div style={{ display: "flex", gap: "6px", flexWrap: "nowrap", alignItems: "center", justifyContent: "center", minWidth: 0 }}>
+                    <div style={{ display: "flex", gap: "1px", flexWrap: "nowrap", alignItems: "center", justifyContent: "center", minWidth: 0 }}>
                       <button onClick={(e) => { e.stopPropagation(); openEdit(c); }} style={iconBtnStyle("#c5a059")} title="تعديل البيانات"><Pencil size={10} /></button>
                       <button onClick={(e) => { e.stopPropagation(); openClone(c); }} style={iconBtnStyle("#2baa74")} title="إضافة بند جديد لنفس الشركة (تكرار)"><Copy size={10} /></button>
                       <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(c.id); }} style={iconBtnStyle("#e74c3c")} title="حذف السجل"><Trash2 size={10} /></button>
