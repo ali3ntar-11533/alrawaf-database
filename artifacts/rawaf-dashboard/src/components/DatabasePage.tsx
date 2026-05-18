@@ -156,7 +156,7 @@ function StarDisplay({ rating }: { rating?: number | null }) {
       {[1, 2, 3, 4, 5].map((i) => (
         <span key={i} style={{ fontSize: "0.75rem", color: i <= r ? "#f5c518" : "#e0dbd0", lineHeight: 1, flexShrink: 0, filter: i <= r ? "drop-shadow(0 0 2px rgba(245,197,24,0.4))" : "none" }}>★</span>
       ))}
-      {r > 0 && <span style={{ fontSize: "0.55rem", color: "#aaa", marginRight: "2px", flexShrink: 0 }}>{r}/5</span>}
+      <span style={{ fontSize: "0.68rem", fontWeight: 700, color: r > 0 ? "#c5a059" : "#ccc", marginRight: "3px", flexShrink: 0 }}>{r > 0 ? r : "—"}</span>
     </div>
   );
 }
@@ -574,8 +574,8 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
               <col style={{ width: "2.5%" }} />{/* الوحدة — قصير */}
               <col style={{ width: "3%" }}   />{/* السعر — أرقام */}
               <col style={{ width: "4.5%" }} />{/* المحتوى المحلي */}
-              <col style={{ width: "4.5%" }} />{/* التواصل */}
-              <col style={{ width: "3.5%" }} />{/* التقييم */}
+              <col style={{ width: "3.5%" }} />{/* التواصل */}
+              <col style={{ width: "4.5%" }} />{/* التقييم */}
               <col style={{ width: "3.8%" }} />{/* إجراءات */}
             </colgroup>
             <thead>
