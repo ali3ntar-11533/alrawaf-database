@@ -168,7 +168,7 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
     background: "linear-gradient(160deg, #1a1510 0%, #110e0a 100%)",
     border: "1px solid rgba(197,160,89,0.4)",
     borderRadius: 20,
-    width: "100%", maxWidth: 920,
+    width: "100%", maxWidth: 1060,
     maxHeight: "90vh",
     display: "flex", flexDirection: "column",
     boxShadow: "0 32px 120px rgba(0,0,0,0.85), inset 0 0 0 1px rgba(197,160,89,0.06)",
@@ -269,50 +269,51 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
                           />
                         </td>
                         {/* User name + avatar */}
-                        <td style={{ padding: "12px 20px" }}>
+                        <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
                           <button
                             onClick={() => void openLogs(u)}
                             title="عرض سجل النشاط"
-                            style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "Tajawal, sans-serif" }}
+                            style={{ display: "flex", alignItems: "center", gap: 9, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "Tajawal, sans-serif" }}
                           >
                             <div style={{
-                              width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                              width: 34, height: 34, borderRadius: 9, flexShrink: 0,
                               background: `linear-gradient(135deg, rgba(197,160,89,${0.15 + (u.id % 5) * 0.06}), rgba(197,160,89,0.05))`,
                               border: "1px solid rgba(197,160,89,0.3)",
                               display: "flex", alignItems: "center", justifyContent: "center",
-                              fontSize: "0.7rem", fontWeight: 800, color: "#c5a059",
+                              fontSize: "0.68rem", fontWeight: 800, color: "#c5a059",
                             }}>
                               {getInitials(u.name)}
                             </div>
                             <div style={{ textAlign: "right" }}>
-                              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#fff", lineHeight: 1.3 }}>{u.name}</div>
-                              <div style={{ fontSize: "0.6rem", color: u.isActive ? "rgba(43,170,116,0.8)" : "rgba(255,90,90,0.8)", fontWeight: 700 }}>{u.isActive ? "مفعّل" : "معطّل"}</div>
+                              <div style={{ fontSize: "0.83rem", fontWeight: 700, color: "#fff", lineHeight: 1.3, whiteSpace: "nowrap" }}>{u.name}</div>
+                              <div style={{ fontSize: "0.58rem", color: u.isActive ? "rgba(43,170,116,0.8)" : "rgba(255,90,90,0.8)", fontWeight: 700 }}>{u.isActive ? "مفعّل" : "معطّل"}</div>
                             </div>
                           </button>
                         </td>
                         {/* Login name */}
-                        <td style={{ padding: "12px 20px" }}>
-                          <span style={{ fontSize: "0.76rem", color: "rgba(255,255,255,0.6)", fontFamily: "monospace", background: "rgba(255,255,255,0.06)", padding: "3px 8px", borderRadius: 6 }}>{u.loginName}</span>
+                        <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
+                          <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.6)", fontFamily: "monospace", background: "rgba(255,255,255,0.06)", padding: "3px 8px", borderRadius: 6 }}>{u.loginName}</span>
                         </td>
                         {/* Password */}
-                        <td style={{ padding: "12px 20px" }}>
+                        <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
                           <PasswordCell pwd={u.rawPassword} />
                         </td>
                         {/* Job title */}
-                        <td style={{ padding: "12px 20px" }}>
-                          <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.7)" }}>{u.jobTitle || "—"}</span>
+                        <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
+                          <span style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.7)" }}>{u.jobTitle || "—"}</span>
                         </td>
                         {/* Role badge */}
-                        <td style={{ padding: "12px 20px" }}>
+                        <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
                           <span style={{
-                            fontSize: "0.68rem", fontWeight: 700, padding: "4px 10px", borderRadius: 20,
+                            fontSize: "0.67rem", fontWeight: 700, padding: "4px 10px", borderRadius: 20,
+                            whiteSpace: "nowrap", display: "inline-block",
                             background: u.role === "admin" ? "rgba(197,160,89,0.14)" : "rgba(100,120,255,0.1)",
                             border: `1px solid ${u.role === "admin" ? "rgba(197,160,89,0.4)" : "rgba(100,120,255,0.22)"}`,
                             color: u.role === "admin" ? "#c5a059" : "rgba(150,160,255,0.9)",
                           }}>{u.loginName === "admin" ? "مسؤول النظام" : (ROLE_LABELS[u.role] ?? u.role)}</span>
                         </td>
                         {/* Actions */}
-                        <td style={{ padding: "12px 20px" }}>
+                        <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
                           <div style={{ display: "flex", gap: 7, justifyContent: "flex-end", alignItems: "center" }}>
                             <button
                               onClick={() => openEdit(u)} title="تعديل"
