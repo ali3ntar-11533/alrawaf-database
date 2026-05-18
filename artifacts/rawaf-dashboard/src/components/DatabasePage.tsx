@@ -207,11 +207,13 @@ interface Props {
   filters:             FilterState;
   onSelectContractor?: (id: number) => void;
   onSearchAndNavigate?: (term: string) => void;
+  currentUser?:        { role: string } | null;
 }
 
 /* ─── Main Component ───────────────────────────── */
-export default function DatabasePage({ search, filters, onSelectContractor, onSearchAndNavigate }: Props) {
-  const [authenticated, setAuthenticated] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1");
+export default function DatabasePage({ search, filters, onSelectContractor, onSearchAndNavigate, currentUser }: Props) {
+  const isAdminUser = currentUser?.role === "admin";
+  const [authenticated, setAuthenticated] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1" || (currentUser?.role === "admin"));
   const [wasAutoLocked, setWasAutoLocked] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -239,16 +241,24 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (sessionStorage.getItem(SESSION_KEY) !== "1" && authenticated) {
+    if (isAdminUser) {
+      setAuthenticated(true);
+      sessionStorage.setItem(SESSION_KEY, "1");
+    }
+  }, [isAdminUser]);
+
+  useEffect(() => {
+    if (!isAdminUser && sessionStorage.getItem(SESSION_KEY) !== "1" && authenticated) {
       setAuthenticated(false);
     }
-  }, [authenticated]);
+  }, [authenticated, isAdminUser]);
 
   /* ── Idle auto-lock (5 min inactivity) ── */
   const IDLE_MS       = 5 * 60 * 1000; // 5 minutes
   const idleTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function triggerAutoLock() {
+    if (isAdminUser) return;
     sessionStorage.removeItem(SESSION_KEY);
     setAuthenticated(false);
     setWasAutoLocked(true);

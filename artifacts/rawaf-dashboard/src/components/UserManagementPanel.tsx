@@ -276,24 +276,30 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
                         </td>
                         {/* Actions */}
                         <td style={{ padding: "12px 20px" }}>
-                          <div style={{ display: "flex", gap: 7, justifyContent: "flex-end" }}>
+                          <div style={{ display: "flex", gap: 7, justifyContent: "flex-end", alignItems: "center" }}>
                             <button
                               onClick={() => openEdit(u)} title="تعديل"
                               style={{ ...BTN_ICON, background: "rgba(197,160,89,0.1)", color: "#c5a059" }}
                               onMouseEnter={e => (e.currentTarget.style.background = "rgba(197,160,89,0.22)")}
                               onMouseLeave={e => (e.currentTarget.style.background = "rgba(197,160,89,0.1)")}
                             >✏️</button>
-                            <button
-                              onClick={() => void toggleActive(u)}
-                              title={u.isActive ? "تعطيل الحساب" : "تفعيل الحساب"}
-                              style={{ ...BTN_ICON, background: u.isActive ? "rgba(255,90,90,0.08)" : "rgba(43,170,116,0.1)", color: u.isActive ? "#ff6464" : "#2baa74", border: `1px solid ${u.isActive ? "rgba(255,90,90,0.25)" : "rgba(43,170,116,0.25)"}` }}
-                            >{u.isActive ? "🚫" : "✅"}</button>
-                            <button
-                              onClick={() => setDeleteConfirm(u)} title="حذف"
-                              style={{ ...BTN_ICON, background: "rgba(200,40,40,0.08)", color: "#e05555", border: "1px solid rgba(200,40,40,0.22)" }}
-                              onMouseEnter={e => (e.currentTarget.style.background = "rgba(200,40,40,0.18)")}
-                              onMouseLeave={e => (e.currentTarget.style.background = "rgba(200,40,40,0.08)")}
-                            >🗑️</button>
+                            {u.loginName !== "admin" && (
+                              <button
+                                onClick={() => void toggleActive(u)}
+                                title={u.isActive ? "تعطيل الحساب" : "تفعيل الحساب"}
+                                style={{ ...BTN_ICON, background: u.isActive ? "rgba(255,90,90,0.08)" : "rgba(43,170,116,0.1)", color: u.isActive ? "#ff6464" : "#2baa74", border: `1px solid ${u.isActive ? "rgba(255,90,90,0.25)" : "rgba(43,170,116,0.25)"}` }}
+                              >{u.isActive ? "🚫" : "✅"}</button>
+                            )}
+                            {u.loginName !== "admin" ? (
+                              <button
+                                onClick={() => setDeleteConfirm(u)} title="حذف"
+                                style={{ ...BTN_ICON, background: "rgba(200,40,40,0.08)", color: "#e05555", border: "1px solid rgba(200,40,40,0.22)" }}
+                                onMouseEnter={e => (e.currentTarget.style.background = "rgba(200,40,40,0.18)")}
+                                onMouseLeave={e => (e.currentTarget.style.background = "rgba(200,40,40,0.08)")}
+                              >🗑️</button>
+                            ) : (
+                              <span title="المسؤول الرئيسي محمي من الحذف" style={{ fontSize: "0.6rem", color: "rgba(197,160,89,0.5)", padding: "4px 8px", border: "1px solid rgba(197,160,89,0.2)", borderRadius: 8, whiteSpace: "nowrap" }}>محمي 🔒</span>
+                            )}
                           </div>
                         </td>
                       </tr>
