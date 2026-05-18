@@ -50,10 +50,14 @@ function matchesSearch(c: Contractor, q: string): boolean {
   return [
     c.contractNo, c.contractor, c.project, c.portfolio,
     c.workType, c.technicalScope,
-    (c as any).businessProgram ?? "",
-    (c as any).workCategory    ?? "",
-    (c as any).mainActivity    ?? "",
-    (c as any).unit            ?? "",
+    c.businessProgram  ?? "",
+    c.workFamily       ?? "",
+    c.workCategory     ?? "",
+    c.mainActivity     ?? "",
+    c.itemScope        ?? "",
+    c.techSpecs        ?? "",
+    c.measurements     ?? "",
+    c.unit             ?? "",
     String(c.price ?? ""),
     c.phone ?? "", c.email ?? "",
   ].some((field) => normalize(String(field)).includes(n));
@@ -68,9 +72,13 @@ const FILTER_DEFS: {
   { key: "contractor",      label: "المقاول / المورد",  getter: (c) => c.contractor },
   { key: "portfolio",       label: "المحفظة",            getter: (c) => c.portfolio },
   { key: "project",         label: "المشروع",            getter: (c) => c.project },
-  { key: "businessProgram", label: "برنامج الأعمال",     getter: (c) => (c as any).businessProgram ?? "" },
+  { key: "businessProgram", label: "برنامج الأعمال",     getter: (c) => c.businessProgram  ?? "" },
+  { key: "workFamily",      label: "عائلة الأعمال",      getter: (c) => c.workFamily       ?? "" },
   { key: "workType",        label: "نوع الأعمال",        getter: (c) => c.workType },
-  { key: "workCategory",    label: "نوع التعاقد",         getter: (c) => (c as any).workCategory ?? "" },
+  { key: "itemScope",       label: "شمولية البند",       getter: (c) => c.itemScope        ?? "" },
+  { key: "techSpecs",       label: "مواصفات فنية",       getter: (c) => c.techSpecs        ?? "" },
+  { key: "measurements",    label: "قياسات",             getter: (c) => c.measurements     ?? "" },
+  { key: "workCategory",    label: "نوع التعاقد",        getter: (c) => c.workCategory     ?? "" },
 ];
 
 /* ═══════════════════════════════════════════════════════════

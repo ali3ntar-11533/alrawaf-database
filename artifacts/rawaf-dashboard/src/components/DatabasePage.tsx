@@ -366,9 +366,13 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
         strictMatch(c.contractor,                       filters.contractor)      &&
         strictMatch(c.portfolio,                        filters.portfolio)       &&
         strictMatch(c.project,                          filters.project)         &&
-        strictMatch((c as any).businessProgram ?? "",   filters.businessProgram) &&
+        strictMatch(c.businessProgram           ?? "",  filters.businessProgram) &&
+        strictMatch(c.workFamily                ?? "",  filters.workFamily)      &&
         strictMatch(c.workType,                         filters.workType)        &&
-        strictMatch((c as any).workCategory    ?? "",   filters.workCategory);
+        strictMatch(c.itemScope                 ?? "",  filters.itemScope)       &&
+        strictMatch(c.techSpecs                 ?? "",  filters.techSpecs)       &&
+        strictMatch(c.measurements              ?? "",  filters.measurements)    &&
+        strictMatch(c.workCategory              ?? "",  filters.workCategory);
 
       /* ── itemPrice filter: exact price match when a value is entered ── */
       const priceFilter = filters.itemPrice.trim();
