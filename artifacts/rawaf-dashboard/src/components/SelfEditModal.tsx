@@ -36,22 +36,19 @@ const INPUT: React.CSSProperties = {
 };
 
 export default function SelfEditModal({ currentUser, onClose, onSaved }: Props) {
-  const [name,      setName]      = useState(currentUser.name);
-  const [jobTitle,  setJobTitle]  = useState(currentUser.jobTitle);
   const [loginName, setLoginName] = useState(currentUser.loginName);
   const [password,  setPassword]  = useState("");
   const [saving,    setSaving]    = useState(false);
   const [error,     setError]     = useState<string | null>(null);
 
   async function handleSave() {
-    if (!name.trim()) { setError("الاسم الكامل مطلوب"); return; }
     if (!loginName.trim()) { setError("اسم المستخدم مطلوب"); return; }
     setSaving(true); setError(null);
     try {
       const body: Record<string, string> = {
         userId:    String(currentUser.id),
-        name:      name.trim(),
-        jobTitle:  jobTitle.trim(),
+        name:      currentUser.name,
+        jobTitle:  currentUser.jobTitle,
         loginName: loginName.trim(),
       };
       if (password) body.password = password;
@@ -87,23 +84,7 @@ export default function SelfEditModal({ currentUser, onClose, onSaved }: Props) 
         {/* Fields */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
-            <label style={LABEL}>الاسم الكامل</label>
-            <input
-              style={INPUT} value={name} onChange={e => setName(e.target.value)}
-              onFocus={e => (e.target.style.borderColor = "rgba(197,160,89,0.8)")}
-              onBlur={e  => (e.target.style.borderColor = "rgba(197,160,89,0.28)")}
-            />
-          </div>
-          <div>
-            <label style={LABEL}>المسمى الوظيفي</label>
-            <input
-              style={INPUT} value={jobTitle} onChange={e => setJobTitle(e.target.value)}
-              onFocus={e => (e.target.style.borderColor = "rgba(197,160,89,0.8)")}
-              onBlur={e  => (e.target.style.borderColor = "rgba(197,160,89,0.28)")}
-            />
-          </div>
-          <div>
-            <label style={LABEL}>اسم المستخدم (للدخول)</label>
+            <label style={LABEL}>اسم المستخدم</label>
             <input
               style={INPUT} value={loginName} onChange={e => setLoginName(e.target.value)}
               onFocus={e => (e.target.style.borderColor = "rgba(197,160,89,0.8)")}

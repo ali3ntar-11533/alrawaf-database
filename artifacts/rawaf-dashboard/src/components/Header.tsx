@@ -143,16 +143,21 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
                 </span>
                 <button
                   onClick={() => setShowSelfEdit(true)}
+                  title="تعديل بيانات الدخول"
                   style={{
-                    background: "none", border: "1px solid rgba(197,160,89,0.35)",
-                    borderRadius: 6, padding: "2px 10px",
-                    color: "rgba(197,160,89,0.85)", fontSize: "0.68rem", fontWeight: 700,
-                    fontFamily: "Tajawal, sans-serif", cursor: "pointer", letterSpacing: "0.03em",
-                    transition: "all 0.18s",
+                    background: "none", border: "none", padding: "2px 4px",
+                    color: "rgba(197,160,89,0.65)", cursor: "pointer",
+                    display: "flex", alignItems: "center", lineHeight: 1,
+                    transition: "color 0.18s",
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(197,160,89,0.12)"; e.currentTarget.style.color = "#c5a059"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "rgba(197,160,89,0.85)"; }}
-                >تعديل البيانات</button>
+                  onMouseEnter={e => (e.currentTarget.style.color = "#c5a059")}
+                  onMouseLeave={e => (e.currentTarget.style.color = "rgba(197,160,89,0.65)")}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
               </div>
             )}
 
