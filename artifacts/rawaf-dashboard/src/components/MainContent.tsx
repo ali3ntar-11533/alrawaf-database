@@ -299,9 +299,16 @@ export default function MainContent({ contractor, allContractors, filteredContra
             <h2 style={{ fontSize: "0.98rem", fontWeight: 800, color: "#ffffff", lineHeight: 1.3, margin: "0 0 5px 0" }}>
               {contractor.contractor}
             </h2>
-            {/* Contract number directly under name, right-aligned */}
-            <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.35)", letterSpacing: "0.04em" }}>
-              {contractor.contractNo}
+            {/* Contract number + contract year side by side */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.35)", letterSpacing: "0.04em" }}>
+                {contractor.contractNo}
+              </div>
+              {contractor.contractYear && (
+                <div style={{ fontSize: "0.58rem", color: "rgba(197,160,89,0.6)", background: "rgba(197,160,89,0.1)", borderRadius: "4px", padding: "1px 7px", letterSpacing: "0.04em", fontWeight: 700 }}>
+                  {contractor.contractYear}
+                </div>
+              )}
             </div>
           </div>
           <div style={{ textAlign: "left", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
@@ -315,15 +322,14 @@ export default function MainContent({ contractor, allContractors, filteredContra
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderBottom: "1px solid #f0ebe0" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", borderBottom: "1px solid #f0ebe0" }}>
           {[
-            { icon: <MapPin size={12} />,    label: "المحفظة",       value: contractor.portfolio },
-            { icon: <Building2 size={12} />, label: "المشروع",       value: contractor.project },
-            { icon: <Briefcase size={12} />, label: "النشاط الرئيسي", value: mainActivity || "—" },
+            { icon: <MapPin size={12} />,    label: "المحفظة", value: contractor.portfolio },
+            { icon: <Building2 size={12} />, label: "المشروع", value: contractor.project },
           ].map((item, i) => (
             <div
               key={i}
-              style={{ padding: "12px 16px", borderLeft: i < 2 ? "1px solid #f0ebe0" : "none", transition: "background 0.18s" }}
+              style={{ padding: "12px 16px", borderLeft: i < 1 ? "1px solid #f0ebe0" : "none", transition: "background 0.18s" }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(197,160,89,0.04)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "")}
             >
@@ -364,10 +370,16 @@ export default function MainContent({ contractor, allContractors, filteredContra
           <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "linear-gradient(135deg, var(--gold), #a88540)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <FileText size={14} color="#fff" />
           </div>
-          <div>
+          <div style={{ flex: 1 }}>
             <h3 style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "1px" }}>نطاق التوصيف الفني للبند</h3>
             <div style={{ fontSize: "0.58rem", color: "#bbb" }}>البيانات الفنية للمقاول المختار</div>
           </div>
+          {contractor.itemCode && (
+            <div style={{ textAlign: "left", flexShrink: 0, background: "rgba(59,143,204,0.07)", border: "1px solid rgba(59,143,204,0.2)", borderRadius: "8px", padding: "5px 12px" }}>
+              <div style={{ fontSize: "0.48rem", color: "#3b8fcc", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, marginBottom: "2px" }}>كود الفريد للبند</div>
+              <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--charcoal)", fontFamily: "monospace", letterSpacing: "0.05em" }}>{contractor.itemCode}</div>
+            </div>
+          )}
         </div>
 
         {/* الوصف الفني للبند */}

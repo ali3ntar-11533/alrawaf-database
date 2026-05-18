@@ -553,8 +553,31 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
 
       {/* Table */}
       <div className="card" style={{ padding: 0, overflow: "hidden", width: "100%" }}>
-        <div style={{ overflowX: "auto", width: "100%" }}>
-          <table style={{ tableLayout: "auto", borderCollapse: "collapse", direction: "rtl", minWidth: "2400px", width: "max-content" }}>
+        <div style={{ width: "100%", overflowX: "hidden" }}>
+          <table style={{ tableLayout: "fixed", borderCollapse: "collapse", direction: "rtl", width: "100%" }}>
+            <colgroup>
+              <col style={{ width: "5%" }}   />{/* رقم العقد */}
+              <col style={{ width: "3.5%" }} />{/* سنة العقد */}
+              <col style={{ width: "8%" }}   />{/* المقاول */}
+              <col style={{ width: "5.5%" }} />{/* المشروع */}
+              <col style={{ width: "4%" }}   />{/* المحفظة */}
+              <col style={{ width: "5%" }}   />{/* النشاط */}
+              <col style={{ width: "4.5%" }} />{/* برنامج */}
+              <col style={{ width: "4.5%" }} />{/* عائلة */}
+              <col style={{ width: "4.5%" }} />{/* نوع الأعمال */}
+              <col style={{ width: "4.5%" }} />{/* شمولية */}
+              <col style={{ width: "4.5%" }} />{/* مواصفات */}
+              <col style={{ width: "3.5%" }} />{/* قياسات */}
+              <col style={{ width: "4.5%" }} />{/* كود */}
+              <col style={{ width: "8%" }}   />{/* الوصف الفني */}
+              <col style={{ width: "4%" }}   />{/* نوع التعاقد */}
+              <col style={{ width: "3%" }}   />{/* الوحدة */}
+              <col style={{ width: "4.5%" }} />{/* السعر */}
+              <col style={{ width: "4%" }}   />{/* المحتوى المحلي */}
+              <col style={{ width: "5%" }}   />{/* التواصل */}
+              <col style={{ width: "4%" }}   />{/* التقييم */}
+              <col style={{ width: "5%" }}   />{/* إجراءات */}
+            </colgroup>
             <thead>
               <tr style={{ background: "var(--charcoal)" }}>
                 {[
