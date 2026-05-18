@@ -214,7 +214,7 @@ function exportToExcel(data: Contractor[]) {
 }
 
 /* ─── Styles ───────────────────────────────── */
-const tdStyle: React.CSSProperties = { padding: "8px 10px", fontSize: "0.72rem", color: "#555", verticalAlign: "middle", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+const tdStyle: React.CSSProperties = { padding: "7px 4px", fontSize: "0.7rem", color: "#555", verticalAlign: "middle", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
 const overlayStyle: React.CSSProperties = { position: "fixed", inset: 0, background: "rgba(30,25,20,0.55)", backdropFilter: "blur(4px)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" };
 const modalStyle: React.CSSProperties = { width: "100%", maxWidth: "680px", maxHeight: "88vh", overflowY: "auto", padding: "28px 28px", position: "relative" };
 const closeBtnStyle: React.CSSProperties = { position: "absolute", top: "16px", left: "16px", background: "none", border: "none", cursor: "pointer", color: "#aaa", padding: "4px" };
@@ -552,13 +552,13 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
       </div>
 
       {/* Table */}
-      <div className="card" style={{ padding: 0, overflow: "hidden", width: "100%" }}>
-        <div style={{ width: "100%", overflowX: "hidden" }}>
+      <div className="card" style={{ padding: 0, overflow: "hidden", width: "100%", maxWidth: "100%" }}>
+        <div style={{ width: "100%", overflowX: "clip" }}>
           <table style={{ tableLayout: "fixed", borderCollapse: "collapse", direction: "rtl", width: "100%" }}>
             <colgroup>
-              <col style={{ width: "4.5%" }} />{/* رقم العقد */}
+              <col style={{ width: "3.5%" }} />{/* رقم العقد */}
               <col style={{ width: "2.8%" }} />{/* سنة العقد — أرقام */}
-              <col style={{ width: "9%" }}   />{/* المقاول — نصوص طويلة */}
+              <col style={{ width: "10%" }}  />{/* المقاول — نصوص طويلة */}
               <col style={{ width: "6.5%" }} />{/* المشروع — نصوص طويلة */}
               <col style={{ width: "3.2%" }} />{/* المحفظة — قصيرة */}
               <col style={{ width: "5.5%" }} />{/* النشاط */}
@@ -587,7 +587,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                   "الوصف الفني للبند", "نوع التعاقد", "الوحدة", "السعر",
                   "المحتوى المحلي", "التواصل", "التقييم", "إجراءات"
                 ].map((h, i) => (
-                  <th key={i} style={{ padding: "12px 10px", textAlign: i >= 19 ? "center" : "right", fontSize: "0.63rem", fontWeight: 700, color: "rgba(197,160,89,0.9)", letterSpacing: "0.05em", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", borderBottom: "2px solid rgba(197,160,89,0.2)" }}>
+                  <th key={i} style={{ padding: "8px 4px", textAlign: i >= 19 ? "center" : "right", fontSize: "0.58rem", fontWeight: 700, color: "rgba(197,160,89,0.9)", letterSpacing: "0.03em", whiteSpace: "normal", wordBreak: "break-word", lineHeight: 1.3, borderBottom: "2px solid rgba(197,160,89,0.2)", verticalAlign: "bottom" }}>
                     {h}
                   </th>
                 ))}
