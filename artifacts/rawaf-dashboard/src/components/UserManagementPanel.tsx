@@ -364,17 +364,19 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
                   />
                 </div>
               ))}
-              <div>
-                <label style={{ display: "block", fontSize: "0.63rem", color: "rgba(197,160,89,0.82)", fontWeight: 700, marginBottom: 5, letterSpacing: "0.05em" }}>الصلاحية</label>
-                <select
-                  value={formRole}
-                  onChange={e => setFormRole(e.target.value)}
-                  style={{ width: "100%", padding: "10px 12px", background: "rgba(20,16,11,0.98)", border: "1.5px solid rgba(197,160,89,0.28)", borderRadius: 9, color: "#fff", fontSize: "0.87rem", fontFamily: "Tajawal, sans-serif", direction: "rtl", outline: "none", boxSizing: "border-box", cursor: "pointer" }}
-                >
-                  <option value="user">مستخدم</option>
-                  <option value="admin">مسؤول</option>
-                </select>
-              </div>
+              {editingUser?.loginName !== "admin" && (
+                <div>
+                  <label style={{ display: "block", fontSize: "0.63rem", color: "rgba(197,160,89,0.82)", fontWeight: 700, marginBottom: 5, letterSpacing: "0.05em" }}>الصلاحية</label>
+                  <select
+                    value={formRole}
+                    onChange={e => setFormRole(e.target.value)}
+                    style={{ width: "100%", padding: "10px 12px", background: "rgba(20,16,11,0.98)", border: "1.5px solid rgba(197,160,89,0.28)", borderRadius: 9, color: "#fff", fontSize: "0.87rem", fontFamily: "Tajawal, sans-serif", direction: "rtl", outline: "none", boxSizing: "border-box", cursor: "pointer" }}
+                  >
+                    <option value="user">مستخدم</option>
+                    <option value="admin">مسؤول</option>
+                  </select>
+                </div>
+              )}
               {formError && (
                 <div style={{ background: "rgba(220,50,50,0.1)", border: "1px solid rgba(220,50,50,0.3)", borderRadius: 8, padding: "9px 12px", fontSize: "0.74rem", color: "#e05050", fontWeight: 600 }}>
                   ⚠ {formError}
