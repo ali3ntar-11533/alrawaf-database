@@ -25,8 +25,10 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
   const [showPanel,    setShowPanel]    = useState(false);
   const [showSelfEdit, setShowSelfEdit] = useState(false);
 
-  const isAdmin        = currentUser?.role === "admin";
+  const isSuperAdmin   = currentUser?.role === "superadmin";
+  const isAdmin        = isSuperAdmin || currentUser?.role === "admin";
   const canSeeDatabase = isAdmin;
+  const canManageUsers = isSuperAdmin;
 
   function handleLogoClick() {
     window.dispatchEvent(new CustomEvent("rawaf-logout"));
@@ -184,7 +186,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
             </nav>
 
             {/* Gear icon — admin only */}
-            {isAdmin && (
+            {canManageUsers && (
               <button
                 onClick={() => setShowPanel(true)}
                 onMouseEnter={() => setGearHover(true)}

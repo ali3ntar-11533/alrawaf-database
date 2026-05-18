@@ -56,8 +56,8 @@ router.delete("/admin/users/:id", async (req, res): Promise<void> => {
   const id = parseInt(req.params.id, 10);
   const [target] = await db.select().from(usersTable).where(eq(usersTable.id, id));
   if (!target) { res.status(404).json({ error: "Not found" }); return; }
-  if (target.role === "admin" && target.loginName === (process.env.ADMIN_LOGIN_NAME ?? "ali3ntar")) {
-    res.status(403).json({ error: "لا يمكن حذف المسؤول الرئيسي" });
+  if (target.role === "superadmin") {
+    res.status(403).json({ error: "لا يمكن حذف مسؤول النظام" });
     return;
   }
   await db.delete(userLogsTable).where(eq(userLogsTable.userId, id));

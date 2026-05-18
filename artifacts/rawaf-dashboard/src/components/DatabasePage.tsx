@@ -244,8 +244,8 @@ interface Props {
 
 /* ─── Main Component ───────────────────────────── */
 export default function DatabasePage({ search, filters, onSelectContractor, onSearchAndNavigate, currentUser }: Props) {
-  const isAdminUser = currentUser?.role === "admin";
-  const [authenticated, setAuthenticated] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1" || (currentUser?.role === "admin"));
+  const isAdminUser = currentUser?.role === "superadmin" || currentUser?.role === "admin";
+  const [authenticated, setAuthenticated] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1" || isAdminUser);
   const [wasAutoLocked, setWasAutoLocked] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [passwordError, setPasswordError] = useState("");

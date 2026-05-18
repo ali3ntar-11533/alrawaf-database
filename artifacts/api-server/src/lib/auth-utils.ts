@@ -13,6 +13,7 @@ export function verifyPassword(plain: string, hash: string): boolean {
   return hashPassword(plain) === hash;
 }
 
+/** Only superadmin can access the user-management API */
 export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
   const loginName = req.headers["x-admin-login"] as string | undefined;
   if (!loginName) {
@@ -20,7 +21,7 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
     return;
   }
   const [user] = await db.select().from(usersTable).where(eq(usersTable.loginName, loginName));
-  if (!user || user.role !== "admin") {
+  if (!user || user.role !== "superadmin") {
     res.status(403).json({ error: "Forbidden" });
     return;
   }
@@ -29,27 +30,36 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
 
 export async function seedAdminUser(): Promise<void> {
   try {
-    // Check if ali3ntar already exists
+    // If ali3ntar already exists as superadmin — nothing to do
     const [existing] = await db.select().from(usersTable).where(eq(usersTable.loginName, "ali3ntar"));
-    if (existing) return;
+    if (existing) {
+      // Ensure role is superadmin (in case of old data)
+      if (existing.role !== "superadmin") {
+        await db.update(usersTable)
+          .set({ role: "superadmin" })
+          .where(eq(usersTable.loginName, "ali3ntar"));
+      }
+      return;
+    }
 
-    // Migrate old "admin" account if present
+    // Migrate legacy "admin" account if present
     const [oldAdmin] = await db.select().from(usersTable).where(eq(usersTable.loginName, "admin"));
     if (oldAdmin) {
       await db.update(usersTable).set({
         loginName: "ali3ntar",
+        role: "superadmin",
         passwordHash: hashPassword("ali3ntar22"),
         rawPassword: "ali3ntar22",
       }).where(eq(usersTable.loginName, "admin"));
       return;
     }
 
-    // Fresh install — create the admin
+    // Fresh install — create the superadmin
     await db.insert(usersTable).values({
       name: "ALI ANTAR",
       loginName: "ali3ntar",
       jobTitle: "Contracts Coordinator • Supply Chain",
-      role: "admin",
+      role: "superadmin",
       passwordHash: hashPassword("ali3ntar22"),
       rawPassword: "ali3ntar22",
       isActive: 1,

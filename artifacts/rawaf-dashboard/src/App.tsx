@@ -38,7 +38,7 @@ function App() {
     const onLogin = (e: Event) => {
       const user = (e as CustomEvent<CurrentUser>).detail;
       setCurrentUser(user);
-      if (user.role !== "admin") setActiveTab("main");
+      if (user.role === "user") setActiveTab("main");
     };
     const onLogout = () => setCurrentUser(null);
     const onProfileUpdated = (e: Event) => {

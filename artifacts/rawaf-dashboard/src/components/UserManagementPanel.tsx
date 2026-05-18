@@ -36,7 +36,7 @@ function getInitials(name: string): string {
   return name.slice(0, 2);
 }
 
-const ROLE_LABELS: Record<string, string> = { admin: "مسؤول", user: "مستخدم" };
+const ROLE_LABELS: Record<string, string> = { superadmin: "مسؤول النظام", admin: "مسؤول", user: "مستخدم" };
 
 function PasswordCell({ pwd }: { pwd?: string | null }) {
   const [show, setShow] = useState(false);
@@ -308,10 +308,10 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
                           <span style={{
                             fontSize: "0.67rem", fontWeight: 700, padding: "4px 10px", borderRadius: 20,
                             whiteSpace: "nowrap", display: "inline-block",
-                            background: u.role === "admin" ? "rgba(197,160,89,0.14)" : "rgba(100,120,255,0.1)",
-                            border: `1px solid ${u.role === "admin" ? "rgba(197,160,89,0.4)" : "rgba(100,120,255,0.22)"}`,
-                            color: u.role === "admin" ? "#c5a059" : "rgba(150,160,255,0.9)",
-                          }}>{u.role === "admin" ? "مسؤول النظام" : (ROLE_LABELS[u.role] ?? u.role)}</span>
+                            background: u.role === "superadmin" ? "rgba(197,160,89,0.22)" : u.role === "admin" ? "rgba(197,160,89,0.10)" : "rgba(100,120,255,0.1)",
+                            border: `1px solid ${u.role === "superadmin" ? "rgba(197,160,89,0.6)" : u.role === "admin" ? "rgba(197,160,89,0.35)" : "rgba(100,120,255,0.22)"}`,
+                            color: u.role === "superadmin" ? "#e8c96a" : u.role === "admin" ? "#c5a059" : "rgba(150,160,255,0.9)",
+                          }}>{ROLE_LABELS[u.role] ?? u.role}</span>
                         </td>
                         {/* Actions */}
                         <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
@@ -322,14 +322,14 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
                               onMouseEnter={e => (e.currentTarget.style.background = "rgba(197,160,89,0.22)")}
                               onMouseLeave={e => (e.currentTarget.style.background = "rgba(197,160,89,0.1)")}
                             >✏️</button>
-                            {u.role !== "admin" && (
+                            {u.role !== "superadmin" && (
                               <button
                                 onClick={() => void toggleActive(u)}
                                 title={u.isActive ? "تعطيل الحساب" : "تفعيل الحساب"}
                                 style={{ ...BTN_ICON, background: u.isActive ? "rgba(255,90,90,0.08)" : "rgba(43,170,116,0.1)", color: u.isActive ? "#ff6464" : "#2baa74", border: `1px solid ${u.isActive ? "rgba(255,90,90,0.25)" : "rgba(43,170,116,0.25)"}` }}
                               >{u.isActive ? "🚫" : "✅"}</button>
                             )}
-                            {u.role !== "admin" ? (
+                            {u.role !== "superadmin" ? (
                               <button
                                 onClick={() => setDeleteConfirm(u)} title="حذف"
                                 style={{ ...BTN_ICON, background: "rgba(200,40,40,0.08)", color: "#e05555", border: "1px solid rgba(200,40,40,0.22)" }}
@@ -337,7 +337,7 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
                                 onMouseLeave={e => (e.currentTarget.style.background = "rgba(200,40,40,0.08)")}
                               >🗑️</button>
                             ) : (
-                              <span title="المسؤول الرئيسي محمي من الحذف" style={{ fontSize: "0.6rem", color: "rgba(197,160,89,0.5)", padding: "4px 8px", border: "1px solid rgba(197,160,89,0.2)", borderRadius: 8, whiteSpace: "nowrap" }}>محمي 🔒</span>
+                              <span title="مسؤول النظام محمي من الحذف" style={{ fontSize: "0.6rem", color: "rgba(197,160,89,0.5)", padding: "4px 8px", border: "1px solid rgba(197,160,89,0.2)", borderRadius: 8, whiteSpace: "nowrap" }}>محمي 🔒</span>
                             )}
                           </div>
                         </td>
@@ -355,7 +355,7 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
               { label: "إجمالي المستخدمين",  value: users.length },
               { label: "المفعّلون",           value: users.filter(u => u.isActive).length },
               { label: "المتصلون الآن",       value: onlineCount },
-              { label: "المسؤولون",           value: users.filter(u => u.role === "admin").length },
+              { label: "المسؤولون",           value: users.filter(u => u.role === "superadmin" || u.role === "admin").length },
             ].map(s => (
               <div key={s.label} style={{ textAlign: "center" }}>
                 <div style={{ fontSize: "1.15rem", fontWeight: 800, color: "#c5a059", lineHeight: 1 }}>{s.value}</div>
@@ -403,7 +403,7 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
                   />
                 </div>
               ))}
-              {editingUser?.role !== "admin" && (
+              {editingUser?.role !== "superadmin" && (
                 <div>
                   <label style={{ display: "block", fontSize: "0.63rem", color: "rgba(197,160,89,0.82)", fontWeight: 700, marginBottom: 5, letterSpacing: "0.05em" }}>الصلاحية</label>
                   <select
