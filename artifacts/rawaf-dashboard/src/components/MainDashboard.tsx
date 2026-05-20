@@ -32,23 +32,31 @@ function contractorMatchesSearch(c: Contractor, search: string): boolean {
     normalize(c.portfolio).includes(n)                       ||
     normalize(c.technicalScope).includes(n)                  ||
     normalize(c.workType).includes(n)                        ||
-    normalize((c as any).workCategory ?? "").includes(n)     ||
-    normalize((c as any).mainActivity ?? "").includes(n)     ||
-    normalize((c as any).businessProgram ?? "").includes(n)  ||
-    normalize((c as any).unit ?? "").includes(n)             ||
-    normalize(c.phone ?? "").includes(n)                     ||
-    normalize(c.email ?? "").includes(n)                     ||
-    normalize((c as any).localContent ?? "").includes(n)
+    normalize(c.workCategory    ?? "").includes(n)           ||
+    normalize(c.mainActivity    ?? "").includes(n)           ||
+    normalize(c.businessProgram ?? "").includes(n)           ||
+    normalize(c.workFamily      ?? "").includes(n)           ||
+    normalize(c.itemScope       ?? "").includes(n)           ||
+    normalize(c.techSpecs       ?? "").includes(n)           ||
+    normalize(c.measurements    ?? "").includes(n)           ||
+    normalize(c.unit            ?? "").includes(n)           ||
+    normalize(c.phone           ?? "").includes(n)           ||
+    normalize(c.email           ?? "").includes(n)           ||
+    normalize(c.localContent    ?? "").includes(n)
   );
 }
 
 function contractorMatchesFilters(c: Contractor, filters: FilterState): boolean {
-  if (filters.contractor && normalize(c.contractor) !== normalize(filters.contractor)) return false;
-  if (filters.portfolio  && normalize(c.portfolio)  !== normalize(filters.portfolio))  return false;
-  if (filters.project    && normalize(c.project)    !== normalize(filters.project))    return false;
-  if (filters.businessProgram && normalize((c as any).businessProgram ?? "") !== normalize(filters.businessProgram)) return false;
-  if (filters.workType   && normalize(c.workType)   !== normalize(filters.workType))   return false;
-  if (filters.workCategory && normalize((c as any).workCategory ?? "") !== normalize(filters.workCategory)) return false;
+  if (filters.contractor      && normalize(c.contractor)              !== normalize(filters.contractor))      return false;
+  if (filters.portfolio       && normalize(c.portfolio)               !== normalize(filters.portfolio))       return false;
+  if (filters.project         && normalize(c.project)                 !== normalize(filters.project))         return false;
+  if (filters.businessProgram && normalize(c.businessProgram ?? "")   !== normalize(filters.businessProgram)) return false;
+  if (filters.workFamily      && normalize(c.workFamily      ?? "")   !== normalize(filters.workFamily))      return false;
+  if (filters.workType        && normalize(c.workType)                !== normalize(filters.workType))        return false;
+  if (filters.workCategory    && normalize(c.workCategory    ?? "")   !== normalize(filters.workCategory))    return false;
+  if (filters.itemScope       && normalize(c.itemScope       ?? "")   !== normalize(filters.itemScope))       return false;
+  if (filters.techSpecs       && normalize(c.techSpecs       ?? "")   !== normalize(filters.techSpecs))       return false;
+  if (filters.measurements    && normalize(c.measurements    ?? "")   !== normalize(filters.measurements))    return false;
   return true;
 }
 
