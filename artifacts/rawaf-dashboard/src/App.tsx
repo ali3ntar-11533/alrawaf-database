@@ -75,8 +75,21 @@ function App() {
   }
 
   function handleFiltersChange(f: FilterState) {
+    // itemPrice is comparison-only — don't reset the selected contractor when only it changes
+    const onlyPriceChanged =
+      f.itemPrice !== filters.itemPrice &&
+      f.contractor      === filters.contractor      &&
+      f.portfolio       === filters.portfolio       &&
+      f.project         === filters.project         &&
+      f.businessProgram === filters.businessProgram &&
+      f.workFamily      === filters.workFamily      &&
+      f.workType        === filters.workType        &&
+      f.workCategory    === filters.workCategory    &&
+      f.itemScope       === filters.itemScope       &&
+      f.techSpecs       === filters.techSpecs       &&
+      f.measurements    === filters.measurements;
     setFilters(f);
-    setSelectedId(null);
+    if (!onlyPriceChanged) setSelectedId(null);
   }
 
   return (
