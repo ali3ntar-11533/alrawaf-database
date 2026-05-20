@@ -1,3 +1,4 @@
+import { useRef, useEffect } from "react";
 import type { Contractor } from "../contractors/types";
 
 interface Props {
@@ -38,9 +39,30 @@ export default function Sidebar({
   isLoading,
   hasFilter,
 }: Props) {
+  const sidebarRef = useRef<HTMLElement>(null);
+
+  // Sync sidebar height to match the content area on the right
+  useEffect(() => {
+    const el = sidebarRef.current;
+    if (!el) return;
+    const grid = el.closest(".main-grid");
+    if (!grid) return;
+    const content = grid.querySelector(".content-area") as HTMLElement | null;
+    if (!content) return;
+
+    const sync = () => {
+      const h = content.offsetHeight;
+      if (h > 0) el.style.minHeight = `${h}px`;
+    };
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(content);
+    return () => ro.disconnect();
+  });
+
   if (isLoading) {
     return (
-      <aside className="sidebar animate-fade">
+      <aside ref={sidebarRef} className="sidebar animate-fade">
         {[1, 2, 3, 4].map((n) => (
           <div key={n} style={{ background: "#f5f0e8", borderRadius: "10px", height: "66px", marginBottom: "8px" }} />
         ))}
@@ -50,6 +72,7 @@ export default function Sidebar({
 
   return (
     <aside
+      ref={sidebarRef}
       className="sidebar animate-slide-in"
       style={{ display: "flex", flexDirection: "column", padding: 0, overflow: "hidden" }}
     >
