@@ -737,16 +737,23 @@ export default function MainContent({ contractor, allContractors, filteredContra
             const pct      = refPrice > 0 ? ((diff / refPrice) * 100).toFixed(1) : "0.0";
             const isHigher = customPrice > refPrice;
             const isEqual  = diff === 0;
-            const refColor = refStat?.color ?? "#3b8fcc";
-            const refLabel = refStat?.label ?? "المتوسط";
+            const refLabel = refStat?.label ?? "الأدنى";
+            // Color: purple when on the custom-price cell itself, red when higher, green when lower, gray when equal
+            const noteColor = activeStat === 0
+              ? "#9b59b6"
+              : isEqual
+                ? "#888888"
+                : isHigher
+                  ? "#e74c3c"
+                  : "#2baa74";
             const text = isEqual
               ? `السعر المقارن (${formatExact(customPrice)}) يساوي ${refLabel}`
               : isHigher
                 ? `▲ السعر المقارن (${formatExact(customPrice)}) أعلى من ${refLabel} بـ ${formatExact(diff)} ر.س (${pct}%)`
                 : `✓ السعر المقارن (${formatExact(customPrice)}) أقل من ${refLabel} بـ ${formatExact(diff)} ر.س (${pct}%)`;
             return (
-              <div style={{ padding: "8px 16px", borderTop: `1px solid ${refColor}55`, background: `${refColor}14`, textAlign: "center", transition: "background 0.25s, border-color 0.25s" }}>
-                <span style={{ fontSize: "0.6rem", color: refColor, fontWeight: 700 }}>{text}</span>
+              <div style={{ padding: "8px 16px", borderTop: `1px solid ${noteColor}55`, background: `${noteColor}18`, textAlign: "center", transition: "background 0.25s, border-color 0.25s" }}>
+                <span style={{ fontSize: "0.6rem", color: noteColor, fontWeight: 700 }}>{text}</span>
               </div>
             );
           })()}
