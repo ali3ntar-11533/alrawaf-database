@@ -1,7 +1,8 @@
 import { Router } from "express";
+import { writeFileSync } from "fs";
 import { db, usersTable, userLogsTable } from "@workspace/db";
 import { eq, and, gte, desc } from "drizzle-orm";
-import { hashPassword, requireAdmin } from "../lib/auth-utils";
+import { hashPassword, requireAdmin, getSeedFilePath } from "../lib/auth-utils";
 
 const router = Router();
 router.use(requireAdmin);
@@ -13,6 +14,29 @@ function safeUser(user: typeof usersTable.$inferSelect) {
     lastActive: safe.lastActive?.toISOString() ?? null,
     createdAt: safe.createdAt.toISOString(),
   };
+}
+
+/** Writes the full user list to users-seed.json so it survives fresh deployments */
+async function writeSeedFile(): Promise<void> {
+  try {
+    const users = await db
+      .select()
+      .from(usersTable)
+      .orderBy(usersTable.createdAt);
+    const seedData = {
+      users: users.map((u) => ({
+        name: u.name,
+        loginName: u.loginName,
+        jobTitle: u.jobTitle,
+        role: u.role,
+        rawPassword: u.rawPassword ?? "",
+        isActive: u.isActive,
+      })),
+    };
+    writeFileSync(getSeedFilePath(), JSON.stringify(seedData, null, 2), "utf8");
+  } catch {
+    // Non-fatal — seed file update is best-effort
+  }
 }
 
 
@@ -31,6 +55,7 @@ router.post("/admin/users", async (req, res): Promise<void> => {
     name, loginName, jobTitle: jobTitle || "", role: role || "user",
     passwordHash: hashPassword(password), rawPassword: password, isActive: 1,
   }).returning();
+  await writeSeedFile();
   res.status(201).json(safeUser(row));
 });
 
@@ -49,6 +74,7 @@ router.put("/admin/users/:id", async (req, res): Promise<void> => {
   }
   const [row] = await db.update(usersTable).set(updates).where(eq(usersTable.id, id)).returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
+  await writeSeedFile();
   res.json(safeUser(row));
 });
 
@@ -63,6 +89,7 @@ router.delete("/admin/users/:id", async (req, res): Promise<void> => {
   await db.delete(userLogsTable).where(eq(userLogsTable.userId, id));
   const [row] = await db.delete(usersTable).where(eq(usersTable.id, id)).returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
+  await writeSeedFile();
   res.sendStatus(204);
 });
 

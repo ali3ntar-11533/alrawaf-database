@@ -1,4 +1,6 @@
 import { createHash } from "crypto";
+import { existsSync, readFileSync } from "fs";
+import { resolve, dirname, join } from "path";
 import type { Request, Response, NextFunction } from "express";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
@@ -26,6 +28,62 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
     return;
   }
   next();
+}
+
+/** Resolves the api-server root directory regardless of dev vs prod */
+function getApiServerRoot(): string {
+  // process.argv[1] is always artifacts/api-server/dist/index.mjs in both dev and prod
+  return resolve(dirname(resolve(process.argv[1])), "..");
+}
+
+/** Returns path to users-seed.json */
+export function getSeedFilePath(): string {
+  return join(getApiServerRoot(), "users-seed.json");
+}
+
+type SeedUser = {
+  name: string;
+  loginName: string;
+  jobTitle: string;
+  role: string;
+  rawPassword: string;
+  isActive: number;
+};
+
+/**
+ * Restores any users from users-seed.json that are missing in the database.
+ * Runs on every server start — ensures no user is ever permanently lost,
+ * even after a fresh deployment or new environment.
+ */
+export async function seedUsersFromFile(): Promise<void> {
+  try {
+    const seedFile = getSeedFilePath();
+    if (!existsSync(seedFile)) return;
+    const raw = readFileSync(seedFile, "utf8");
+    const data = JSON.parse(raw) as { users: SeedUser[] };
+    if (!Array.isArray(data.users)) return;
+
+    for (const u of data.users) {
+      if (!u.loginName || !u.rawPassword) continue;
+      const [existing] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.loginName, u.loginName));
+      if (!existing) {
+        await db.insert(usersTable).values({
+          name: u.name,
+          loginName: u.loginName,
+          jobTitle: u.jobTitle || "",
+          role: u.role || "user",
+          passwordHash: hashPassword(u.rawPassword),
+          rawPassword: u.rawPassword,
+          isActive: u.isActive ?? 1,
+        });
+      }
+    }
+  } catch {
+    // Seed file may not exist in some environments — not a fatal error
+  }
 }
 
 export async function seedAdminUser(): Promise<void> {
