@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useLayoutEffect } from "react";
 import type { Contractor } from "../contractors/types";
 
 interface Props {
@@ -41,8 +41,9 @@ export default function Sidebar({
 }: Props) {
   const sidebarRef = useRef<HTMLElement>(null);
 
-  // Sync sidebar height to match the content area on the right
-  useEffect(() => {
+  // Sync sidebar height to match the content area — useLayoutEffect fires
+  // synchronously after DOM mutations so we always read the correct height.
+  useLayoutEffect(() => {
     const el = sidebarRef.current;
     if (!el) return;
     const grid = el.closest(".main-grid");
@@ -50,19 +51,14 @@ export default function Sidebar({
     const content = grid.querySelector(".content-area") as HTMLElement | null;
     if (!content) return;
 
-    let raf: number;
     const sync = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const h = content.offsetHeight;
-        if (h > 0) el.style.minHeight = `${h}px`;
-      });
+      const h = content.offsetHeight;
+      el.style.minHeight = h > 0 ? `${h}px` : "";
     };
     sync();
     const ro = new ResizeObserver(sync);
     ro.observe(content);
-    ro.observe(el);
-    return () => { ro.disconnect(); cancelAnimationFrame(raf); };
+    return () => ro.disconnect();
   });
 
   if (isLoading) {
