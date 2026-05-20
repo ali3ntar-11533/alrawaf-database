@@ -169,7 +169,7 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
     background: "linear-gradient(160deg, #1a1510 0%, #110e0a 100%)",
     border: "1px solid rgba(197,160,89,0.4)",
     borderRadius: 20,
-    width: "100%", maxWidth: 1060,
+    width: "calc(100vw - 60px)", maxWidth: 1400,
     maxHeight: "90vh",
     display: "flex", flexDirection: "column",
     boxShadow: "0 32px 120px rgba(0,0,0,0.85), inset 0 0 0 1px rgba(197,160,89,0.06)",
