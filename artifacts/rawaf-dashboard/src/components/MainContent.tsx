@@ -185,6 +185,21 @@ export default function MainContent({ contractor, allContractors, filteredContra
     }
   })();
 
+  // ── Comparison confidence indicator ──
+  const confidence: { label: string; color: string; dot: string; tip: string } = (() => {
+    switch (poolMethod) {
+      case "itemCode":
+        return { label: "دقيق جداً", color: "#3b8fcc", dot: "#3b8fcc", tip: "تطابق بكود البند — أعلى دقة ممكنة" };
+      case "type+family+scope":
+        return { label: "دقيق", color: "#2baa74", dot: "#2baa74", tip: "تطابق: نوع الأعمال + عائلة الأعمال + شمولية البند" };
+      case "type+family":
+        return { label: "متوسط", color: "#c5a059", dot: "#c5a059", tip: "تطابق: نوع الأعمال + عائلة الأعمال فقط — يُنصح بتعبئة شمولية البند" };
+      case "type":
+      default:
+        return { label: "أساسي", color: "#e07b2a", dot: "#e07b2a", tip: "تطابق: نوع الأعمال فقط — قد تشمل أصناف مختلفة. يُنصح بتعبئة عائلة الأعمال وشمولية البند" };
+    }
+  })();
+
   // Only consider records with a valid price > 0 for min/max/avg calculations
   const validPricePool = pricePool.filter((c) => c.price > 0);
   const allPrices      = validPricePool.map((c) => c.price);
@@ -532,9 +547,19 @@ export default function MainContent({ contractor, allContractors, filteredContra
                 <DollarSign size={13} style={{ color: "var(--gold)" }} />
                 مقارنة الأسعار
               </h3>
-              <span style={{ fontSize: "0.58rem", color: "#bbb", background: "#f5f0e8", borderRadius: "4px", padding: "2px 7px", textAlign: "left" }} title={`نطاق المقارنة: ${poolLabel}`}>
-                أفضل {best5.length} قيمة • {poolMethod === "itemCode" ? `كود: ${contractor?.itemCode}` : poolMethod === "type+family+scope" ? "نوع + عائلة + شمولية" : poolMethod === "type+family" ? "نوع + عائلة" : "نوع الأعمال"} • سعر + تقييم
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                {/* Confidence badge */}
+                <span
+                  title={confidence.tip}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.58rem", fontWeight: 700, color: confidence.color, background: `${confidence.color}14`, border: `1px solid ${confidence.color}30`, borderRadius: "5px", padding: "2px 8px", cursor: "help", whiteSpace: "nowrap" }}
+                >
+                  <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: confidence.dot, flexShrink: 0, display: "inline-block" }} />
+                  {confidence.label}
+                </span>
+                <span style={{ fontSize: "0.58rem", color: "#bbb", background: "#f5f0e8", borderRadius: "4px", padding: "2px 7px", textAlign: "left" }} title={`نطاق المقارنة: ${poolLabel}`}>
+                  أفضل {best5.length} • سعر + تقييم
+                </span>
+              </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>
               {best5.map((c, i) => {
@@ -620,11 +645,19 @@ export default function MainContent({ contractor, allContractors, filteredContra
             <span style={{ fontSize: "0.62rem", color: "rgba(197,160,89,0.85)", fontWeight: 700, letterSpacing: "0.05em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
               تحليل الأسعار • {poolLabel}
             </span>
-            <span
-              title={poolMethod === "itemCode" ? "تطابق دقيق بكود البند" : poolMethod === "type+family+scope" ? "تطابق: نوع + عائلة + شمولية" : poolMethod === "type+family" ? "تطابق: نوع + عائلة" : "تطابق: نوع الأعمال فقط"}
-              style={{ fontSize: "0.6rem", color: poolMethod === "itemCode" ? "rgba(59,143,204,0.85)" : "rgba(255,255,255,0.35)", background: poolMethod === "itemCode" ? "rgba(59,143,204,0.18)" : "rgba(255,255,255,0.07)", borderRadius: "5px", padding: "2px 10px", flexShrink: 0, whiteSpace: "nowrap", border: poolMethod === "itemCode" ? "1px solid rgba(59,143,204,0.3)" : "none" }}>
-              {scopePoolSize > 1 ? `${scopePoolSize} سجل مطابق` : "سجل واحد"}
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
+              {/* Confidence badge — dark variant for the dark footer */}
+              <span
+                title={confidence.tip}
+                style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.58rem", fontWeight: 700, color: confidence.color, background: `${confidence.color}22`, border: `1px solid ${confidence.color}40`, borderRadius: "5px", padding: "2px 8px", cursor: "help", whiteSpace: "nowrap" }}
+              >
+                <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: confidence.dot, flexShrink: 0, display: "inline-block" }} />
+                {confidence.label}
+              </span>
+              <span style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.07)", borderRadius: "5px", padding: "2px 10px", whiteSpace: "nowrap" }}>
+                {scopePoolSize > 1 ? `${scopePoolSize} سجل` : "سجل واحد"}
+              </span>
+            </div>
           </div>
 
           {/* 4 stat cells — tab-style: active cell gets a colored top border + brighter bg */}
