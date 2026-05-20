@@ -729,8 +729,8 @@ export default function MainContent({ contractor, allContractors, filteredContra
 
           {/* Custom price comparison indicator — updates live based on clicked stat cell */}
           {customPrice && customPrice > 0 && scopePoolSize > 0 && (() => {
-            // Use the clicked stat (1=min, 2=avg, 3=max); if index 0 (السعر المقارن itself) fall back to avg
-            const refIdx   = activeStat > 0 && activeStat <= 3 ? activeStat : 2;
+            // Use the clicked stat (1=min, 2=avg, 3=max); if index 0 (السعر المقارن itself) fall back to min
+            const refIdx   = activeStat > 0 && activeStat <= 3 ? activeStat : 1;
             const refStat  = footerStats[refIdx];
             const refPrice = refStat?.rawPrice ?? Math.round(avgPrice);
             const diff     = Math.round(Math.abs(customPrice - refPrice));
