@@ -477,8 +477,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
               {workHistory.length} مشروع • {contractor?.workType}
             </span>
           </div>
-          {/* Scrollable list — shows ~5 rows then scrolls */}
-          <div style={{ maxHeight: "290px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", scrollbarWidth: "thin", scrollbarColor: "rgba(197,160,89,0.3) transparent" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {workHistory.map((w, i) => (
               <div
                 key={w.id}
