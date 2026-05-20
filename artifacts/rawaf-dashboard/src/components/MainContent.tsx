@@ -238,15 +238,19 @@ export default function MainContent({ contractor, allContractors, filteredContra
         .slice(0, 5)
     : [];
 
-  // ── Work history: same contractor name, any project (other records for this contractor) ──
+  // ── Work history: same contractor name + same workType ──
   const contractorNameKey = contractor ? normalize(contractor.contractor) : "";
+  const contractorWorkTypeKey = contractor ? normalize(contractor.workType) : "";
   const workHistory: Contractor[] = contractor && contractorNameKey.length > 0
     ? allContractors
         .filter((c) => {
           if (c.id === contractor.id) return false;
-          return normalize(c.contractor) === contractorNameKey;
+          return (
+            normalize(c.contractor) === contractorNameKey &&
+            normalize(c.workType)   === contractorWorkTypeKey
+          );
         })
-        .slice(0, 6)
+        .slice(0, 50)   // fetch up to 50; we scroll through them
     : [];
 
   if (!contractor) {
@@ -470,10 +474,11 @@ export default function MainContent({ contractor, allContractors, filteredContra
             <Clock size={14} style={{ color: "var(--gold)" }} />
             <h3 style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--charcoal)" }}>سجل الأعمال المنفذة سابقاً</h3>
             <span style={{ fontSize: "0.62rem", color: "#bbb", background: "#f5f0e8", borderRadius: "4px", padding: "2px 7px", marginRight: "auto" }}>
-              مشاريع أخرى لنفس المقاول
+              {workHistory.length} مشروع • {contractor?.workType}
             </span>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {/* Scrollable list — shows ~5 rows then scrolls */}
+          <div style={{ maxHeight: "290px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", scrollbarWidth: "thin", scrollbarColor: "rgba(197,160,89,0.3) transparent" }}>
             {workHistory.map((w, i) => (
               <div
                 key={w.id}
