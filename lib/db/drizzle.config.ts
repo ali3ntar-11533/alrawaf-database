@@ -11,4 +11,9 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL,
   },
+  // strict: prevents drizzle-kit from auto-applying destructive changes
+  // (drop table / drop column) without explicit confirmation.
+  // This protects existing data (users, contractors, etc.) from accidental loss.
+  strict: true,
+  verbose: true,
 });
