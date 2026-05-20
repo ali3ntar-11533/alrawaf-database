@@ -50,14 +50,19 @@ export default function Sidebar({
     const content = grid.querySelector(".content-area") as HTMLElement | null;
     if (!content) return;
 
+    let raf: number;
     const sync = () => {
-      const h = content.offsetHeight;
-      if (h > 0) el.style.minHeight = `${h}px`;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const h = content.offsetHeight;
+        if (h > 0) el.style.minHeight = `${h}px`;
+      });
     };
     sync();
     const ro = new ResizeObserver(sync);
     ro.observe(content);
-    return () => ro.disconnect();
+    ro.observe(el);
+    return () => { ro.disconnect(); cancelAnimationFrame(raf); };
   });
 
   if (isLoading) {
