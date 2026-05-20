@@ -100,12 +100,12 @@ export default function MainContent({ contractor, allContractors, filteredContra
     setAvgCycleIdx(0);
     setMaxCycleIdx(0);
   }, [contractor?.id]);
-  // When a custom price is entered for the first time, default to avg comparison (index 2)
+  // When a custom price is entered for the first time, default to min comparison (index 1)
   const prevCustomPrice = useRef<number | null | undefined>(null);
   useEffect(() => {
     const had = prevCustomPrice.current && prevCustomPrice.current > 0;
     const has  = customPrice && customPrice > 0;
-    if (has && !had) setActiveStat(2);
+    if (has && !had) setActiveStat(1);
     if (!has && had) setActiveStat(0);
     prevCustomPrice.current = customPrice;
   }, [customPrice]);
