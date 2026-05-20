@@ -100,12 +100,12 @@ export default function MainContent({ contractor, allContractors, filteredContra
     setAvgCycleIdx(0);
     setMaxCycleIdx(0);
   }, [contractor?.id]);
-  // When a custom price is entered for the first time, default to min comparison (index 1)
+  // When a custom price is entered for the first time, highlight the "السعر المقارن" cell (index 0)
   const prevCustomPrice = useRef<number | null | undefined>(null);
   useEffect(() => {
     const had = prevCustomPrice.current && prevCustomPrice.current > 0;
     const has  = customPrice && customPrice > 0;
-    if (has && !had) setActiveStat(1);
+    if (has && !had) setActiveStat(0);
     if (!has && had) setActiveStat(0);
     prevCustomPrice.current = customPrice;
   }, [customPrice]);
@@ -738,15 +738,17 @@ export default function MainContent({ contractor, allContractors, filteredContra
             const isHigher = customPrice > refPrice;
             const isEqual  = diff === 0;
             const refLabel = refStat?.label ?? "الأدنى";
-            const refColor = refStat?.color ?? "#3b8fcc";
+            // Note color = color of the ACTIVE cell (not the reference cell)
+            // so each cell lights up the note strip in its own color
+            const noteColor = footerStats[activeStat]?.color ?? refStat?.color ?? "#9b59b6";
             const text = isEqual
               ? `السعر المقارن (${formatExact(customPrice)}) يساوي ${refLabel}`
               : isHigher
                 ? `▲ السعر المقارن (${formatExact(customPrice)}) أعلى من ${refLabel} بـ ${formatExact(diff)} ر.س (${pct}%)`
                 : `✓ السعر المقارن (${formatExact(customPrice)}) أقل من ${refLabel} بـ ${formatExact(diff)} ر.س (${pct}%)`;
             return (
-              <div style={{ padding: "8px 16px", borderTop: `1px solid ${refColor}55`, background: `${refColor}14`, textAlign: "center", transition: "background 0.25s, border-color 0.25s" }}>
-                <span style={{ fontSize: "0.6rem", color: refColor, fontWeight: 700 }}>{text}</span>
+              <div style={{ padding: "8px 16px", borderTop: `1px solid ${noteColor}55`, background: `${noteColor}14`, textAlign: "center", transition: "background 0.25s, border-color 0.25s" }}>
+                <span style={{ fontSize: "0.6rem", color: noteColor, fontWeight: 700 }}>{text}</span>
               </div>
             );
           })()}
