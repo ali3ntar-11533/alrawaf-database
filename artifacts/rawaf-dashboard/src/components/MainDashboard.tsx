@@ -64,7 +64,8 @@ export default function MainDashboard({ search, filters, selectedId, onSelectId 
   const { data: allContractors = [], isLoading } = useContractorsContext();
 
   const hasSearch       = search.trim().length > 0;
-  const hasFilters      = Object.values(filters).some(Boolean);
+  // itemPrice is comparison-only — exclude it from sidebar filtering logic
+  const hasFilters      = Object.entries(filters).some(([key, val]) => key !== "itemPrice" && Boolean(val));
   const hasDirectSelect = selectedId != null;
 
   // Identify the directly selected contractor (for same-name sidebar grouping)
