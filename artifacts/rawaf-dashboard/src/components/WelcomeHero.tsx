@@ -61,7 +61,7 @@ export default function WelcomeHero() {
 
       <p
         style={{
-          fontSize: "clamp(0.82rem, 1.6vh, 1.05rem)",
+          fontSize: "clamp(0.92rem, 1.85vh, 1.14rem)",
           color: "#5a524a",
           lineHeight: 1.8,
           fontWeight: 500,
