@@ -94,6 +94,13 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
   const [formError,    setFormError]    = useState("");
   const [formBusy,     setFormBusy]     = useState(false);
 
+  /* ── wipe-items state ── */
+  const [wipeOpen,    setWipeOpen]    = useState(false);
+  const [wipePwd,     setWipePwd]     = useState("");
+  const [wipeBusy,    setWipeBusy]    = useState(false);
+  const [wipeError,   setWipeError]   = useState("");
+  const [wipeSuccess, setWipeSuccess] = useState<string | null>(null);
+
   const adminHeaders = {
     "Content-Type": "application/json",
     "x-admin-login": currentUser.loginName,
@@ -349,19 +356,54 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
             )}
           </div>
 
-          {/* ── FOOTER STATS ── */}
-          <div style={{ padding: "12px 28px", borderTop: "1px solid rgba(197,160,89,0.15)", display: "flex", gap: 28, flexShrink: 0, background: "rgba(0,0,0,0.25)" }}>
-            {[
-              { label: "إجمالي المستخدمين",  value: users.length },
-              { label: "المفعّلون",           value: users.filter(u => u.isActive).length },
-              { label: "المتصلون الآن",       value: onlineCount },
-              { label: "المسؤولون",           value: users.filter(u => u.role === "superadmin" || u.role === "admin").length },
-            ].map(s => (
-              <div key={s.label} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "1.15rem", fontWeight: 800, color: "#c5a059", lineHeight: 1 }}>{s.value}</div>
-                <div style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.38)", letterSpacing: "0.06em", marginTop: 3 }}>{s.label}</div>
-              </div>
-            ))}
+          {/* ── FOOTER: stats (start/right in RTL) + danger button (end/left in RTL) ── */}
+          <div style={{ padding: "12px 28px", borderTop: "1px solid rgba(197,160,89,0.15)", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0, background: "rgba(0,0,0,0.25)" }}>
+            <div style={{ display: "flex", gap: 28 }}>
+              {[
+                { label: "إجمالي المستخدمين",  value: users.length },
+                { label: "المفعّلون",           value: users.filter(u => u.isActive).length },
+                { label: "المتصلون الآن",       value: onlineCount },
+                { label: "المسؤولون",           value: users.filter(u => u.role === "superadmin" || u.role === "admin").length },
+              ].map(s => (
+                <div key={s.label} style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "1.15rem", fontWeight: 800, color: "#c5a059", lineHeight: 1 }}>{s.value}</div>
+                  <div style={{ fontSize: "0.58rem", color: "rgba(255,255,255,0.38)", letterSpacing: "0.06em", marginTop: 3 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {currentUser.role === "superadmin" && (
+              <button
+                onClick={() => { setWipePwd(""); setWipeError(""); setWipeSuccess(null); setWipeOpen(true); }}
+                style={{
+                  display: "flex", alignItems: "center", gap: 9,
+                  padding: "10px 18px",
+                  background: "linear-gradient(180deg, #4a0d12 0%, #2e0608 100%)",
+                  color: "#fecaca",
+                  border: "1px solid rgba(220,38,38,0.55)",
+                  borderRadius: 10,
+                  fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.03em",
+                  fontFamily: "Tajawal, sans-serif",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 14px rgba(120,20,20,0.35), inset 0 1px 0 rgba(255,255,255,0.06)",
+                  transition: "all 0.18s ease",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = "linear-gradient(180deg, #5a1118 0%, #3a080b 100%)";
+                  e.currentTarget.style.borderColor = "rgba(248,113,113,0.85)";
+                  e.currentTarget.style.boxShadow = "0 6px 20px rgba(180,30,30,0.5), inset 0 1px 0 rgba(255,255,255,0.08)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = "linear-gradient(180deg, #4a0d12 0%, #2e0608 100%)";
+                  e.currentTarget.style.borderColor = "rgba(220,38,38,0.55)";
+                  e.currentTarget.style.boxShadow = "0 4px 14px rgba(120,20,20,0.35), inset 0 1px 0 rgba(255,255,255,0.06)";
+                }}
+                title="تصفير وحذف كافة بنود جداول الكميات (لا يمس المستخدمين)"
+              >
+                <span style={{ fontSize: "0.95rem" }}>⚠</span>
+                <span>تصفير وحذف كافة البنود</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -540,6 +582,121 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
                 style={{ flex: 1, padding: "11px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "rgba(255,255,255,0.65)", fontSize: "0.88rem", fontWeight: 600, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}
               >إلغاء</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── WIPE-ITEMS CONFIRMATION MODAL ── */}
+      {wipeOpen && (
+        <div
+          onClick={e => { if (e.target === e.currentTarget && !wipeBusy) setWipeOpen(false); }}
+          style={{ position: "fixed", inset: 0, zIndex: 9300, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          <div style={{
+            background: "linear-gradient(160deg, #1f1410 0%, #14090a 100%)",
+            border: "1px solid rgba(220,38,38,0.45)",
+            borderRadius: 18,
+            padding: "28px 32px",
+            width: "100%", maxWidth: 480,
+            boxShadow: "0 32px 100px rgba(80,0,0,0.6), inset 0 0 0 1px rgba(220,38,38,0.08)",
+            fontFamily: "Tajawal, sans-serif", direction: "rtl",
+          }}>
+            {wipeSuccess ? (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg, #c5a059 0%, #a88540 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem", color: "#1a1510", fontWeight: 900 }}>✓</div>
+                  <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "#c5a059" }}>تم التصفير بنجاح</h3>
+                </div>
+                <div style={{ background: "rgba(197,160,89,0.08)", border: "1px solid rgba(197,160,89,0.25)", borderRadius: 10, padding: "14px 16px", color: "rgba(255,255,255,0.85)", fontSize: "0.85rem", lineHeight: 1.7, marginBottom: 18 }}>
+                  {wipeSuccess}
+                  <div style={{ marginTop: 8, fontSize: "0.72rem", color: "rgba(197,160,89,0.7)" }}>
+                    حسابات المستخدمين وسجلات الدخول لم تُمَس.
+                  </div>
+                </div>
+                <button
+                  onClick={() => { setWipeOpen(false); window.location.reload(); }}
+                  style={{ width: "100%", padding: "12px", background: "linear-gradient(135deg, #c5a059 0%, #a88540 100%)", color: "#1a1510", border: "none", borderRadius: 10, fontSize: "0.9rem", fontWeight: 800, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}
+                >حسناً، تحديث الواجهة</button>
+              </>
+            ) : (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: "linear-gradient(135deg, #4a0d12 0%, #2e0608 100%)", border: "1px solid rgba(220,38,38,0.6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.5rem", color: "#fecaca" }}>⚠</div>
+                  <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "#fecaca" }}>تأكيد عملية التصفير</h3>
+                </div>
+
+                <div style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.3)", borderRadius: 10, padding: "12px 14px", color: "rgba(254,202,202,0.92)", fontSize: "0.82rem", lineHeight: 1.7, marginBottom: 18 }}>
+                  <strong style={{ color: "#fecaca" }}>تنبيه:</strong> أنت على وشك تصفير وحذف <strong>كافة بنود جداول الكميات</strong> بشكل نهائي ولا يمكن التراجع. يرجى إدخال كلمة المرور للتأكيد.
+                  <div style={{ marginTop: 8, fontSize: "0.72rem", color: "rgba(197,160,89,0.65)" }}>
+                    • جدول المستخدمين وسجلات الدخول محميون ولن يُمَسّوا.
+                  </div>
+                </div>
+
+                <label style={{ display: "block", fontSize: "0.65rem", color: "rgba(197,160,89,0.85)", fontWeight: 700, marginBottom: 6, letterSpacing: "0.05em" }}>
+                  كلمة مرور المسؤول ({currentUser.loginName})
+                </label>
+                <input
+                  type="password"
+                  value={wipePwd}
+                  autoFocus
+                  disabled={wipeBusy}
+                  onChange={e => { setWipePwd(e.target.value); setWipeError(""); }}
+                  onKeyDown={async e => {
+                    if (e.key === "Enter" && wipePwd && !wipeBusy) {
+                      setWipeBusy(true); setWipeError("");
+                      try {
+                        const r = await fetch("/api/admin/wipe-items", {
+                          method: "POST", headers: adminHeaders,
+                          body: JSON.stringify({ password: wipePwd }),
+                        });
+                        const j = await r.json() as { ok?: boolean; error?: string; message?: string };
+                        if (!r.ok || !j.ok) { setWipeError(j.error || "فشل التصفير"); setWipeBusy(false); return; }
+                        setWipeSuccess(j.message || "تم التصفير");
+                      } catch (err) {
+                        setWipeError(err instanceof Error ? err.message : "خطأ في الاتصال");
+                      } finally { setWipeBusy(false); }
+                    }
+                  }}
+                  style={{ width: "100%", padding: "11px 13px", background: "rgba(255,255,255,0.06)", border: `1.5px solid ${wipeError ? "rgba(220,38,38,0.7)" : "rgba(197,160,89,0.3)"}`, borderRadius: 10, color: "#fff", fontSize: "0.92rem", fontFamily: "Tajawal, sans-serif", direction: "ltr", textAlign: "center", outline: "none", boxSizing: "border-box", letterSpacing: "0.15em" }}
+                />
+
+                {wipeError && (
+                  <div style={{ marginTop: 10, background: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.35)", borderRadius: 8, padding: "8px 12px", fontSize: "0.76rem", color: "#fca5a5", fontWeight: 600 }}>
+                    {wipeError}
+                  </div>
+                )}
+
+                <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+                  <button
+                    disabled={wipeBusy || !wipePwd}
+                    onClick={async () => {
+                      setWipeBusy(true); setWipeError("");
+                      try {
+                        const r = await fetch("/api/admin/wipe-items", {
+                          method: "POST", headers: adminHeaders,
+                          body: JSON.stringify({ password: wipePwd }),
+                        });
+                        const j = await r.json() as { ok?: boolean; error?: string; message?: string };
+                        if (!r.ok || !j.ok) { setWipeError(j.error || "فشل التصفير"); setWipeBusy(false); return; }
+                        setWipeSuccess(j.message || "تم التصفير");
+                      } catch (err) {
+                        setWipeError(err instanceof Error ? err.message : "خطأ في الاتصال");
+                      } finally { setWipeBusy(false); }
+                    }}
+                    style={{ flex: 1, padding: "12px", background: wipePwd && !wipeBusy ? "linear-gradient(180deg, #7a1118 0%, #4a0608 100%)" : "rgba(80,20,20,0.4)", color: "#fff", border: "1px solid rgba(220,38,38,0.6)", borderRadius: 10, fontSize: "0.85rem", fontWeight: 800, cursor: wipePwd && !wipeBusy ? "pointer" : "not-allowed", fontFamily: "Tajawal, sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                  >
+                    {wipeBusy
+                      ? <><span style={{ width: 13, height: 13, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTop: "2px solid #fff", display: "inline-block", animation: "sg-spin 0.7s linear infinite" }} />جاري التصفير...</>
+                      : "تأكيد التصفير النهائي"}
+                  </button>
+                  <button
+                    disabled={wipeBusy}
+                    onClick={() => setWipeOpen(false)}
+                    style={{ flex: 1, padding: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "rgba(255,255,255,0.7)", fontSize: "0.85rem", fontWeight: 700, cursor: wipeBusy ? "not-allowed" : "pointer", fontFamily: "Tajawal, sans-serif" }}
+                  >إلغاء</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

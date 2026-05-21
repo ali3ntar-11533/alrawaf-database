@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { writeFileSync } from "fs";
-import { db, usersTable, userLogsTable } from "@workspace/db";
+import { sql } from "drizzle-orm";
+import { db, usersTable, userLogsTable, contractorsTable, itemCodeMapTable } from "@workspace/db";
 import { eq, and, gte, desc } from "drizzle-orm";
-import { hashPassword, requireAdmin, getSeedFilePath } from "../lib/auth-utils";
+import { hashPassword, verifyPassword, requireAdmin, getSeedFilePath } from "../lib/auth-utils";
 
 const router = Router();
 router.use(requireAdmin);
@@ -100,6 +101,56 @@ router.get("/admin/users/:id/logs", async (req, res): Promise<void> => {
     .where(and(eq(userLogsTable.userId, userId), gte(userLogsTable.loginAt, sevenDaysAgo)))
     .orderBy(desc(userLogsTable.loginAt));
   res.json(logs.map(l => ({ ...l, loginAt: l.loginAt.toISOString() })));
+});
+
+/**
+ * DANGER: bulk-wipe BOQ items (contractors) + item code allocator.
+ * Strictly does NOT touch users or user_logs — preserves all accounts.
+ * Requires superadmin (via requireAdmin) AND a re-entered password.
+ */
+router.post("/admin/wipe-items", async (req, res): Promise<void> => {
+  const loginName = req.headers["x-admin-login"] as string;
+  const { password } = req.body as { password?: string };
+  if (!password || typeof password !== "string") {
+    res.status(400).json({ error: "كلمة المرور مطلوبة" });
+    return;
+  }
+  const [admin] = await db.select().from(usersTable).where(eq(usersTable.loginName, loginName));
+  if (!admin || !verifyPassword(password, admin.passwordHash)) {
+    req.log.warn({ loginName }, "wipe-items: password verification failed");
+    res.status(401).json({ error: "كلمة المرور غير صحيحة" });
+    return;
+  }
+
+  let deletedContractors = 0;
+  let deletedCodes = 0;
+  try {
+    await db.transaction(async (tx) => {
+      const before = await tx.execute(sql`SELECT COUNT(*)::int AS n FROM contractors`);
+      deletedContractors = Number((before.rows[0] as { n: number }).n);
+      const beforeCodes = await tx.execute(sql`SELECT COUNT(*)::int AS n FROM item_code_map`);
+      deletedCodes = Number((beforeCodes.rows[0] as { n: number }).n);
+
+      await tx.delete(contractorsTable);
+      await tx.delete(itemCodeMapTable);
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "خطأ غير معروف";
+    req.log.error({ err: msg }, "wipe-items: transaction failed");
+    res.status(500).json({ error: msg });
+    return;
+  }
+
+  req.log.warn(
+    { actor: loginName, deletedContractors, deletedCodes },
+    "wipe-items: BOQ tables cleared (users preserved)",
+  );
+  res.json({
+    ok: true,
+    deletedContractors,
+    deletedCodes,
+    message: `تم تصفير ${deletedContractors} بند و ${deletedCodes} كود — حسابات المستخدمين سليمة`,
+  });
 });
 
 export default router;
