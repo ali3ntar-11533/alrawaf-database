@@ -68,14 +68,14 @@ export default function MainDashboard({ search, filters, selectedId, onSelectId 
   const hasFilters      = Object.entries(filters).some(([key, val]) => key !== "itemPrice" && Boolean(val));
   const hasDirectSelect = selectedId != null;
 
-  // Identify the directly selected contractor (for same-name sidebar grouping)
+  // Identify the directly selected contractor
   const directRecord = hasDirectSelect
     ? allContractors.find((c: Contractor) => c.id === selectedId)
     : undefined;
 
   // Filtered list for the sidebar:
   //  - Searching / filtering → matches
-  //  - Direct select (from DB) → all records sharing the same contractor name
+  //  - Direct select (from DB) → similar items by family+type+scope hierarchy
   //  - Idle → empty (WelcomeHero)
   let filtered: Contractor[];
   if (hasSearch || hasFilters) {
@@ -85,10 +85,36 @@ export default function MainDashboard({ search, filters, selectedId, onSelectId 
       return matchesSearch && matchesFilters;
     });
   } else if (hasDirectSelect && directRecord) {
-    filtered = allContractors.filter(
-      (c: Contractor) =>
-        c.contractor.trim().toLowerCase() === directRecord.contractor.trim().toLowerCase()
-    );
+    const n = (s: string) => (s ?? "").replace(/[\u064B-\u065F]/g, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").toLowerCase().trim();
+    const family = n(directRecord.workFamily ?? "");
+    const type   = n(directRecord.workType);
+    const scope  = n(directRecord.itemScope  ?? "");
+
+    // L1: family + type + scope
+    if (family && type && scope) {
+      const pool = allContractors.filter((c: Contractor) =>
+        n(c.workFamily ?? "") === family && n(c.workType) === type && n(c.itemScope ?? "") === scope
+      );
+      if (pool.length > 0) { filtered = pool; }
+      else if (family && type) {
+        // L2: family + type
+        const pool2 = allContractors.filter((c: Contractor) =>
+          n(c.workFamily ?? "") === family && n(c.workType) === type
+        );
+        filtered = pool2.length > 0 ? pool2 : allContractors.filter((c: Contractor) => n(c.workType) === type);
+      } else {
+        filtered = allContractors.filter((c: Contractor) => n(c.workType) === type);
+      }
+    } else if (family && type) {
+      // L2: family + type
+      const pool2 = allContractors.filter((c: Contractor) =>
+        n(c.workFamily ?? "") === family && n(c.workType) === type
+      );
+      filtered = pool2.length > 0 ? pool2 : allContractors.filter((c: Contractor) => n(c.workType) === type);
+    } else {
+      // L3: type only
+      filtered = allContractors.filter((c: Contractor) => n(c.workType) === type);
+    }
   } else {
     filtered = [];
   }
