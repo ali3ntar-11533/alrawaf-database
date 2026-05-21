@@ -166,9 +166,9 @@ export default function MainContent({ contractor, allContractors, filteredContra
     if (!contractor) return "—";
     switch (poolMethod) {
       case "type+family+scope":
-        return `${contractor.workType} › ${contractor.workFamily} › ${contractor.itemScope}`;
+        return `${contractor.workFamily} › ${contractor.workType} › ${contractor.itemScope}`;
       case "type+family":
-        return `${contractor.workType} › ${contractor.workFamily}`;
+        return `${contractor.workFamily} › ${contractor.workType}`;
       case "type":
       default:
         return contractor.workType || "—";
@@ -179,9 +179,9 @@ export default function MainContent({ contractor, allContractors, filteredContra
   const confidence: { label: string; color: string; dot: string; tip: string } = (() => {
     switch (poolMethod) {
       case "type+family+scope":
-        return { label: "دقيق", color: "#2baa74", dot: "#2baa74", tip: "تطابق: نوع الأعمال + عائلة الأعمال + شمولية البند" };
+        return { label: "دقيق", color: "#2baa74", dot: "#2baa74", tip: "تطابق: عائلة الأعمال + نوع الأعمال + شمولية البند" };
       case "type+family":
-        return { label: "متوسط", color: "#c5a059", dot: "#c5a059", tip: "تطابق: نوع الأعمال + عائلة الأعمال فقط — يُنصح بتعبئة شمولية البند" };
+        return { label: "متوسط", color: "#c5a059", dot: "#c5a059", tip: "تطابق: عائلة الأعمال + نوع الأعمال فقط — يُنصح بتعبئة شمولية البند" };
       case "type":
       default:
         return { label: "أساسي", color: "#3b8fcc", dot: "#3b8fcc", tip: "تطابق: نوع الأعمال فقط — قد تشمل أصناف مختلفة. يُنصح بتعبئة عائلة الأعمال وشمولية البند" };
