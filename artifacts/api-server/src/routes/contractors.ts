@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, eq, type SQL } from "drizzle-orm";
-import { db, contractorsTable } from "@workspace/db";
+import { db, contractorsTable, generateItemCode } from "@workspace/db";
 import {
   CreateContractorBody,
   GetContractorParams,
@@ -80,13 +80,42 @@ router.get("/contractors", async (req, res): Promise<void> => {
   res.json(ListContractorsResponse.parse(rows.map(r => ({ ...r, createdAt: r.createdAt.toISOString() }))));
 });
 
+/* Server-side item code resolution.
+   1. Always recompute the code from portfolio + 7 numeric slots — the
+      client-sent value is ignored to keep the DB authoritative.
+   2. Before inserting, look up any existing record with the exact same
+      computed code. If found, reuse it verbatim (deduplication rule). */
+async function resolveItemCode(data: typeof contractorsTable.$inferInsert): Promise<string | null> {
+  const computed = generateItemCode({
+    portfolio:       data.portfolio,
+    mainActivity:    data.mainActivity,
+    businessProgram: data.businessProgram,
+    workFamily:      data.workFamily,
+    workType:        data.workType,
+    itemScope:       data.itemScope,
+    techSpecs:       data.techSpecs,
+    measurements:    data.measurements,
+  });
+  if (!computed) return null;
+  const [existing] = await db
+    .select({ itemCode: contractorsTable.itemCode })
+    .from(contractorsTable)
+    .where(eq(contractorsTable.itemCode, computed))
+    .limit(1);
+  return existing?.itemCode ?? computed;
+}
+
 router.post("/contractors", async (req, res): Promise<void> => {
   const parsed = CreateContractorBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [row] = await db.insert(contractorsTable).values(parsed.data).returning();
+  const itemCode = await resolveItemCode(parsed.data);
+  const [row] = await db
+    .insert(contractorsTable)
+    .values({ ...parsed.data, itemCode })
+    .returning();
   res.status(201).json(GetContractorResponse.parse({ ...row, createdAt: row.createdAt.toISOString() }));
 });
 
@@ -110,9 +139,10 @@ router.put("/contractors/:id", async (req, res): Promise<void> => {
   const parsed = CreateContractorBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
+  const itemCode = await resolveItemCode(parsed.data);
   const [row] = await db
     .update(contractorsTable)
-    .set(parsed.data)
+    .set({ ...parsed.data, itemCode })
     .where(eq(contractorsTable.id, params.data.id))
     .returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }

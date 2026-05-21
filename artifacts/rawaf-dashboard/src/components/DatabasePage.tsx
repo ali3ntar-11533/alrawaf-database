@@ -11,6 +11,7 @@ import {
 } from "../contractors/api";
 import { useContractorsContext } from "../contractors/context";
 import type { Contractor } from "../contractors/types";
+import { generateItemCode } from "../utils/itemCode";
 
 const DB_PASSWORD = "maged@2026";
 const SESSION_KEY = "rawaf_db_auth";
@@ -53,7 +54,7 @@ const EMPTY_FORM: FormData = {
 const LOCAL_CONTENT_OPTIONS = ["", "مسجل", "غير مسجل"];
 
 /* Column order matches the table exactly */
-const FORM_FIELDS: { key: keyof FormData; label: string; type?: string; wide?: boolean; fullRow?: boolean; rows?: number; options?: string[] }[] = [
+const FORM_FIELDS: { key: keyof FormData; label: string; type?: string; wide?: boolean; fullRow?: boolean; rows?: number; options?: string[]; readOnly?: boolean }[] = [
   { key: "contractNo",      label: "١. رقم العقد" },
   { key: "contractYear",    label: "٢. سنة العقد" },
   { key: "contractor",      label: "٣. اسم المقاول / المورد" },
@@ -66,7 +67,7 @@ const FORM_FIELDS: { key: keyof FormData; label: string; type?: string; wide?: b
   { key: "itemScope",       label: "١٠. شمولية البند" },
   { key: "techSpecs",       label: "١١. مواصفات فنية" },
   { key: "measurements",    label: "١٢. قياسات" },
-  { key: "itemCode",        label: "١٣. كود الفريد للبند", fullRow: true },
+  { key: "itemCode",        label: "١٣. كود الفريد للبند (يُولَّد تلقائياً)", fullRow: true, readOnly: true },
   { key: "technicalScope",  label: "١٤. الوصف الفني للبند", wide: true, rows: 3 },
   { key: "workCategory",    label: "١٥. نوع التعاقد" },
   { key: "unit",            label: "١٦. الوحدة" },
@@ -226,6 +227,7 @@ const iconBtnStyle = (color: string): React.CSSProperties => ({ display: "inline
 const submitBtnStyle: React.CSSProperties = { flex: 1, background: "linear-gradient(135deg, var(--gold), #a88540)", color: "#fff", border: "none", borderRadius: "10px", padding: "12px", fontSize: "0.85rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" };
 const cancelBtnStyle: React.CSSProperties = { background: "#f5f0e8", color: "var(--charcoal)", border: "none", borderRadius: "10px", padding: "12px 20px", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" };
 const roFieldStyle: React.CSSProperties = { ...inputStyle, background: "#f0ece4", color: "#888", cursor: "not-allowed" };
+const autoCodeStyle: React.CSSProperties = { ...inputStyle, background: "linear-gradient(135deg, #fdf8ec, #f7eed4)", border: "1.5px solid var(--gold)", color: "var(--gold-dark, #a88540)", fontFamily: "'Courier New', monospace", fontWeight: 700, letterSpacing: "0.08em", cursor: "not-allowed", textAlign: "center" };
 const truncateCellStyle: React.CSSProperties = {
   minWidth: 0,
   overflow: "hidden",
@@ -264,6 +266,22 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
   const [cloneUnit, setCloneUnit]                 = useState("");
   const [cloneLocalContent, setCloneLocalContent] = useState("");
   const [cloneItemCode, setCloneItemCode]         = useState("");
+
+  /* Auto-generated item codes — kept in sync reactively with the 8 inputs. */
+  const addItemCode  = generateItemCode(addForm);
+  const editItemCode = generateItemCode(editForm);
+
+  useEffect(() => {
+    if (addForm.itemCode !== addItemCode) {
+      setAddForm((p) => ({ ...p, itemCode: addItemCode }));
+    }
+  }, [addItemCode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (editRow && editForm.itemCode !== editItemCode) {
+      setEditForm((p) => ({ ...p, itemCode: editItemCode }));
+    }
+  }, [editItemCode, editRow]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [showCloudSync, setShowCloudSync] = useState(false);
@@ -414,7 +432,8 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
     setClonePrice(String(c.price));
     setCloneUnit((c as any).unit ?? "");
     setCloneLocalContent((c as any).localContent ?? "");
-    setCloneItemCode((c as any).itemCode ?? "");
+    /* Auto-derived from source — same 7 slots + same portfolio yield the same code. */
+    setCloneItemCode(generateItemCode(c as any) || ((c as any).itemCode ?? ""));
   }
 
   async function handleEditSubmit(e: React.FormEvent) {
@@ -738,6 +757,8 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                       <select value={editForm[f.key]} onChange={(e) => setEditForm((p) => ({ ...p, [f.key]: e.target.value }))} style={{ ...inputStyle, cursor: "pointer", appearance: "auto" }}>
                         {(f.options ?? []).map((opt) => <option key={opt} value={opt}>{opt || "— اختر —"}</option>)}
                       </select>
+                    ) : f.readOnly ? (
+                      <input type="text" value={editForm[f.key] || "—"} readOnly tabIndex={-1} style={autoCodeStyle} />
                     ) : (
                       <input type={f.type ?? "text"} value={editForm[f.key]} onChange={(e) => setEditForm((p) => ({ ...p, [f.key]: e.target.value }))} style={inputStyle}
                         onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")} />
@@ -784,6 +805,8 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                       <select value={addForm[f.key]} onChange={(e) => setAddForm((p) => ({ ...p, [f.key]: e.target.value }))} style={{ ...inputStyle, cursor: "pointer", appearance: "auto" }}>
                         {(f.options ?? []).map((opt) => <option key={opt} value={opt}>{opt || "— اختر —"}</option>)}
                       </select>
+                    ) : f.readOnly ? (
+                      <input type="text" value={addForm[f.key] || "—"} readOnly tabIndex={-1} style={autoCodeStyle} />
                     ) : (
                       <input type={f.type ?? "text"} value={addForm[f.key]} onChange={(e) => setAddForm((p) => ({ ...p, [f.key]: e.target.value }))} style={inputStyle}
                         onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")} />
@@ -861,9 +884,8 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
             <form onSubmit={handleCloneSubmit}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px 14px", marginBottom: "18px" }}>
                 <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <label style={{ ...labelStyle, color: "#c5a059" }}>١٣. كود الفريد للبند الجديد</label>
-                  <input type="text" value={cloneItemCode} onChange={(e) => setCloneItemCode(e.target.value)} style={inputStyle}
-                    onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")} />
+                  <label style={{ ...labelStyle, color: "#c5a059" }}>١٣. كود الفريد للبند (يُولَّد تلقائياً)</label>
+                  <input type="text" value={cloneItemCode || "—"} readOnly tabIndex={-1} style={autoCodeStyle} />
                 </div>
                 <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: "4px" }}>
                   <label style={{ ...labelStyle, color: "#c5a059" }}>١٤. الوصف الفني للبند الجديد</label>
