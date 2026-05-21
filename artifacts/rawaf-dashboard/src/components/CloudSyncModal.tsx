@@ -269,6 +269,7 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
   const [rows, setRows] = useState<Row[]>(() => makeRows(10));
   const [isSaving, setIsSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState<{ saved: number; total: number } | null>(null);
+  const [saveResult, setSaveResult] = useState<{ saved: number; total: number; errors: number; firstError: string | null } | null>(null);
   const [summary, setSummary] = useState<{ saved: number; duplicates: number; errors: number } | null>(null);
   const [templateMode, setTemplateMode] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -417,8 +418,12 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
     }
 
     setSummary({ saved, duplicates, errors });
+    /* Keep the overlay locked AND switch it to the final result screen.
+       The user must press "تم" to dismiss — so even a 500ms import is
+       clearly acknowledged with a checkmark + count, instead of vanishing
+       before the eye can register it. */
+    setSaveResult({ saved, total: payload.length, errors, firstError });
     setSaveProgress(null);
-    setIsSaving(false);
     if (saved > 0) onSaved();
   }
 
@@ -634,12 +639,15 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
            Locks the entire modal during a bulk import so the user
            cannot double-click "حفظ" or close the dialog mid-flight.
            Shows row count + animated spinner.                          */}
-      {isSaving && (() => {
-        const total      = saveProgress?.total ?? nonEmptyCount;
-        const savedNow   = saveProgress?.saved ?? 0;
+      {(isSaving || saveResult) && (() => {
+        const done       = saveResult !== null;
+        const total      = saveResult?.total ?? saveProgress?.total ?? nonEmptyCount;
+        const savedNow   = saveResult?.saved ?? saveProgress?.saved ?? 0;
         const percent    = total > 0 ? Math.min(100, Math.round((savedNow / total) * 100)) : 0;
         const arSaved    = savedNow.toLocaleString("ar-EG");
         const arTotal    = total.toLocaleString("ar-EG");
+        const hasErrors  = (saveResult?.errors ?? 0) > 0;
+        const fullSuccess = done && !hasErrors && savedNow === total && total > 0;
         return (
           <div
             role="status"
@@ -654,27 +662,59 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
               animation: "fadeInUp 0.25s ease-out",
             }}
           >
-            <div
-              style={{
-                width: 78, height: 78, borderRadius: "50%",
-                border: "5px solid rgba(59,143,204,0.18)",
-                borderTopColor: "#3b8fcc",
-                animation: "spin 0.85s linear infinite",
-              }}
-            />
-            <div style={{ textAlign: "center", maxWidth: 540, padding: "0 24px" }}>
-              <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#fff", marginBottom: 10 }}>
-                جاري معالجة وتكويد البنود
+            {done ? (
+              <div style={{
+                width: 92, height: 92, borderRadius: "50%",
+                background: fullSuccess
+                  ? "linear-gradient(135deg, #10b981 0%, #059669 100%)"
+                  : hasErrors
+                    ? "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)"
+                    : "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "3rem", color: "#fff", fontWeight: 900,
+                boxShadow: fullSuccess
+                  ? "0 0 28px rgba(16,185,129,0.6), 0 8px 24px rgba(0,0,0,0.4)"
+                  : "0 0 28px rgba(239,68,68,0.5), 0 8px 24px rgba(0,0,0,0.4)",
+                animation: "popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              }}>
+                {fullSuccess ? "✓" : hasErrors ? "✕" : "!"}
               </div>
-              <div style={{ fontSize: "0.95rem", color: "#7ec8f0", lineHeight: 1.8, fontWeight: 700 }}>
-                تم حفظ <strong style={{ color: "#fff", fontSize: "1.15rem" }}>{arSaved}</strong>
+            ) : (
+              <div
+                style={{
+                  width: 78, height: 78, borderRadius: "50%",
+                  border: "5px solid rgba(59,143,204,0.18)",
+                  borderTopColor: "#3b8fcc",
+                  animation: "spin 0.85s linear infinite",
+                }}
+              />
+            )}
+            <div style={{ textAlign: "center", maxWidth: 540, padding: "0 24px" }}>
+              <div style={{ fontSize: "1.25rem", fontWeight: 800, color: "#fff", marginBottom: 10 }}>
+                {done
+                  ? fullSuccess
+                    ? "اكتمل الحفظ بنجاح"
+                    : hasErrors
+                      ? "اكتمل الحفظ مع وجود أخطاء"
+                      : "اكتمل الحفظ"
+                  : "جاري معالجة وتكويد البنود"}
+              </div>
+              <div style={{ fontSize: "1rem", color: done && fullSuccess ? "#86efac" : "#7ec8f0", lineHeight: 1.8, fontWeight: 700 }}>
+                تم حفظ <strong style={{ color: "#fff", fontSize: "1.25rem" }}>{arSaved}</strong>
                 {" "}من إجمالي{" "}
-                <strong style={{ color: "#fff", fontSize: "1.15rem" }}>{arTotal}</strong>
+                <strong style={{ color: "#fff", fontSize: "1.25rem" }}>{arTotal}</strong>
                 {" "}بند بنجاح
               </div>
-              <div style={{ fontSize: "0.74rem", color: "rgba(255,200,120,0.85)", marginTop: 8, fontWeight: 600 }}>
-                ⚠ يرجى عدم إغلاق المتصفح — كل دفعة محفوظة بشكل دائم في قاعدة البيانات
-              </div>
+              {!done && (
+                <div style={{ fontSize: "0.78rem", color: "rgba(255,200,120,0.9)", marginTop: 10, fontWeight: 700 }}>
+                  ⚠ يرجى عدم إغلاق المتصفح — كل دفعة محفوظة بشكل دائم في قاعدة البيانات
+                </div>
+              )}
+              {done && hasErrors && saveResult?.firstError && (
+                <div style={{ fontSize: "0.78rem", color: "#fca5a5", marginTop: 10, padding: "8px 14px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8 }}>
+                  {saveResult.firstError}
+                </div>
+              )}
             </div>
 
             {/* ── Live Progress Bar ── */}
@@ -704,7 +744,29 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
               </div>
             </div>
 
-            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+            {done && (
+              <button
+                onClick={() => { setSaveResult(null); setIsSaving(false); }}
+                autoFocus
+                style={{
+                  marginTop: 8, padding: "12px 36px",
+                  background: fullSuccess
+                    ? "linear-gradient(135deg, #c5a059 0%, #a88540 100%)"
+                    : "linear-gradient(135deg, #3b8fcc 0%, #1e6fa8 100%)",
+                  color: "#fff", border: "none", borderRadius: 12,
+                  fontSize: "0.95rem", fontWeight: 800,
+                  fontFamily: "Tajawal, sans-serif",
+                  cursor: "pointer",
+                  boxShadow: "0 6px 20px rgba(0,0,0,0.4)",
+                  letterSpacing: "0.04em",
+                }}
+              >تم — إغلاق</button>
+            )}
+
+            <style>{`
+              @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+              @keyframes popIn { 0% { transform: scale(0.3); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+            `}</style>
           </div>
         );
       })()}
