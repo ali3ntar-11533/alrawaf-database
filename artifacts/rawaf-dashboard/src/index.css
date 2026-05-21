@@ -34,7 +34,7 @@ body {
   background-color: var(--body-bg);
   color: var(--text-primary);
   direction: rtl;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* ── Animations ── */
@@ -148,7 +148,7 @@ body {
   flex-direction: column;
   gap: 0;
   min-width: 0;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* Prevent grid columns from overflowing */
