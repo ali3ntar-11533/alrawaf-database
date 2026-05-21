@@ -269,7 +269,7 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
   const [rows, setRows] = useState<Row[]>(() => makeRows(10));
   const [isSaving, setIsSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState<{ saved: number; total: number } | null>(null);
-  const [saveResult, setSaveResult] = useState<{ saved: number; total: number; errors: number; firstError: string | null } | null>(null);
+  const [saveResult, setSaveResult] = useState<{ saved: number; total: number; errors: number; firstError: string | null; duplicates?: number } | null>(null);
   const [summary, setSummary] = useState<{ saved: number; duplicates: number; errors: number } | null>(null);
   const [templateMode, setTemplateMode] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -321,25 +321,35 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
 
     setIsSaving(true);
     setSummary(null);
+    setSaveResult(null);
 
-    /* ── Phase 1: client-side duplicate detection (cheap, runs locally) ── */
-    let duplicates = 0;
+    /* ── Phase 1: PURE duplicate detection (no side effects in setState). ──
+       Compute the duplicate vs fresh split first, then issue a single
+       deterministic setRows. */
+    const duplicateIds = new Set<string>();
     const fresh: Row[] = [];
+    for (const r of toSave) {
+      if (existingSignatures.has(rowSignature(r.data))) {
+        duplicateIds.add(r.id);
+      } else {
+        fresh.push(r);
+      }
+    }
+    const duplicates = duplicateIds.size;
+    const freshIds = new Set(fresh.map((r) => r.id));
     setRows((prev) =>
       prev.map((r) => {
-        if (isRowEmpty(r.data)) return r;
-        if (existingSignatures.has(rowSignature(r.data))) {
-          duplicates++;
-          return { ...r, status: "duplicate" };
-        }
-        fresh.push(r);
-        return { ...r, status: "saving" };
+        if (duplicateIds.has(r.id)) return { ...r, status: "duplicate" };
+        if (freshIds.has(r.id))     return { ...r, status: "saving" };
+        return r;
       })
     );
 
     if (fresh.length === 0) {
+      /* All inputs were duplicates — surface this clearly via the locked
+         result overlay so the user does not miss the outcome. */
       setSummary({ saved: 0, duplicates, errors: 0 });
-      setIsSaving(false);
+      setSaveResult({ saved: 0, total: 0, errors: 0, firstError: null, duplicates });
       return;
     }
 
@@ -417,12 +427,21 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
       }
     }
 
+    /* Safety net: any row still flagged "saving" after the loop is a bug
+       in our accounting (should be impossible). Force it to "error" so the
+       UI never shows an indefinite spinner next to a row. */
+    setRows((prev) => prev.map((r) =>
+      r.status === "saving"
+        ? { ...r, status: "error", error: "لم يكتمل الحفظ — أعد المحاولة" }
+        : r
+    ));
+
     setSummary({ saved, duplicates, errors });
     /* Keep the overlay locked AND switch it to the final result screen.
        The user must press "تم" to dismiss — so even a 500ms import is
        clearly acknowledged with a checkmark + count, instead of vanishing
        before the eye can register it. */
-    setSaveResult({ saved, total: payload.length, errors, firstError });
+    setSaveResult({ saved, total: payload.length, errors, firstError, duplicates });
     setSaveProgress(null);
     if (saved > 0) onSaved();
   }
@@ -692,18 +711,33 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
             <div style={{ textAlign: "center", maxWidth: 540, padding: "0 24px" }}>
               <div style={{ fontSize: "1.25rem", fontWeight: 800, color: "#fff", marginBottom: 10 }}>
                 {done
-                  ? fullSuccess
-                    ? "اكتمل الحفظ بنجاح"
-                    : hasErrors
-                      ? "اكتمل الحفظ مع وجود أخطاء"
-                      : "اكتمل الحفظ"
+                  ? saveResult?.total === 0 && (saveResult?.duplicates ?? 0) > 0
+                    ? "لا يوجد جديد للحفظ"
+                    : fullSuccess
+                      ? "اكتمل الحفظ بنجاح"
+                      : hasErrors
+                        ? "اكتمل الحفظ مع وجود أخطاء"
+                        : "اكتمل الحفظ"
                   : "جاري معالجة وتكويد البنود"}
               </div>
               <div style={{ fontSize: "1rem", color: done && fullSuccess ? "#86efac" : "#7ec8f0", lineHeight: 1.8, fontWeight: 700 }}>
-                تم حفظ <strong style={{ color: "#fff", fontSize: "1.25rem" }}>{arSaved}</strong>
-                {" "}من إجمالي{" "}
-                <strong style={{ color: "#fff", fontSize: "1.25rem" }}>{arTotal}</strong>
-                {" "}بند بنجاح
+                {done && saveResult?.total === 0 && (saveResult?.duplicates ?? 0) > 0 ? (
+                  <>
+                    جميع البنود (<strong style={{ color: "#fff", fontSize: "1.25rem" }}>{(saveResult?.duplicates ?? 0).toLocaleString("ar-EG")}</strong>) موجودة مسبقاً في قاعدة البيانات — لم تتم إضافة أي صف جديد
+                  </>
+                ) : (
+                  <>
+                    تم حفظ <strong style={{ color: "#fff", fontSize: "1.25rem" }}>{arSaved}</strong>
+                    {" "}من إجمالي{" "}
+                    <strong style={{ color: "#fff", fontSize: "1.25rem" }}>{arTotal}</strong>
+                    {" "}بند بنجاح
+                    {done && (saveResult?.duplicates ?? 0) > 0 && (
+                      <div style={{ fontSize: "0.85rem", color: "#fcd34d", marginTop: 6, fontWeight: 600 }}>
+                        + {(saveResult?.duplicates ?? 0).toLocaleString("ar-EG")} صف تم تجاوزه (مكرر)
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
               {!done && (
                 <div style={{ fontSize: "0.78rem", color: "rgba(255,200,120,0.9)", marginTop: 10, fontWeight: 700 }}>
