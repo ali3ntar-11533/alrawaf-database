@@ -356,7 +356,10 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
         containsMatch(c.workCategory       ?? "",  search) ||
         containsMatch(c.unit               ?? "",  search) ||
         containsMatch(c.phone,                     search) ||
-        containsMatch(c.email,                     search)
+        containsMatch(c.email,                     search) ||
+        containsMatch(c.localContent       ?? "",  search) ||
+        containsMatch(c.workDescription    ?? "",  search) ||
+        containsMatch(c.workScopeText      ?? "",  search)
       );
 
       /* ── Dropdown filters: STRICT Exact Match (normalized equality) ──

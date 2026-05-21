@@ -27,6 +27,7 @@ function contractorMatchesSearch(c: Contractor, search: string): boolean {
   const n = normalize(search);
   return (
     normalize(c.contractNo).includes(n)                      ||
+    normalize(c.contractYear    ?? "").includes(n)           ||
     normalize(c.contractor).includes(n)                      ||
     normalize(c.project).includes(n)                         ||
     normalize(c.portfolio).includes(n)                       ||
@@ -37,12 +38,15 @@ function contractorMatchesSearch(c: Contractor, search: string): boolean {
     normalize(c.businessProgram ?? "").includes(n)           ||
     normalize(c.workFamily      ?? "").includes(n)           ||
     normalize(c.itemScope       ?? "").includes(n)           ||
+    normalize(c.itemCode        ?? "").includes(n)           ||
     normalize(c.techSpecs       ?? "").includes(n)           ||
     normalize(c.measurements    ?? "").includes(n)           ||
     normalize(c.unit            ?? "").includes(n)           ||
     normalize(c.phone           ?? "").includes(n)           ||
     normalize(c.email           ?? "").includes(n)           ||
-    normalize(c.localContent    ?? "").includes(n)
+    normalize(c.localContent    ?? "").includes(n)           ||
+    normalize(c.workDescription ?? "").includes(n)           ||
+    normalize(c.workScopeText   ?? "").includes(n)
   );
 }
 
