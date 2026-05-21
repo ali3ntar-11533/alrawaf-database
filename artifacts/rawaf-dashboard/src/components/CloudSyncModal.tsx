@@ -117,13 +117,25 @@ function downloadTemplate() {
   XLSX.writeFile(wb, "قالب_إدخال_البيانات.xlsx");
 }
 
-function parseExcelFile(file: File): Promise<RowData[]> {
+function parseExcelFile(
+  file: File,
+  onProgress?: (percent: number, phase: "read" | "parse" | "done") => void,
+): Promise<RowData[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
+    /* Phase 1 (0-70%): browser reading bytes from disk to memory. */
+    reader.onprogress = (ev) => {
+      if (onProgress && ev.lengthComputable && ev.total > 0) {
+        const pct = Math.min(70, Math.round((ev.loaded / ev.total) * 70));
+        onProgress(pct, "read");
+      }
+    };
     reader.onload = (e) => {
       try {
+        onProgress?.(75, "parse");
         const data = e.target?.result;
         const wb = XLSX.read(data, { type: "array" });
+        onProgress?.(90, "parse");
         const ws = wb.Sheets[wb.SheetNames[0]];
         const rows: string[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as string[][];
         /* Skip header row if first row matches template headers */
@@ -149,6 +161,7 @@ function parseExcelFile(file: File): Promise<RowData[]> {
               rating:          get(20),
             };
           });
+        onProgress?.(100, "done");
         resolve(parsed);
       } catch (err) {
         reject(err);
@@ -275,6 +288,7 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadName, setUploadName] = useState<string | null>(null);
   const [isReading, setIsReading] = useState(false);
+  const [readProgress, setReadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const existingSignatures = new Set(existingContractors.map(dbSignature));
@@ -296,10 +310,11 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
   async function handleFileUpload(file: File) {
     setUploadError(null);
     setIsReading(true);
+    setReadProgress(0);
     setUploadName(file.name);
     try {
-      const parsed = await parseExcelFile(file);
-      if (parsed.length === 0) { setUploadError("لم يتم العثور على بيانات في الملف"); setIsReading(false); return; }
+      const parsed = await parseExcelFile(file, (pct) => setReadProgress(pct));
+      if (parsed.length === 0) { setUploadError("لم يتم العثور على بيانات في الملف"); setIsReading(false); setReadProgress(0); return; }
       const newRows: Row[] = parsed.map((data) => ({ id: Math.random().toString(36).slice(2), data, status: "idle" }));
       setRows((prev) => {
         const nonEmpty = prev.filter((r) => !isRowEmpty(r.data));
@@ -311,6 +326,7 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
       setUploadError("تعذّر قراءة الملف — تأكد أنه ملف Excel صحيح (.xlsx / .xls)");
     } finally {
       setIsReading(false);
+      setReadProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
@@ -621,20 +637,48 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
                 <div style={{ width: 36, height: 36, borderRadius: "10px", background: "linear-gradient(135deg, #1d8a5a, #2baa74)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "#fff" }}>٢</span>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#a0e6c8", marginBottom: "3px" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#a0e6c8", marginBottom: "3px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {uploadName ? uploadName : "رفع الملف المعبّأ"}
                   </div>
                   <div style={{ fontSize: "0.68rem", color: "rgba(100,220,170,0.6)" }}>
-                    {isReading ? "جاري قراءة الملف..." : "اختر ملف Excel (.xlsx / .xls) بعد تعبئة القالب"}
+                    {isReading
+                      ? readProgress < 70
+                        ? `جاري قراءة الملف... ${readProgress}%`
+                        : readProgress < 100
+                          ? `جاري تحليل البيانات... ${readProgress}%`
+                          : `اكتمل — جاري الإدراج...`
+                      : "اختر ملف Excel (.xlsx / .xls) بعد تعبئة القالب"}
                   </div>
+                  {/* Live progress bar — visible only while reading */}
+                  {isReading && (
+                    <div style={{ marginTop: 8, width: "100%", height: 6, background: "rgba(43,170,116,0.15)", borderRadius: 999, overflow: "hidden", border: "1px solid rgba(43,170,116,0.25)" }}>
+                      <div style={{
+                        width: `${readProgress}%`,
+                        height: "100%",
+                        background: "linear-gradient(90deg, #2baa74, #4dd49a)",
+                        boxShadow: "0 0 10px rgba(43,170,116,0.6)",
+                        transition: "width 0.18s ease-out",
+                        borderRadius: 999,
+                      }} />
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => { setUploadError(null); fileInputRef.current?.click(); }}
                   disabled={isReading}
-                  style={{ display: "flex", alignItems: "center", gap: "6px", background: isReading ? "rgba(43,170,116,0.25)" : "linear-gradient(135deg, #1d8a5a, #2baa74)", border: "none", color: "#fff", borderRadius: "9px", padding: "9px 18px", fontSize: "0.8rem", fontWeight: 700, cursor: isReading ? "not-allowed" : "pointer", fontFamily: "Tajawal, sans-serif", flexShrink: 0, boxShadow: isReading ? "none" : "0 4px 14px rgba(43,170,116,0.3)", opacity: isReading ? 0.6 : 1 }}>
-                  {isReading ? <Loader size={14} style={{ animation: "spin-loader 0.9s linear infinite" }} /> : <Upload size={14} />}
-                  {isReading ? "جاري القراءة..." : "رفع الملف"}
+                  style={{ display: "flex", alignItems: "center", gap: "6px", background: isReading ? "rgba(43,170,116,0.25)" : "linear-gradient(135deg, #1d8a5a, #2baa74)", border: "none", color: "#fff", borderRadius: "9px", padding: "9px 18px", fontSize: "0.8rem", fontWeight: 700, cursor: isReading ? "not-allowed" : "pointer", fontFamily: "Tajawal, sans-serif", flexShrink: 0, boxShadow: isReading ? "none" : "0 4px 14px rgba(43,170,116,0.3)", opacity: isReading ? 0.85 : 1, minWidth: 110, justifyContent: "center" }}>
+                  {isReading ? (
+                    <>
+                      <Loader size={14} style={{ animation: "spin-loader 0.9s linear infinite" }} />
+                      <span style={{ fontFamily: "monospace", fontWeight: 800 }}>{readProgress}%</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={14} />
+                      رفع الملف
+                    </>
+                  )}
                 </button>
               </div>
             </div>
