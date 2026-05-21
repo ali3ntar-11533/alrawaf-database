@@ -83,6 +83,33 @@ function TruncatedBadge({
   );
 }
 
+/* ── 3-Tier comparison based on the unique item-code prefix ─────────────
+   Code format: `<L>-<14 digits>` where the 14 digits are 7 slots×2.
+   Tier 1 (دقيق):    full 16-char code matches            → identical item
+   Tier 2 (متماثل):  letter + first 5 slots (12 chars)     → same scope
+   Tier 3 (موسّع):   letter + first 3 slots (8 chars)      → same family
+*/
+type Tier = "exact" | "similar" | "broad";
+
+const TIER_META: Record<Tier, { label: string; icon: string; color: string; slots: number; tip: string }> = {
+  exact:   { label: "دقيق",   icon: "🎯", color: "#2baa74", slots: 7, tip: "تطابق كامل للكود الفريد للبند — أعدل مقارنة" },
+  similar: { label: "متماثل", icon: "⚖️", color: "#c5a059", slots: 5, tip: "تطابق المحفظة + النشاط + البرنامج + العائلة + نوع الأعمال + الشمولية" },
+  broad:   { label: "موسّع",  icon: "🌐", color: "#3b8fcc", slots: 3, tip: "تطابق المحفظة + النشاط + البرنامج + العائلة" },
+};
+
+function codePrefix(code: string | null | undefined, slots: number): string {
+  if (!code) return "";
+  const want = 2 + slots * 2; // "L-" + slots×2 digits
+  return code.length >= want ? code.slice(0, want) : "";
+}
+
+function buildMask(code: string | null | undefined, slots: number): string {
+  if (!code) return "—";
+  const prefix    = codePrefix(code, slots);
+  const remaining = Math.max(0, 14 - slots * 2);
+  return prefix + "_".repeat(remaining);
+}
+
 export default function MainContent({ contractor, allContractors, filteredContractors, isLoading, onSelectId, customPrice, emptyStateMessage }: Props) {
   // Active stat tab index (0=custom/current, 1=min, 2=avg, 3=max)
   const [activeStat, setActiveStat] = useState(0);
@@ -92,6 +119,8 @@ export default function MainContent({ contractor, allContractors, filteredContra
   const [minCycleIdx, setMinCycleIdx] = useState(0);
   const [avgCycleIdx, setAvgCycleIdx] = useState(0);
   const [maxCycleIdx, setMaxCycleIdx] = useState(0);
+  // Comparison tier — null means "auto-pick the most precise tier with ≥2 records"
+  const [userTier, setUserTier] = useState<Tier | null>(null);
 
   useEffect(() => {
     if (skipStatReset.current) { skipStatReset.current = false; return; }
@@ -99,6 +128,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
     setMinCycleIdx(0);
     setAvgCycleIdx(0);
     setMaxCycleIdx(0);
+    setUserTier(null); // reset to auto-pick on contractor change
   }, [contractor?.id]);
   // When a custom price is entered for the first time, highlight the "السعر المقارن" cell (index 0)
   const prevCustomPrice = useRef<number | null | undefined>(null);
@@ -120,73 +150,69 @@ export default function MainContent({ contractor, allContractors, filteredContra
     );
   }
 
-  // ── Price pool: 4-level match — most precise first ──
-  // L1: workType + workFamily + itemScope → triple-field item group
-  // L2: workType + workFamily         → double-field group
-  // L3: workType only                 → widest fallback
+  // ── Price pools: 3-tier hierarchical match driven by the unique item code ──
+  // Tier 1 (exact):   identical 14-digit code      → identical item
+  // Tier 2 (similar): same letter + first 5 slots  → same scope/type
+  // Tier 3 (broad):   same letter + first 3 slots  → same work family
+  // Legacy fallback: when the current record has no itemCode, fall back to
+  // text-based workType matching (so old data stays comparable).
+  const currentCode = (contractor as any)?.itemCode as string | null | undefined;
+  const hasCode     = !!currentCode;
+  const prefix5     = codePrefix(currentCode, 5);
+  const prefix3     = codePrefix(currentCode, 3);
 
-  type PoolMethod = "type+family+scope" | "type+family" | "type";
+  const workTypeKey   = contractor ? normalize(contractor.workType) : "";
+  const legacyPool: Contractor[] = (!hasCode && workTypeKey)
+    ? filteredContractors.filter((c) => normalize(c.workType) === workTypeKey)
+    : [];
 
-  const workTypeKey   = contractor ? normalize(contractor.workType        ) : "";
-  const workFamilyKey = contractor ? normalize(contractor.workFamily ?? "") : "";
-  const itemScopeKey  = contractor ? normalize(contractor.itemScope  ?? "") : "";
+  const poolExact: Contractor[] = hasCode
+    ? filteredContractors.filter((c) => (c as any).itemCode === currentCode)
+    : legacyPool;
+  const poolSimilar: Contractor[] = hasCode && prefix5
+    ? filteredContractors.filter((c) => {
+        const code = (c as any).itemCode as string | null | undefined;
+        return !!code && code.startsWith(prefix5);
+      })
+    : legacyPool;
+  const poolBroad: Contractor[] = hasCode && prefix3
+    ? filteredContractors.filter((c) => {
+        const code = (c as any).itemCode as string | null | undefined;
+        return !!code && code.startsWith(prefix3);
+      })
+    : legacyPool;
 
-  let pricePool:   Contractor[] = [];
-  let poolMethod:  PoolMethod   = "type";
+  const tierPools: Record<Tier, Contractor[]> = {
+    exact:   poolExact,
+    similar: poolSimilar,
+    broad:   poolBroad,
+  };
 
-  if (contractor) {
-    if (pricePool.length === 0 && workTypeKey.length > 0 && workFamilyKey.length > 0 && itemScopeKey.length > 0) {
-      const pool = filteredContractors.filter(
-        (c) =>
-          normalize(c.workType)         === workTypeKey &&
-          normalize(c.workFamily  ?? "") === workFamilyKey &&
-          normalize(c.itemScope   ?? "") === itemScopeKey
-      );
-      if (pool.length > 0) { pricePool = pool; poolMethod = "type+family+scope"; }
-    }
-    if (pricePool.length === 0 && workTypeKey.length > 0 && workFamilyKey.length > 0) {
-      const pool = filteredContractors.filter(
-        (c) =>
-          normalize(c.workType)         === workTypeKey &&
-          normalize(c.workFamily  ?? "") === workFamilyKey
-      );
-      if (pool.length > 0) { pricePool = pool; poolMethod = "type+family"; }
-    }
-    if (pricePool.length === 0 && workTypeKey.length > 0) {
-      pricePool  = filteredContractors.filter((c) => normalize(c.workType) === workTypeKey);
-      poolMethod = "type";
-    }
-    if (pricePool.length === 0) pricePool = [contractor];
-  }
+  // Auto-pick the most precise tier that has ≥2 records (so the comparison
+  // is actually meaningful); else fall through to the next tier.
+  const autoTier: Tier =
+    poolExact.length   >= 2 ? "exact"
+    : poolSimilar.length >= 2 ? "similar"
+    : poolBroad.length   >= 2 ? "broad"
+    : "exact";
+  const tier: Tier = userTier ?? autoTier;
+
+  let pricePool: Contractor[] = tierPools[tier];
+  if (pricePool.length === 0 && contractor) pricePool = [contractor];
 
   const scopePoolSize = pricePool.length;
 
-  // Human-readable label describing the comparison scope used
-  const poolLabel: string = (() => {
-    if (!contractor) return "—";
-    switch (poolMethod) {
-      case "type+family+scope":
-        return `${contractor.workFamily} › ${contractor.workType} › ${contractor.itemScope}`;
-      case "type+family":
-        return `${contractor.workFamily} › ${contractor.workType}`;
-      case "type":
-      default:
-        return contractor.workType || "—";
-    }
-  })();
-
-  // ── Comparison confidence indicator ──
-  const confidence: { label: string; color: string; dot: string; tip: string } = (() => {
-    switch (poolMethod) {
-      case "type+family+scope":
-        return { label: "دقيق", color: "#2baa74", dot: "#2baa74", tip: "تطابق: عائلة الأعمال + نوع الأعمال + شمولية البند" };
-      case "type+family":
-        return { label: "متوسط", color: "#c5a059", dot: "#c5a059", tip: "تطابق: عائلة الأعمال + نوع الأعمال فقط — يُنصح بتعبئة شمولية البند" };
-      case "type":
-      default:
-        return { label: "أساسي", color: "#3b8fcc", dot: "#3b8fcc", tip: "تطابق: نوع الأعمال فقط — قد تشمل أصناف مختلفة. يُنصح بتعبئة عائلة الأعمال وشمولية البند" };
-    }
-  })();
+  // Mask ribbon for the active tier — shows which digits are "fixed" vs free.
+  const tierMask  = buildMask(currentCode, TIER_META[tier].slots);
+  const tierMeta  = TIER_META[tier];
+  // Human-readable scope label (shown in the dark footer header)
+  const poolLabel: string = !contractor
+    ? "—"
+    : tier === "exact"
+      ? (currentCode || contractor.workType || "—")
+      : tier === "similar"
+        ? `${contractor.workFamily ?? ""} › ${contractor.workType ?? ""} › ${contractor.itemScope ?? ""}`.replace(/^›|›$/g, "").trim()
+        : `${contractor.mainActivity ?? ""} › ${contractor.workFamily ?? ""}`.replace(/^›|›$/g, "").trim();
 
   // Only consider records with a valid price > 0 for min/max/avg calculations
   const validPricePool = pricePool.filter((c) => c.price > 0);
@@ -194,6 +220,100 @@ export default function MainContent({ contractor, allContractors, filteredContra
   const maxPrice       = allPrices.length > 0 ? Math.max(...allPrices) : 1;
   const minPrice       = allPrices.length > 0 ? Math.min(...allPrices) : 0;
   const avgPrice       = avg(allPrices);
+
+  // ── Price-deviation alarm: when the current contractor's price diverges
+  //    from the tier's average by more than 30%, flip the tier indicator
+  //    to red regardless of which tier is active (financial-protection rule).
+  const deviationPct = (contractor && avgPrice > 0)
+    ? Math.abs(contractor.price - avgPrice) / avgPrice
+    : 0;
+  const isHighDeviation = deviationPct > 0.30 && validPricePool.length >= 2;
+  const activeTierColor = isHighDeviation ? "#e74c3c" : tierMeta.color;
+
+  /* TierTabs — switchable 3-tier comparison selector.
+     `dark` swaps the palette for the dark-themed footer header. */
+  const renderTierTabs = (dark: boolean) => (
+    <div style={{
+      display: "inline-flex", gap: "2px",
+      background: dark ? "rgba(255,255,255,0.06)" : "#f5f0e8",
+      borderRadius: "7px", padding: "2px", flexShrink: 0,
+    }}>
+      {(["exact", "similar", "broad"] as Tier[]).map((t) => {
+        const meta     = TIER_META[t];
+        const isActive = tier === t;
+        const count    = tierPools[t].length;
+        const disabled = count === 0;
+        const activeColor = (isActive && isHighDeviation) ? "#e74c3c" : meta.color;
+        return (
+          <button
+            key={t}
+            disabled={disabled}
+            onClick={() => {
+              setUserTier(t);
+              // Reset stat-cell cycle indices so the new tier starts fresh
+              setMinCycleIdx(0);
+              setAvgCycleIdx(0);
+              setMaxCycleIdx(0);
+            }}
+            title={`${meta.tip}${disabled ? " — لا توجد بنود" : ""}`}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: "4px",
+              fontSize: "0.58rem", fontWeight: 700,
+              padding: "3px 8px", borderRadius: "5px", border: "none",
+              cursor: disabled ? "not-allowed" : "pointer",
+              background: isActive ? activeColor : "transparent",
+              color: isActive ? "#fff" : (dark ? "rgba(255,255,255,0.55)" : "#888"),
+              opacity: disabled ? 0.35 : 1,
+              transition: "all 0.18s",
+              fontFamily: "inherit",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <span style={{ fontSize: "0.62rem", lineHeight: 1 }}>{meta.icon}</span>
+            {meta.label}
+            <span style={{
+              background: isActive ? "rgba(255,255,255,0.28)" : (dark ? "rgba(255,255,255,0.10)" : "#e8e0d0"),
+              borderRadius: "3px", padding: "0 4px", fontWeight: 800,
+              fontSize: "0.54rem", minWidth: "14px", textAlign: "center",
+            }}>{count}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  /* MaskRibbon — shows the matching prefix for the active tier, with
+     trailing underscores for the "free" digits.  Helps the user see
+     exactly which parts of the code drove the comparison. */
+  const renderMaskRibbon = (dark: boolean) => (
+    <span
+      title={`القناع المُستخدم في المقارنة — الخانات الثابتة ظاهرة بالأرقام والخانات الحرة بـ _`}
+      style={{
+        fontFamily: "monospace", fontSize: "0.58rem", fontWeight: 700,
+        letterSpacing: "0.06em",
+        color: dark ? "rgba(255,255,255,0.85)" : "var(--charcoal)",
+        background: dark ? "rgba(197,160,89,0.18)" : "rgba(197,160,89,0.12)",
+        border: `1px solid ${dark ? "rgba(197,160,89,0.35)" : "rgba(197,160,89,0.30)"}`,
+        borderRadius: "4px", padding: "2px 7px",
+        whiteSpace: "nowrap", flexShrink: 0,
+        direction: "ltr",
+      }}
+    >{tierMask}</span>
+  );
+
+  /* Deviation warning chip — only shown when |current − avg| / avg > 30% */
+  const renderDeviationChip = () => isHighDeviation ? (
+    <span
+      title={`سعر المقاول الحالي ينحرف بنسبة ${(deviationPct * 100).toFixed(0)}٪ عن متوسط هذا المستوى`}
+      style={{
+        display: "inline-flex", alignItems: "center", gap: "3px",
+        fontSize: "0.55rem", fontWeight: 800, color: "#fff",
+        background: "#e74c3c", borderRadius: "4px", padding: "2px 6px",
+        whiteSpace: "nowrap", flexShrink: 0,
+        animation: "pulse-gold 1.5s ease-in-out infinite",
+      }}
+    >🔴 انحراف {(deviationPct * 100).toFixed(0)}٪</span>
+  ) : null;
 
   // All contractors sharing the exact min / max price (for cycling)
   const contractorsAtMin = validPricePool.filter((c) => c.price === minPrice);
@@ -535,18 +655,10 @@ export default function MainContent({ contractor, allContractors, filteredContra
                 <DollarSign size={13} style={{ color: "var(--gold)" }} />
                 مقارنة الأسعار
               </h3>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                {/* Confidence badge */}
-                <span
-                  title={confidence.tip}
-                  style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.58rem", fontWeight: 700, color: confidence.color, background: `${confidence.color}14`, border: `1px solid ${confidence.color}30`, borderRadius: "5px", padding: "2px 8px", cursor: "help", whiteSpace: "nowrap" }}
-                >
-                  <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: confidence.dot, flexShrink: 0, display: "inline-block" }} />
-                  {confidence.label}
-                </span>
-                <span style={{ fontSize: "0.58rem", color: "#bbb", background: "#f5f0e8", borderRadius: "4px", padding: "2px 7px", textAlign: "left" }} title={`نطاق المقارنة: ${poolLabel}`}>
-                  أفضل {best5.length} • سعر + تقييم
-                </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                {renderTierTabs(false)}
+                {renderMaskRibbon(false)}
+                {renderDeviationChip()}
               </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>
@@ -611,7 +723,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
               })}
             </div>
             <div style={{ marginTop: "10px", fontSize: "0.6rem", color: "#bbb", textAlign: "center" }}>
-              مرتبة حسب أفضل قيمة (60% سعر + 40% تقييم) • مقارنة داخل مجموعة البند الحالي فقط • اضغط لعرض بيانات أي مقاول
+              مرتبة حسب أفضل قيمة (60% سعر + 40% تقييم) • مستوى المقارنة: <strong style={{ color: activeTierColor }}>{tierMeta.label}</strong> ({scopePoolSize} {scopePoolSize === 1 ? "سجل" : "سجلات"}) • اضغط لعرض بيانات أي مقاول
             </div>
           </div>
         );
@@ -633,18 +745,10 @@ export default function MainContent({ contractor, allContractors, filteredContra
             <span style={{ fontSize: "0.62rem", color: "rgba(197,160,89,0.85)", fontWeight: 700, letterSpacing: "0.05em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
               تحليل الأسعار • {poolLabel}
             </span>
-            <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0 }}>
-              {/* Confidence badge — dark variant for the dark footer */}
-              <span
-                title={confidence.tip}
-                style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.58rem", fontWeight: 700, color: confidence.color, background: `${confidence.color}22`, border: `1px solid ${confidence.color}40`, borderRadius: "5px", padding: "2px 8px", cursor: "help", whiteSpace: "nowrap" }}
-              >
-                <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: confidence.dot, flexShrink: 0, display: "inline-block" }} />
-                {confidence.label}
-              </span>
-              <span style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.07)", borderRadius: "5px", padding: "2px 10px", whiteSpace: "nowrap" }}>
-                {scopePoolSize > 1 ? `${scopePoolSize} سجل` : "سجل واحد"}
-              </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
+              {renderTierTabs(true)}
+              {renderMaskRibbon(true)}
+              {renderDeviationChip()}
             </div>
           </div>
 
