@@ -121,14 +121,12 @@ export default function MainContent({ contractor, allContractors, filteredContra
   }
 
   // ── Price pool: 4-level match — most precise first ──
-  // L1: itemCode exact match         → same unique item code
-  // L2: workType + workFamily + itemScope → triple-field item group
-  // L3: workType + workFamily         → double-field group
-  // L4: workType only                 → widest fallback
+  // L1: workType + workFamily + itemScope → triple-field item group
+  // L2: workType + workFamily         → double-field group
+  // L3: workType only                 → widest fallback
 
-  type PoolMethod = "itemCode" | "type+family+scope" | "type+family" | "type";
+  type PoolMethod = "type+family+scope" | "type+family" | "type";
 
-  const itemCodeKey   = contractor ? normalize(contractor.itemCode   ?? "") : "";
   const workTypeKey   = contractor ? normalize(contractor.workType        ) : "";
   const workFamilyKey = contractor ? normalize(contractor.workFamily ?? "") : "";
   const itemScopeKey  = contractor ? normalize(contractor.itemScope  ?? "") : "";
@@ -137,12 +135,6 @@ export default function MainContent({ contractor, allContractors, filteredContra
   let poolMethod:  PoolMethod   = "type";
 
   if (contractor) {
-    if (itemCodeKey.length > 0) {
-      const pool = filteredContractors.filter(
-        (c) => normalize(c.itemCode ?? "") === itemCodeKey
-      );
-      if (pool.length > 0) { pricePool = pool; poolMethod = "itemCode"; }
-    }
     if (pricePool.length === 0 && workTypeKey.length > 0 && workFamilyKey.length > 0 && itemScopeKey.length > 0) {
       const pool = filteredContractors.filter(
         (c) =>
@@ -173,8 +165,6 @@ export default function MainContent({ contractor, allContractors, filteredContra
   const poolLabel: string = (() => {
     if (!contractor) return "—";
     switch (poolMethod) {
-      case "itemCode":
-        return `كود البند: ${contractor.itemCode}`;
       case "type+family+scope":
         return `${contractor.workType} › ${contractor.workFamily} › ${contractor.itemScope}`;
       case "type+family":
@@ -188,15 +178,13 @@ export default function MainContent({ contractor, allContractors, filteredContra
   // ── Comparison confidence indicator ──
   const confidence: { label: string; color: string; dot: string; tip: string } = (() => {
     switch (poolMethod) {
-      case "itemCode":
-        return { label: "دقيق جداً", color: "#3b8fcc", dot: "#3b8fcc", tip: "تطابق بكود البند — أعلى دقة ممكنة" };
       case "type+family+scope":
         return { label: "دقيق", color: "#2baa74", dot: "#2baa74", tip: "تطابق: نوع الأعمال + عائلة الأعمال + شمولية البند" };
       case "type+family":
         return { label: "متوسط", color: "#c5a059", dot: "#c5a059", tip: "تطابق: نوع الأعمال + عائلة الأعمال فقط — يُنصح بتعبئة شمولية البند" };
       case "type":
       default:
-        return { label: "أساسي", color: "#e07b2a", dot: "#e07b2a", tip: "تطابق: نوع الأعمال فقط — قد تشمل أصناف مختلفة. يُنصح بتعبئة عائلة الأعمال وشمولية البند" };
+        return { label: "أساسي", color: "#3b8fcc", dot: "#3b8fcc", tip: "تطابق: نوع الأعمال فقط — قد تشمل أصناف مختلفة. يُنصح بتعبئة عائلة الأعمال وشمولية البند" };
     }
   })();
 
