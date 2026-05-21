@@ -100,10 +100,16 @@ function App() {
     if (!onlyPriceChanged) setSelectedId(null);
   }
 
+  const isWelcome = activeTab === "main" && !search.trim() && !selectedId && !Object.values(filters).some(v => v !== "");
+
   return (
     <SplashGate>
       <ContractorsProvider>
-        <div style={{ height: "100vh", display: "flex", flexDirection: "column", backgroundColor: "var(--body-bg)" }}>
+        <div style={{
+          ...(isWelcome ? { height: "100vh", overflow: "hidden" } : { minHeight: "100vh" }),
+          display: "flex", flexDirection: "column",
+          backgroundColor: "var(--body-bg)",
+        }}>
           <Header
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -113,7 +119,7 @@ function App() {
             onFiltersChange={handleFiltersChange}
             currentUser={currentUser}
           />
-          <div key={activeTab} style={{ flex: 1, minHeight: 0, overflowY: activeTab === "main" && !search.trim() && !selectedId && !Object.values(filters).some(v => v !== "") ? "hidden" : "auto" }}>
+          <div key={activeTab} style={{ flex: 1, minHeight: 0 }}>
             {activeTab === "main" ? (
               <MainDashboard
                 search={search}
