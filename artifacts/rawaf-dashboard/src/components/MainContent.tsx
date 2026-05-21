@@ -221,14 +221,36 @@ export default function MainContent({ contractor, allContractors, filteredContra
   const minPrice       = allPrices.length > 0 ? Math.min(...allPrices) : 0;
   const avgPrice       = avg(allPrices);
 
-  // ── Price-deviation alarm: when the current contractor's price diverges
+  // ── Price under evaluation ─────────────────────────────────────────────
+  //    Use the user-entered custom price when present (an external offer
+  //    being benchmarked), otherwise the current contractor's stored price.
+  //    All deviation/ranking logic below pivots on this single value so
+  //    custom offers are scored against the internal tier pool exactly the
+  //    same way the contractor's own price is.
+  const hasCustomPrice = !!(customPrice && customPrice > 0);
+  const priceUnderEval = hasCustomPrice ? (customPrice as number) : (contractor?.price ?? 0);
+  const evalLabel      = hasCustomPrice ? "السعر المُدخل" : "سعر المقاول الحالي";
+
+  // ── Price-deviation alarm: when the price under evaluation diverges
   //    from the tier's average by more than 30%, flip the tier indicator
   //    to red regardless of which tier is active (financial-protection rule).
-  const deviationPct = (contractor && avgPrice > 0)
-    ? Math.abs(contractor.price - avgPrice) / avgPrice
+  const deviationPct = (priceUnderEval > 0 && avgPrice > 0)
+    ? Math.abs(priceUnderEval - avgPrice) / avgPrice
     : 0;
   const isHighDeviation = deviationPct > 0.30 && validPricePool.length >= 2;
   const activeTierColor = isHighDeviation ? "#e74c3c" : tierMeta.color;
+
+  // ── Rank of the evaluated price inside the current tier ────────────────
+  //    `cheaperCount` = how many tier records strictly undercut us.
+  //    Rank = cheaperCount + 1.  Useful both for the contractor's own
+  //    price AND for benchmarking an externally-typed offer.
+  const cheaperCount = validPricePool.filter((c) => c.price < priceUnderEval).length;
+  const evalRank     = priceUnderEval > 0 ? cheaperCount + 1 : 0;
+  const evalTotal    = validPricePool.length + (hasCustomPrice ? 1 : 0);
+  // For custom price: is it strictly the cheapest? (would dethrone min)
+  const customBeatsMin = hasCustomPrice && validPricePool.length > 0 && priceUnderEval < minPrice;
+  const savingsVsMin   = hasCustomPrice ? Math.max(0, minPrice - priceUnderEval) : 0;
+  const overhangVsAvg  = hasCustomPrice && avgPrice > 0 ? Math.round(priceUnderEval - avgPrice) : 0;
 
   /* TierTabs — switchable 3-tier comparison selector.
      `dark` swaps the palette for the dark-themed footer header. */
@@ -301,10 +323,11 @@ export default function MainContent({ contractor, allContractors, filteredContra
     >{tierMask}</span>
   );
 
-  /* Deviation warning chip — only shown when |current − avg| / avg > 30% */
+  /* Deviation warning chip — only shown when |evaluated − avg| / avg > 30%.
+     The label adapts to whichever price is under evaluation. */
   const renderDeviationChip = () => isHighDeviation ? (
     <span
-      title={`سعر المقاول الحالي ينحرف بنسبة ${(deviationPct * 100).toFixed(0)}٪ عن متوسط هذا المستوى`}
+      title={`${evalLabel} (${formatExact(priceUnderEval)}) ينحرف بنسبة ${(deviationPct * 100).toFixed(0)}٪ عن متوسط هذا المستوى (${formatExact(Math.round(avgPrice))})`}
       style={{
         display: "inline-flex", alignItems: "center", gap: "3px",
         fontSize: "0.55rem", fontWeight: 800, color: "#fff",
@@ -312,8 +335,32 @@ export default function MainContent({ contractor, allContractors, filteredContra
         whiteSpace: "nowrap", flexShrink: 0,
         animation: "pulse-gold 1.5s ease-in-out infinite",
       }}
-    >🔴 انحراف {(deviationPct * 100).toFixed(0)}٪</span>
+    >🔴 {hasCustomPrice ? "السعر المُدخل" : "انحراف"} {(deviationPct * 100).toFixed(0)}٪</span>
   ) : null;
+
+  /* Rank chip — shows where the evaluated price would sit in the tier pool.
+     Always visible when there is something to compare against (≥2 records).
+     For custom price the chip is purple (to match the existing "السعر المقارن" cell color). */
+  const renderRankChip = (dark: boolean) => {
+    if (validPricePool.length < 2 || priceUnderEval <= 0) return null;
+    const color   = hasCustomPrice ? "#9b59b6" : "#c5a059";
+    const isBest  = evalRank === 1;
+    const icon    = isBest ? "🏆" : hasCustomPrice ? "💡" : "📊";
+    return (
+      <span
+        title={`${evalLabel} (${formatExact(priceUnderEval)}) يحتل الترتيب ${evalRank} من ${evalTotal} في هذا المستوى`}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: "3px",
+          fontSize: "0.55rem", fontWeight: 800,
+          color: isBest ? "#fff" : color,
+          background: isBest ? color : (dark ? `${color}22` : `${color}14`),
+          border: `1px solid ${color}${dark ? "55" : "40"}`,
+          borderRadius: "4px", padding: "2px 6px",
+          whiteSpace: "nowrap", flexShrink: 0, direction: "rtl",
+        }}
+      >{icon} الترتيب {evalRank}/{evalTotal}</span>
+    );
+  };
 
   // All contractors sharing the exact min / max price (for cycling)
   const contractorsAtMin = validPricePool.filter((c) => c.price === minPrice);
@@ -658,6 +705,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
               <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", justifyContent: "flex-end" }}>
                 {renderTierTabs(false)}
                 {renderMaskRibbon(false)}
+                {renderRankChip(false)}
                 {renderDeviationChip()}
               </div>
             </div>
@@ -748,6 +796,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
             <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
               {renderTierTabs(true)}
               {renderMaskRibbon(true)}
+              {renderRankChip(true)}
               {renderDeviationChip()}
             </div>
           </div>
