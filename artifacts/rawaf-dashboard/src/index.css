@@ -25,7 +25,10 @@
 html {
   overflow-y: scroll;
   scrollbar-gutter: stable;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+html::-webkit-scrollbar { display: none; }
 
 body {
   font-family: 'Tajawal', sans-serif;
