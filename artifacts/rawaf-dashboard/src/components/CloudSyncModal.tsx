@@ -268,6 +268,7 @@ function StatusBadge({ status, error }: { status: RowStatus; error?: string }) {
 export default function CloudSyncModal({ existingContractors, onClose, onSaved }: Props) {
   const [rows, setRows] = useState<Row[]>(() => makeRows(10));
   const [isSaving, setIsSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState<{ saved: number; total: number } | null>(null);
   const [summary, setSummary] = useState<{ saved: number; duplicates: number; errors: number } | null>(null);
   const [templateMode, setTemplateMode] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -369,24 +370,54 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
       workScopeText:   null,
     }));
 
-    /* ── Phase 3: ONE round-trip bulk insert ── */
-    let saved = 0, errors = 0;
-    try {
-      const result = await bulkCreateContractors(payload);
-      saved = result.saved;
-      fresh.forEach((r) => existingSignatures.add(rowSignature(r.data)));
-      setRows((prev) => prev.map((r) =>
-        fresh.some((f) => f.id === r.id) ? { ...r, status: "saved" } : r
-      ));
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "خطأ غير معروف";
-      errors = fresh.length;
-      setRows((prev) => prev.map((r) =>
-        fresh.some((f) => f.id === r.id) ? { ...r, status: "error", error: msg } : r
-      ));
+    /* ── Phase 3: chunked incremental save ──
+       Each 500-row chunk is its own HTTP request and its own DB
+       transaction.  Server-side COMMIT happens after every chunk, so if
+       the user closes the browser mid-import every chunk already
+       acknowledged is permanently persisted.  Live progress UI updates
+       between chunks. */
+    const CHUNK_SIZE = 500;
+    setSaveProgress({ saved: 0, total: payload.length });
+
+    let saved = 0;
+    let errors = 0;
+    let firstError: string | null = null;
+    const savedIds: string[] = [];
+
+    for (let i = 0; i < payload.length; i += CHUNK_SIZE) {
+      const sliceItems  = payload.slice(i, i + CHUNK_SIZE);
+      const sliceRows   = fresh.slice(i, i + CHUNK_SIZE);
+      try {
+        const result = await bulkCreateContractors(sliceItems);
+        saved += result.saved;
+        for (const r of sliceRows) {
+          existingSignatures.add(rowSignature(r.data));
+          savedIds.push(r.id);
+        }
+        const savedIdSet = new Set(savedIds);
+        setRows((prev) => prev.map((r) =>
+          savedIdSet.has(r.id) ? { ...r, status: "saved" } : r
+        ));
+        setSaveProgress({ saved, total: payload.length });
+        /* Yield to the browser so the progress UI repaints between chunks
+           before we kick off the next network round-trip. */
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "خطأ غير معروف";
+        if (!firstError) firstError = msg;
+        errors += sliceRows.length;
+        const failedIds = new Set(sliceRows.map((r) => r.id));
+        setRows((prev) => prev.map((r) =>
+          failedIds.has(r.id) ? { ...r, status: "error", error: msg } : r
+        ));
+        /* Stop on first failure — saved chunks are already persisted in
+           data.db so the user keeps the work that succeeded. */
+        break;
+      }
     }
 
     setSummary({ saved, duplicates, errors });
+    setSaveProgress(null);
     setIsSaving(false);
     if (saved > 0) onSaved();
   }
@@ -603,42 +634,80 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
            Locks the entire modal during a bulk import so the user
            cannot double-click "حفظ" or close the dialog mid-flight.
            Shows row count + animated spinner.                          */}
-      {isSaving && (
-        <div
-          role="status"
-          aria-live="polite"
-          style={{
-            position: "fixed", inset: 0, zIndex: 3000,
-            background: "rgba(8,14,28,0.78)", backdropFilter: "blur(10px)",
-            display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center",
-            gap: "18px", direction: "rtl",
-            fontFamily: "Tajawal, sans-serif",
-            animation: "fadeInUp 0.25s ease-out",
-          }}
-        >
+      {isSaving && (() => {
+        const total      = saveProgress?.total ?? nonEmptyCount;
+        const savedNow   = saveProgress?.saved ?? 0;
+        const percent    = total > 0 ? Math.min(100, Math.round((savedNow / total) * 100)) : 0;
+        const arSaved    = savedNow.toLocaleString("ar-EG");
+        const arTotal    = total.toLocaleString("ar-EG");
+        return (
           <div
+            role="status"
+            aria-live="polite"
             style={{
-              width: 78, height: 78, borderRadius: "50%",
-              border: "5px solid rgba(59,143,204,0.18)",
-              borderTopColor: "#3b8fcc",
-              animation: "spin 0.85s linear infinite",
+              position: "fixed", inset: 0, zIndex: 3000,
+              background: "rgba(8,14,28,0.82)", backdropFilter: "blur(12px)",
+              display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center",
+              gap: "22px", direction: "rtl",
+              fontFamily: "Tajawal, sans-serif",
+              animation: "fadeInUp 0.25s ease-out",
             }}
-          />
-          <div style={{ textAlign: "center", maxWidth: 460, padding: "0 24px" }}>
-            <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#fff", marginBottom: 8 }}>
-              جاري حفظ وتكويد البنود ذكياً…
+          >
+            <div
+              style={{
+                width: 78, height: 78, borderRadius: "50%",
+                border: "5px solid rgba(59,143,204,0.18)",
+                borderTopColor: "#3b8fcc",
+                animation: "spin 0.85s linear infinite",
+              }}
+            />
+            <div style={{ textAlign: "center", maxWidth: 540, padding: "0 24px" }}>
+              <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#fff", marginBottom: 10 }}>
+                جاري معالجة وتكويد البنود
+              </div>
+              <div style={{ fontSize: "0.95rem", color: "#7ec8f0", lineHeight: 1.8, fontWeight: 700 }}>
+                تم حفظ <strong style={{ color: "#fff", fontSize: "1.15rem" }}>{arSaved}</strong>
+                {" "}من إجمالي{" "}
+                <strong style={{ color: "#fff", fontSize: "1.15rem" }}>{arTotal}</strong>
+                {" "}بند بنجاح
+              </div>
+              <div style={{ fontSize: "0.74rem", color: "rgba(255,200,120,0.85)", marginTop: 8, fontWeight: 600 }}>
+                ⚠ يرجى عدم إغلاق المتصفح — كل دفعة محفوظة بشكل دائم في قاعدة البيانات
+              </div>
             </div>
-            <div style={{ fontSize: "0.82rem", color: "rgba(126,200,240,0.85)", lineHeight: 1.7 }}>
-              يتم توليد الأكواد الفنية وحقن{" "}
-              <strong style={{ color: "#7ec8f0" }}>{nonEmptyCount.toLocaleString("ar-EG")}</strong>{" "}
-              بند في قاعدة البيانات داخل عملية واحدة.<br/>
-              يرجى الانتظار ثوانٍ — لا تُغلق النافذة.
+
+            {/* ── Live Progress Bar ── */}
+            <div style={{ width: "min(520px, 80vw)", padding: "0 20px" }}>
+              <div style={{
+                width: "100%", height: 14,
+                background: "rgba(59,143,204,0.12)",
+                border: "1px solid rgba(59,143,204,0.25)",
+                borderRadius: 999, overflow: "hidden",
+                boxShadow: "inset 0 2px 6px rgba(0,0,0,0.45)",
+              }}>
+                <div style={{
+                  width: `${percent}%`, height: "100%",
+                  background: "linear-gradient(90deg, #1e6fa8 0%, #3b8fcc 50%, #7ec8f0 100%)",
+                  borderRadius: 999,
+                  transition: "width 0.35s ease-out",
+                  boxShadow: "0 0 14px rgba(126,200,240,0.6)",
+                }} />
+              </div>
+              <div style={{
+                display: "flex", justifyContent: "space-between",
+                marginTop: 8, fontSize: "0.75rem",
+                color: "rgba(255,255,255,0.7)", fontWeight: 700,
+              }}>
+                <span>{percent}%</span>
+                <span>{arSaved} / {arTotal}</span>
+              </div>
             </div>
+
+            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
           </div>
-          <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
