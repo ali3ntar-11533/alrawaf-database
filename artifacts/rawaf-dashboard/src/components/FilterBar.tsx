@@ -288,7 +288,7 @@ function FilterDropdown({
           </div>
 
           {/* ── Scrollable options ── */}
-          <div style={{ maxHeight: "260px", overflowY: "auto" }}>
+          <div className="dark-scroll" style={{ maxHeight: "260px", overflowY: "auto" }}>
             {filteredOpts.length === 0 ? (
               <div style={{ padding: "18px 14px", textAlign: "center", fontSize: "0.72rem", color: "rgba(255,255,255,0.3)", fontFamily: "Tajawal, sans-serif" }}>
                 لا توجد نتائج مطابقة
