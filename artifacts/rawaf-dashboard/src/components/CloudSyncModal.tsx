@@ -58,7 +58,7 @@ const COLUMNS: { key: keyof RowData; label: string; width: number; type?: "numbe
   { key: "itemScope",       label: "شمولية",           width: 60  },
   { key: "techSpecs",       label: "مواصفات",          width: 60  },
   { key: "measurements",    label: "قياسات",           width: 35  },
-  { key: "itemCode",        label: "الكود",            width: 60  },
+  /* itemCode column intentionally NOT editable — server generates it. */
   { key: "technicalScope",  label: "الوصف الفني",      width: 110 },
   { key: "workCategory",    label: "تعاقد",            width: 42  },
   { key: "unit",            label: "وحدة",             width: 30  },
@@ -141,7 +141,8 @@ function parseExcelFile(file: File): Promise<RowData[]> {
               businessProgram: get(6),  workFamily:      get(7),
               workType:        get(8),  itemScope:       get(9),
               techSpecs:       get(10), measurements:    get(11),
-              itemCode:        get(12), technicalScope:  get(13),
+              /* itemCode is auto-generated — discard whatever is in the file. */
+              itemCode:        "", technicalScope:  get(13),
               workCategory:    get(14), unit:            get(15),
               price:           get(16), localContent:    get(17),
               phone:           get(18), email:           get(19),
@@ -176,7 +177,8 @@ function parsePasted(text: string): RowData[] {
       itemScope:       get(9),
       techSpecs:       get(10),
       measurements:    get(11),
-      itemCode:        get(12),
+      /* itemCode is auto-generated — discard whatever is in the pasted row. */
+      itemCode:        "",
       technicalScope:  get(13),
       workCategory:    get(14),
       unit:            get(15),

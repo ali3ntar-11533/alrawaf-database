@@ -101,8 +101,19 @@ async function resolveItemCode(
   });
 }
 
+/* Defensive strip: remove itemCode from the incoming body BEFORE Zod
+   parsing.  This is the strongest lock — even a hand-crafted curl/Postman
+   request cannot inject a code. The field is server-generated, period. */
+function stripItemCode(body: unknown): unknown {
+  if (body && typeof body === "object") {
+    const { itemCode: _ignored, ...rest } = body as Record<string, unknown>;
+    return rest;
+  }
+  return body;
+}
+
 router.post("/contractors", async (req, res): Promise<void> => {
-  const parsed = CreateContractorBody.safeParse(req.body);
+  const parsed = CreateContractorBody.safeParse(stripItemCode(req.body));
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
@@ -132,7 +143,7 @@ router.put("/contractors/:id", async (req, res): Promise<void> => {
   const params = UpdateContractorParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) { res.status(400).json({ error: "Invalid id" }); return; }
 
-  const parsed = CreateContractorBody.safeParse(req.body);
+  const parsed = CreateContractorBody.safeParse(stripItemCode(req.body));
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
   const itemCode = await resolveItemCode(parsed.data);
