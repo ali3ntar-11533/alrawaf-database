@@ -27,6 +27,23 @@ export async function createContractor(data: Omit<Contractor, "id">): Promise<Co
   });
 }
 
+/* Bulk import — sends the entire array in ONE round-trip. Server handles
+   item-code allocation + insertion inside a single transaction. */
+export interface BulkCreateResult {
+  saved:     number;
+  total:     number;
+  elapsedMs: number;
+  errors:    { index: number; message: string }[];
+}
+export async function bulkCreateContractors(
+  items: Omit<Contractor, "id">[],
+): Promise<BulkCreateResult> {
+  return apiFetch<BulkCreateResult>("/contractors/bulk", {
+    method: "POST",
+    body: JSON.stringify({ items }),
+  });
+}
+
 export async function updateContractor(id: number, data: Partial<Omit<Contractor, "id">>): Promise<Contractor> {
   return apiFetch<Contractor>(`/contractors/${id}`, {
     method: "PUT",

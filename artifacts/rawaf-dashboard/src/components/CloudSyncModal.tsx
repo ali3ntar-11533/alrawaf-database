@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import * as XLSX from "xlsx";
 import { X, Cloud, Download, Upload, Save, AlertCircle, CheckCircle, Loader, Plus, Trash2, FileSpreadsheet } from "lucide-react";
-import { createContractor } from "../contractors/api";
+import { bulkCreateContractors } from "../contractors/api";
 import type { Contractor } from "../contractors/types";
 
 /* ─── Types ─────────────────────────────────────────────── */
@@ -320,55 +320,70 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
     setIsSaving(true);
     setSummary(null);
 
+    /* ── Phase 1: client-side duplicate detection (cheap, runs locally) ── */
+    let duplicates = 0;
+    const fresh: Row[] = [];
     setRows((prev) =>
       prev.map((r) => {
         if (isRowEmpty(r.data)) return r;
-        if (existingSignatures.has(rowSignature(r.data))) return { ...r, status: "duplicate" };
+        if (existingSignatures.has(rowSignature(r.data))) {
+          duplicates++;
+          return { ...r, status: "duplicate" };
+        }
+        fresh.push(r);
         return { ...r, status: "saving" };
       })
     );
 
-    let saved = 0, duplicates = 0, errors = 0;
+    if (fresh.length === 0) {
+      setSummary({ saved: 0, duplicates, errors: 0 });
+      setIsSaving(false);
+      return;
+    }
 
-    for (const row of toSave) {
-      const sig = rowSignature(row.data);
-      if (existingSignatures.has(sig)) { duplicates++; continue; }
-      try {
-        await createContractor({
-          contractNo:      row.data.contractNo.trim(),
-          contractYear:    row.data.contractYear.trim()    || null,
-          contractor:      row.data.contractor.trim(),
-          project:         row.data.project.trim(),
-          portfolio:       row.data.portfolio.trim(),
-          mainActivity:    row.data.mainActivity.trim()    || null,
-          businessProgram: row.data.businessProgram.trim() || null,
-          workFamily:      row.data.workFamily.trim()      || null,
-          workType:        row.data.workType.trim(),
-          itemScope:       row.data.itemScope.trim()       || null,
-          techSpecs:       row.data.techSpecs.trim()       || null,
-          measurements:    row.data.measurements.trim()    || null,
-          /* itemCode is ALWAYS server-generated — any value present in
-             the uploaded Excel/CSV is intentionally discarded here. */
-          itemCode:        null,
-          technicalScope:  row.data.technicalScope.trim(),
-          workCategory:    row.data.workCategory.trim()    || null,
-          unit:            row.data.unit.trim()            || null,
-          price:           Math.min(Math.round(parseFloat(row.data.price) || 0), 2_000_000_000),
-          localContent:    row.data.localContent.trim()    || null,
-          phone:           row.data.phone.trim(),
-          email:           row.data.email.trim(),
-          rating:          row.data.rating ? Math.min(5, Math.max(0, Math.round(parseFloat(row.data.rating)))) : null,
-          workDescription: null,
-          workScopeText:   null,
-        });
-        existingSignatures.add(sig);
-        saved++;
-        setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: "saved" } : r));
-      } catch (e: unknown) {
-        errors++;
-        const msg = e instanceof Error ? e.message : "خطأ غير معروف";
-        setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: "error", error: msg } : r));
-      }
+    /* ── Phase 2: build the payload ONCE (in memory) ── */
+    const payload = fresh.map((row) => ({
+      contractNo:      row.data.contractNo.trim(),
+      contractYear:    row.data.contractYear.trim()    || null,
+      contractor:      row.data.contractor.trim(),
+      project:         row.data.project.trim(),
+      portfolio:       row.data.portfolio.trim(),
+      mainActivity:    row.data.mainActivity.trim()    || null,
+      businessProgram: row.data.businessProgram.trim() || null,
+      workFamily:      row.data.workFamily.trim()      || null,
+      workType:        row.data.workType.trim(),
+      itemScope:       row.data.itemScope.trim()       || null,
+      techSpecs:       row.data.techSpecs.trim()       || null,
+      measurements:    row.data.measurements.trim()    || null,
+      /* itemCode is ALWAYS server-generated — discard any inbound value. */
+      itemCode:        null,
+      technicalScope:  row.data.technicalScope.trim(),
+      workCategory:    row.data.workCategory.trim()    || null,
+      unit:            row.data.unit.trim()            || null,
+      price:           Math.min(Math.round(parseFloat(row.data.price) || 0), 2_000_000_000),
+      localContent:    row.data.localContent.trim()    || null,
+      phone:           row.data.phone.trim(),
+      email:           row.data.email.trim(),
+      rating:          row.data.rating ? Math.min(5, Math.max(0, Math.round(parseFloat(row.data.rating)))) : null,
+      workDescription: null,
+      workScopeText:   null,
+    }));
+
+    /* ── Phase 3: ONE round-trip bulk insert ── */
+    let saved = 0, errors = 0;
+    try {
+      const result = await bulkCreateContractors(payload);
+      saved = result.saved;
+      fresh.forEach((r) => existingSignatures.add(rowSignature(r.data)));
+      setRows((prev) => prev.map((r) =>
+        fresh.some((f) => f.id === r.id) ? { ...r, status: "saved" } : r
+      ));
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "خطأ غير معروف";
+      errors = fresh.length;
+      setRows((prev) => prev.map((r) =>
+        fresh.some((f) => f.id === r.id) ? { ...r, status: "error", error: msg } : r
+      ));
     }
 
     setSummary({ saved, duplicates, errors });
@@ -581,6 +596,47 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
               <button onClick={() => { setTemplateMode(false); setUploadError(null); setUploadName(null); }} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#aaa", borderRadius: "8px", padding: "8px 24px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}>إغلاق</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ─── Bulk-save overlay ──────────────────────────────────────────
+           Locks the entire modal during a bulk import so the user
+           cannot double-click "حفظ" or close the dialog mid-flight.
+           Shows row count + animated spinner.                          */}
+      {isSaving && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: "fixed", inset: 0, zIndex: 3000,
+            background: "rgba(8,14,28,0.78)", backdropFilter: "blur(10px)",
+            display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center",
+            gap: "18px", direction: "rtl",
+            fontFamily: "Tajawal, sans-serif",
+            animation: "fadeInUp 0.25s ease-out",
+          }}
+        >
+          <div
+            style={{
+              width: 78, height: 78, borderRadius: "50%",
+              border: "5px solid rgba(59,143,204,0.18)",
+              borderTopColor: "#3b8fcc",
+              animation: "spin 0.85s linear infinite",
+            }}
+          />
+          <div style={{ textAlign: "center", maxWidth: 460, padding: "0 24px" }}>
+            <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#fff", marginBottom: 8 }}>
+              جاري حفظ وتكويد البنود ذكياً…
+            </div>
+            <div style={{ fontSize: "0.82rem", color: "rgba(126,200,240,0.85)", lineHeight: 1.7 }}>
+              يتم توليد الأكواد الفنية وحقن{" "}
+              <strong style={{ color: "#7ec8f0" }}>{nonEmptyCount.toLocaleString("ar-EG")}</strong>{" "}
+              بند في قاعدة البيانات داخل عملية واحدة.<br/>
+              يرجى الانتظار ثوانٍ — لا تُغلق النافذة.
+            </div>
+          </div>
+          <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
       )}
     </div>

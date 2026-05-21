@@ -26,7 +26,9 @@ app.use(
   }),
 );
 app.use(cors());
-app.use(express.json());
+/* 50 MB body limit — sized for the bulk import endpoint (up to 20k rows,
+   each ~1–2 KB JSON). Default 100kb would reject any meaningful import. */
+app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);

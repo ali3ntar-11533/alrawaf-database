@@ -8,7 +8,7 @@
    column.  This module exposes the pure helpers; the async resolver
    lives on the server side and queries the DB. */
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { itemCodeMapTable } from "./schema/item_code_map";
 
@@ -160,6 +160,139 @@ export async function resolveItemCodeFromDb(
     ),
   );
   return `${letter}-${codes.join("")}`;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   BULK resolver — used by /contractors/bulk to import thousands of rows
+   without hammering the DB.
+
+   Strategy (single transaction caller is expected to wrap this):
+   1. Walk all items in memory, collect every distinct (column, normalizedText)
+      pair that needs a code.
+   2. ONE SELECT to load every existing mapping for the involved columns.
+   3. For every pair not already mapped, allocate the next sequential code
+      IN MEMORY (per column), using the max of what we just loaded as the
+      starting cursor.
+   4. ONE INSERT (chunked) to persist the freshly-allocated mappings, with
+      ON CONFLICT DO NOTHING so a parallel writer cannot break us.
+   5. ONE re-SELECT of any rows where ON CONFLICT silently skipped — to
+      pick up codes a concurrent caller may have just claimed for the same
+      text values. (Bounded; the conflict set is at most |newMappings|.)
+
+   Returns the full item-code string for each input in the same order.
+   null is returned for inputs whose portfolio has no letter mapping.
+   --------------------------------------------------------------------- */
+export async function resolveItemCodesBulk(
+  db: NodePgDatabase<Record<string, unknown>>,
+  items: ItemCodeInput[],
+): Promise<(string | null)[]> {
+  if (items.length === 0) return [];
+
+  /* Step 1 — collect needed (column, normText) pairs + remember the
+     first raw text we saw for each (for auditing in rawValue). */
+  const neededByCol = new Map<SlotColumn, Set<string>>();
+  const rawSamples  = new Map<string, string>(); // `${col}|${normText}` -> first raw
+
+  for (const item of items) {
+    if (!portfolioLetter(item.portfolio)) continue;
+    for (const col of SLOT_COLUMNS) {
+      const raw = (item[col] ?? "") as string;
+      const norm = normArabic(raw);
+      if (!norm) continue;
+      if (!neededByCol.has(col)) neededByCol.set(col, new Set());
+      neededByCol.get(col)!.add(norm);
+      const key = `${col}|${norm}`;
+      if (!rawSamples.has(key)) rawSamples.set(key, raw.trim());
+    }
+  }
+
+  const involvedCols = [...neededByCol.keys()];
+  if (involvedCols.length === 0) {
+    /* No portfolios resolve → just return nulls. */
+    return items.map(() => null);
+  }
+
+  /* Step 1.5 — SERIALIZE allocation per column via Postgres advisory locks.
+     Without this, two concurrent bulk imports could both read max=N for
+     the same column, both allocate N+1 for DIFFERENT text values, and one
+     would silently lose its (column, numeric_code) unique-constraint race
+     leaving the row coded "00".  The lock is bound to the current
+     transaction (xact) so it auto-releases on commit/rollback. The caller
+     MUST wrap this function in db.transaction() for the lock to scope. */
+  for (const col of involvedCols) {
+    await db.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${"itemcode:" + col}))`);
+  }
+
+  /* Step 2 — load every existing mapping for the involved columns. */
+  const existingRows = await db
+    .select({
+      columnName:  itemCodeMapTable.columnName,
+      textValue:   itemCodeMapTable.textValue,
+      numericCode: itemCodeMapTable.numericCode,
+    })
+    .from(itemCodeMapTable)
+    .where(inArray(itemCodeMapTable.columnName, involvedCols));
+
+  /* Cache: "col|normText" -> 2-digit code */
+  const codeCache = new Map<string, string>();
+  /* Per-column max numeric code seen so far. */
+  const maxByCol  = new Map<SlotColumn, number>();
+
+  for (const row of existingRows) {
+    codeCache.set(`${row.columnName}|${row.textValue}`, row.numericCode);
+    const n = parseInt(row.numericCode, 10) || 0;
+    const prev = maxByCol.get(row.columnName as SlotColumn) ?? 0;
+    if (n > prev) maxByCol.set(row.columnName as SlotColumn, n);
+  }
+
+  /* Step 3 — allocate codes for any pair not yet in the cache. */
+  const newMapRows: (typeof itemCodeMapTable.$inferInsert)[] = [];
+  for (const [col, texts] of neededByCol) {
+    for (const norm of texts) {
+      const key = `${col}|${norm}`;
+      if (codeCache.has(key)) continue;
+      const next = (maxByCol.get(col) ?? 0) + 1;
+      maxByCol.set(col, next);
+      const code = pad2(next);
+      codeCache.set(key, code);
+      newMapRows.push({
+        columnName:  col,
+        textValue:   norm,
+        rawValue:    rawSamples.get(key) ?? norm,
+        numericCode: code,
+      });
+    }
+  }
+
+  /* Step 4 — persist new mappings.
+     The advisory lock above guarantees no concurrent writer can be
+     allocating into the same columns, so a clean INSERT cannot collide on
+     the (column_name, numeric_code) unique index.  We still set the
+     conflict target to (column_name, text_value) as a belt-and-suspenders
+     defense against a duplicate text inside the request itself. */
+  if (newMapRows.length > 0) {
+    const MAP_CHUNK = 1000;
+    for (let i = 0; i < newMapRows.length; i += MAP_CHUNK) {
+      await db
+        .insert(itemCodeMapTable)
+        .values(newMapRows.slice(i, i + MAP_CHUNK))
+        .onConflictDoNothing({
+          target: [itemCodeMapTable.columnName, itemCodeMapTable.textValue],
+        });
+    }
+  }
+
+  /* Step 6 — build the final code for every input. */
+  return items.map((item) => {
+    const letter = portfolioLetter(item.portfolio);
+    if (!letter) return null;
+    const parts = SLOT_COLUMNS.map((col) => {
+      const norm = normArabic((item[col] ?? "") as string);
+      if (!norm) return "00";
+      return codeCache.get(`${col}|${norm}`) ?? "00";
+    });
+    return `${letter}-${parts.join("")}`;
+  });
 }
 
 /* Legacy pure helper kept for backwards-compat / non-DB callers.

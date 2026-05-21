@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { and, eq, type SQL } from "drizzle-orm";
-import { db, contractorsTable, resolveItemCodeFromDb } from "@workspace/db";
+import { z } from "zod";
+import { db, contractorsTable, resolveItemCodeFromDb, resolveItemCodesBulk } from "@workspace/db";
 import {
   CreateContractorBody,
   GetContractorParams,
@@ -124,6 +125,95 @@ router.post("/contractors", async (req, res): Promise<void> => {
     .values({ ...parsed.data, itemCode })
     .returning();
   res.status(201).json(GetContractorResponse.parse({ ...row, createdAt: row.createdAt.toISOString() }));
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
+   POST /contractors/bulk — Optimized bulk import for thousands of rows.
+
+   Performance contract (vs per-row POST):
+   - 1 HTTP round-trip instead of N
+   - 1 in-memory pass to allocate ALL item codes (instead of 7 sequential
+     SELECTs + 1 INSERT per row in item_code_map)
+   - Chunked multi-row INSERT for contractors inside a single transaction
+   - Atomic: if any chunk fails, NOTHING is committed (no partial state)
+
+   Body:  { items: CreateContractorBody[] }
+   Reply: { saved: number, total: number, errors: [{index, message}] }
+   --------------------------------------------------------------------- */
+const BulkCreateBody = z.object({
+  items: z.array(CreateContractorBody).min(1).max(20_000),
+});
+
+router.post("/contractors/bulk", async (req, res): Promise<void> => {
+  /* Strip itemCode from every row BEFORE validation — same defensive
+     lock applied to single-row POST. Client values are never trusted. */
+  const stripped =
+    req.body && typeof req.body === "object" && Array.isArray((req.body as { items?: unknown }).items)
+      ? { items: ((req.body as { items: unknown[] }).items).map(stripItemCode) }
+      : req.body;
+
+  const parsed = BulkCreateBody.safeParse(stripped);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const { items } = parsed.data;
+
+  /* Atomic envelope: item-code allocation AND contractor inserts run in
+     ONE transaction.  Two guarantees follow:
+       (a) Advisory locks taken by resolveItemCodesBulk are auto-released
+           on commit/rollback (xact-scoped), so failed inserts don't leak
+           locks.
+       (b) Orphaned item_code_map rows are impossible — if the contractor
+           inserts fail, the freshly-allocated mappings roll back too. */
+  const CHUNK_SIZE = 500;
+  const totalToInsert = items.length;
+  let inserted = 0;
+
+  const t0 = Date.now();
+  try {
+    await db.transaction(async (tx) => {
+      const itemCodes = await resolveItemCodesBulk(
+        tx,
+        items.map((it) => ({
+          portfolio:       it.portfolio,
+          mainActivity:    it.mainActivity     ?? null,
+          businessProgram: it.businessProgram  ?? null,
+          workFamily:      it.workFamily       ?? null,
+          workType:        it.workType,
+          itemScope:       it.itemScope        ?? null,
+          techSpecs:       it.techSpecs        ?? null,
+          measurements:    it.measurements     ?? null,
+        })),
+      );
+      for (let i = 0; i < items.length; i += CHUNK_SIZE) {
+        const slice = items.slice(i, i + CHUNK_SIZE).map((item, j) => ({
+          ...item,
+          itemCode: itemCodes[i + j] ?? null,
+        }));
+        await tx.insert(contractorsTable).values(slice);
+        inserted += slice.length;
+      }
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown DB error";
+    req.log.error({ err: msg, totalToInsert }, "bulk insert failed (transaction rolled back)");
+    res.status(500).json({ error: msg, saved: 0, total: totalToInsert });
+    return;
+  }
+  const elapsedMs = Date.now() - t0;
+
+  req.log.info(
+    { saved: inserted, total: totalToInsert, elapsedMs, perRow: (elapsedMs / Math.max(1, totalToInsert)).toFixed(2) },
+    "bulk insert completed",
+  );
+
+  res.status(201).json({
+    saved: inserted,
+    total: totalToInsert,
+    elapsedMs,
+    errors: [] as { index: number; message: string }[],
+  });
 });
 
 router.get("/contractors/:id", async (req, res): Promise<void> => {
