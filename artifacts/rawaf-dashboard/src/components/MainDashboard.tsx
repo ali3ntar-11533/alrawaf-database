@@ -124,7 +124,7 @@ export default function MainDashboard({ search, filters, selectedId, onSelectId 
       <MainContent
         contractor={selected}
         allContractors={allContractors}
-        filteredContractors={(hasSearch || hasFilters) ? filtered : allContractors}
+        filteredContractors={filtered}
         isLoading={isLoading}
         onSelectId={onSelectId}
         customPrice={filters.itemPrice ? Number(filters.itemPrice) : null}
