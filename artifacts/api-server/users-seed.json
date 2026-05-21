@@ -47,46 +47,6 @@
       "role": "admin",
       "rawPassword": "22625",
       "isActive": 1
-    },
-    {
-      "name": "1",
-      "loginName": "1",
-      "jobTitle": "1",
-      "role": "user",
-      "rawPassword": "1",
-      "isActive": 1
-    },
-    {
-      "name": "11",
-      "loginName": "11",
-      "jobTitle": "11",
-      "role": "user",
-      "rawPassword": "1",
-      "isActive": 1
-    },
-    {
-      "name": "111",
-      "loginName": "111",
-      "jobTitle": "111",
-      "role": "user",
-      "rawPassword": "111",
-      "isActive": 1
-    },
-    {
-      "name": "11111",
-      "loginName": "11111",
-      "jobTitle": "111",
-      "role": "user",
-      "rawPassword": "11111",
-      "isActive": 1
-    },
-    {
-      "name": "1221",
-      "loginName": "212",
-      "jobTitle": "1221",
-      "role": "user",
-      "rawPassword": "2112",
-      "isActive": 1
     }
   ]
 }
