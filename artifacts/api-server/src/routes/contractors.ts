@@ -141,7 +141,7 @@ router.post("/contractors", async (req, res): Promise<void> => {
    Reply: { saved: number, total: number, errors: [{index, message}] }
    --------------------------------------------------------------------- */
 const BulkCreateBody = z.object({
-  items: z.array(CreateContractorBody).min(1).max(20_000),
+  items: z.array(CreateContractorBody).min(1).max(100_000),
 });
 
 router.post("/contractors/bulk", async (req, res): Promise<void> => {
