@@ -216,7 +216,7 @@ function exportToExcel(data: Contractor[]) {
 /* ─── Styles ───────────────────────────────── */
 const tdStyle: React.CSSProperties = { padding: "7px 4px", fontSize: "0.7rem", color: "#555", verticalAlign: "middle", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
 const overlayStyle: React.CSSProperties = { position: "fixed", inset: 0, background: "rgba(30,25,20,0.55)", backdropFilter: "blur(4px)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" };
-const modalStyle: React.CSSProperties = { width: "100%", maxWidth: "960px", maxHeight: "90vh", overflowY: "auto", padding: "28px 32px", position: "relative" };
+const modalStyle: React.CSSProperties = { width: "100%", maxWidth: "960px", maxHeight: "90vh", overflowY: "auto", padding: "28px 32px", position: "relative", scrollbarWidth: "thin", scrollbarColor: "rgba(197,160,89,0.4) transparent" };
 const closeBtnStyle: React.CSSProperties = { position: "absolute", top: "16px", left: "16px", background: "none", border: "none", cursor: "pointer", color: "#aaa", padding: "4px" };
 const modalTitleStyle: React.CSSProperties = { fontSize: "0.95rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "6px" };
 const labelStyle: React.CSSProperties = { fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.04em" };
