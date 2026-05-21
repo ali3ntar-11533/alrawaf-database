@@ -510,7 +510,7 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
       {/* ── Instructions bar ── */}
       <div style={{ background: "#0a1628", padding: "8px 24px", fontSize: "0.68rem", color: "rgba(126,200,240,0.7)", display: "flex", gap: "20px", alignItems: "center", direction: "rtl", flexShrink: 0, borderBottom: "1px solid rgba(59,143,204,0.15)" }}>
         <span>💡 انقر على أي خلية لتعديلها مباشرة</span>
-        <span>📋 الترتيب عند اللصق: رقم العقد | سنة العقد | المقاول | المشروع | المحفظة | النشاط | برنامج | عائلة | نوع الأعمال | شمولية | مواصفات | قياسات | كود | وصف فني | تعاقد | وحدة | سعر | محتوى محلي | تواصل | بريد | تقييم</span>
+        <span>📋 الترتيب عند اللصق: رقم العقد | سنة العقد | المقاول | المشروع | المحفظة | النشاط | برنامج | عائلة | نوع الأعمال | شمولية | مواصفات | قياسات | وصف فني | تعاقد | وحدة | سعر | محتوى محلي | تواصل | بريد | تقييم</span>
         <span>🔒 السجل المكرر بجميع بياناته يُتخطى</span>
       </div>
 
