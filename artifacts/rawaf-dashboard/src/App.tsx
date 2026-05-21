@@ -69,6 +69,14 @@ function App() {
     return () => clearInterval(t);
   }, [currentUser]);
 
+  // Hide page scrollbar on welcome state (no search / filter / selection)
+  useEffect(() => {
+    const hasAnyFilter = Object.values(filters).some(v => v !== "");
+    const isWelcome = activeTab === "main" && !search.trim() && !selectedId && !hasAnyFilter;
+    document.body.classList.toggle("welcome-state", isWelcome);
+    return () => { document.body.classList.remove("welcome-state"); };
+  }, [activeTab, search, selectedId, filters]);
+
   function handleSearchChange(value: string) {
     setSearch(value);
     setSelectedId(null);
