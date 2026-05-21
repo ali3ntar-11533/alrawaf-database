@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { and, eq, type SQL } from "drizzle-orm";
-import { db, contractorsTable, generateItemCode } from "@workspace/db";
+import { db, contractorsTable, resolveItemCodeFromDb } from "@workspace/db";
 import {
   CreateContractorBody,
   GetContractorParams,
@@ -81,12 +81,15 @@ router.get("/contractors", async (req, res): Promise<void> => {
 });
 
 /* Server-side item code resolution.
-   1. Always recompute the code from portfolio + 7 numeric slots — the
-      client-sent value is ignored to keep the DB authoritative.
-   2. Before inserting, look up any existing record with the exact same
-      computed code. If found, reuse it verbatim (deduplication rule). */
-async function resolveItemCode(data: typeof contractorsTable.$inferInsert): Promise<string | null> {
-  const computed = generateItemCode({
+   The client value is ALWAYS ignored. The code is rebuilt from the
+   portfolio letter plus the 7 text fields, each mapped through the
+   DB-backed item_code_map (text→2-digit). Same text in the same column
+   always yields the same number, so identical 8-tuples → identical code
+   (natural deduplication). */
+async function resolveItemCode(
+  data: typeof contractorsTable.$inferInsert,
+): Promise<string | null> {
+  return resolveItemCodeFromDb(db, {
     portfolio:       data.portfolio,
     mainActivity:    data.mainActivity,
     businessProgram: data.businessProgram,
@@ -96,13 +99,6 @@ async function resolveItemCode(data: typeof contractorsTable.$inferInsert): Prom
     techSpecs:       data.techSpecs,
     measurements:    data.measurements,
   });
-  if (!computed) return null;
-  const [existing] = await db
-    .select({ itemCode: contractorsTable.itemCode })
-    .from(contractorsTable)
-    .where(eq(contractorsTable.itemCode, computed))
-    .limit(1);
-  return existing?.itemCode ?? computed;
 }
 
 router.post("/contractors", async (req, res): Promise<void> => {

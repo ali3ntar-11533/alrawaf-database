@@ -211,7 +211,7 @@ function dbSignature(c: Contractor): string {
     norm(c.itemScope        ?? ""),
     norm(c.techSpecs        ?? ""),
     norm(c.measurements     ?? ""),
-    norm(c.itemCode         ?? ""),
+    /* itemCode excluded from duplicate signature — server regenerates it. */
     norm(c.technicalScope),
     norm(c.workCategory     ?? ""),
     norm(c.unit             ?? ""),
@@ -235,7 +235,7 @@ function rowSignature(d: RowData): string {
     norm(d.itemScope),
     norm(d.techSpecs),
     norm(d.measurements),
-    norm(d.itemCode),
+    /* itemCode excluded from duplicate signature — server regenerates it. */
     norm(d.technicalScope),
     norm(d.workCategory),
     norm(d.unit),
@@ -345,7 +345,9 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
           itemScope:       row.data.itemScope.trim()       || null,
           techSpecs:       row.data.techSpecs.trim()       || null,
           measurements:    row.data.measurements.trim()    || null,
-          itemCode:        row.data.itemCode.trim()        || null,
+          /* itemCode is ALWAYS server-generated — any value present in
+             the uploaded Excel/CSV is intentionally discarded here. */
+          itemCode:        null,
           technicalScope:  row.data.technicalScope.trim(),
           workCategory:    row.data.workCategory.trim()    || null,
           unit:            row.data.unit.trim()            || null,

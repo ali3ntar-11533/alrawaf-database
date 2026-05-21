@@ -11,7 +11,6 @@ import {
 } from "../contractors/api";
 import { useContractorsContext } from "../contractors/context";
 import type { Contractor } from "../contractors/types";
-import { generateItemCode } from "../utils/itemCode";
 
 const DB_PASSWORD = "maged@2026";
 const SESSION_KEY = "rawaf_db_auth";
@@ -119,7 +118,8 @@ function buildPutData(f: FormData, rating?: number | null): Omit<Contractor, "id
     itemScope:       f.itemScope.trim()       || null,
     techSpecs:       f.techSpecs.trim()       || null,
     measurements:    f.measurements.trim()    || null,
-    itemCode:        f.itemCode.trim()        || null,
+    /* Server is authoritative — always null, never client value. */
+    itemCode:        null,
     technicalScope:  f.technicalScope,
     workCategory:    f.workCategory.trim()    || null,
     unit:            f.unit.trim()            || null,
@@ -267,21 +267,10 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
   const [cloneLocalContent, setCloneLocalContent] = useState("");
   const [cloneItemCode, setCloneItemCode]         = useState("");
 
-  /* Auto-generated item codes — kept in sync reactively with the 8 inputs. */
-  const addItemCode  = generateItemCode(addForm);
-  const editItemCode = generateItemCode(editForm);
-
-  useEffect(() => {
-    if (addForm.itemCode !== addItemCode) {
-      setAddForm((p) => ({ ...p, itemCode: addItemCode }));
-    }
-  }, [addItemCode]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (editRow && editForm.itemCode !== editItemCode) {
-      setEditForm((p) => ({ ...p, itemCode: editItemCode }));
-    }
-  }, [editItemCode, editRow]); // eslint-disable-line react-hooks/exhaustive-deps
+  /* itemCode is server-generated.  The client never predicts it — the
+     final value comes back from POST/PUT.  In the form it's shown as
+     a locked placeholder; for edits we display the previously saved
+     code (server will recompute on save). */
 
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [showCloudSync, setShowCloudSync] = useState(false);
@@ -432,8 +421,9 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
     setClonePrice(String(c.price));
     setCloneUnit((c as any).unit ?? "");
     setCloneLocalContent((c as any).localContent ?? "");
-    /* Auto-derived from source — same 7 slots + same portfolio yield the same code. */
-    setCloneItemCode(generateItemCode(c as any) || ((c as any).itemCode ?? ""));
+    /* Show the source record's existing code as preview; server will
+       regenerate from the actual 8 fields on save. */
+    setCloneItemCode(((c as any).itemCode ?? ""));
   }
 
   async function handleEditSubmit(e: React.FormEvent) {
@@ -478,7 +468,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
       const baseForm = contractorToForm(cloneSource);
       await createContractor(
         buildPutData(
-          { ...baseForm, technicalScope: cloneTechScope, price: clonePrice, unit: cloneUnit, localContent: cloneLocalContent, itemCode: cloneItemCode },
+          { ...baseForm, technicalScope: cloneTechScope, price: clonePrice, unit: cloneUnit, localContent: cloneLocalContent, itemCode: "" },
           (cloneSource as any).rating ?? null,
         ),
       );
@@ -758,7 +748,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                         {(f.options ?? []).map((opt) => <option key={opt} value={opt}>{opt || "— اختر —"}</option>)}
                       </select>
                     ) : f.readOnly ? (
-                      <input type="text" value={editForm[f.key] || "—"} readOnly tabIndex={-1} style={autoCodeStyle} />
+                      <input type="text" value={editForm[f.key] || "(يُولَّد تلقائياً عند الحفظ)"} readOnly tabIndex={-1} style={autoCodeStyle} />
                     ) : (
                       <input type={f.type ?? "text"} value={editForm[f.key]} onChange={(e) => setEditForm((p) => ({ ...p, [f.key]: e.target.value }))} style={inputStyle}
                         onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")} />
@@ -806,7 +796,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                         {(f.options ?? []).map((opt) => <option key={opt} value={opt}>{opt || "— اختر —"}</option>)}
                       </select>
                     ) : f.readOnly ? (
-                      <input type="text" value={addForm[f.key] || "—"} readOnly tabIndex={-1} style={autoCodeStyle} />
+                      <input type="text" value="(يُولَّد تلقائياً عند الحفظ)" readOnly tabIndex={-1} style={autoCodeStyle} />
                     ) : (
                       <input type={f.type ?? "text"} value={addForm[f.key]} onChange={(e) => setAddForm((p) => ({ ...p, [f.key]: e.target.value }))} style={inputStyle}
                         onFocus={(e) => (e.target.style.borderColor = "var(--gold)")} onBlur={(e) => (e.target.style.borderColor = "#e8e0d0")} />
@@ -885,7 +875,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px 14px", marginBottom: "18px" }}>
                 <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: "4px" }}>
                   <label style={{ ...labelStyle, color: "#c5a059" }}>١٣. كود الفريد للبند (يُولَّد تلقائياً)</label>
-                  <input type="text" value={cloneItemCode || "—"} readOnly tabIndex={-1} style={autoCodeStyle} />
+                  <input type="text" value={cloneItemCode || "(يُولَّد تلقائياً عند الحفظ)"} readOnly tabIndex={-1} style={autoCodeStyle} />
                 </div>
                 <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: "4px" }}>
                   <label style={{ ...labelStyle, color: "#c5a059" }}>١٤. الوصف الفني للبند الجديد</label>
