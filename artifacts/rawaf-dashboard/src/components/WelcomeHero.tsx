@@ -20,8 +20,8 @@ export default function WelcomeHero() {
       {/* Logo circle */}
       <div
         style={{
-          width: "clamp(70px, 9vh, 110px)",
-          height: "clamp(70px, 9vh, 110px)",
+          width: "clamp(100px, 14vh, 160px)",
+          height: "clamp(100px, 14vh, 160px)",
           borderRadius: "50%",
           background: "linear-gradient(135deg, #fff 60%, #f5efe2 100%)",
           border: "3px solid rgba(197,160,89,0.35)",
@@ -48,7 +48,7 @@ export default function WelcomeHero() {
       {/* Main welcome text */}
       <h2
         style={{
-          fontSize: "clamp(1.1rem, 2.5vh, 1.85rem)",
+          fontSize: "clamp(1.6rem, 3.8vh, 2.6rem)",
           fontWeight: 800,
           color: "var(--charcoal)",
           lineHeight: 1.4,
@@ -61,7 +61,7 @@ export default function WelcomeHero() {
 
       <p
         style={{
-          fontSize: "clamp(0.75rem, 1.5vh, 1.05rem)",
+          fontSize: "clamp(0.9rem, 1.9vh, 1.18rem)",
           color: "#5a524a",
           lineHeight: 1.8,
           fontWeight: 500,
@@ -95,7 +95,7 @@ export default function WelcomeHero() {
         }}
       >
         <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--gold)", animation: "pulse-gold 2s ease-in-out infinite", flexShrink: 0 }} />
-        <span style={{ fontSize: "clamp(0.75rem, 1.3vh, 0.88rem)", color: "var(--gold-dark)", fontWeight: 700 }}>
+        <span style={{ fontSize: "clamp(0.88rem, 1.6vh, 1.05rem)", color: "var(--gold-dark)", fontWeight: 700 }}>
           ابدأ بالبحث الشامل في الحقل أعلاه لعرض المتخصصين
         </span>
       </div>
