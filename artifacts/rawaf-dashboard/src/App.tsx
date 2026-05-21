@@ -103,7 +103,7 @@ function App() {
   return (
     <SplashGate>
       <ContractorsProvider>
-        <div style={{ minHeight: "100vh", backgroundColor: "var(--body-bg)" }}>
+        <div style={{ height: "100vh", display: "flex", flexDirection: "column", backgroundColor: "var(--body-bg)" }}>
           <Header
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -113,7 +113,7 @@ function App() {
             onFiltersChange={handleFiltersChange}
             currentUser={currentUser}
           />
-          <div key={activeTab}>
+          <div key={activeTab} style={{ flex: 1, minHeight: 0, overflowY: activeTab === "main" && !search.trim() && !selectedId && !Object.values(filters).some(v => v !== "") ? "hidden" : "auto" }}>
             {activeTab === "main" ? (
               <MainDashboard
                 search={search}
