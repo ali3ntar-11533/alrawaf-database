@@ -235,7 +235,7 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
           </div>
 
           {/* ── TABLE ── */}
-          <div style={{ overflowY: "auto", flex: 1, padding: "4px 0" }}>
+          <div className="dark-scroll" style={{ overflowY: "auto", flex: 1, padding: "4px 0" }}>
             {loading ? (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 70, gap: 12 }}>
                 <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2.5px solid rgba(197,160,89,0.25)", borderTop: "2.5px solid #c5a059", animation: "sg-spin 0.8s linear infinite" }} />
@@ -478,7 +478,7 @@ export default function UserManagementPanel({ currentUser, onClose }: Props) {
               <span style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.28)", marginRight: "auto" }}>{logs.length} عملية دخول في 30 يوم</span>
             </div>
             {/* Log entries */}
-            <div className="no-scrollbar" style={{ overflowY: "auto", flex: 1, padding: "4px 0" }}>
+            <div className="dark-scroll" style={{ overflowY: "auto", flex: 1, padding: "4px 0" }}>
               {logsLoading ? (
                 <div style={{ display: "flex", justifyContent: "center", padding: 50 }}>
                   <div style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid rgba(197,160,89,0.3)", borderTop: "2px solid #c5a059", animation: "sg-spin 0.8s linear infinite" }} />
