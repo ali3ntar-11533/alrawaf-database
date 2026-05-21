@@ -23,11 +23,15 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(197,160,89,0.35) transparent;
 }
 html::-webkit-scrollbar,
-body::-webkit-scrollbar { display: none; }
+body::-webkit-scrollbar { width: 5px; }
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb { background: rgba(197,160,89,0.35); border-radius: 10px; }
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track { background: transparent; }
 
 body {
   font-family: 'Tajawal', sans-serif;
