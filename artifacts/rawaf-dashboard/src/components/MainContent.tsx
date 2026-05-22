@@ -408,19 +408,45 @@ export default function MainContent({ contractor, allContractors, filteredContra
         .slice(0, 5)
     : [];
 
-  // ── Work history: same contractor name + same workType ──
+  // ── Work history: same contractor + same item tier (mirrors comparison pool) ──
+  // When the current record has an itemCode we match by code prefix — the same
+  // tier logic used by the price-comparison chart — so only bids on the same
+  // (or similar) item family are shown, preventing unrelated work types from
+  // bleeding in.  When there is no itemCode (legacy data) we fall back to
+  // workType matching, identical to the legacy comparison fallback above.
   const contractorNameKey = contractor ? normalize(contractor.contractor) : "";
-  const contractorWorkTypeKey = contractor ? normalize(contractor.workType) : "";
   const workHistory: Contractor[] = contractor && contractorNameKey.length > 0
-    ? allContractors
-        .filter((c) => {
-          if (c.id === contractor.id) return false;
-          return (
-            normalize(c.contractor) === contractorNameKey &&
-            normalize(c.workType)   === contractorWorkTypeKey
-          );
-        })
-        .slice(0, 50)   // fetch up to 50; we scroll through them
+    ? (() => {
+        const sameContractor = (c: Contractor) =>
+          c.id !== contractor.id && normalize(c.contractor) === contractorNameKey;
+
+        if (hasCode) {
+          // Similar tier — same first 5 code slots
+          if (prefix5) {
+            const similar = allContractors.filter((c) => {
+              if (!sameContractor(c)) return false;
+              const code = (c as any).itemCode as string | null | undefined;
+              return !!code && code.startsWith(prefix5);
+            });
+            if (similar.length > 0) return similar.slice(0, 50);
+          }
+          // Broad tier — same first 3 code slots
+          if (prefix3) {
+            const broad = allContractors.filter((c) => {
+              if (!sameContractor(c)) return false;
+              const code = (c as any).itemCode as string | null | undefined;
+              return !!code && code.startsWith(prefix3);
+            });
+            if (broad.length > 0) return broad.slice(0, 50);
+          }
+        }
+
+        // Legacy fallback — no itemCode on current record (or no prefix match found)
+        const workTypeKey = normalize(contractor.workType ?? "");
+        return allContractors
+          .filter((c) => sameContractor(c) && normalize(c.workType) === workTypeKey)
+          .slice(0, 50);
+      })()
     : [];
 
   if (!contractor) {
