@@ -60,7 +60,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
   const updateDropdownRect = useCallback(() => {
     if (!wrapperRef.current) return;
     const r = wrapperRef.current.getBoundingClientRect();
-    setDropdownRect({ top: r.bottom + window.scrollY, left: r.left + window.scrollX, width: r.width });
+    setDropdownRect({ top: r.bottom, left: r.left, width: r.width });
   }, []);
 
   useEffect(() => {
@@ -83,10 +83,6 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
 
   const { data: contractors = [] } = useContractorsContext();
 
-  /* Sync localSearch if parent clears/changes search externally */
-  useEffect(() => {
-    setLocalSearch(search);
-  }, [search]);
 
   /* Debounced propagation — fires 120ms after typing stops */
   const handleInputChange = useCallback((value: string) => {
@@ -478,7 +474,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
             {/* ── Suggestions dropdown — rendered via Portal to escape header stacking context ── */}
             {showSuggestions && suggestions.length > 0 && dropdownRect && createPortal(
               <div style={{
-                position: "absolute",
+                position: "fixed",
                 top: dropdownRect.top,
                 left: dropdownRect.left,
                 width: dropdownRect.width,
