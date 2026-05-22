@@ -442,6 +442,31 @@ function PriceInputPill({
 export default function FilterBar({ filters, onFiltersChange, search = "" }: FilterBarProps) {
   const { data: contractors = [], isLoading, filterOptions } = useContractorsContext();
 
+  /* ── Drag-to-scroll for the filter pills row ── */
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const dragState = useRef({ active: false, startX: 0, scrollLeft: 0 });
+
+  function onDragStart(e: React.MouseEvent<HTMLDivElement>) {
+    const el = scrollRef.current;
+    if (!el) return;
+    dragState.current = { active: true, startX: e.clientX, scrollLeft: el.scrollLeft };
+    el.style.cursor = "grabbing";
+    el.style.userSelect = "none";
+  }
+  function onDragMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (!dragState.current.active || !scrollRef.current) return;
+    e.preventDefault();
+    const dx = e.clientX - dragState.current.startX;
+    scrollRef.current.scrollLeft = dragState.current.scrollLeft - dx;
+  }
+  function onDragEnd() {
+    dragState.current.active = false;
+    if (scrollRef.current) {
+      scrollRef.current.style.cursor = "grab";
+      scrollRef.current.style.userSelect = "";
+    }
+  }
+
   /* ── Options strategy ─────────────────────────────────────────────────────
      1. SERVER BASE (`filterOptions`): fetched once on app load via a single
         lightweight SQL DISTINCT query — contains ALL possible values from the
@@ -528,10 +553,15 @@ export default function FilterBar({ filters, onFiltersChange, search = "" }: Fil
         {/* Divider — aligned with search bar */}
         <div style={{ borderTop: "1px solid rgba(197,160,89,0.13)", marginBottom: "8px" }} />
 
-        {/* Outer scroll viewport — full width, hides scrollbar, allows horizontal scroll */}
+        {/* Outer scroll viewport — full width, hides scrollbar, allows horizontal scroll + drag */}
         <div
+          ref={scrollRef}
           className="filter-pill-scroll"
-          style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: "4px" }}
+          style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: "4px", cursor: "grab" }}
+          onMouseDown={onDragStart}
+          onMouseMove={onDragMove}
+          onMouseUp={onDragEnd}
+          onMouseLeave={onDragEnd}
         >
           {/* Inner flex row — centered when pills fit, expands to min-width when they overflow */}
           <div style={{
