@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { X, Cloud, Download, Upload, Save, AlertCircle, CheckCircle, Loader, Plus, Trash2, FileSpreadsheet } from "lucide-react";
-import { bulkCreateContractors } from "../contractors/api";
+import { bulkCreateContractors, updateContractor } from "../contractors/api";
 import type { Contractor } from "../contractors/types";
 
 /* ─── Types ─────────────────────────────────────────────── */
@@ -29,7 +29,7 @@ interface RowData {
   rating:          string;
 }
 
-type RowStatus = "idle" | "saving" | "saved" | "duplicate" | "error";
+type RowStatus = "idle" | "saving" | "saved" | "duplicate" | "updated" | "error";
 
 interface Row {
   id:     string;
@@ -206,15 +206,15 @@ function parsePasted(text: string): RowData[] {
   });
 }
 
-/* ─── Full-record duplicate detection ───────────────────────
-   A record is a duplicate ONLY when ALL key columns match an
-   existing DB record exactly (localContent & rating excluded).
-   ──────────────────────────────────────────────────────────── */
+/* ─── Normalizer ─────────────────────────────────────────── */
 function norm(s: string): string {
   return (s ?? "").replace(/[\u064B-\u065F]/g, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").toLowerCase().trim();
 }
 
-function dbSignature(c: Contractor): string {
+/* ─── Identity signature — 14 key fields ONLY (no price/unit/phone/email).
+   Two records with matching identity but different price/unit are treated
+   as "same item, update price/unit" rather than a new record or duplicate. */
+function dbIdentity(c: Contractor): string {
   return [
     norm(c.contractNo),
     norm(c.contractYear     ?? ""),
@@ -228,17 +228,12 @@ function dbSignature(c: Contractor): string {
     norm(c.itemScope        ?? ""),
     norm(c.techSpecs        ?? ""),
     norm(c.measurements     ?? ""),
-    /* itemCode excluded from duplicate signature — server regenerates it. */
     norm(c.technicalScope),
     norm(c.workCategory     ?? ""),
-    norm(c.unit             ?? ""),
-    String(c.price),
-    norm(c.phone),
-    norm(c.email),
   ].join("\x00");
 }
 
-function rowSignature(d: RowData): string {
+function rowIdentity(d: RowData): string {
   return [
     norm(d.contractNo),
     norm(d.contractYear),
@@ -252,14 +247,19 @@ function rowSignature(d: RowData): string {
     norm(d.itemScope),
     norm(d.techSpecs),
     norm(d.measurements),
-    /* itemCode excluded from duplicate signature — server regenerates it. */
     norm(d.technicalScope),
     norm(d.workCategory),
-    norm(d.unit),
-    String(Math.round(parseFloat(d.price) || 0)),
-    norm(d.phone),
-    norm(d.email),
   ].join("\x00");
+}
+
+/* ─── Full-record duplicate — same identity AND same price/unit ──────────
+   Only used to skip rows that are 100% identical (nothing to update).    */
+function dbSignature(c: Contractor): string {
+  return dbIdentity(c) + "\x00" + String(c.price) + "\x00" + norm(c.unit ?? "");
+}
+
+function rowSignature(d: RowData): string {
+  return rowIdentity(d) + "\x00" + String(Math.round(parseFloat(d.price) || 0)) + "\x00" + norm(d.unit);
 }
 
 /* ─── Status Badge ──────────────────────────────────────── */
@@ -267,6 +267,11 @@ function StatusBadge({ status, error }: { status: RowStatus; error?: string }) {
   if (status === "idle")      return null;
   if (status === "saving")    return <Loader size={14} style={{ color: "#3b8fcc", animation: "spin-loader 0.9s linear infinite" }} />;
   if (status === "saved")     return <CheckCircle size={14} style={{ color: "#2baa74" }} />;
+  if (status === "updated")   return (
+    <span title="تم تحديث السعر / الوحدة لهذا البند">
+      <CheckCircle size={14} style={{ color: "#c5a059" }} />
+    </span>
+  );
   if (status === "duplicate") return (
     <span title="سجل مطابق تماماً موجود في القاعدة — تم التخطي">
       <AlertCircle size={14} style={{ color: "#e67e22" }} />
@@ -309,7 +314,12 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
     return () => clearInterval(id);
   }, [readTotalRows]);
 
+  /* Full-duplicate set (same identity + same price/unit → skip entirely) */
   const existingSignatures = new Set(existingContractors.map(dbSignature));
+  /* Identity map: key=14-field identity → existing Contractor (for price/unit updates) */
+  const existingIdentityMap = new Map<string, Contractor>(
+    existingContractors.map((c) => [dbIdentity(c), c])
+  );
 
   const updateCell = useCallback((rowId: string, key: keyof RowData, value: string) => {
     setRows((prev) => prev.map((r) =>
@@ -367,31 +377,41 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
     setSummary(null);
     setSaveResult(null);
 
-    /* ── Phase 1: PURE duplicate detection (no side effects in setState). ──
-       Compute the duplicate vs fresh split first, then issue a single
-       deterministic setRows. */
-    const duplicateIds = new Set<string>();
+    /* ── Phase 1: Classify each row into one of three buckets ──────────────
+       • duplicate  — identity AND price/unit match exactly → skip
+       • toUpdate   — identity matches but price/unit differ → update existing
+       • fresh      — no identity match → create new record                 */
+    const duplicateIds  = new Set<string>();
+    const toUpdate: { row: Row; existingId: number }[] = [];
     const fresh: Row[] = [];
+
     for (const r of toSave) {
       if (existingSignatures.has(rowSignature(r.data))) {
         duplicateIds.add(r.id);
       } else {
-        fresh.push(r);
+        const existing = existingIdentityMap.get(rowIdentity(r.data));
+        if (existing) {
+          toUpdate.push({ row: r, existingId: existing.id });
+        } else {
+          fresh.push(r);
+        }
       }
     }
-    const duplicates = duplicateIds.size;
-    const freshIds = new Set(fresh.map((r) => r.id));
+
+    const duplicates   = duplicateIds.size;
+    const updateIds    = new Set(toUpdate.map((u) => u.row.id));
+    const freshIds     = new Set(fresh.map((r) => r.id));
+
     setRows((prev) =>
       prev.map((r) => {
         if (duplicateIds.has(r.id)) return { ...r, status: "duplicate" };
+        if (updateIds.has(r.id))    return { ...r, status: "saving" };
         if (freshIds.has(r.id))     return { ...r, status: "saving" };
         return r;
       })
     );
 
-    if (fresh.length === 0) {
-      /* All inputs were duplicates — surface this clearly via the locked
-         result overlay so the user does not miss the outcome. */
+    if (fresh.length === 0 && toUpdate.length === 0) {
       setSummary({ saved: 0, duplicates, errors: 0 });
       setSaveResult({ saved: 0, total: 0, errors: 0, firstError: null, duplicates });
       return;
@@ -425,18 +445,37 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
       workScopeText:   null,
     }));
 
-    /* ── Phase 3: chunked incremental save ──
+    /* ── Phase 2b: price/unit updates for identity-matched rows ── */
+    let updated = 0;
+    let errors = 0;
+    let firstError: string | null = null;
+
+    for (const { row, existingId } of toUpdate) {
+      const newPrice = Math.min(Math.round(parseFloat(row.data.price) || 0), 2_000_000_000);
+      const newUnit  = row.data.unit.trim() || null;
+      try {
+        await updateContractor(existingId, { price: newPrice, unit: newUnit });
+        updated++;
+        setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: "updated" } : r));
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "خطأ غير معروف";
+        if (!firstError) firstError = msg;
+        errors++;
+        setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: "error", error: msg } : r));
+      }
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    /* ── Phase 3: chunked incremental save for new records ──
        Each 500-row chunk is its own HTTP request and its own DB
        transaction.  Server-side COMMIT happens after every chunk, so if
        the user closes the browser mid-import every chunk already
        acknowledged is permanently persisted.  Live progress UI updates
        between chunks. */
     const CHUNK_SIZE = 500;
-    setSaveProgress({ saved: 0, total: payload.length });
+    if (payload.length > 0) setSaveProgress({ saved: 0, total: payload.length });
 
     let saved = 0;
-    let errors = 0;
-    let firstError: string | null = null;
     const savedIds: string[] = [];
 
     for (let i = 0; i < payload.length; i += CHUNK_SIZE) {
@@ -485,9 +524,9 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
        The user must press "تم" to dismiss — so even a 500ms import is
        clearly acknowledged with a checkmark + count, instead of vanishing
        before the eye can register it. */
-    setSaveResult({ saved, total: payload.length, errors, firstError, duplicates });
+    setSaveResult({ saved: saved + updated, total: payload.length + toUpdate.length, errors, firstError, duplicates });
     setSaveProgress(null);
-    if (saved > 0) onSaved();
+    if (saved > 0 || updated > 0) onSaved();
   }
 
   const nonEmptyCount = rows.filter((r) => !isRowEmpty(r.data)).length;
