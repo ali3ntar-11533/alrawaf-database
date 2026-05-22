@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { X, Plus, Trash2, Pencil, Lock, Download, Copy, Cloud } from "lucide-react";
 import CloudSyncModal from "./CloudSyncModal";
 import type { FilterState } from "./filterTypes";
@@ -338,7 +339,10 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authenticated]);
 
-  const { data: contractors = [], isLoading, isError, refetch } = useContractorsContext();
+  const { data: contractors = [], isLoading, isFetching, isError, refetch } = useContractorsContext();
+
+  /* Scroll container for the virtual table */
+  const tableScrollRef = useRef<HTMLDivElement>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   /* Filter + sort by contractor name then ID */
@@ -397,6 +401,21 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
       if (nameA > nameB) return 1;
       return a.id - b.id; // stable: older records first within same contractor
     });
+
+  /* ── Virtual table: only renders the visible rows in the DOM ──────────────
+     Estimated row height 44 px; overscan 8 rows above/below viewport edge.
+     The scroll element is a fixed-height div that wraps the entire table. */
+  const ROW_H = 44;
+  const rowVirtualizer = useVirtualizer({
+    count:            filtered.length,
+    getScrollElement: () => tableScrollRef.current,
+    estimateSize:     () => ROW_H,
+    overscan:         8,
+  });
+  const virtualRows  = rowVirtualizer.getVirtualItems();
+  const totalHeight  = rowVirtualizer.getTotalSize();
+  const topPad    = virtualRows.length > 0 ? virtualRows[0].start                             : 0;
+  const bottomPad = virtualRows.length > 0 ? totalHeight - (virtualRows.at(-1)?.end ?? 0)    : 0;
 
   function handlePasswordSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -541,8 +560,14 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
         <div>
           <h2 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "2px" }}>سجل البيانات الشامل</h2>
-          <span style={{ fontSize: "0.72rem", color: "#aaa" }}>
-            {filtered.length} سجل {search ? `(من ${contractors.length} — مفلتر بالبحث العلوي)` : ""}
+          <span style={{ fontSize: "0.72rem", color: "#aaa", display: "flex", alignItems: "center", gap: "6px" }}>
+            {filtered.length} سجل {search ? `(من ${contractors.length} — مفلتر بالبحث العلوي)` : `من أصل ${contractors.length}`}
+            {isFetching && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.65rem", color: "#3b8fcc" }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", border: "1.5px solid rgba(59,143,204,0.3)", borderTopColor: "#3b8fcc", display: "inline-block", animation: "spin-loader 0.9s linear infinite" }} />
+                يتم تحميل المزيد...
+              </span>
+            )}
           </span>
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
@@ -569,28 +594,29 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table — virtual-scrolled: only visible rows exist in the DOM */}
       <div className="card" style={{ padding: 0, overflow: "hidden", width: "100%", maxWidth: "100%" }}>
+        {/* Sticky header sits above the scrollable body */}
         <div style={{ width: "100%", overflowX: "clip" }}>
           <table style={{ tableLayout: "fixed", borderCollapse: "collapse", direction: "rtl", width: "100%" }}>
             <colgroup>
               <col style={{ width: "3.5%" }} />{/* رقم العقد */}
-              <col style={{ width: "2.8%" }} />{/* سنة العقد — أرقام */}
-              <col style={{ width: "10%" }}  />{/* المقاول — نصوص طويلة */}
-              <col style={{ width: "6.5%" }} />{/* المشروع — نصوص طويلة */}
-              <col style={{ width: "3.2%" }} />{/* المحفظة — قصيرة */}
+              <col style={{ width: "2.8%" }} />{/* سنة العقد */}
+              <col style={{ width: "10%" }}  />{/* المقاول */}
+              <col style={{ width: "6.5%" }} />{/* المشروع */}
+              <col style={{ width: "3.2%" }} />{/* المحفظة */}
               <col style={{ width: "5.5%" }} />{/* النشاط */}
               <col style={{ width: "5%" }}   />{/* برنامج */}
               <col style={{ width: "5%" }}   />{/* عائلة */}
               <col style={{ width: "4.5%" }} />{/* نوع الأعمال */}
               <col style={{ width: "4.5%" }} />{/* شمولية */}
               <col style={{ width: "4.5%" }} />{/* مواصفات */}
-              <col style={{ width: "2.8%" }} />{/* قياسات — أرقام */}
+              <col style={{ width: "2.8%" }} />{/* قياسات */}
               <col style={{ width: "4.5%" }} />{/* كود */}
-              <col style={{ width: "9%" }}   />{/* الوصف الفني — نصوص طويلة */}
-              <col style={{ width: "3.2%" }} />{/* نوع التعاقد — قصير */}
-              <col style={{ width: "2.5%" }} />{/* الوحدة — قصير */}
-              <col style={{ width: "3%" }}   />{/* السعر — أرقام */}
+              <col style={{ width: "9%" }}   />{/* الوصف الفني */}
+              <col style={{ width: "3.2%" }} />{/* نوع التعاقد */}
+              <col style={{ width: "2.5%" }} />{/* الوحدة */}
+              <col style={{ width: "3%" }}   />{/* السعر */}
               <col style={{ width: "4.5%" }} />{/* المحتوى المحلي */}
               <col style={{ width: "3.5%" }} />{/* التواصل */}
               <col style={{ width: "4.5%" }} />{/* التقييم */}
@@ -611,92 +637,137 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                 ))}
               </tr>
             </thead>
-            <tbody>
-              {isLoading ? (
-                <tr><td colSpan={21} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
-                    <div style={{ width: 32, height: 32, border: "3px solid rgba(197,160,89,0.2)", borderTopColor: "var(--gold)", borderRadius: "50%", animation: "spin-loader 0.9s linear infinite" }} />
-                    جاري تحميل البيانات...
-                  </div>
-                </td></tr>
-              ) : isError ? (
-                <tr><td colSpan={21} style={{ textAlign: "center", padding: "50px" }}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
-                    <div style={{ fontSize: "2rem" }}>⚠️</div>
-                    <div style={{ fontSize: "0.85rem", color: "#e74c3c", fontWeight: 700 }}>تعذّر تحميل البيانات</div>
-                    <div style={{ fontSize: "0.75rem", color: "#aaa" }}>تحقق من اتصال الشبكة أو أعد تحميل الصفحة</div>
-                    <button onClick={() => refetch()}
-                      style={{ marginTop: "6px", background: "linear-gradient(135deg, var(--gold), #a88540)", color: "#fff", border: "none", borderRadius: "8px", padding: "8px 20px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}>
-                      إعادة المحاولة
-                    </button>
-                  </div>
-                </td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={21} style={{ textAlign: "center", padding: "50px", color: "#aaa", fontSize: "0.85rem" }}>لا توجد سجلات مطابقة للبحث</td></tr>
-              ) : filtered.map((c: Contractor, idx: number) => (
-                <tr key={c.id} style={{ background: idx % 2 === 0 ? "#fff" : "#faf8f4", borderBottom: "1px solid #f0ebe0" }}>
-                  <td style={tdStyle} title={c.contractNo}>{c.contractNo}</td>
-                  <td style={{ ...tdStyle, fontSize: "0.7rem", color: "#888" }} title={c.contractYear || "—"}>{c.contractYear || "—"}</td>
-                  {/* Contractor name — clickable → navigate to main tab */}
-                  <td
-                    style={{ ...tdStyle, fontWeight: 700, cursor: "pointer", color: "var(--charcoal)" }}
-                    onClick={() => onSelectContractor && onSelectContractor(c.id)}
-                    title={c.contractor}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--gold)"; (e.currentTarget as HTMLElement).style.textDecoration = "underline"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--charcoal)"; (e.currentTarget as HTMLElement).style.textDecoration = ""; }}
-                  >{c.contractor}</td>
-                  <td style={tdStyle} title={c.project}>{c.project}</td>
-                  <td style={tdStyle} title={c.portfolio}>{c.portfolio}</td>
-                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#3b8fcc" }} title={c.mainActivity || "—"}>{c.mainActivity || "—"}</td>
-                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={c.businessProgram || "—"}>{c.businessProgram || "—"}</td>
-                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={c.workFamily || "—"}>{c.workFamily || "—"}</td>
-                  <td style={{ ...tdStyle, minWidth: 0, overflow: "hidden" }} title={c.workType || "—"}>
-                    <span style={{ display: "inline-block", maxWidth: "100%", background: "rgba(197,160,89,0.1)", color: "var(--gold)", borderRadius: "6px", padding: "2px 8px", fontSize: "0.7rem", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", verticalAlign: "middle" }}>
-                      {c.workType}
-                    </span>
-                  </td>
-                  <td style={{ ...tdStyle, fontSize: "0.7rem", color: "#555" }} title={c.itemScope || "—"}>{c.itemScope || "—"}</td>
-                  <td style={{ ...tdStyle, fontSize: "0.7rem", color: "#555" }} title={c.techSpecs || "—"}>{c.techSpecs || "—"}</td>
-                  <td style={{ ...tdStyle, fontSize: "0.7rem", color: "#555" }} title={c.measurements || "—"}>{c.measurements || "—"}</td>
-                  <td style={{ ...tdStyle, fontSize: "0.7rem", color: "#555", fontFamily: "monospace" }} title={c.itemCode || "—"}>{c.itemCode || "—"}</td>
-                  {/* Technical scope — clickable → search in main tab */}
-                  <td
-                    style={{ ...tdStyle, cursor: "pointer", color: "var(--charcoal)" }}
-                    title={c.technicalScope}
-                    onClick={() => onSearchAndNavigate && onSearchAndNavigate(c.technicalScope)}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#3b8fcc"; (e.currentTarget as HTMLElement).style.textDecoration = "underline"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--charcoal)"; (e.currentTarget as HTMLElement).style.textDecoration = ""; }}
-                  >{c.technicalScope}</td>
-                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={c.workCategory || "—"}>{c.workCategory || "—"}</td>
-                  <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={c.unit || "—"}>{c.unit || "—"}</td>
-                  <td style={{ ...tdStyle, fontWeight: 700, color: "var(--gold)", fontSize: "0.75rem", direction: "ltr", textAlign: "right" }} title={c.price.toLocaleString("en")}>
-                    {c.price.toLocaleString("en")}
-                  </td>
-                  <td style={tdStyle} title={c.localContent || "—"}>
-                    {c.localContent ? (
-                      <span style={{ background: c.localContent === "مسجل" ? "rgba(43,170,116,0.12)" : "rgba(200,200,200,0.18)", color: c.localContent === "مسجل" ? "#1d8a5a" : "#888", border: `1px solid ${c.localContent === "مسجل" ? "rgba(43,170,116,0.3)" : "rgba(180,180,180,0.3)"}`, borderRadius: "6px", padding: "2px 9px", fontSize: "0.7rem", fontWeight: 700 }}>{c.localContent}</span>
-                    ) : <span style={{ color: "#ccc", fontSize: "0.7rem" }}>—</span>}
-                  </td>
-                  <td style={tdStyle} title={`${c.phone} | ${c.email}`}>
-                    <div style={{ fontSize: "0.7rem", color: "#888", minWidth: 0 }}>
-                      <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.phone}</div>
-                      <div style={{ direction: "ltr", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#bbb", fontSize: "0.65rem" }}>{c.email}</div>
-                    </div>
-                  </td>
-                  <td style={{ ...tdStyle, textAlign: "center", verticalAlign: "middle" }}>
-                    <StarDisplay rating={c.rating} />
-                  </td>
-                  <td style={{ ...tdStyle, textAlign: "center", verticalAlign: "middle" }}>
-                    <div style={{ display: "flex", gap: "1px", flexWrap: "nowrap", alignItems: "center", justifyContent: "center", minWidth: 0 }}>
-                      <button onClick={(e) => { e.stopPropagation(); openEdit(c); }} style={iconBtnStyle("#c5a059")} title="تعديل البيانات"><Pencil size={10} /></button>
-                      <button onClick={(e) => { e.stopPropagation(); openClone(c); }} style={iconBtnStyle("#2baa74")} title="إضافة بند جديد لنفس الشركة (تكرار)"><Copy size={10} /></button>
-                      <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(c.id); }} style={iconBtnStyle("#e74c3c")} title="حذف السجل"><Trash2 size={10} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
           </table>
+        </div>
+
+        {/* Scrollable body — fixed height so the virtualizer can measure it */}
+        <div
+          ref={tableScrollRef}
+          style={{ width: "100%", height: "calc(100vh - 340px)", minHeight: 320, overflowY: "auto", overflowX: "clip" }}
+        >
+          {isLoading ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: "10px", color: "#aaa", fontSize: "0.85rem" }}>
+              <div style={{ width: 32, height: 32, border: "3px solid rgba(197,160,89,0.2)", borderTopColor: "var(--gold)", borderRadius: "50%", animation: "spin-loader 0.9s linear infinite" }} />
+              جاري تحميل البيانات...
+            </div>
+          ) : isError ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: "10px" }}>
+              <div style={{ fontSize: "2rem" }}>⚠️</div>
+              <div style={{ fontSize: "0.85rem", color: "#e74c3c", fontWeight: 700 }}>تعذّر تحميل البيانات</div>
+              <div style={{ fontSize: "0.75rem", color: "#aaa" }}>تحقق من اتصال الشبكة أو أعد تحميل الصفحة</div>
+              <button onClick={() => refetch()}
+                style={{ marginTop: "6px", background: "linear-gradient(135deg, var(--gold), #a88540)", color: "#fff", border: "none", borderRadius: "8px", padding: "8px 20px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}>
+                إعادة المحاولة
+              </button>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#aaa", fontSize: "0.85rem" }}>
+              لا توجد سجلات مطابقة للبحث
+            </div>
+          ) : (
+            <table style={{ tableLayout: "fixed", borderCollapse: "collapse", direction: "rtl", width: "100%" }}>
+              <colgroup>
+                <col style={{ width: "3.5%" }} />
+                <col style={{ width: "2.8%" }} />
+                <col style={{ width: "10%" }}  />
+                <col style={{ width: "6.5%" }} />
+                <col style={{ width: "3.2%" }} />
+                <col style={{ width: "5.5%" }} />
+                <col style={{ width: "5%" }}   />
+                <col style={{ width: "5%" }}   />
+                <col style={{ width: "4.5%" }} />
+                <col style={{ width: "4.5%" }} />
+                <col style={{ width: "4.5%" }} />
+                <col style={{ width: "2.8%" }} />
+                <col style={{ width: "4.5%" }} />
+                <col style={{ width: "9%" }}   />
+                <col style={{ width: "3.2%" }} />
+                <col style={{ width: "2.5%" }} />
+                <col style={{ width: "3%" }}   />
+                <col style={{ width: "4.5%" }} />
+                <col style={{ width: "3.5%" }} />
+                <col style={{ width: "4.5%" }} />
+                <col style={{ width: "3.8%" }} />
+              </colgroup>
+              <tbody>
+                {/* Top spacer — represents rows scrolled above the viewport */}
+                {topPad > 0 && (
+                  <tr><td colSpan={21} style={{ height: topPad, padding: 0, border: "none" }} /></tr>
+                )}
+
+                {/* Only the visible rows */}
+                {virtualRows.map((vRow) => {
+                  const c   = filtered[vRow.index];
+                  const idx = vRow.index;
+                  return (
+                    <tr key={c.id} style={{ background: idx % 2 === 0 ? "#fff" : "#faf8f4", borderBottom: "1px solid #f0ebe0" }}>
+                      <td style={tdStyle} title={c.contractNo}>{c.contractNo}</td>
+                      <td style={{ ...tdStyle, fontSize: "0.7rem", color: "#888" }} title={c.contractYear || "—"}>{c.contractYear || "—"}</td>
+                      <td
+                        style={{ ...tdStyle, fontWeight: 700, cursor: "pointer", color: "var(--charcoal)" }}
+                        onClick={() => onSelectContractor && onSelectContractor(c.id)}
+                        title={c.contractor}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--gold)"; (e.currentTarget as HTMLElement).style.textDecoration = "underline"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--charcoal)"; (e.currentTarget as HTMLElement).style.textDecoration = ""; }}
+                      >{c.contractor}</td>
+                      <td style={tdStyle} title={c.project}>{c.project}</td>
+                      <td style={tdStyle} title={c.portfolio}>{c.portfolio}</td>
+                      <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#3b8fcc" }} title={c.mainActivity || "—"}>{c.mainActivity || "—"}</td>
+                      <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={c.businessProgram || "—"}>{c.businessProgram || "—"}</td>
+                      <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={c.workFamily || "—"}>{c.workFamily || "—"}</td>
+                      <td style={{ ...tdStyle, minWidth: 0, overflow: "hidden" }} title={c.workType || "—"}>
+                        <span style={{ display: "inline-block", maxWidth: "100%", background: "rgba(197,160,89,0.1)", color: "var(--gold)", borderRadius: "6px", padding: "2px 8px", fontSize: "0.7rem", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", verticalAlign: "middle" }}>
+                          {c.workType}
+                        </span>
+                      </td>
+                      <td style={{ ...tdStyle, fontSize: "0.7rem", color: "#555" }} title={c.itemScope || "—"}>{c.itemScope || "—"}</td>
+                      <td style={{ ...tdStyle, fontSize: "0.7rem", color: "#555" }} title={c.techSpecs || "—"}>{c.techSpecs || "—"}</td>
+                      <td style={{ ...tdStyle, fontSize: "0.7rem", color: "#555" }} title={c.measurements || "—"}>{c.measurements || "—"}</td>
+                      <td style={{ ...tdStyle, fontSize: "0.7rem", color: "#555", fontFamily: "monospace" }} title={c.itemCode || "—"}>{c.itemCode || "—"}</td>
+                      <td
+                        style={{ ...tdStyle, cursor: "pointer", color: "var(--charcoal)" }}
+                        title={c.technicalScope}
+                        onClick={() => onSearchAndNavigate && onSearchAndNavigate(c.technicalScope)}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#3b8fcc"; (e.currentTarget as HTMLElement).style.textDecoration = "underline"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--charcoal)"; (e.currentTarget as HTMLElement).style.textDecoration = ""; }}
+                      >{c.technicalScope}</td>
+                      <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={c.workCategory || "—"}>{c.workCategory || "—"}</td>
+                      <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={c.unit || "—"}>{c.unit || "—"}</td>
+                      <td style={{ ...tdStyle, fontWeight: 700, color: "var(--gold)", fontSize: "0.75rem", direction: "ltr", textAlign: "right" }} title={c.price.toLocaleString("en")}>
+                        {c.price.toLocaleString("en")}
+                      </td>
+                      <td style={tdStyle} title={c.localContent || "—"}>
+                        {c.localContent ? (
+                          <span style={{ background: c.localContent === "مسجل" ? "rgba(43,170,116,0.12)" : "rgba(200,200,200,0.18)", color: c.localContent === "مسجل" ? "#1d8a5a" : "#888", border: `1px solid ${c.localContent === "مسجل" ? "rgba(43,170,116,0.3)" : "rgba(180,180,180,0.3)"}`, borderRadius: "6px", padding: "2px 9px", fontSize: "0.7rem", fontWeight: 700 }}>{c.localContent}</span>
+                        ) : <span style={{ color: "#ccc", fontSize: "0.7rem" }}>—</span>}
+                      </td>
+                      <td style={tdStyle} title={`${c.phone} | ${c.email}`}>
+                        <div style={{ fontSize: "0.7rem", color: "#888", minWidth: 0 }}>
+                          <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.phone}</div>
+                          <div style={{ direction: "ltr", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#bbb", fontSize: "0.65rem" }}>{c.email}</div>
+                        </div>
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: "center", verticalAlign: "middle" }}>
+                        <StarDisplay rating={c.rating} />
+                      </td>
+                      <td style={{ ...tdStyle, textAlign: "center", verticalAlign: "middle" }}>
+                        <div style={{ display: "flex", gap: "1px", flexWrap: "nowrap", alignItems: "center", justifyContent: "center", minWidth: 0 }}>
+                          <button onClick={(e) => { e.stopPropagation(); openEdit(c); }} style={iconBtnStyle("#c5a059")} title="تعديل البيانات"><Pencil size={10} /></button>
+                          <button onClick={(e) => { e.stopPropagation(); openClone(c); }} style={iconBtnStyle("#2baa74")} title="إضافة بند جديد لنفس الشركة (تكرار)"><Copy size={10} /></button>
+                          <button onClick={(e) => { e.stopPropagation(); setDeleteConfirm(c.id); }} style={iconBtnStyle("#e74c3c")} title="حذف السجل"><Trash2 size={10} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {/* Bottom spacer — represents rows below the viewport */}
+                {bottomPad > 0 && (
+                  <tr><td colSpan={21} style={{ height: bottomPad, padding: 0, border: "none" }} /></tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 

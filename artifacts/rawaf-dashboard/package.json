@@ -75,6 +75,7 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "@tanstack/react-virtual": "^3.13.25",
     "chart.js": "^4.5.1",
     "xlsx": "^0.18.5"
   }

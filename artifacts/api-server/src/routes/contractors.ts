@@ -72,13 +72,22 @@ router.get("/contractors", async (req, res): Promise<void> => {
     if (mainActivity)    filters.push(exactEq(contractorsTable.mainActivity,    norm(mainActivity)));
   }
 
-  const rows = await db
+  /* Optional pagination — limit / offset keep the payload small so the
+     client can do progressive background loading without stalling the UI. */
+  const limit  = req.query.limit  ? parseInt(String(req.query.limit),  10) : undefined;
+  const offset = req.query.offset ? parseInt(String(req.query.offset), 10) : undefined;
+
+  const baseQ = db
     .select()
     .from(contractorsTable)
     .where(filters.length > 0 ? and(...filters) : undefined)
     .orderBy(contractorsTable.id);
 
-  res.json(ListContractorsResponse.parse(rows.map(r => ({ ...r, createdAt: r.createdAt.toISOString() }))));
+  const rows = (limit !== undefined)
+    ? await baseQ.limit(limit).offset(offset ?? 0)
+    : await baseQ;
+
+  res.json(rows.map(r => ({ ...r, createdAt: r.createdAt.toISOString() })));
 });
 
 /* Server-side item code resolution.

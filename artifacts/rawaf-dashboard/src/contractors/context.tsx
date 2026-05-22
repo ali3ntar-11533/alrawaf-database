@@ -3,10 +3,11 @@ import { useContractors } from "./api";
 import type { Contractor } from "./types";
 
 interface ContractorsContextValue {
-  data: Contractor[];
-  isLoading: boolean;
-  isError: boolean;
-  refetch: () => void;
+  data:        Contractor[];
+  isLoading:   boolean;
+  isFetching:  boolean;
+  isError:     boolean;
+  refetch:     () => void;
 }
 
 const ContractorsContext = createContext<ContractorsContextValue | null>(null);
