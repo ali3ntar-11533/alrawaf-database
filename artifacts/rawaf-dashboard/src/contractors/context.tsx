@@ -1,21 +1,25 @@
 import { createContext, useContext } from "react";
-import { useContractors } from "./api";
+import { useContractors, useFilterOptions } from "./api";
 import type { Contractor } from "./types";
+import type { FilterOptionsMap } from "./api";
 
 interface ContractorsContextValue {
-  data:        Contractor[];
-  isLoading:   boolean;
-  isFetching:  boolean;
-  isError:     boolean;
-  refetch:     () => void;
+  data:          Contractor[];
+  isLoading:     boolean;
+  isFetching:    boolean;
+  isError:       boolean;
+  refetch:       () => void;
+  filterOptions: FilterOptionsMap | null;
 }
 
 const ContractorsContext = createContext<ContractorsContextValue | null>(null);
 
 export function ContractorsProvider({ children }: { children: React.ReactNode }) {
-  const value = useContractors();
+  const contractors   = useContractors();
+  const filterOptions = useFilterOptions();
+
   return (
-    <ContractorsContext.Provider value={value}>
+    <ContractorsContext.Provider value={{ ...contractors, filterOptions }}>
       {children}
     </ContractorsContext.Provider>
   );

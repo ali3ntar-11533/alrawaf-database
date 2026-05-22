@@ -439,34 +439,60 @@ function PriceInputPill({
    FilterBar — main export
    ═══════════════════════════════════════════════════════════ */
 export default function FilterBar({ filters, onFiltersChange, search = "" }: FilterBarProps) {
-  const { data: contractors = [], isLoading } = useContractorsContext();
+  const { data: contractors = [], isLoading, filterOptions } = useContractorsContext();
 
-  /* ── Cascading / faceted options ──────────────────────────────────────────
-     For each dropdown, options are derived from contractors that:
-       1. Match the global search bar text (if any)
-       2. Match ALL OTHER currently active filter selections (not self)
-     This means: typing in the search bar narrows every dropdown, and
-     selecting one filter narrows the options available in all others.
+  /* ── Options strategy ─────────────────────────────────────────────────────
+     1. SERVER BASE (`filterOptions`): fetched once on app load via a single
+        lightweight SQL DISTINCT query — contains ALL possible values from the
+        entire database regardless of how much data has been progressively loaded.
+     2. CASCADING NARROWING: when the user activates a filter or types in the
+        search bar, we narrow options to only values compatible with the current
+        selection using the in-memory loaded records.
+        • If the cascaded set is non-empty → use it (most precise).
+        • If cascaded set is empty (data not yet fully loaded, or no match) →
+          fall back to the complete server base so dropdowns never appear empty.
   ───────────────────────────────────────────────────────────────────────── */
   const options = useMemo((): Record<keyof FilterState, string[]> => {
     const all = contractors as Contractor[];
     const map = {} as Record<keyof FilterState, string[]>;
+
     for (const def of FILTER_DEFS) {
+      /* Full server-provided list for this field (may be null on first render).
+         `itemPrice` is a text input, not in FilterOptionsMap — safe to cast. */
+      type FOMKey = keyof import("../contractors/api").FilterOptionsMap;
+      const serverBase: string[] =
+        filterOptions && (def.key as string) in filterOptions
+          ? filterOptions[def.key as FOMKey]
+          : [];
+
+      /* Is any narrowing needed? (search text or another filter is active) */
+      const needNarrowing =
+        search.trim() !== "" ||
+        FILTER_DEFS.some((other) => other.key !== def.key && filters[other.key] !== "");
+
+      if (!needNarrowing) {
+        /* No active context → show complete server list */
+        map[def.key] = serverBase.length > 0 ? serverBase : getUnique(all, def.getter);
+        continue;
+      }
+
+      /* Cascading: filter in-memory pool to records matching search + other filters */
       const pool = all.filter((c) => {
-        // Must match the global search text
         if (!matchesSearch(c, search)) return false;
-        // Must match every OTHER active filter (strict equality)
         for (const other of FILTER_DEFS) {
-          if (other.key === def.key) continue;        // skip self
+          if (other.key === def.key) continue;
           const activeVal = filters[other.key];
           if (activeVal && !strictMatch(other.getter(c), activeVal)) return false;
         }
         return true;
       });
-      map[def.key] = getUnique(pool, def.getter);
+      const cascaded = getUnique(pool, def.getter);
+
+      /* Fall back to server base if cascaded set is empty (data still loading) */
+      map[def.key] = cascaded.length > 0 ? cascaded : serverBase;
     }
     return map;
-  }, [contractors, filters, search]);
+  }, [contractors, filterOptions, filters, search]);
 
   const activeCount = Object.values(filters).filter(Boolean).length;
 

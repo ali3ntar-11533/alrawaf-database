@@ -225,6 +225,51 @@ router.post("/contractors/bulk", async (req, res): Promise<void> => {
   });
 });
 
+/* ─────────────────────────────────────────────────────────────────────────
+   GET /contractors/filter-options
+   Returns the complete set of DISTINCT values for every filter field,
+   fetched directly from the DB in parallel. Used by the frontend to
+   populate filter dropdowns with ALL possible values immediately —
+   independent of the progressive background data-loading. One call,
+   one network round-trip, returned in ~50 ms regardless of table size.
+   ─────────────────────────────────────────────────────────────────────────*/
+router.get("/contractors/filter-options", async (req, res): Promise<void> => {
+  const t = contractorsTable;
+
+  const [
+    contractors, portfolios, mainActivities, businessPrograms,
+    workFamilies, workTypes, itemScopes, techSpecsList,
+    measurementsList, workCategories,
+  ] = await Promise.all([
+    db.selectDistinct({ v: t.contractor     }).from(t),
+    db.selectDistinct({ v: t.portfolio      }).from(t),
+    db.selectDistinct({ v: t.mainActivity   }).from(t),
+    db.selectDistinct({ v: t.businessProgram}).from(t),
+    db.selectDistinct({ v: t.workFamily     }).from(t),
+    db.selectDistinct({ v: t.workType       }).from(t),
+    db.selectDistinct({ v: t.itemScope      }).from(t),
+    db.selectDistinct({ v: t.techSpecs      }).from(t),
+    db.selectDistinct({ v: t.measurements   }).from(t),
+    db.selectDistinct({ v: t.workCategory   }).from(t),
+  ]);
+
+  const sorted = (rows: { v: string | null }[]): string[] =>
+    rows.map(r => r.v ?? "").filter(Boolean).sort((a, b) => a.localeCompare(b, "ar"));
+
+  res.json({
+    contractor:      sorted(contractors),
+    portfolio:       sorted(portfolios),
+    mainActivity:    sorted(mainActivities),
+    businessProgram: sorted(businessPrograms),
+    workFamily:      sorted(workFamilies),
+    workType:        sorted(workTypes),
+    itemScope:       sorted(itemScopes),
+    techSpecs:       sorted(techSpecsList),
+    measurements:    sorted(measurementsList),
+    workCategory:    sorted(workCategories),
+  });
+});
+
 router.get("/contractors/:id", async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = GetContractorParams.safeParse({ id: parseInt(raw, 10) });

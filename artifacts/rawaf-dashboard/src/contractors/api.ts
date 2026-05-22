@@ -59,6 +59,36 @@ export async function deleteContractor(id: number): Promise<void> {
   return apiFetch<void>(`/contractors/${id}`, { method: "DELETE" });
 }
 
+/* All DISTINCT values for each filter field — one light DB call */
+export interface FilterOptionsMap {
+  contractor:      string[];
+  portfolio:       string[];
+  mainActivity:    string[];
+  businessProgram: string[];
+  workFamily:      string[];
+  workType:        string[];
+  itemScope:       string[];
+  techSpecs:       string[];
+  measurements:    string[];
+  workCategory:    string[];
+}
+
+export async function fetchFilterOptions(): Promise<FilterOptionsMap> {
+  return apiFetch<FilterOptionsMap>("/contractors/filter-options");
+}
+
+export function useFilterOptions() {
+  const [options, setOptions] = useState<FilterOptionsMap | null>(null);
+
+  useEffect(() => {
+    fetchFilterOptions()
+      .then(setOptions)
+      .catch(() => {/* silently ignore; FilterBar falls back to loaded data */});
+  }, []);
+
+  return options;
+}
+
 export function useContractors() {
   const [data,       setData]       = useState<Contractor[]>([]);
   const [isLoading,  setIsLoading]  = useState(true);
