@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, eq, type SQL } from "drizzle-orm";
+import { and, eq, or, ilike, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { db, contractorsTable, resolveItemCodeFromDb, resolveItemCodesBulk } from "@workspace/db";
 import {
@@ -72,9 +72,44 @@ router.get("/contractors", async (req, res): Promise<void> => {
     if (mainActivity)    filters.push(exactEq(contractorsTable.mainActivity,    norm(mainActivity)));
   }
 
+  /* ── Full-text search across all text columns (q= parameter) ─────────────
+     Runs a case-insensitive ILIKE %term% across every searchable text field.
+     The client sends this when the user types in the header search bar.
+     Results are capped at 500 rows to keep the response payload small.     */
+  const searchTerm = req.query.q ? String(req.query.q).trim() : "";
+  if (searchTerm) {
+    const like = `%${searchTerm}%`;
+    const t = contractorsTable;
+    const searchClause = or(
+      ilike(t.contractNo,      like),
+      ilike(t.contractor,      like),
+      ilike(t.project,         like),
+      ilike(t.portfolio,       like),
+      ilike(t.technicalScope,  like),
+      ilike(t.workType,        like),
+      ilike(t.mainActivity,    like),
+      ilike(t.businessProgram, like),
+      ilike(t.workFamily,      like),
+      ilike(t.itemScope,       like),
+      ilike(t.techSpecs,       like),
+      ilike(t.measurements,    like),
+      ilike(t.itemCode,        like),
+      ilike(t.workCategory,    like),
+      ilike(t.phone,           like),
+      ilike(t.email,           like),
+      ilike(t.localContent,    like),
+      ilike(t.workDescription, like),
+      ilike(t.workScopeText,   like),
+    );
+    if (searchClause) filters.push(searchClause);
+  }
+
   /* Optional pagination — limit / offset keep the payload small so the
-     client can do progressive background loading without stalling the UI. */
-  const limit  = req.query.limit  ? parseInt(String(req.query.limit),  10) : undefined;
+     client can do progressive background loading without stalling the UI.
+     When a full-text search term is present, cap at 500 if no explicit limit. */
+  const limit  = req.query.limit  ? parseInt(String(req.query.limit),  10)
+               : searchTerm       ? 500
+               : undefined;
   const offset = req.query.offset ? parseInt(String(req.query.offset), 10) : undefined;
 
   const baseQ = db

@@ -3,6 +3,33 @@ import type { Contractor } from "./types";
 
 const BASE = "/api";
 
+/* ── Cache helpers (localStorage, 1-hour TTL) ─────────────────────────────
+   Stores the fully-loaded contractors array so subsequent page visits
+   display data instantly from cache while a silent background refresh runs.
+   Uses try/catch so quota errors (large datasets) are silently ignored.  */
+const CACHE_KEY = "rawaf_c_v2";
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+function readCache(): Contractor[] | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw) as { ts: number; data: Contractor[] };
+    if (Date.now() - ts > CACHE_TTL) { localStorage.removeItem(CACHE_KEY); return null; }
+    return data;
+  } catch { return null; }
+}
+
+function writeCache(data: Contractor[]): void {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); }
+  catch { /* quota exceeded for very large datasets — skip silently */ }
+}
+
+export function clearContractorsCache(): void {
+  try { localStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
+}
+
+/* ── Core fetch helper ───────────────────────────────────────────────────*/
 const PAGE_SIZE = 2000;
 
 async function apiFetch<T>(url: string, opts?: RequestInit): Promise<T> {
@@ -18,10 +45,16 @@ async function apiFetch<T>(url: string, opts?: RequestInit): Promise<T> {
   return res.json();
 }
 
-export async function listContractors(limit?: number, offset?: number): Promise<Contractor[]> {
+/* limit / offset / q(search) are all optional */
+export async function listContractors(
+  limit?: number,
+  offset?: number,
+  q?: string,
+): Promise<Contractor[]> {
   const params = new URLSearchParams();
   if (limit  !== undefined) params.set("limit",  String(limit));
   if (offset !== undefined) params.set("offset", String(offset));
+  if (q)                    params.set("q",      q);
   const qs = params.toString();
   return apiFetch<Contractor[]>(`/contractors${qs ? `?${qs}` : ""}`);
 }
@@ -59,6 +92,43 @@ export async function deleteContractor(id: number): Promise<void> {
   return apiFetch<void>(`/contractors/${id}`, { method: "DELETE" });
 }
 
+/* ── Server-side full-text search ───────────────────────────────────────
+   Debounces the search term by 300 ms, then sends it to the server which
+   runs ILIKE across every text column. Returns up to 500 matches from the
+   COMPLETE database — independent of how much data is loaded in memory.  */
+export function useServerSearch(term: string) {
+  const [results,    setResults]    = useState<Contractor[] | null>(null);
+  const [isSearching, setSearching] = useState(false);
+  const latestTerm = useRef(term);
+  latestTerm.current = term;
+
+  useEffect(() => {
+    if (!term.trim()) {
+      setResults(null);
+      setSearching(false);
+      return;
+    }
+
+    setSearching(true);
+
+    const id = setTimeout(async () => {
+      try {
+        const data = await listContractors(500, 0, term.trim());
+        if (latestTerm.current === term) setResults(data);
+      } catch {
+        /* network error — fall back to in-memory search silently */
+        if (latestTerm.current === term) setResults(null);
+      } finally {
+        if (latestTerm.current === term) setSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(id);
+  }, [term]);
+
+  return { results, isSearching };
+}
+
 /* All DISTINCT values for each filter field — one light DB call */
 export interface FilterOptionsMap {
   contractor:      string[];
@@ -89,52 +159,84 @@ export function useFilterOptions() {
   return options;
 }
 
+/* ── Progressive background loader with localStorage cache ──────────────
+   First visit:     progressive load 2000/batch (shows data after ~1 s)
+   Subsequent visits: instant load from localStorage, then silent refresh   */
 export function useContractors() {
-  const [data,       setData]       = useState<Contractor[]>([]);
-  const [isLoading,  setIsLoading]  = useState(true);
+  const initialCache = useRef<Contractor[] | null | "checked">(null);
+  if (initialCache.current === null) initialCache.current = readCache();
+
+  const cached = initialCache.current !== "checked" ? initialCache.current : null;
+
+  const [data,       setData]       = useState<Contractor[]>(cached ?? []);
+  const [isLoading,  setIsLoading]  = useState(cached === null);
   const [isFetching, setIsFetching] = useState(false);
   const [isError,    setIsError]    = useState(false);
   const [tick,       setTick]       = useState(0);
 
-  /* Stable ref so the async loop can read the latest cancelled flag */
   const cancelledRef = useRef(false);
 
   useEffect(() => {
     cancelledRef.current = false;
-    setIsLoading(true);
     setIsError(false);
-    setIsFetching(false);
+
+    /* Was fresh cache used on this mount? Only on tick 0. */
+    const fromCache = tick === 0 && cached !== null;
 
     const run = async () => {
       try {
-        /* ── First page: show UI immediately ── */
-        const first = await listContractors(PAGE_SIZE, 0);
-        if (cancelledRef.current) return;
-        setData(first);
-        setIsLoading(false);
+        if (!fromCache) {
+          /* ── Cold start: load first page quickly, then background load ── */
+          setIsLoading(true);
+          setIsFetching(false);
 
-        /* If the first page is not full there's nothing more to load */
-        if (first.length < PAGE_SIZE) return;
-
-        /* ── Background pages: accumulate silently ── */
-        setIsFetching(true);
-        const acc: Contractor[] = [...first];
-        let offset = PAGE_SIZE;
-
-        while (!cancelledRef.current) {
-          const page = await listContractors(PAGE_SIZE, offset);
+          const first = await listContractors(PAGE_SIZE, 0);
           if (cancelledRef.current) return;
-          acc.push(...page);
-          /* Spread a new array so React detects the change */
-          setData([...acc]);
-          if (page.length < PAGE_SIZE) break;
-          offset += PAGE_SIZE;
+          setData(first);
+          setIsLoading(false);
+
+          if (first.length < PAGE_SIZE) { writeCache(first); return; }
+
+          setIsFetching(true);
+          const acc: Contractor[] = [...first];
+          let offset = PAGE_SIZE;
+
+          while (!cancelledRef.current) {
+            const page = await listContractors(PAGE_SIZE, offset);
+            if (cancelledRef.current) return;
+            acc.push(...page);
+            setData([...acc]);
+            if (page.length < PAGE_SIZE) break;
+            offset += PAGE_SIZE;
+          }
+
+          if (!cancelledRef.current) {
+            writeCache(acc);
+            setIsFetching(false);
+          }
+        } else {
+          /* ── Cache hit: data already shown — silent background refresh ── */
+          setIsFetching(true);
+          const acc: Contractor[] = [];
+          let offset = 0;
+
+          while (!cancelledRef.current) {
+            const page = await listContractors(PAGE_SIZE, offset);
+            if (cancelledRef.current) return;
+            acc.push(...page);
+            if (page.length < PAGE_SIZE) break;
+            offset += PAGE_SIZE;
+          }
+
+          if (!cancelledRef.current) {
+            setData([...acc]);
+            writeCache(acc);
+            setIsFetching(false);
+          }
         }
-        if (!cancelledRef.current) setIsFetching(false);
       } catch {
         if (!cancelledRef.current) {
-          setIsError(true);
-          setIsLoading(false);
+          if (!fromCache) { setIsError(true); setIsLoading(false); }
           setIsFetching(false);
         }
       }
@@ -142,9 +244,12 @@ export function useContractors() {
 
     run();
     return () => { cancelledRef.current = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick]);
 
   function refetch() {
+    clearContractorsCache();
+    initialCache.current = "checked"; // prevent re-reading stale cache
     setData([]);
     setTick((t) => t + 1);
   }
