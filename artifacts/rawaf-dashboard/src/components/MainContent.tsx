@@ -744,6 +744,12 @@ export default function MainContent({ contractor, allContractors, filteredContra
                 const barColor    = isCurrent
                   ? "linear-gradient(90deg, var(--gold), #e8c870)"
                   : i === 0 ? "linear-gradient(90deg, #2baa74, #36c786)" : BAR_COLORS[i % BAR_COLORS.length];
+                const hoverTitle = [
+                  `#${i + 1} ${c.contractor} — ${formatExact(c.price)} ر.س`,
+                  c.project ? `المشروع: ${c.project}` : "",
+                  c.itemCode ? `الكود: ${c.itemCode}` : "",
+                  c.rating ? `التقييم: ${c.rating}/5` : "",
+                ].filter(Boolean).join("\n");
                 return (
                   <div
                     key={c.id}
@@ -751,6 +757,7 @@ export default function MainContent({ contractor, allContractors, filteredContra
                     style={{ display: "flex", flexDirection: "column", gap: "4px", cursor: "pointer" }}
                     onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
                     onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                    title={hoverTitle}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                       <div style={{ width: "18px", height: "18px", borderRadius: "5px", background: i === 0 ? "#2baa74" : isCurrent ? "var(--gold)" : "#e0dbd0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
