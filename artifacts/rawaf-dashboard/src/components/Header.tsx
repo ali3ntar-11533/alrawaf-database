@@ -517,6 +517,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
                 overflow: "hidden",
                 zIndex: 99999,
                 direction: "rtl",
+                boxSizing: "border-box",
               }}>
                 {suggestions.map((value, i) => {
                   const isFocused = i === focusedIdx;
