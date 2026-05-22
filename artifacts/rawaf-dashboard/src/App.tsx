@@ -88,7 +88,7 @@ function App() {
       f.itemPrice !== filters.itemPrice &&
       f.contractor      === filters.contractor      &&
       f.portfolio       === filters.portfolio       &&
-      f.project         === filters.project         &&
+      f.mainActivity    === filters.mainActivity    &&
       f.businessProgram === filters.businessProgram &&
       f.workFamily      === filters.workFamily      &&
       f.workType        === filters.workType        &&

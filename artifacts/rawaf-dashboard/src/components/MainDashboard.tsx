@@ -53,7 +53,7 @@ function contractorMatchesSearch(c: Contractor, search: string): boolean {
 function contractorMatchesFilters(c: Contractor, filters: FilterState): boolean {
   if (filters.contractor      && normalize(c.contractor)              !== normalize(filters.contractor))      return false;
   if (filters.portfolio       && normalize(c.portfolio)               !== normalize(filters.portfolio))       return false;
-  if (filters.project         && normalize(c.project)                 !== normalize(filters.project))         return false;
+  if (filters.mainActivity    && normalize(c.mainActivity    ?? "")   !== normalize(filters.mainActivity))    return false;
   if (filters.businessProgram && normalize(c.businessProgram ?? "")   !== normalize(filters.businessProgram)) return false;
   if (filters.workFamily      && normalize(c.workFamily      ?? "")   !== normalize(filters.workFamily))      return false;
   if (filters.workType        && normalize(c.workType)                !== normalize(filters.workType))        return false;

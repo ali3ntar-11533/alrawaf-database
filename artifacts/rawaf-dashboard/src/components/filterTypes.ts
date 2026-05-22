@@ -1,7 +1,7 @@
 export interface FilterState {
   contractor:      string;
   portfolio:       string;
-  project:         string;
+  mainActivity:    string;
   businessProgram: string;
   workFamily:      string;
   workType:        string;
@@ -15,7 +15,7 @@ export interface FilterState {
 export const EMPTY_FILTERS: FilterState = {
   contractor:      "",
   portfolio:       "",
-  project:         "",
+  mainActivity:    "",
   businessProgram: "",
   workFamily:      "",
   workType:        "",

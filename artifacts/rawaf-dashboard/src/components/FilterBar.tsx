@@ -71,7 +71,7 @@ const FILTER_DEFS: {
 }[] = [
   { key: "contractor",      label: "المقاول / المورد",  getter: (c) => c.contractor },
   { key: "portfolio",       label: "المحفظة",            getter: (c) => c.portfolio },
-  { key: "project",         label: "المشروع",            getter: (c) => c.project },
+  { key: "mainActivity",    label: "النشاط الرئيسي",     getter: (c) => c.mainActivity     ?? "" },
   { key: "businessProgram", label: "برنامج الأعمال",     getter: (c) => c.businessProgram  ?? "" },
   { key: "workFamily",      label: "عائلة الأعمال",      getter: (c) => c.workFamily       ?? "" },
   { key: "workType",        label: "نوع الأعمال",        getter: (c) => c.workType },
