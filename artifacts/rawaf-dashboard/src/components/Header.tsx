@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { TabType } from "../App";
 import type { CurrentUser } from "../App";
 import { Search } from "lucide-react";
@@ -46,6 +46,10 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [focusedIdx,       setFocusedIdx]      = useState(-1);
 
+  /* Local input state — updates instantly on every keystroke */
+  const [localSearch, setLocalSearch] = useState(search);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef   = useRef<HTMLInputElement>(null);
 
@@ -58,13 +62,48 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
 
   const { data: contractors = [] } = useContractorsContext();
 
+  /* Sync localSearch if parent clears/changes search externally */
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
+
+  /* Debounced propagation — fires 120ms after typing stops */
+  const handleInputChange = useCallback((value: string) => {
+    setLocalSearch(value);
+    setShowSuggestions(true);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      onSearchChange(value);
+    }, 120);
+  }, [onSearchChange]);
+
+  /* Immediate propagation — for suggestion clicks / clear button */
+  const applySearch = useCallback((value: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setLocalSearch(value);
+    onSearchChange(value);
+  }, [onSearchChange]);
+
+  /* ── Pre-compute Pass 2 unique values from contractors ──────────────────
+     Computed once when contractors array changes — NOT on every keystroke. */
+  const pass2Candidates = useMemo((): string[] => {
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const c of contractors) {
+      for (const v of [c.contractNo, c.project, c.technicalScope ?? "", String(c.price ?? "")]) {
+        const clean = (v ?? "").trim();
+        if (clean && !seen.has(clean)) { seen.add(clean); result.push(clean); }
+      }
+    }
+    return result;
+  }, [contractors]);
+
   /* ── Compute flat suggestions across the FULL dataset ──────────────────
      Pass 1: filterOptions (10 categorical fields — full DB distinct values).
-     Pass 2: in-memory contractors rows for fields NOT in filterOptions:
-             contractNo, project, technicalScope, unit, workDescription.
+     Pass 2: pre-computed unique values from contractors rows.
      Results are deduplicated and capped at 12.                           */
   const suggestions = useMemo((): string[] => {
-    const term = search.trim();
+    const term = localSearch.trim();
     if (!term) return [];
     const normTerm = norm(term);
     const seen   = new Set<string>();
@@ -89,19 +128,16 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
       }
     }
 
-    /* Pass 2 — in-memory rows: fields not covered by filterOptions */
+    /* Pass 2 — pre-computed unique values (no full row scan per keystroke) */
     if (result.length < 12) {
-      for (const c of contractors) {
-        push(c.contractNo);
-        push(c.project);
-        push(c.technicalScope ?? "");
-        push(String(c.price ?? ""));
+      for (const v of pass2Candidates) {
+        push(v);
         if (result.length >= 12) break;
       }
     }
 
     return result;
-  }, [search, filterOptions, contractors]);
+  }, [localSearch, filterOptions, pass2Candidates]);
 
   /* Reset focused index when suggestions list changes */
   useEffect(() => { setFocusedIdx(-1); }, [suggestions]);
@@ -122,7 +158,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
   }
 
   function selectSuggestion(value: string) {
-    onSearchChange(value);
+    applySearch(value);
     setShowSuggestions(false);
     setFocusedIdx(-1);
     inputRef.current?.blur();
@@ -357,13 +393,13 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
               ref={inputRef}
               type="text"
               placeholder="ابحث بأي معلومة: اسم المقاول، المشروع، نوع الأعمال، المحفظة، رقم العقد..."
-              value={search}
-              onChange={(e) => { onSearchChange(e.target.value); setShowSuggestions(true); }}
+              value={localSearch}
+              onChange={(e) => handleInputChange(e.target.value)}
               onFocus={(e) => {
                 e.target.style.borderColor = "rgba(197,160,89,0.9)";
                 e.target.style.background  = "rgba(255,255,255,0.15)";
                 e.target.style.boxShadow   = "0 0 0 4px rgba(197,160,89,0.12)";
-                if (search.trim()) setShowSuggestions(true);
+                if (localSearch.trim()) setShowSuggestions(true);
               }}
               onBlur={(e) => {
                 e.target.style.borderColor = "rgba(197,160,89,0.35)";
@@ -397,9 +433,9 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
             />
 
             {/* Clear button */}
-            {search && (
+            {localSearch && (
               <button
-                onMouseDown={(e) => { e.preventDefault(); onSearchChange(""); setShowSuggestions(false); }}
+                onMouseDown={(e) => { e.preventDefault(); applySearch(""); setShowSuggestions(false); }}
                 style={{
                   position: "absolute", top: "50%", left: "14px",
                   transform: "translateY(-50%)",
