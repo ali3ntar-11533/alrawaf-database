@@ -460,12 +460,12 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
                 position: "absolute",
                 top: "100%",
                 right: 0, left: 0,
-                background: "rgba(22,17,12,0.97)",
-                border: "1.5px solid rgba(197,160,89,0.40)",
+                background: "rgba(250,246,240,0.98)",
+                border: "1.5px solid rgba(197,160,89,0.35)",
                 borderTop: "1px solid rgba(197,160,89,0.15)",
                 borderRadius: "0 0 14px 14px",
                 backdropFilter: "blur(16px)",
-                boxShadow: "0 12px 40px rgba(0,0,0,0.55)",
+                boxShadow: "0 8px 32px rgba(58,54,50,0.15)",
                 overflow: "hidden",
                 zIndex: 9999,
                 direction: "rtl",
@@ -484,15 +484,15 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
                         gap: "10px",
                         padding: "10px 18px",
                         cursor: "pointer",
-                        background: isFocused ? "rgba(197,160,89,0.10)" : "transparent",
+                        background: isFocused ? "rgba(197,160,89,0.13)" : "transparent",
                         borderRight: isFocused ? "3px solid var(--gold)" : "3px solid transparent",
-                        borderBottom: i < suggestions.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                        borderBottom: i < suggestions.length - 1 ? "1px solid rgba(197,160,89,0.12)" : "none",
                         transition: "background 0.12s",
                       }}
                     >
                       {/* Search icon */}
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                        stroke={isFocused ? "rgba(197,160,89,0.9)" : "rgba(255,255,255,0.25)"}
+                        stroke={isFocused ? "rgba(197,160,89,0.9)" : "rgba(58,54,50,0.30)"}
                         strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
                         style={{ flexShrink: 0, transition: "stroke 0.12s" }}>
                         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -502,7 +502,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
                       <span style={{
                         fontSize: "0.83rem",
                         fontFamily: "Tajawal, sans-serif",
-                        color: isFocused ? "#fff" : "rgba(255,255,255,0.80)",
+                        color: isFocused ? "var(--charcoal)" : "rgba(58,54,50,0.85)",
                         fontWeight: isFocused ? 600 : 400,
                         overflow: "hidden",
                         textOverflow: "ellipsis",
@@ -530,9 +530,9 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
                 {/* Footer */}
                 <div style={{
                   padding: "5px 18px",
-                  borderTop: "1px solid rgba(197,160,89,0.07)",
+                  borderTop: "1px solid rgba(197,160,89,0.15)",
                   fontSize: "0.6rem",
-                  color: "rgba(255,255,255,0.20)",
+                  color: "rgba(58,54,50,0.45)",
                   fontFamily: "Tajawal, sans-serif",
                   display: "flex",
                   justifyContent: "space-between",
