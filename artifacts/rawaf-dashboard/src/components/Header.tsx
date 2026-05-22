@@ -32,21 +32,11 @@ function norm(s: string) {
     .trim();
 }
 
-/* Suggestion source fields — label shown next to each suggestion */
-const SUGGESTION_FIELDS: { key: keyof FilterOptionsMap; label: string }[] = [
-  { key: "contractor",      label: "المقاول"      },
-  { key: "portfolio",       label: "المحفظة"       },
-  { key: "mainActivity",    label: "النشاط"        },
-  { key: "businessProgram", label: "البرنامج"      },
-  { key: "workFamily",      label: "العائلة"       },
-  { key: "workType",        label: "نوع الأعمال"   },
-  { key: "workCategory",    label: "نوع التعاقد"   },
-  { key: "itemScope",       label: "شمولية البند"  },
-  { key: "techSpecs",       label: "مواصفات فنية"  },
-  { key: "measurements",    label: "قياسات"        },
+/* All fields we collect suggestion values from */
+const SUGGESTION_KEYS: (keyof FilterOptionsMap)[] = [
+  "contractor", "portfolio", "mainActivity", "businessProgram",
+  "workFamily", "workType", "workCategory", "itemScope", "techSpecs", "measurements",
 ];
-
-interface Suggestion { field: string; value: string; }
 
 export default function Header({ activeTab, onTabChange, search, onSearchChange, filters, onFiltersChange, currentUser }: HeaderProps) {
   const [logoHover,    setLogoHover]    = useState(false);
@@ -66,22 +56,24 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
   const canSeeDatabase = isAdmin;
   const canManageUsers = isSuperAdmin;
 
-  /* ── Compute suggestions from filterOptions (full DB distinct values) ──── */
-  const suggestions = useMemo((): Suggestion[] => {
+  /* ── Compute flat suggestions from ALL filterOptions fields ────────────
+     Collects every distinct value across all fields, deduplicates, filters
+     by the typed term (contains match, Arabic-normalised), caps at 12.     */
+  const suggestions = useMemo((): string[] => {
     const term = search.trim();
     if (!term || !filterOptions) return [];
     const normTerm = norm(term);
-    const result: Suggestion[] = [];
-    for (const { key, label } of SUGGESTION_FIELDS) {
-      const opts = filterOptions[key] ?? [];
-      let count = 0;
-      for (const v of opts) {
+    const seen  = new Set<string>();
+    const result: string[] = [];
+    for (const key of SUGGESTION_KEYS) {
+      for (const v of (filterOptions[key] ?? [])) {
+        if (!v.trim() || seen.has(v)) continue;
         if (norm(v).includes(normTerm)) {
-          result.push({ field: label, value: v });
-          if (++count >= 2) break; // max 2 per field
+          seen.add(v);
+          result.push(v);
+          if (result.length >= 12) return result;
         }
       }
-      if (result.length >= 10) break; // overall cap
     }
     return result;
   }, [search, filterOptions]);
@@ -121,7 +113,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
       setFocusedIdx((i) => Math.max(i - 1, -1));
     } else if (e.key === "Enter" && focusedIdx >= 0) {
       e.preventDefault();
-      selectSuggestion(suggestions[focusedIdx].value);
+      selectSuggestion(suggestions[focusedIdx]);
     } else if (e.key === "Escape") {
       setShowSuggestions(false);
       setFocusedIdx(-1);
@@ -417,12 +409,12 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
                 zIndex: 9999,
                 direction: "rtl",
               }}>
-                {suggestions.map((s, i) => {
+                {suggestions.map((value, i) => {
                   const isFocused = i === focusedIdx;
                   return (
                     <div
-                      key={`${s.field}-${s.value}`}
-                      onMouseDown={(e) => { e.preventDefault(); selectSuggestion(s.value); }}
+                      key={value}
+                      onMouseDown={(e) => { e.preventDefault(); selectSuggestion(value); }}
                       onMouseEnter={() => setFocusedIdx(i)}
                       onMouseLeave={() => setFocusedIdx(-1)}
                       style={{
@@ -437,25 +429,17 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
                         transition: "background 0.12s",
                       }}
                     >
-                      {/* Field badge */}
-                      <span style={{
-                        fontSize: "0.6rem",
-                        fontFamily: "Tajawal, sans-serif",
-                        color: "rgba(197,160,89,0.70)",
-                        background: "rgba(197,160,89,0.10)",
-                        border: "1px solid rgba(197,160,89,0.20)",
-                        borderRadius: "5px",
-                        padding: "1px 7px",
-                        flexShrink: 0,
-                        whiteSpace: "nowrap",
-                        fontWeight: 600,
-                      }}>
-                        {s.field}
-                      </span>
+                      {/* Search icon */}
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                        stroke={isFocused ? "rgba(197,160,89,0.9)" : "rgba(255,255,255,0.25)"}
+                        strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                        style={{ flexShrink: 0, transition: "stroke 0.12s" }}>
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                      </svg>
 
                       {/* Matched value */}
                       <span style={{
-                        fontSize: "0.82rem",
+                        fontSize: "0.83rem",
                         fontFamily: "Tajawal, sans-serif",
                         color: isFocused ? "#fff" : "rgba(255,255,255,0.80)",
                         fontWeight: isFocused ? 600 : 400,
@@ -464,14 +448,14 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
                         whiteSpace: "nowrap",
                         flex: 1,
                       }}>
-                        {s.value}
+                        {value}
                       </span>
 
                       {/* Enter hint on focused item */}
                       {isFocused && (
                         <span style={{
                           fontSize: "0.58rem",
-                          color: "rgba(197,160,89,0.45)",
+                          color: "rgba(197,160,89,0.5)",
                           flexShrink: 0,
                           fontFamily: "monospace",
                         }}>
