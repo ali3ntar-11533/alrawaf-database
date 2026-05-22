@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { TabType } from "../App";
 import type { CurrentUser } from "../App";
-import { Search } from "lucide-react";
+import { Search, ArrowLeft } from "lucide-react";
 import logoImg from "@assets/logo_1776506524686.jpg";
 import heroBg from "@assets/Image_jo77t3jo77t3jo1_1776495109728.png";
 import FilterBar from "./FilterBar";
@@ -84,14 +84,14 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
   const { data: contractors = [] } = useContractorsContext();
 
 
-  /* Debounced propagation — fires 120ms after typing stops */
+  /* Typing only updates local state + suggestions — no filtering until Enter/go */
   const handleInputChange = useCallback((value: string) => {
     setLocalSearch(value);
     setShowSuggestions(true);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      onSearchChange(value);
-    }, 120);
+    if (!value.trim()) {
+      /* Clear immediately resets filtering */
+      onSearchChange("");
+    }
   }, [onSearchChange]);
 
   /* Immediate propagation — for suggestion clicks / clear button */
@@ -182,16 +182,23 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (!showSuggestions || suggestions.length === 0) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setFocusedIdx((i) => Math.min(i + 1, suggestions.length - 1));
+      if (showSuggestions && suggestions.length > 0)
+        setFocusedIdx((i) => Math.min(i + 1, suggestions.length - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setFocusedIdx((i) => Math.max(i - 1, -1));
-    } else if (e.key === "Enter" && focusedIdx >= 0) {
+      if (showSuggestions && suggestions.length > 0)
+        setFocusedIdx((i) => Math.max(i - 1, -1));
+    } else if (e.key === "Enter") {
       e.preventDefault();
-      selectSuggestion(suggestions[focusedIdx]);
+      if (focusedIdx >= 0 && showSuggestions && suggestions.length > 0) {
+        selectSuggestion(suggestions[focusedIdx]);
+      } else {
+        applySearch(localSearch);
+        setShowSuggestions(false);
+        setFocusedIdx(-1);
+      }
     } else if (e.key === "Escape") {
       setShowSuggestions(false);
       setFocusedIdx(-1);
@@ -422,7 +429,6 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
                 e.target.style.borderColor = "rgba(197,160,89,0.35)";
                 e.target.style.background  = "rgba(255,255,255,0.10)";
                 e.target.style.boxShadow   = "none";
-                /* Delay close so suggestion clicks can register first */
                 setTimeout(() => {
                   if (!wrapperRef.current?.contains(document.activeElement)) {
                     setShowSuggestions(false);
@@ -432,9 +438,10 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
               onKeyDown={handleKeyDown}
               style={{
                 width: "100%",
-                padding: "14px 50px 14px 20px",
+                padding: "14px 50px 14px 90px",
                 background: "rgba(255,255,255,0.10)",
                 border: "1.5px solid rgba(197,160,89,0.35)",
+                borderBottom: showSuggestions && suggestions.length > 0 ? "1.5px solid transparent" : "1.5px solid rgba(197,160,89,0.35)",
                 borderRadius: showSuggestions && suggestions.length > 0 ? "14px 14px 0 0" : "14px",
                 fontSize: "0.9rem",
                 fontFamily: "Tajawal, sans-serif",
@@ -449,22 +456,45 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
               }}
             />
 
-            {/* Clear button */}
+            {/* Go / Search button — always visible on left, triggers actual filtering */}
+            <button
+              onMouseDown={(e) => { e.preventDefault(); applySearch(localSearch); setShowSuggestions(false); inputRef.current?.blur(); }}
+              title="بحث (Enter)"
+              style={{
+                position: "absolute", top: "50%", left: "12px",
+                transform: "translateY(-50%)",
+                background: localSearch.trim() ? "rgba(197,160,89,0.85)" : "rgba(255,255,255,0.10)",
+                border: `1.5px solid ${localSearch.trim() ? "rgba(197,160,89,0.9)" : "rgba(255,255,255,0.18)"}`,
+                borderRadius: "9px", width: "34px", height: "34px",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer",
+                color: localSearch.trim() ? "#fff" : "rgba(255,255,255,0.40)",
+                transition: "background 0.18s, border-color 0.18s, color 0.18s",
+                zIndex: 2,
+                flexShrink: 0,
+              }}
+              onMouseEnter={(e) => { if (localSearch.trim()) e.currentTarget.style.background = "rgba(197,160,89,1)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = localSearch.trim() ? "rgba(197,160,89,0.85)" : "rgba(255,255,255,0.10)"; }}
+            >
+              <ArrowLeft size={15} />
+            </button>
+
+            {/* Clear button — appears next to go button when there is text */}
             {localSearch && (
               <button
                 onMouseDown={(e) => { e.preventDefault(); applySearch(""); setShowSuggestions(false); }}
                 style={{
-                  position: "absolute", top: "50%", left: "14px",
+                  position: "absolute", top: "50%", left: "52px",
                   transform: "translateY(-50%)",
-                  background: "rgba(255,255,255,0.15)", border: "none",
-                  borderRadius: "50%", width: "24px", height: "24px",
+                  background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.15)",
+                  borderRadius: "9px", width: "28px", height: "28px",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  cursor: "pointer", color: "rgba(255,255,255,0.7)", fontSize: "14px",
+                  cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: "15px",
                   lineHeight: 1, transition: "background 0.15s",
                   zIndex: 2,
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.25)")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.22)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
                 title="مسح البحث"
               >
                 ×
@@ -480,7 +510,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
                 width: dropdownRect.width,
                 background: "rgba(250,246,240,0.98)",
                 border: "1.5px solid rgba(197,160,89,0.35)",
-                borderTop: "1px solid rgba(197,160,89,0.15)",
+                borderTop: "none",
                 borderRadius: "0 0 14px 14px",
                 backdropFilter: "blur(16px)",
                 boxShadow: "0 8px 32px rgba(58,54,50,0.15)",
