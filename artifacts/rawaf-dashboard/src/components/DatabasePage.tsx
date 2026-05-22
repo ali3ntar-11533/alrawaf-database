@@ -344,7 +344,19 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
 
   /* Scroll container for the virtual table */
   const tableScrollRef = useRef<HTMLDivElement>(null);
+  /* Saved scroll position — restored after refetch so the view doesn't jump */
+  const savedScrollRef = useRef<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  /* Restore scroll position after data reloads */
+  useEffect(() => {
+    if (savedScrollRef.current === null) return;
+    const pos = savedScrollRef.current;
+    savedScrollRef.current = null;
+    requestAnimationFrame(() => {
+      if (tableScrollRef.current) tableScrollRef.current.scrollTop = pos;
+    });
+  }, [contractors]);
 
   /* Filter + sort by contractor name then ID.
      Pure in-memory filtering — instant response, same mechanism as the filter
@@ -397,11 +409,8 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
       return matchesSearch && matchesFilters && matchesPrice;
     })
     .sort((a: Contractor, b: Contractor) => {
-      const nameA = a.contractor.trim().toLowerCase();
-      const nameB = b.contractor.trim().toLowerCase();
-      if (nameA < nameB) return -1;
-      if (nameA > nameB) return 1;
-      return a.id - b.id; // stable: older records first within same contractor
+      const cmp = a.contractor.trim().localeCompare(b.contractor.trim(), "ar", { sensitivity: "base" });
+      return cmp !== 0 ? cmp : a.id - b.id; // stable: older records first within same contractor
     });
 
   /* ── Virtual table: only renders the visible rows in the DOM ──────────────
@@ -455,6 +464,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
     try {
       await updateContractor(editRow.id, buildPutData(editForm, editRating));
       clearContractorsCache();
+      savedScrollRef.current = tableScrollRef.current?.scrollTop ?? null;
       refetch();
       setEditRow(null);
     } catch {
@@ -471,6 +481,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
     try {
       await createContractor(buildPutData(addForm, addRating));
       clearContractorsCache();
+      savedScrollRef.current = tableScrollRef.current?.scrollTop ?? null;
       refetch();
       setAddForm(EMPTY_FORM);
       setAddRating(0);
@@ -496,6 +507,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
         ),
       );
       clearContractorsCache();
+      savedScrollRef.current = tableScrollRef.current?.scrollTop ?? null;
       refetch();
       setCloneSource(null);
     } catch {
@@ -511,6 +523,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
     try {
       await deleteContractor(id);
       clearContractorsCache();
+      savedScrollRef.current = tableScrollRef.current?.scrollTop ?? null;
       refetch();
       setDeleteConfirm(null);
     } catch {
