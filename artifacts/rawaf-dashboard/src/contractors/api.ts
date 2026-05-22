@@ -254,5 +254,15 @@ export function useContractors() {
     setTick((t) => t + 1);
   }
 
-  return { data, isLoading, isFetching, isError, refetch };
+  /* Optimistic local update — mutates the in-memory array and cache immediately
+     without triggering a server round-trip. Use after successful API mutations. */
+  function updateData(updater: (prev: Contractor[]) => Contractor[]) {
+    setData((prev) => {
+      const next = updater(prev);
+      writeCache(next);
+      return next;
+    });
+  }
+
+  return { data, isLoading, isFetching, isError, refetch, updateData };
 }

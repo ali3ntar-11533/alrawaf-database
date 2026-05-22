@@ -340,7 +340,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authenticated]);
 
-  const { data: contractors = [], isLoading, isFetching, isError, refetch } = useContractorsContext();
+  const { data: contractors = [], isLoading, isFetching, isError, refetch, updateData } = useContractorsContext();
 
   /* Scroll container for the virtual table */
   const tableScrollRef = useRef<HTMLDivElement>(null);
@@ -462,10 +462,8 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
     setIsSaving(true);
     setEditError(null);
     try {
-      await updateContractor(editRow.id, buildPutData(editForm, editRating));
-      clearContractorsCache();
-      savedScrollRef.current = tableScrollRef.current?.scrollTop ?? null;
-      refetch();
+      const updated = await updateContractor(editRow.id, buildPutData(editForm, editRating));
+      updateData((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
       setEditRow(null);
     } catch {
       setEditError("تعذّر حفظ التعديلات. تحقق من اتصال الشبكة وأعد المحاولة.");
@@ -479,10 +477,8 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
     setIsSaving(true);
     setAddError(null);
     try {
-      await createContractor(buildPutData(addForm, addRating));
-      clearContractorsCache();
-      savedScrollRef.current = tableScrollRef.current?.scrollTop ?? null;
-      refetch();
+      const created = await createContractor(buildPutData(addForm, addRating));
+      updateData((prev) => [...prev, created]);
       setAddForm(EMPTY_FORM);
       setAddRating(0);
       setShowAddForm(false);
@@ -500,15 +496,13 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
     setCloneError(null);
     try {
       const baseForm = contractorToForm(cloneSource);
-      await createContractor(
+      const cloned = await createContractor(
         buildPutData(
           { ...baseForm, technicalScope: cloneTechScope, price: clonePrice, unit: cloneUnit, localContent: cloneLocalContent, itemCode: "" },
           (cloneSource as any).rating ?? null,
         ),
       );
-      clearContractorsCache();
-      savedScrollRef.current = tableScrollRef.current?.scrollTop ?? null;
-      refetch();
+      updateData((prev) => [...prev, cloned]);
       setCloneSource(null);
     } catch {
       setCloneError("تعذّر حفظ السجل الجديد. تحقق من اتصال الشبكة وأعد المحاولة.");
@@ -522,9 +516,7 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
     setDeleteError(null);
     try {
       await deleteContractor(id);
-      clearContractorsCache();
-      savedScrollRef.current = tableScrollRef.current?.scrollTop ?? null;
-      refetch();
+      updateData((prev) => prev.filter((c) => c.id !== id));
       setDeleteConfirm(null);
     } catch {
       setDeleteError("تعذّر حذف السجل. تحقق من اتصال الشبكة وأعد المحاولة.");

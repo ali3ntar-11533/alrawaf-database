@@ -9,6 +9,7 @@ interface ContractorsContextValue {
   isFetching:    boolean;
   isError:       boolean;
   refetch:       () => void;
+  updateData:    (updater: (prev: Contractor[]) => Contractor[]) => void;
   filterOptions: FilterOptionsMap | null;
 }
 
