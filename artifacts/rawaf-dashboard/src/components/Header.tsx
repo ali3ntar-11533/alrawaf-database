@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { TabType } from "../App";
 import type { CurrentUser } from "../App";
 import { Search } from "lucide-react";
@@ -8,6 +8,8 @@ import FilterBar from "./FilterBar";
 import type { FilterState } from "./filterTypes";
 import UserManagementPanel from "./UserManagementPanel";
 import SelfEditModal from "./SelfEditModal";
+import { useContractorsContext } from "../contractors/context";
+import type { FilterOptionsMap } from "../contractors/api";
 
 interface HeaderProps {
   activeTab:       TabType;
@@ -19,19 +21,111 @@ interface HeaderProps {
   currentUser:     CurrentUser | null;
 }
 
+/* Arabic normalizer — strips diacritics, unifies alef/teh-marbuta/alef-maqsura */
+function norm(s: string) {
+  return (s ?? "")
+    .replace(/[\u064B-\u065F]/g, "")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
+    .toLowerCase()
+    .trim();
+}
+
+/* Suggestion source fields — label shown next to each suggestion */
+const SUGGESTION_FIELDS: { key: keyof FilterOptionsMap; label: string }[] = [
+  { key: "contractor",      label: "المقاول"      },
+  { key: "portfolio",       label: "المحفظة"       },
+  { key: "mainActivity",    label: "النشاط"        },
+  { key: "businessProgram", label: "البرنامج"      },
+  { key: "workFamily",      label: "العائلة"       },
+  { key: "workType",        label: "نوع الأعمال"   },
+  { key: "workCategory",    label: "نوع التعاقد"   },
+  { key: "itemScope",       label: "شمولية البند"  },
+  { key: "techSpecs",       label: "مواصفات فنية"  },
+  { key: "measurements",    label: "قياسات"        },
+];
+
+interface Suggestion { field: string; value: string; }
+
 export default function Header({ activeTab, onTabChange, search, onSearchChange, filters, onFiltersChange, currentUser }: HeaderProps) {
   const [logoHover,    setLogoHover]    = useState(false);
   const [gearHover,    setGearHover]    = useState(false);
   const [showPanel,    setShowPanel]    = useState(false);
   const [showSelfEdit, setShowSelfEdit] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [focusedIdx,       setFocusedIdx]      = useState(-1);
+
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef   = useRef<HTMLInputElement>(null);
+
+  const { filterOptions } = useContractorsContext();
 
   const isSuperAdmin   = currentUser?.role === "superadmin";
   const isAdmin        = isSuperAdmin || currentUser?.role === "admin";
   const canSeeDatabase = isAdmin;
   const canManageUsers = isSuperAdmin;
 
+  /* ── Compute suggestions from filterOptions (full DB distinct values) ──── */
+  const suggestions = useMemo((): Suggestion[] => {
+    const term = search.trim();
+    if (!term || !filterOptions) return [];
+    const normTerm = norm(term);
+    const result: Suggestion[] = [];
+    for (const { key, label } of SUGGESTION_FIELDS) {
+      const opts = filterOptions[key] ?? [];
+      let count = 0;
+      for (const v of opts) {
+        if (norm(v).includes(normTerm)) {
+          result.push({ field: label, value: v });
+          if (++count >= 2) break; // max 2 per field
+        }
+      }
+      if (result.length >= 10) break; // overall cap
+    }
+    return result;
+  }, [search, filterOptions]);
+
+  /* Reset focused index when suggestions list changes */
+  useEffect(() => { setFocusedIdx(-1); }, [suggestions]);
+
+  /* Close suggestions on outside click */
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (!wrapperRef.current?.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
   function handleLogoClick() {
     window.dispatchEvent(new CustomEvent("rawaf-logout"));
+  }
+
+  function selectSuggestion(value: string) {
+    onSearchChange(value);
+    setShowSuggestions(false);
+    setFocusedIdx(-1);
+    inputRef.current?.blur();
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!showSuggestions || suggestions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setFocusedIdx((i) => Math.min(i + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setFocusedIdx((i) => Math.max(i - 1, -1));
+    } else if (e.key === "Enter" && focusedIdx >= 0) {
+      e.preventDefault();
+      selectSuggestion(suggestions[focusedIdx].value);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+      setFocusedIdx(-1);
+    }
   }
 
   return (
@@ -226,30 +320,52 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
           </div>{/* end column (user info + tabs) */}
         </div>{/* end space-between */}
 
-        {/* ── Unified Search Bar ── */}
+        {/* ── Unified Search Bar + Autocomplete ── */}
         <div style={{ marginTop: "12px" }}>
-          <div style={{ position: "relative", maxWidth: "720px", margin: "0 auto" }}>
-            <div
-              style={{
-                position: "absolute", top: "50%", right: "18px",
-                transform: "translateY(-50%)",
-                color: "rgba(197,160,89,0.7)",
-                pointerEvents: "none",
-              }}
-            >
+          <div ref={wrapperRef} style={{ position: "relative", maxWidth: "720px", margin: "0 auto" }}>
+
+            {/* Search icon */}
+            <div style={{
+              position: "absolute", top: "50%", right: "18px",
+              transform: "translateY(-50%)",
+              color: "rgba(197,160,89,0.7)",
+              pointerEvents: "none",
+              zIndex: 1,
+            }}>
               <Search size={17} />
             </div>
+
+            {/* Input */}
             <input
+              ref={inputRef}
               type="text"
               placeholder="ابحث بأي معلومة: اسم المقاول، المشروع، نوع الأعمال، المحفظة، رقم العقد..."
               value={search}
-              onChange={(e) => onSearchChange(e.target.value)}
+              onChange={(e) => { onSearchChange(e.target.value); setShowSuggestions(true); }}
+              onFocus={(e) => {
+                e.target.style.borderColor = "rgba(197,160,89,0.9)";
+                e.target.style.background  = "rgba(255,255,255,0.15)";
+                e.target.style.boxShadow   = "0 0 0 4px rgba(197,160,89,0.12)";
+                if (search.trim()) setShowSuggestions(true);
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "rgba(197,160,89,0.35)";
+                e.target.style.background  = "rgba(255,255,255,0.10)";
+                e.target.style.boxShadow   = "none";
+                /* Delay close so suggestion clicks can register first */
+                setTimeout(() => {
+                  if (!wrapperRef.current?.contains(document.activeElement)) {
+                    setShowSuggestions(false);
+                  }
+                }, 150);
+              }}
+              onKeyDown={handleKeyDown}
               style={{
                 width: "100%",
                 padding: "14px 50px 14px 20px",
                 background: "rgba(255,255,255,0.10)",
                 border: "1.5px solid rgba(197,160,89,0.35)",
-                borderRadius: "14px",
+                borderRadius: showSuggestions && suggestions.length > 0 ? "14px 14px 0 0" : "14px",
                 fontSize: "0.9rem",
                 fontFamily: "Tajawal, sans-serif",
                 direction: "rtl",
@@ -258,21 +374,15 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
                 backdropFilter: "blur(8px)",
                 boxSizing: "border-box",
                 transition: "border-color 0.2s, background 0.2s, box-shadow 0.2s",
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = "rgba(197,160,89,0.9)";
-                e.target.style.background  = "rgba(255,255,255,0.15)";
-                e.target.style.boxShadow   = "0 0 0 4px rgba(197,160,89,0.12)";
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = "rgba(197,160,89,0.35)";
-                e.target.style.background  = "rgba(255,255,255,0.10)";
-                e.target.style.boxShadow   = "none";
+                position: "relative",
+                zIndex: 1,
               }}
             />
+
+            {/* Clear button */}
             {search && (
               <button
-                onClick={() => onSearchChange("")}
+                onMouseDown={(e) => { e.preventDefault(); onSearchChange(""); setShowSuggestions(false); }}
                 style={{
                   position: "absolute", top: "50%", left: "14px",
                   transform: "translateY(-50%)",
@@ -281,6 +391,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   cursor: "pointer", color: "rgba(255,255,255,0.7)", fontSize: "14px",
                   lineHeight: 1, transition: "background 0.15s",
+                  zIndex: 2,
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.25)")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
@@ -288,6 +399,103 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
               >
                 ×
               </button>
+            )}
+
+            {/* ── Suggestions dropdown ── */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div style={{
+                position: "absolute",
+                top: "100%",
+                right: 0, left: 0,
+                background: "rgba(22,17,12,0.97)",
+                border: "1.5px solid rgba(197,160,89,0.40)",
+                borderTop: "1px solid rgba(197,160,89,0.15)",
+                borderRadius: "0 0 14px 14px",
+                backdropFilter: "blur(16px)",
+                boxShadow: "0 12px 40px rgba(0,0,0,0.55)",
+                overflow: "hidden",
+                zIndex: 9999,
+                direction: "rtl",
+              }}>
+                {suggestions.map((s, i) => {
+                  const isFocused = i === focusedIdx;
+                  return (
+                    <div
+                      key={`${s.field}-${s.value}`}
+                      onMouseDown={(e) => { e.preventDefault(); selectSuggestion(s.value); }}
+                      onMouseEnter={() => setFocusedIdx(i)}
+                      onMouseLeave={() => setFocusedIdx(-1)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        padding: "10px 18px",
+                        cursor: "pointer",
+                        background: isFocused ? "rgba(197,160,89,0.10)" : "transparent",
+                        borderRight: isFocused ? "3px solid var(--gold)" : "3px solid transparent",
+                        borderBottom: i < suggestions.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                        transition: "background 0.12s",
+                      }}
+                    >
+                      {/* Field badge */}
+                      <span style={{
+                        fontSize: "0.6rem",
+                        fontFamily: "Tajawal, sans-serif",
+                        color: "rgba(197,160,89,0.70)",
+                        background: "rgba(197,160,89,0.10)",
+                        border: "1px solid rgba(197,160,89,0.20)",
+                        borderRadius: "5px",
+                        padding: "1px 7px",
+                        flexShrink: 0,
+                        whiteSpace: "nowrap",
+                        fontWeight: 600,
+                      }}>
+                        {s.field}
+                      </span>
+
+                      {/* Matched value */}
+                      <span style={{
+                        fontSize: "0.82rem",
+                        fontFamily: "Tajawal, sans-serif",
+                        color: isFocused ? "#fff" : "rgba(255,255,255,0.80)",
+                        fontWeight: isFocused ? 600 : 400,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        flex: 1,
+                      }}>
+                        {s.value}
+                      </span>
+
+                      {/* Enter hint on focused item */}
+                      {isFocused && (
+                        <span style={{
+                          fontSize: "0.58rem",
+                          color: "rgba(197,160,89,0.45)",
+                          flexShrink: 0,
+                          fontFamily: "monospace",
+                        }}>
+                          ↵
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Footer */}
+                <div style={{
+                  padding: "5px 18px",
+                  borderTop: "1px solid rgba(197,160,89,0.07)",
+                  fontSize: "0.6rem",
+                  color: "rgba(255,255,255,0.20)",
+                  fontFamily: "Tajawal, sans-serif",
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}>
+                  <span>↑↓ للتنقل · Enter للاختيار · Esc للإغلاق</span>
+                  <span>{suggestions.length} اقتراح</span>
+                </div>
+              </div>
             )}
           </div>
         </div>

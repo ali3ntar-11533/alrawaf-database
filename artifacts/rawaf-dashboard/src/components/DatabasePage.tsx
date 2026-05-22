@@ -9,7 +9,6 @@ import {
   createContractor,
   updateContractor,
   deleteContractor,
-  useServerSearch,
   clearContractorsCache,
 } from "../contractors/api";
 import { useContractorsContext } from "../contractors/context";
@@ -343,25 +342,16 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
 
   const { data: contractors = [], isLoading, isFetching, isError, refetch } = useContractorsContext();
 
-  /* ── Server-side search: queries the full DB via ILIKE (300 ms debounce) ── */
-  const { results: serverResults, isSearching } = useServerSearch(search);
-  /* Use server results when a search term is active and results arrived;
-     fall back to in-memory data when search is empty or still loading. */
-  const useServerData = search.trim() !== "" && serverResults !== null;
-  const searchBase    = useServerData ? serverResults : contractors;
-
   /* Scroll container for the virtual table */
   const tableScrollRef = useRef<HTMLDivElement>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   /* Filter + sort by contractor name then ID.
-     When a search term is active and server results are available, `searchBase`
-     already contains only the matching records (server-side ILIKE), so we skip
-     the in-memory text match and only apply the dropdown / price filters. */
-  const filtered = searchBase
+     Pure in-memory filtering — instant response, same mechanism as the filter
+     pills. The full dataset is available from localStorage cache on revisits. */
+  const filtered = contractors
     .filter((c: Contractor) => {
-      /* ── Text search: skip when server already filtered (useServerData) ── */
-      const matchesSearch = useServerData || !search || (
+      const matchesSearch = !search || (
         containsMatch(c.contractNo,                search) ||
         containsMatch(c.contractYear       ?? "",  search) ||
         containsMatch(c.contractor,                search) ||
@@ -577,20 +567,11 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
         <div>
           <h2 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--charcoal)", marginBottom: "2px" }}>سجل البيانات الشامل</h2>
           <span style={{ fontSize: "0.72rem", color: "#aaa", display: "flex", alignItems: "center", gap: "6px" }}>
-            {filtered.length} سجل
-            {search ? (
-              useServerData
-                ? <span style={{ color: "#2baa74", fontWeight: 700 }}> من كامل القاعدة</span>
-                : isSearching
-                  ? <span style={{ color: "#3b8fcc" }}> (جاري البحث...)</span>
-                  : <span> (بحث في {contractors.length} محمّل)</span>
-            ) : (
-              <span> من أصل {contractors.length}</span>
-            )}
-            {(isFetching || isSearching) && (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.65rem", color: isFetching ? "#3b8fcc" : "#2baa74" }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", border: `1.5px solid ${isFetching ? "rgba(59,143,204,0.3)" : "rgba(43,170,116,0.3)"}`, borderTopColor: isFetching ? "#3b8fcc" : "#2baa74", display: "inline-block", animation: "spin-loader 0.9s linear infinite" }} />
-                {isFetching ? "يتم تحميل المزيد..." : "يبحث في القاعدة..."}
+            {filtered.length} سجل {search ? `(من ${contractors.length} — مفلتر بالبحث)` : `من أصل ${contractors.length}`}
+            {isFetching && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.65rem", color: "#3b8fcc" }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", border: "1.5px solid rgba(59,143,204,0.3)", borderTopColor: "#3b8fcc", display: "inline-block", animation: "spin-loader 0.9s linear infinite" }} />
+                يتم تحميل المزيد...
               </span>
             )}
           </span>
