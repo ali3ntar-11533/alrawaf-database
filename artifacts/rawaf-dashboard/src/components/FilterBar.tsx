@@ -256,17 +256,18 @@ function FilterDropdown({
           ref={panelRef}
           style={{
             ...panelStyle,
-            background:     "rgba(22,18,14,0.98)",
-            border:         "1.5px solid rgba(197,160,89,0.28)",
+            background:     "rgba(250,246,240,0.98)",
+            border:         "1.5px solid rgba(197,160,89,0.35)",
             borderRadius:   "13px",
-            boxShadow:      "0 20px 60px rgba(0,0,0,0.65), 0 0 0 1px rgba(197,160,89,0.06)",
+            boxShadow:      "0 8px 32px rgba(58,54,50,0.15)",
             overflow:       "hidden",
-            backdropFilter: "blur(24px)",
+            backdropFilter: "blur(16px)",
             animation:      "filterDropIn 0.15s ease",
+            boxSizing:      "border-box" as const,
           }}
         >
           {/* ── Inner search ── */}
-          <div style={{ padding: "10px 10px 8px", borderBottom: "1px solid rgba(197,160,89,0.10)", background: "rgba(197,160,89,0.04)" }}>
+          <div style={{ padding: "10px 10px 8px", borderBottom: "1px solid rgba(197,160,89,0.15)", background: "rgba(197,160,89,0.05)" }}>
             <input
               ref={searchRef}
               type="text"
@@ -275,22 +276,22 @@ function FilterDropdown({
               onChange={(e) => setInnerSearch(e.target.value)}
               style={{
                 width: "100%", padding: "7px 11px",
-                background: "rgba(255,255,255,0.07)",
-                border: "1px solid rgba(197,160,89,0.22)",
+                background: "rgba(255,255,255,0.70)",
+                border: "1px solid rgba(197,160,89,0.30)",
                 borderRadius: "8px",
                 fontSize: "0.72rem", fontFamily: "Tajawal, sans-serif",
-                direction: "rtl", color: "#fff", outline: "none",
+                direction: "rtl", color: "#3a3632", outline: "none",
                 boxSizing: "border-box", transition: "border-color 0.18s",
               }}
               onFocus={(e) => (e.target.style.borderColor = "rgba(197,160,89,0.75)")}
-              onBlur={(e)  => (e.target.style.borderColor = "rgba(197,160,89,0.22)")}
+              onBlur={(e)  => (e.target.style.borderColor = "rgba(197,160,89,0.30)")}
             />
           </div>
 
           {/* ── Scrollable options ── */}
           <div className="dark-scroll" style={{ maxHeight: "260px", overflowY: "auto" }}>
             {filteredOpts.length === 0 ? (
-              <div style={{ padding: "18px 14px", textAlign: "center", fontSize: "0.72rem", color: "rgba(255,255,255,0.3)", fontFamily: "Tajawal, sans-serif" }}>
+              <div style={{ padding: "18px 14px", textAlign: "center", fontSize: "0.72rem", color: "rgba(58,54,50,0.40)", fontFamily: "Tajawal, sans-serif" }}>
                 لا توجد نتائج مطابقة
               </div>
             ) : filteredOpts.map((opt) => {
@@ -303,8 +304,8 @@ function FilterDropdown({
                     padding: "9px 14px", fontSize: "0.75rem",
                     fontFamily: "Tajawal, sans-serif", direction: "rtl",
                     cursor: "pointer",
-                    color:       sel ? "var(--gold)" : "rgba(255,255,255,0.80)",
-                    background:  sel ? "rgba(197,160,89,0.10)" : "transparent",
+                    color:       sel ? "#a88540" : "rgba(58,54,50,0.85)",
+                    background:  sel ? "rgba(197,160,89,0.12)" : "transparent",
                     fontWeight:  sel ? 700 : 400,
                     borderRight: sel ? "3px solid var(--gold)" : "3px solid transparent",
                     transition:  "background 0.12s, color 0.12s",
@@ -313,14 +314,14 @@ function FilterDropdown({
                   }}
                   onMouseEnter={(e) => {
                     if (!sel) {
-                      (e.currentTarget as HTMLDivElement).style.background = "rgba(197,160,89,0.07)";
-                      (e.currentTarget as HTMLDivElement).style.color      = "#fff";
+                      (e.currentTarget as HTMLDivElement).style.background = "rgba(197,160,89,0.10)";
+                      (e.currentTarget as HTMLDivElement).style.color      = "#3a3632";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!sel) {
                       (e.currentTarget as HTMLDivElement).style.background = "transparent";
-                      (e.currentTarget as HTMLDivElement).style.color      = "rgba(255,255,255,0.80)";
+                      (e.currentTarget as HTMLDivElement).style.color      = "rgba(58,54,50,0.85)";
                     }
                   }}
                 >
@@ -332,7 +333,7 @@ function FilterDropdown({
           </div>
 
           {/* ── Footer count ── */}
-          <div style={{ padding: "5px 14px", borderTop: "1px solid rgba(197,160,89,0.07)", fontSize: "0.6rem", color: "rgba(255,255,255,0.22)", textAlign: "center", fontFamily: "Tajawal, sans-serif" }}>
+          <div style={{ padding: "5px 14px", borderTop: "1px solid rgba(197,160,89,0.15)", fontSize: "0.6rem", color: "rgba(58,54,50,0.40)", textAlign: "center", fontFamily: "Tajawal, sans-serif" }}>
             {filteredOpts.length} خيار متاح
           </div>
         </div>,
