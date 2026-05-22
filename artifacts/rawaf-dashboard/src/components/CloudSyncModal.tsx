@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { X, Cloud, Download, Upload, Save, AlertCircle, CheckCircle, Loader, Plus, Trash2, FileSpreadsheet } from "lucide-react";
 import { bulkCreateContractors } from "../contractors/api";
@@ -120,7 +120,7 @@ function downloadTemplate() {
 
 function parseExcelFile(
   file: File,
-  onProgress?: (percent: number, phase: "read" | "parse" | "done") => void,
+  onProgress?: (percent: number, phase: "read" | "parse" | "done", rowCount?: number) => void,
 ): Promise<RowData[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -162,7 +162,8 @@ function parseExcelFile(
               email:           get(18), rating:          get(19),
             };
           });
-        onProgress?.(100, "done");
+        /* Pass the final row count so the UI can show an animated counter. */
+        onProgress?.(100, "done", parsed.length);
         resolve(parsed);
       } catch (err) {
         reject(err);
@@ -290,7 +291,23 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
   const [uploadName, setUploadName] = useState<string | null>(null);
   const [isReading, setIsReading] = useState(false);
   const [readProgress, setReadProgress] = useState(0);
+  const [readPhase, setReadPhase] = useState<"read" | "parse" | "done" | null>(null);
+  const [readTotalRows, setReadTotalRows] = useState(0);
+  const [readDisplayRows, setReadDisplayRows] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /* Animate row counter from 0 → readTotalRows when parsing finishes */
+  useEffect(() => {
+    if (readTotalRows === 0) { setReadDisplayRows(0); return; }
+    let current = 0;
+    const step  = Math.max(1, Math.ceil(readTotalRows / 60)); // ~60 frames
+    const id = setInterval(() => {
+      current += step;
+      if (current >= readTotalRows) { setReadDisplayRows(readTotalRows); clearInterval(id); }
+      else { setReadDisplayRows(current); }
+    }, 16); // ~60 fps
+    return () => clearInterval(id);
+  }, [readTotalRows]);
 
   const existingSignatures = new Set(existingContractors.map(dbSignature));
 
@@ -312,9 +329,16 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
     setUploadError(null);
     setIsReading(true);
     setReadProgress(0);
+    setReadPhase("read");
+    setReadTotalRows(0);
+    setReadDisplayRows(0);
     setUploadName(file.name);
     try {
-      const parsed = await parseExcelFile(file, (pct) => setReadProgress(pct));
+      const parsed = await parseExcelFile(file, (pct, phase, rowCount) => {
+        setReadProgress(pct);
+        setReadPhase(phase);
+        if (phase === "done" && rowCount != null) setReadTotalRows(rowCount);
+      });
       if (parsed.length === 0) { setUploadError("لم يتم العثور على بيانات في الملف"); setIsReading(false); setReadProgress(0); return; }
       const newRows: Row[] = parsed.map((data) => ({ id: Math.random().toString(36).slice(2), data, status: "idle" }));
       setRows((prev) => {
@@ -328,6 +352,9 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
     } finally {
       setIsReading(false);
       setReadProgress(0);
+      setReadPhase(null);
+      setReadTotalRows(0);
+      setReadDisplayRows(0);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
@@ -642,24 +669,51 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
                   <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#a0e6c8", marginBottom: "3px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {uploadName ? uploadName : "رفع الملف المعبّأ"}
                   </div>
-                  <div style={{ fontSize: "0.68rem", color: "rgba(100,220,170,0.6)" }}>
+                  {/* Status text */}
+                  <div style={{ fontSize: "0.68rem", color: "rgba(100,220,170,0.7)", fontWeight: 600, minHeight: "1.2em" }}>
                     {isReading
-                      ? readProgress < 70
+                      ? readPhase === "read"
                         ? `جاري قراءة الملف... ${readProgress}%`
-                        : readProgress < 100
+                        : readPhase === "parse"
                           ? `جاري تحليل البيانات... ${readProgress}%`
-                          : `اكتمل — جاري الإدراج...`
+                          : readPhase === "done"
+                            ? `اكتمل التحليل — جاري الإدراج...`
+                            : `جاري المعالجة... ${readProgress}%`
                       : "اختر ملف Excel (.xlsx / .xls) بعد تعبئة القالب"}
                   </div>
-                  {/* Live progress bar — visible only while reading */}
+
+                  {/* Animated row counter — appears when row count is known */}
+                  {isReading && readTotalRows > 0 && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" }}>
+                      <span style={{ fontSize: "0.62rem", color: "rgba(100,220,170,0.5)", fontFamily: "Tajawal, sans-serif" }}>تم رصد</span>
+                      <span style={{
+                        fontSize: "1rem", fontWeight: 900,
+                        color: "#4dd49a",
+                        fontFamily: "monospace",
+                        letterSpacing: "-0.02em",
+                        minWidth: "4ch",
+                        textShadow: "0 0 12px rgba(77,212,154,0.5)",
+                        transition: "color 0.1s",
+                      }}>
+                        {readDisplayRows.toLocaleString("ar-EG")}
+                      </span>
+                      <span style={{ fontSize: "0.62rem", color: "rgba(100,220,170,0.5)", fontFamily: "Tajawal, sans-serif" }}>
+                        من {readTotalRows.toLocaleString("ar-EG")} سجل
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Live progress bar */}
                   {isReading && (
-                    <div style={{ marginTop: 8, width: "100%", height: 6, background: "rgba(43,170,116,0.15)", borderRadius: 999, overflow: "hidden", border: "1px solid rgba(43,170,116,0.25)" }}>
+                    <div style={{ marginTop: 6, width: "100%", height: 6, background: "rgba(43,170,116,0.15)", borderRadius: 999, overflow: "hidden", border: "1px solid rgba(43,170,116,0.25)" }}>
                       <div style={{
-                        width: `${readProgress}%`,
+                        width: readTotalRows > 0
+                          ? `${Math.round((readDisplayRows / readTotalRows) * 100)}%`
+                          : `${readProgress}%`,
                         height: "100%",
                         background: "linear-gradient(90deg, #2baa74, #4dd49a)",
                         boxShadow: "0 0 10px rgba(43,170,116,0.6)",
-                        transition: "width 0.18s ease-out",
+                        transition: "width 0.06s linear",
                         borderRadius: 999,
                       }} />
                     </div>
@@ -670,10 +724,16 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
                   disabled={isReading}
                   style={{ display: "flex", alignItems: "center", gap: "6px", background: isReading ? "rgba(43,170,116,0.25)" : "linear-gradient(135deg, #1d8a5a, #2baa74)", border: "none", color: "#fff", borderRadius: "9px", padding: "9px 18px", fontSize: "0.8rem", fontWeight: 700, cursor: isReading ? "not-allowed" : "pointer", fontFamily: "Tajawal, sans-serif", flexShrink: 0, boxShadow: isReading ? "none" : "0 4px 14px rgba(43,170,116,0.3)", opacity: isReading ? 0.85 : 1, minWidth: 110, justifyContent: "center" }}>
                   {isReading ? (
-                    <>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", lineHeight: 1 }}>
                       <Loader size={14} style={{ animation: "spin-loader 0.9s linear infinite" }} />
-                      <span style={{ fontFamily: "monospace", fontWeight: 800 }}>{readProgress}%</span>
-                    </>
+                      {readTotalRows > 0 ? (
+                        <span style={{ fontFamily: "monospace", fontWeight: 900, fontSize: "0.9rem", letterSpacing: "-0.02em" }}>
+                          {readDisplayRows.toLocaleString("ar-EG")}
+                        </span>
+                      ) : (
+                        <span style={{ fontFamily: "monospace", fontWeight: 800 }}>{readProgress}%</span>
+                      )}
+                    </div>
                   ) : (
                     <>
                       <Upload size={14} />
