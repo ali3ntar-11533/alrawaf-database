@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { TabType } from "../App";
 import type { CurrentUser } from "../App";
 import { Search } from "lucide-react";
@@ -52,6 +53,26 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef   = useRef<HTMLInputElement>(null);
+
+  /* Portal dropdown position — recalculated on open / scroll / resize */
+  const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  const updateDropdownRect = useCallback(() => {
+    if (!wrapperRef.current) return;
+    const r = wrapperRef.current.getBoundingClientRect();
+    setDropdownRect({ top: r.bottom + window.scrollY, left: r.left + window.scrollX, width: r.width });
+  }, []);
+
+  useEffect(() => {
+    if (!showSuggestions) return;
+    updateDropdownRect();
+    window.addEventListener("scroll", updateDropdownRect, true);
+    window.addEventListener("resize", updateDropdownRect);
+    return () => {
+      window.removeEventListener("scroll", updateDropdownRect, true);
+      window.removeEventListener("resize", updateDropdownRect);
+    };
+  }, [showSuggestions, updateDropdownRect]);
 
   const { filterOptions } = useContractorsContext();
 
@@ -454,12 +475,13 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
               </button>
             )}
 
-            {/* ── Suggestions dropdown ── */}
-            {showSuggestions && suggestions.length > 0 && (
+            {/* ── Suggestions dropdown — rendered via Portal to escape header stacking context ── */}
+            {showSuggestions && suggestions.length > 0 && dropdownRect && createPortal(
               <div style={{
                 position: "absolute",
-                top: "100%",
-                right: 0, left: 0,
+                top: dropdownRect.top,
+                left: dropdownRect.left,
+                width: dropdownRect.width,
                 background: "rgba(250,246,240,0.98)",
                 border: "1.5px solid rgba(197,160,89,0.35)",
                 borderTop: "1px solid rgba(197,160,89,0.15)",
@@ -467,7 +489,7 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
                 backdropFilter: "blur(16px)",
                 boxShadow: "0 8px 32px rgba(58,54,50,0.15)",
                 overflow: "hidden",
-                zIndex: 9999,
+                zIndex: 99999,
                 direction: "rtl",
               }}>
                 {suggestions.map((value, i) => {
@@ -540,7 +562,8 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
                   <span>↑↓ للتنقل · Enter للاختيار · Esc للإغلاق</span>
                   <span>{suggestions.length} اقتراح</span>
                 </div>
-              </div>
+              </div>,
+              document.body
             )}
           </div>
         </div>
