@@ -56,27 +56,52 @@ export default function Header({ activeTab, onTabChange, search, onSearchChange,
   const canSeeDatabase = isAdmin;
   const canManageUsers = isSuperAdmin;
 
-  /* ── Compute flat suggestions from ALL filterOptions fields ────────────
-     Collects every distinct value across all fields, deduplicates, filters
-     by the typed term (contains match, Arabic-normalised), caps at 12.     */
+  const { data: contractors = [] } = useContractorsContext();
+
+  /* ── Compute flat suggestions across the FULL dataset ──────────────────
+     Pass 1: filterOptions (10 categorical fields — full DB distinct values).
+     Pass 2: in-memory contractors rows for fields NOT in filterOptions:
+             contractNo, project, technicalScope, unit, workDescription.
+     Results are deduplicated and capped at 12.                           */
   const suggestions = useMemo((): string[] => {
     const term = search.trim();
-    if (!term || !filterOptions) return [];
+    if (!term) return [];
     const normTerm = norm(term);
-    const seen  = new Set<string>();
+    const seen   = new Set<string>();
     const result: string[] = [];
-    for (const key of SUGGESTION_KEYS) {
-      for (const v of (filterOptions[key] ?? [])) {
-        if (!v.trim() || seen.has(v)) continue;
-        if (norm(v).includes(normTerm)) {
-          seen.add(v);
-          result.push(v);
+
+    function push(v: string) {
+      const clean = (v ?? "").trim();
+      if (!clean || seen.has(clean)) return;
+      if (norm(clean).includes(normTerm)) {
+        seen.add(clean);
+        result.push(clean);
+      }
+    }
+
+    /* Pass 1 — filterOptions (categorical) */
+    if (filterOptions) {
+      for (const key of SUGGESTION_KEYS) {
+        for (const v of (filterOptions[key] ?? [])) {
+          push(v);
           if (result.length >= 12) return result;
         }
       }
     }
+
+    /* Pass 2 — in-memory rows: fields not covered by filterOptions */
+    if (result.length < 12) {
+      for (const c of contractors) {
+        push(c.contractNo);
+        push(c.project);
+        push(c.technicalScope ?? "");
+        push(String(c.price ?? ""));
+        if (result.length >= 12) break;
+      }
+    }
+
     return result;
-  }, [search, filterOptions]);
+  }, [search, filterOptions, contractors]);
 
   /* Reset focused index when suggestions list changes */
   useEffect(() => { setFocusedIdx(-1); }, [suggestions]);
