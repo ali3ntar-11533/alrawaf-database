@@ -312,6 +312,73 @@ function rowSignature(d: RowData): string {
   return rowIdentity(d) + "\x00" + String(Math.round(parseFloat(d.price) || 0)) + "\x00" + norm(d.unit);
 }
 
+/* ─── Partial-match detection ────────────────────────────────────────────
+   Returns an existing Contractor that is "incomplete" (has at least one
+   empty identity field) AND whose every NON-EMPTY identity field matches
+   the uploaded row exactly.  This lets a complete row from the Excel file
+   fill in the gaps of a previously-entered incomplete DB record instead of
+   creating a duplicate.
+
+   Guard rails:
+   • DB record must have at least one empty identity field (otherwise it
+     would have been caught by the full identity map already).
+   • At least 2 non-empty DB fields must match (avoids too-broad matching
+     on nearly-empty records).
+   • `contractor` must be non-empty in the DB record AND match the row —
+     it is the primary anchor that prevents cross-vendor false positives.  */
+const IDENTITY_KEYS: (keyof Contractor)[] = [
+  "contractNo", "contractYear", "contractor", "project", "portfolio",
+  "mainActivity", "businessProgram", "workFamily", "workType",
+  "itemScope", "techSpecs", "measurements", "technicalScope", "workCategory",
+];
+const IDENTITY_ROW_KEYS: (keyof RowData)[] = [
+  "contractNo", "contractYear", "contractor", "project", "portfolio",
+  "mainActivity", "businessProgram", "workFamily", "workType",
+  "itemScope", "techSpecs", "measurements", "technicalScope", "workCategory",
+];
+
+function findPartialMatch(row: RowData, contractors: Contractor[]): Contractor | null {
+  const rn = IDENTITY_ROW_KEYS.map((k) => norm(row[k]));
+  for (const c of contractors) {
+    const dn = IDENTITY_KEYS.map((k) => norm(String(c[k] ?? "")));
+    const hasGap     = dn.some((v) => !v);          // at least one empty DB field
+    if (!hasGap) continue;
+    const nonEmpty   = dn.map((v, i) => ({ db: v, row: rn[i] })).filter(({ db }) => db);
+    if (nonEmpty.length < 2) continue;              // too few anchors
+    if (!norm(c.contractor)) continue;              // contractor must be the anchor
+    if (!nonEmpty.every(({ db, row: r }) => db === r)) continue; // all non-empty must match
+    return c;
+  }
+  return null;
+}
+
+/* ─── Full row payload builder (used for partial-match completion) ─────── */
+function buildFullPayload(d: RowData) {
+  return {
+    contractNo:      d.contractNo.trim(),
+    contractYear:    d.contractYear.trim()    || null,
+    contractor:      d.contractor.trim(),
+    project:         d.project.trim(),
+    portfolio:       d.portfolio.trim(),
+    mainActivity:    d.mainActivity.trim()    || null,
+    businessProgram: d.businessProgram.trim() || null,
+    workFamily:      d.workFamily.trim()      || null,
+    workType:        d.workType.trim(),
+    itemScope:       d.itemScope.trim()       || null,
+    techSpecs:       d.techSpecs.trim()       || null,
+    measurements:    d.measurements.trim()    || null,
+    itemCode:        null,
+    technicalScope:  d.technicalScope.trim(),
+    workCategory:    d.workCategory.trim()    || null,
+    unit:            d.unit.trim()            || null,
+    price:           Math.min(Math.round(parseFloat(d.price) || 0), 2_000_000_000),
+    localContent:    d.localContent.trim()    || null,
+    phone:           d.phone.trim(),
+    email:           d.email.trim(),
+    rating:          d.rating ? Math.min(5, Math.max(0, Math.round(parseFloat(d.rating)))) : null,
+  };
+}
+
 /* ─── Status Badge ──────────────────────────────────────── */
 function StatusBadge({ status, error }: { status: RowStatus; error?: string }) {
   if (status === "idle")      return null;
@@ -427,12 +494,14 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
     setSummary(null);
     setSaveResult(null);
 
-    /* ── Phase 1: Classify each row into one of three buckets ──────────────
-       • duplicate  — identity AND price/unit match exactly → skip
-       • toUpdate   — identity matches but price/unit differ → update existing
-       • fresh      — no identity match → create new record                 */
+    /* ── Phase 1: Classify each row into one of four buckets ───────────────
+       • duplicate   — identity AND price/unit match exactly → skip
+       • toUpdate    — full identity matches but price/unit differ → update price/unit
+       • toComplete  — partial identity match (DB record has empty fields) → fill all data
+       • fresh       — no match at all → create new record                 */
     const duplicateIds  = new Set<string>();
-    const toUpdate: { row: Row; existingId: number }[] = [];
+    const toUpdate:   { row: Row; existingId: number }[] = [];
+    const toComplete: { row: Row; existingId: number }[] = [];
     const fresh: Row[] = [];
 
     for (const r of toSave) {
@@ -443,25 +512,32 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
         if (existing) {
           toUpdate.push({ row: r, existingId: existing.id });
         } else {
-          fresh.push(r);
+          const partial = findPartialMatch(r.data, existingContractors);
+          if (partial) {
+            toComplete.push({ row: r, existingId: partial.id });
+          } else {
+            fresh.push(r);
+          }
         }
       }
     }
 
-    const duplicates   = duplicateIds.size;
-    const updateIds    = new Set(toUpdate.map((u) => u.row.id));
-    const freshIds     = new Set(fresh.map((r) => r.id));
+    const duplicates    = duplicateIds.size;
+    const updateIds     = new Set(toUpdate.map((u) => u.row.id));
+    const completeIds   = new Set(toComplete.map((u) => u.row.id));
+    const freshIds      = new Set(fresh.map((r) => r.id));
 
     setRows((prev) =>
       prev.map((r) => {
-        if (duplicateIds.has(r.id)) return { ...r, status: "duplicate" };
-        if (updateIds.has(r.id))    return { ...r, status: "saving" };
-        if (freshIds.has(r.id))     return { ...r, status: "saving" };
+        if (duplicateIds.has(r.id))  return { ...r, status: "duplicate" };
+        if (updateIds.has(r.id))     return { ...r, status: "saving" };
+        if (completeIds.has(r.id))   return { ...r, status: "saving" };
+        if (freshIds.has(r.id))      return { ...r, status: "saving" };
         return r;
       })
     );
 
-    if (fresh.length === 0 && toUpdate.length === 0) {
+    if (fresh.length === 0 && toUpdate.length === 0 && toComplete.length === 0) {
       setSummary({ saved: 0, duplicates, errors: 0 });
       setSaveResult({ saved: 0, total: 0, errors: 0, firstError: null, duplicates });
       return;
@@ -495,7 +571,7 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
       workScopeText:   null,
     }));
 
-    /* ── Phase 2b: price/unit updates for identity-matched rows ── */
+    /* ── Phase 2b: updates — price/unit only OR full data completion ── */
     let updated = 0;
     let errors = 0;
     let firstError: string | null = null;
@@ -505,6 +581,21 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
       const newUnit  = row.data.unit.trim() || null;
       try {
         await updateContractor(existingId, { price: newPrice, unit: newUnit });
+        updated++;
+        setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: "updated" } : r));
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "خطأ غير معروف";
+        if (!firstError) firstError = msg;
+        errors++;
+        setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: "error", error: msg } : r));
+      }
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    /* Partial-match completions — fill all missing fields from the uploaded row */
+    for (const { row, existingId } of toComplete) {
+      try {
+        await updateContractor(existingId, buildFullPayload(row.data));
         updated++;
         setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: "updated" } : r));
       } catch (e: unknown) {
@@ -574,7 +665,7 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
        The user must press "تم" to dismiss — so even a 500ms import is
        clearly acknowledged with a checkmark + count, instead of vanishing
        before the eye can register it. */
-    setSaveResult({ saved: saved + updated, total: payload.length + toUpdate.length, errors, firstError, duplicates });
+    setSaveResult({ saved: saved + updated, total: payload.length + toUpdate.length + toComplete.length, errors, firstError, duplicates });
     setSaveProgress(null);
     if (saved > 0 || updated > 0) onSaved();
   }
