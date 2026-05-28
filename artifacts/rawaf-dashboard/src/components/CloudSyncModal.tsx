@@ -382,15 +382,21 @@ const IDENTITY_ROW_KEYS: (keyof RowData)[] = [
 ];
 
 function findPartialMatch(row: RowData, contractors: Contractor[]): Contractor | null {
+  const rowContractNo = norm(row.contractNo);
+  /* contractNo must be non-empty and must match — without this anchor the
+     search is too broad and can match thousands of unrelated records.     */
+  if (!rowContractNo) return null;
+
   const rn = IDENTITY_ROW_KEYS.map((k) => norm(row[k]));
   for (const c of contractors) {
+    /* Primary anchor: contractNo must be present AND match */
+    if (!norm(c.contractNo) || norm(c.contractNo) !== rowContractNo) continue;
     const dn = IDENTITY_KEYS.map((k) => norm(String(c[k] ?? "")));
-    const hasGap     = dn.some((v) => !v);          // at least one empty DB field
+    const hasGap   = dn.some((v) => !v);          // at least one empty DB field
     if (!hasGap) continue;
-    const nonEmpty   = dn.map((v, i) => ({ db: v, row: rn[i] })).filter(({ db }) => db);
-    if (nonEmpty.length < 2) continue;              // too few anchors
-    if (!norm(c.contractor)) continue;              // contractor must be the anchor
-    if (!nonEmpty.every(({ db, row: r }) => db === r)) continue; // all non-empty must match
+    const nonEmpty = dn.map((v, i) => ({ db: v, row: rn[i] })).filter(({ db }) => db);
+    if (nonEmpty.length < 3) continue;              // require 3+ matching anchors
+    if (!nonEmpty.every(({ db, row: r }) => db === r)) continue;
     return c;
   }
   return null;
@@ -653,8 +659,19 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
       };
     }
 
+    /* Run a list of update tasks with bounded parallelism (CONCURRENCY at a
+       time).  Each task is a no-arg async function that resolves when done.
+       Between batches we yield the main thread so the UI can paint.       */
+    const CONCURRENCY = 20;
+    async function runParallel(tasks: (() => Promise<void>)[]): Promise<void> {
+      for (let i = 0; i < tasks.length; i += CONCURRENCY) {
+        await Promise.all(tasks.slice(i, i + CONCURRENCY).map((t) => t()));
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    }
+
     /* price/unit updates: keep all existing fields, override only price & unit */
-    for (const { row, existing } of toUpdate) {
+    await runParallel(toUpdate.map(({ row, existing }) => async () => {
       const newPrice = Math.min(Math.round(parseFloat(row.data.price) || 0), 2_000_000_000);
       const newUnit  = row.data.unit.trim() || null;
       try {
@@ -671,15 +688,13 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
         errors++;
         setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: "error", error: msg } : r));
       }
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    }
+    }));
 
     /* Partial-match completions: start from existing record then override with
        every non-empty value from the uploaded row (new data wins over old).  */
-    for (const { row, existing } of toComplete) {
+    await runParallel(toComplete.map(({ row, existing }) => async () => {
       const fromRow = buildFullPayload(row.data);
-      /* Merge: keep existing value when the row value is empty/null */
-      const merged = { ...contractorToPayload(existing) };
+      const merged  = { ...contractorToPayload(existing) };
       for (const key of Object.keys(fromRow) as (keyof typeof fromRow)[]) {
         const v = fromRow[key];
         if (v !== null && v !== "" && v !== 0) {
@@ -696,8 +711,7 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
         errors++;
         setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: "error", error: msg } : r));
       }
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    }
+    }));
 
     /* ── Phase 3: chunked incremental save for new records ──
        Each 500-row chunk is its own HTTP request and its own DB
