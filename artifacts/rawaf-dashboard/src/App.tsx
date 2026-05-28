@@ -131,6 +131,7 @@ function App() {
               <DatabasePage
                 search={search}
                 filters={filters}
+                onFiltersChange={handleFiltersChange}
                 currentUser={currentUser}
                 onSelectContractor={(id) => { setSelectedId(id); setActiveTab("main"); }}
                 onSearchAndNavigate={(term) => {

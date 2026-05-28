@@ -241,13 +241,14 @@ const truncateCellStyle: React.CSSProperties = {
 interface Props {
   search:              string;
   filters:             FilterState;
+  onFiltersChange?:    (f: FilterState) => void;
   onSelectContractor?: (id: number) => void;
   onSearchAndNavigate?: (term: string) => void;
   currentUser?:        { role: string } | null;
 }
 
 /* ─── Main Component ───────────────────────────── */
-export default function DatabasePage({ search, filters, onSelectContractor, onSearchAndNavigate, currentUser }: Props) {
+export default function DatabasePage({ search, filters, onFiltersChange, onSelectContractor, onSearchAndNavigate, currentUser }: Props) {
   const isAdminUser = currentUser?.role === "superadmin" || currentUser?.role === "admin";
   const [authenticated, setAuthenticated] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1" || isAdminUser);
   const [wasAutoLocked, setWasAutoLocked] = useState(false);
@@ -723,11 +724,23 @@ export default function DatabasePage({ search, filters, onSelectContractor, onSe
                       >{c.contractor}</td>
                       <td style={tdStyle} title={c.project}>{c.project}</td>
                       <td style={tdStyle} title={c.portfolio}>{c.portfolio}</td>
-                      <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#3b8fcc" }} title={c.mainActivity || "—"}>{c.mainActivity || "—"}</td>
+                      <td
+                        style={{ ...tdStyle, fontSize: "0.72rem", color: "#3b8fcc", cursor: c.mainActivity ? "pointer" : "default" }}
+                        title={c.mainActivity ? `فلتر: ${c.mainActivity}` : "—"}
+                        onClick={() => c.mainActivity && onFiltersChange && onFiltersChange({ ...filters, mainActivity: c.mainActivity })}
+                        onMouseEnter={(e) => { if (c.mainActivity) (e.currentTarget as HTMLElement).style.textDecoration = "underline"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.textDecoration = ""; }}
+                      >{c.mainActivity || "—"}</td>
                       <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={c.businessProgram || "—"}>{c.businessProgram || "—"}</td>
                       <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={c.workFamily || "—"}>{c.workFamily || "—"}</td>
                       <td style={{ ...tdStyle, minWidth: 0, overflow: "hidden" }} title={c.workType || "—"}>
-                        <span style={{ display: "inline-block", maxWidth: "100%", background: "rgba(197,160,89,0.1)", color: "var(--gold)", borderRadius: "6px", padding: "2px 8px", fontSize: "0.7rem", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", verticalAlign: "middle" }}>
+                        <span
+                          onClick={() => onFiltersChange && onFiltersChange({ ...filters, workType: c.workType })}
+                          title={`فلتر: ${c.workType}`}
+                          style={{ display: "inline-block", maxWidth: "100%", background: "rgba(197,160,89,0.1)", color: "var(--gold)", borderRadius: "6px", padding: "2px 8px", fontSize: "0.7rem", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", verticalAlign: "middle", cursor: "pointer", transition: "background 0.15s" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(197,160,89,0.25)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(197,160,89,0.1)"; }}
+                        >
                           {c.workType}
                         </span>
                       </td>
