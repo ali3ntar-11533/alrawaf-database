@@ -145,8 +145,29 @@ const HEADER_TO_KEY: Record<string, keyof RowData> = {
   "Rating":                "rating",
 };
 
-/* All known header strings (current + legacy) — used for header-row detection */
-const ALL_KNOWN_HEADERS = new Set(Object.keys(HEADER_TO_KEY));
+/* All known header strings (current + legacy) — used for header-row detection.
+   We include both the original keys AND their normalised forms so that a sheet
+   whose headers were saved with tashkeel still triggers header-mode detection. */
+const ALL_KNOWN_HEADERS = new Set([
+  ...Object.keys(HEADER_TO_KEY),
+]);
+
+/* Normalised lookup: strip diacritics, normalise alef variants, collapse
+   whitespace — lets us match headers even when the Excel file was saved with
+   tashkeel or non-breaking spaces.                                          */
+function normHeader(s: string): string {
+  return s
+    .replace(/[\u064B-\u065F\u0670]/g, "")  // strip all Arabic diacritics
+    .replace(/[أإآٱ]/g, "ا")                // normalise alef variants
+    .replace(/ة/g, "ه")                      // ta marbuta → ha
+    .replace(/ى/g, "ي")                      // alef maqsura → ya
+    .replace(/\s+/g, " ")                    // collapse whitespace
+    .trim()
+    .toLowerCase();
+}
+const HEADER_TO_KEY_NORM: Record<string, keyof RowData> = Object.fromEntries(
+  Object.entries(HEADER_TO_KEY).map(([k, v]) => [normHeader(k), v])
+);
 
 /* Build a position map from a parsed header row, then produce a RowData
    extractor that looks up values by column name instead of fixed index.
@@ -154,7 +175,11 @@ const ALL_KNOWN_HEADERS = new Set(Object.keys(HEADER_TO_KEY));
 function buildRowExtractor(headerCells: string[]): (cells: string[]) => RowData {
   const pos: Partial<Record<keyof RowData, number>> = {};
   headerCells.forEach((h, i) => {
-    const key = HEADER_TO_KEY[h.trim()];
+    /* Try exact match first, then fall back to normalised match so that
+       headers with diacritics, alef variants, or extra spaces still map
+       correctly.  Also update ALL_KNOWN_HEADERS dynamically so header
+       detection picks up any normalised match too.                      */
+    const key = HEADER_TO_KEY[h.trim()] ?? HEADER_TO_KEY_NORM[normHeader(h)];
     if (key) pos[key] = i;
   });
   return (cells: string[]): RowData => {
@@ -240,9 +265,11 @@ function parseExcelFile(
         /* raw: true → numeric cells come back as JS numbers (not formatted
            strings like "1,000"), which String() then converts cleanly.   */
         const rows: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: true }) as unknown[][];
-        /* Detect header row by checking if any cell matches a known column name */
+        /* Detect header row: try exact match first, then normalised match */
         const firstRow = rows[0]?.map((c) => String(c).trim()) ?? [];
-        const hasHeader = firstRow.some((c) => ALL_KNOWN_HEADERS.has(c));
+        const hasHeader = firstRow.some(
+          (c) => ALL_KNOWN_HEADERS.has(c) || HEADER_TO_KEY_NORM[normHeader(c)] !== undefined
+        );
         const dataRows = hasHeader ? rows.slice(1) : rows;
         /* Use name-based extraction when a header row is present so that
            column order changes (e.g. old templates with itemCode column)
@@ -267,7 +294,7 @@ function parsePasted(text: string): RowData[] {
   const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n").filter((l) => l.trim());
   if (lines.length === 0) return [];
   const firstCells = lines[0].split("\t").map((c) => c.trim());
-  const hasHeader  = firstCells.some((c) => ALL_KNOWN_HEADERS.has(c));
+  const hasHeader  = firstCells.some((c) => ALL_KNOWN_HEADERS.has(c) || HEADER_TO_KEY_NORM[normHeader(c)] !== undefined);
   const dataLines  = hasHeader ? lines.slice(1) : lines;
   const extractRow = hasHeader ? buildRowExtractor(firstCells) : positionalRow;
   return dataLines.map((line) => extractRow(line.split("\t").map((c) => c.trim())));
