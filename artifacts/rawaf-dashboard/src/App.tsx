@@ -134,12 +134,6 @@ function App() {
                 onFiltersChange={handleFiltersChange}
                 currentUser={currentUser}
                 onSelectContractor={(id) => { setSelectedId(id); setActiveTab("main"); }}
-                onSearchAndNavigate={(term) => {
-                  setSearch(term);
-                  setSelectedId(null);
-                  setFilters(EMPTY_FILTERS);
-                  setActiveTab("main");
-                }}
               />
             )}
           </div>

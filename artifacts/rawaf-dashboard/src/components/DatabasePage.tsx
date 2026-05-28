@@ -243,12 +243,11 @@ interface Props {
   filters:             FilterState;
   onFiltersChange?:    (f: FilterState) => void;
   onSelectContractor?: (id: number) => void;
-  onSearchAndNavigate?: (term: string) => void;
   currentUser?:        { role: string } | null;
 }
 
 /* ─── Main Component ───────────────────────────── */
-export default function DatabasePage({ search, filters, onFiltersChange, onSelectContractor, onSearchAndNavigate, currentUser }: Props) {
+export default function DatabasePage({ search, filters, onFiltersChange, onSelectContractor, currentUser }: Props) {
   const isAdminUser = currentUser?.role === "superadmin" || currentUser?.role === "admin";
   const [authenticated, setAuthenticated] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1" || isAdminUser);
   const [wasAutoLocked, setWasAutoLocked] = useState(false);
