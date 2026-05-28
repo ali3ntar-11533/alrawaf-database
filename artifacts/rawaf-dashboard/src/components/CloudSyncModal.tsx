@@ -455,7 +455,8 @@ function StatusBadge({ status, error }: { status: RowStatus; error?: string }) {
 export default function CloudSyncModal({ existingContractors, onClose, onSaved }: Props) {
   const [rows, setRows] = useState<Row[]>(() => makeRows(10));
   const [isSaving, setIsSaving] = useState(false);
-  const [saveProgress, setSaveProgress] = useState<{ saved: number; total: number } | null>(null);
+  const [saveProgress,  setSaveProgress]  = useState<{ saved: number; total: number } | null>(null);
+  const [updateProgress, setUpdateProgress] = useState<{ done: number; total: number } | null>(null);
   const [saveResult, setSaveResult] = useState<{ saved: number; total: number; errors: number; firstError: string | null; duplicates?: number } | null>(null);
   const [summary, setSummary] = useState<{ saved: number; duplicates: number; errors: number } | null>(null);
   const [templateMode, setTemplateMode] = useState(false);
@@ -675,14 +676,13 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
       payload: Record<string, unknown>;
     };
 
-    async function runBatchedUpdates(tasks: UpdateTask[]): Promise<void> {
+    async function runBatchedUpdates(tasks: UpdateTask[], totalAllUpdates: number, doneOffset: number): Promise<number> {
+      let batchDone = 0;
       for (let i = 0; i < tasks.length; i += CONCURRENCY) {
         const batch = tasks.slice(i, i + CONCURRENCY);
-        /* Fire all requests in parallel */
         const results = await Promise.allSettled(
           batch.map((t) => updateContractor(t.id, t.payload as Parameters<typeof updateContractor>[1]))
         );
-        /* Collect outcomes then apply ONE setRows call for the whole batch */
         const statusMap = new Map<string, { status: RowStatus; error?: string }>();
         results.forEach((r, idx) => {
           const rowId = batch[idx].rowId;
@@ -696,37 +696,53 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
             statusMap.set(rowId, { status: "error", error: msg });
           }
         });
+        batchDone += batch.length;
         setRows((prev) => prev.map((r) => {
           const s = statusMap.get(r.id);
           return s ? { ...r, ...s } : r;
         }));
-        /* Yield to let the browser paint before the next batch */
+        /* Update the update-phase progress counter */
+        setUpdateProgress({ done: doneOffset + batchDone, total: totalAllUpdates });
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
+      return batchDone;
     }
 
+    const totalUpdates = toUpdate.length + toComplete.length;
+    if (totalUpdates > 0) setUpdateProgress({ done: 0, total: totalUpdates });
+
     /* price/unit updates: keep all existing fields, override only price & unit */
-    await runBatchedUpdates(toUpdate.map(({ row, existing }) => ({
-      rowId:   row.id,
-      id:      existing.id,
-      payload: {
-        ...contractorToPayload(existing),
-        price: Math.min(Math.round(parseFloat(row.data.price) || 0), 2_000_000_000),
-        unit:  row.data.unit.trim() || null,
-      },
-    })));
+    const doneUpdate = await runBatchedUpdates(
+      toUpdate.map(({ row, existing }) => ({
+        rowId:   row.id,
+        id:      existing.id,
+        payload: {
+          ...contractorToPayload(existing),
+          price: Math.min(Math.round(parseFloat(row.data.price) || 0), 2_000_000_000),
+          unit:  row.data.unit.trim() || null,
+        },
+      })),
+      totalUpdates,
+      0,
+    );
 
     /* Partial-match completions: start from existing record then override with
        every non-empty value from the uploaded row (new data wins over old).  */
-    await runBatchedUpdates(toComplete.map(({ row, existing }) => {
-      const fromRow = buildFullPayload(row.data);
-      const merged  = { ...contractorToPayload(existing) } as Record<string, unknown>;
-      for (const key of Object.keys(fromRow) as (keyof typeof fromRow)[]) {
-        const v = fromRow[key];
-        if (v !== null && v !== "" && v !== 0) merged[key] = v;
-      }
-      return { rowId: row.id, id: existing.id, payload: merged };
-    }));
+    await runBatchedUpdates(
+      toComplete.map(({ row, existing }) => {
+        const fromRow = buildFullPayload(row.data);
+        const merged  = { ...contractorToPayload(existing) } as Record<string, unknown>;
+        for (const key of Object.keys(fromRow) as (keyof typeof fromRow)[]) {
+          const v = fromRow[key];
+          if (v !== null && v !== "" && v !== 0) merged[key] = v;
+        }
+        return { rowId: row.id, id: existing.id, payload: merged };
+      }),
+      totalUpdates,
+      doneUpdate,
+    );
+
+    setUpdateProgress(null);
 
     /* ── Phase 3: chunked incremental save for new records ──
        Each 500-row chunk is its own HTTP request and its own DB
@@ -1065,10 +1081,14 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
            cannot double-click "حفظ" or close the dialog mid-flight.
            Shows row count + animated spinner.                          */}
       {(isSaving || saveResult) && (() => {
-        const done       = saveResult !== null;
-        const total      = saveResult?.total ?? saveProgress?.total ?? nonEmptyCount;
-        const savedNow   = saveResult?.saved ?? saveProgress?.saved ?? 0;
-        const percent    = total > 0 ? Math.min(100, Math.round((savedNow / total) * 100)) : 0;
+        const done        = saveResult !== null;
+        const isUpdating  = !done && updateProgress !== null && saveProgress === null;
+        const total       = saveResult?.total ?? saveProgress?.total ?? nonEmptyCount;
+        const savedNow    = saveResult?.saved ?? saveProgress?.saved ?? 0;
+        const percent     = total > 0 ? Math.min(100, Math.round((savedNow / total) * 100)) : 0;
+        const updPct      = updateProgress && updateProgress.total > 0
+          ? Math.min(100, Math.round((updateProgress.done / updateProgress.total) * 100))
+          : 0;
         const arSaved    = savedNow.toLocaleString("ar-EG");
         const arTotal    = total.toLocaleString("ar-EG");
         const hasErrors  = (saveResult?.errors ?? 0) > 0;
@@ -1124,7 +1144,9 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
                       : hasErrors
                         ? "اكتمل الحفظ مع وجود أخطاء"
                         : "اكتمل الحفظ"
-                  : "جاري معالجة وتكويد البنود"}
+                  : isUpdating
+                    ? "جاري تحديث البنود الموجودة"
+                    : "جاري معالجة وتكويد البنود"}
               </div>
               <div style={{ fontSize: "1rem", color: done && fullSuccess ? "#86efac" : "#7ec8f0", lineHeight: 1.8, fontWeight: 700 }}>
                 {done && saveResult?.total === 0 && (saveResult?.duplicates ?? 0) > 0 ? (
@@ -1158,29 +1180,59 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
             </div>
 
             {/* ── Live Progress Bar ── */}
-            <div style={{ width: "min(520px, 80vw)", padding: "0 20px" }}>
-              <div style={{
-                width: "100%", height: 14,
-                background: "rgba(59,143,204,0.12)",
-                border: "1px solid rgba(59,143,204,0.25)",
-                borderRadius: 999, overflow: "hidden",
-                boxShadow: "inset 0 2px 6px rgba(0,0,0,0.45)",
-              }}>
+            <div style={{ width: "min(520px, 80vw)", padding: "0 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+              {/* Update-phase bar (shown only while updating existing records) */}
+              {isUpdating && updateProgress && (
+                <div>
+                  <div style={{ fontSize: "0.72rem", color: "rgba(255,210,100,0.9)", fontWeight: 700, marginBottom: 5, textAlign: "center" }}>
+                    تحديث البنود الموجودة — {updateProgress.done.toLocaleString("ar-EG")} / {updateProgress.total.toLocaleString("ar-EG")}
+                  </div>
+                  <div style={{
+                    width: "100%", height: 10,
+                    background: "rgba(197,160,89,0.12)",
+                    border: "1px solid rgba(197,160,89,0.3)",
+                    borderRadius: 999, overflow: "hidden",
+                  }}>
+                    <div style={{
+                      width: `${updPct}%`, height: "100%",
+                      background: "linear-gradient(90deg, #a88540 0%, #c5a059 50%, #e0bb7a 100%)",
+                      borderRadius: 999,
+                      transition: "width 0.3s ease-out",
+                      boxShadow: "0 0 10px rgba(197,160,89,0.5)",
+                    }} />
+                  </div>
+                </div>
+              )}
+              {/* Save-phase bar */}
+              <div>
+                {isUpdating && (
+                  <div style={{ fontSize: "0.72rem", color: "rgba(126,200,240,0.7)", fontWeight: 700, marginBottom: 5, textAlign: "center" }}>
+                    حفظ البنود الجديدة
+                  </div>
+                )}
                 <div style={{
-                  width: `${percent}%`, height: "100%",
-                  background: "linear-gradient(90deg, #1e6fa8 0%, #3b8fcc 50%, #7ec8f0 100%)",
-                  borderRadius: 999,
-                  transition: "width 0.35s ease-out",
-                  boxShadow: "0 0 14px rgba(126,200,240,0.6)",
-                }} />
-              </div>
-              <div style={{
-                display: "flex", justifyContent: "space-between",
-                marginTop: 8, fontSize: "0.75rem",
-                color: "rgba(255,255,255,0.7)", fontWeight: 700,
-              }}>
-                <span>{percent}%</span>
-                <span>{arSaved} / {arTotal}</span>
+                  width: "100%", height: 14,
+                  background: "rgba(59,143,204,0.12)",
+                  border: "1px solid rgba(59,143,204,0.25)",
+                  borderRadius: 999, overflow: "hidden",
+                  boxShadow: "inset 0 2px 6px rgba(0,0,0,0.45)",
+                }}>
+                  <div style={{
+                    width: `${percent}%`, height: "100%",
+                    background: "linear-gradient(90deg, #1e6fa8 0%, #3b8fcc 50%, #7ec8f0 100%)",
+                    borderRadius: 999,
+                    transition: "width 0.35s ease-out",
+                    boxShadow: "0 0 14px rgba(126,200,240,0.6)",
+                  }} />
+                </div>
+                <div style={{
+                  display: "flex", justifyContent: "space-between",
+                  marginTop: 8, fontSize: "0.75rem",
+                  color: "rgba(255,255,255,0.7)", fontWeight: 700,
+                }}>
+                  <span>{percent}%</span>
+                  <span>{arSaved} / {arTotal}</span>
+                </div>
               </div>
             </div>
 
