@@ -749,11 +749,8 @@ export default function DatabasePage({ search, filters, onFiltersChange, onSelec
                       <td style={{ ...tdStyle, fontSize: "0.7rem", color: "#555" }} title={c.measurements || "—"}>{c.measurements || "—"}</td>
                       <td style={{ ...tdStyle, fontSize: "0.7rem", color: "#555", fontFamily: "monospace" }} title={c.itemCode || "—"}>{c.itemCode || "—"}</td>
                       <td
-                        style={{ ...tdStyle, cursor: "pointer", color: "var(--charcoal)" }}
+                        style={{ ...tdStyle, color: "var(--charcoal)" }}
                         title={c.technicalScope}
-                        onClick={() => onSearchAndNavigate && onSearchAndNavigate(c.technicalScope)}
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#3b8fcc"; (e.currentTarget as HTMLElement).style.textDecoration = "underline"; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--charcoal)"; (e.currentTarget as HTMLElement).style.textDecoration = ""; }}
                       >{c.technicalScope}</td>
                       <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={c.workCategory || "—"}>{c.workCategory || "—"}</td>
                       <td style={{ ...tdStyle, fontSize: "0.72rem", color: "#888" }} title={c.unit || "—"}>{c.unit || "—"}</td>
