@@ -544,8 +544,8 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
        • toComplete  — partial identity match (DB record has empty fields) → fill all data
        • fresh       — no match at all → create new record                 */
     const duplicateIds  = new Set<string>();
-    const toUpdate:   { row: Row; existingId: number }[] = [];
-    const toComplete: { row: Row; existingId: number }[] = [];
+    const toUpdate:   { row: Row; existing: Contractor }[] = [];
+    const toComplete: { row: Row; existing: Contractor }[] = [];
     const fresh: Row[] = [];
 
     for (const r of toSave) {
@@ -554,11 +554,11 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
       } else {
         const existing = existingIdentityMap.get(rowIdentity(r.data));
         if (existing) {
-          toUpdate.push({ row: r, existingId: existing.id });
+          toUpdate.push({ row: r, existing });
         } else {
           const partial = findPartialMatch(r.data, existingContractors);
           if (partial) {
-            toComplete.push({ row: r, existingId: partial.id });
+            toComplete.push({ row: r, existing: partial });
           } else {
             fresh.push(r);
           }
@@ -615,16 +615,54 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
       workScopeText:   null,
     }));
 
-    /* ── Phase 2b: updates — price/unit only OR full data completion ── */
+    /* ── Phase 2b: updates — always send a COMPLETE payload by merging the
+       existing DB record with the new values from the uploaded row.
+       The PUT endpoint validates using the full CreateContractorBody schema,
+       so sending a partial object (e.g. just { price, unit }) would return
+       400 because required fields are missing.  Merging guarantees every
+       required field is always present.                                    */
     let updated = 0;
     let errors = 0;
     let firstError: string | null = null;
 
-    for (const { row, existingId } of toUpdate) {
+    /* Helper: turn a Contractor record into a PUT-safe payload */
+    function contractorToPayload(c: Contractor) {
+      return {
+        contractNo:      c.contractNo,
+        contractYear:    c.contractYear    ?? null,
+        contractor:      c.contractor,
+        project:         c.project,
+        portfolio:       c.portfolio,
+        mainActivity:    c.mainActivity    ?? null,
+        businessProgram: c.businessProgram ?? null,
+        workFamily:      c.workFamily      ?? null,
+        workType:        c.workType,
+        itemScope:       c.itemScope       ?? null,
+        techSpecs:       c.techSpecs       ?? null,
+        measurements:    c.measurements    ?? null,
+        technicalScope:  c.technicalScope,
+        workCategory:    c.workCategory    ?? null,
+        unit:            c.unit            ?? null,
+        price:           c.price,
+        localContent:    c.localContent    ?? null,
+        phone:           c.phone,
+        email:           c.email,
+        rating:          c.rating          ?? null,
+        workDescription: null,
+        workScopeText:   null,
+      };
+    }
+
+    /* price/unit updates: keep all existing fields, override only price & unit */
+    for (const { row, existing } of toUpdate) {
       const newPrice = Math.min(Math.round(parseFloat(row.data.price) || 0), 2_000_000_000);
       const newUnit  = row.data.unit.trim() || null;
       try {
-        await updateContractor(existingId, { price: newPrice, unit: newUnit });
+        await updateContractor(existing.id, {
+          ...contractorToPayload(existing),
+          price: newPrice,
+          unit:  newUnit,
+        });
         updated++;
         setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: "updated" } : r));
       } catch (e: unknown) {
@@ -636,10 +674,20 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
       await new Promise((resolve) => setTimeout(resolve, 0));
     }
 
-    /* Partial-match completions — fill all missing fields from the uploaded row */
-    for (const { row, existingId } of toComplete) {
+    /* Partial-match completions: start from existing record then override with
+       every non-empty value from the uploaded row (new data wins over old).  */
+    for (const { row, existing } of toComplete) {
+      const fromRow = buildFullPayload(row.data);
+      /* Merge: keep existing value when the row value is empty/null */
+      const merged = { ...contractorToPayload(existing) };
+      for (const key of Object.keys(fromRow) as (keyof typeof fromRow)[]) {
+        const v = fromRow[key];
+        if (v !== null && v !== "" && v !== 0) {
+          (merged as Record<string, unknown>)[key] = v;
+        }
+      }
       try {
-        await updateContractor(existingId, buildFullPayload(row.data));
+        await updateContractor(existing.id, merged);
         updated++;
         setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: "updated" } : r));
       } catch (e: unknown) {
