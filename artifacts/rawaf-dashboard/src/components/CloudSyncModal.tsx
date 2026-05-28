@@ -105,12 +105,17 @@ const TEMPLATE_HEADERS = [
    "كود الفريد للبند" at position 12 and newer ones without it).
    Matching is done by NAME so column order no longer matters.    ── */
 const HEADER_TO_KEY: Record<string, keyof RowData> = {
+  /* ── contract / vendor ── */
   "رقم العقد":              "contractNo",
   "سنة العقد":              "contractYear",
   "المقاول / المورد":       "contractor",
+  "المقاول":                "contractor",
+  "المورد":                 "contractor",
   "المشروع":                "project",
   "المحفظة":                "portfolio",
+  /* ── classification ── */
   "النشاط الرئيسي":        "mainActivity",
+  "النشاط":                "mainActivity",
   "برنامج الأعمال":        "businessProgram",
   "عائلة الأعمال":         "workFamily",
   "نوع الأعمال":           "workType",
@@ -121,13 +126,23 @@ const HEADER_TO_KEY: Record<string, keyof RowData> = {
      (server always regenerates itemCode from the other 8 fields).   */
   "كود الفريد للبند":       "itemCode",
   "الوصف الفني للبند":     "technicalScope",
+  "الوصف الفني":           "technicalScope",
   "نوع التعاقد":            "workCategory",
+  /* ── price / unit ── */
   "الوحدة":                "unit",
   "السعر":                 "price",
+  "سعر":                   "price",
+  "Price":                 "price",
+  /* ── contact / rating ── */
   "المحتوى المحلي":        "localContent",
   "رقم التواصل":           "phone",
+  "التواصل":               "phone",
   "البريد الإلكتروني":      "email",
+  "البريد":                "email",
   "التقييم (0-5)":         "rating",
+  "التقييم":               "rating",
+  "تقييم":                 "rating",
+  "Rating":                "rating",
 };
 
 /* All known header strings (current + legacy) — used for header-row detection */
@@ -222,7 +237,9 @@ function parseExcelFile(
         const wb = XLSX.read(data, { type: "array" });
         onProgress?.(90, "parse");
         const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows: string[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as string[][];
+        /* raw: true → numeric cells come back as JS numbers (not formatted
+           strings like "1,000"), which String() then converts cleanly.   */
+        const rows: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: true }) as unknown[][];
         /* Detect header row by checking if any cell matches a known column name */
         const firstRow = rows[0]?.map((c) => String(c).trim()) ?? [];
         const hasHeader = firstRow.some((c) => ALL_KNOWN_HEADERS.has(c));
