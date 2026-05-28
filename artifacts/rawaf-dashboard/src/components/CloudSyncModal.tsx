@@ -659,58 +659,73 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
       };
     }
 
-    /* Run a list of update tasks with bounded parallelism (CONCURRENCY at a
-       time).  Each task is a no-arg async function that resolves when done.
-       Between batches we yield the main thread so the UI can paint.       */
+    /* ── Batched parallel update runner ─────────────────────────────────────
+       Key design decisions:
+       1. CONCURRENCY requests fire at the same time (true parallel I/O).
+       2. All `setRows` calls for a batch are collected into one Map then
+          applied in a SINGLE React state update — avoids N re-renders of a
+          large list (which was causing 8-second stalls between batches).
+       3. A single `setTimeout(0)` yield between batches lets the browser
+          paint the progress UI.                                             */
     const CONCURRENCY = 20;
-    async function runParallel(tasks: (() => Promise<void>)[]): Promise<void> {
+
+    type UpdateTask = {
+      rowId:   string;
+      id:      number;
+      payload: Record<string, unknown>;
+    };
+
+    async function runBatchedUpdates(tasks: UpdateTask[]): Promise<void> {
       for (let i = 0; i < tasks.length; i += CONCURRENCY) {
-        await Promise.all(tasks.slice(i, i + CONCURRENCY).map((t) => t()));
+        const batch = tasks.slice(i, i + CONCURRENCY);
+        /* Fire all requests in parallel */
+        const results = await Promise.allSettled(
+          batch.map((t) => updateContractor(t.id, t.payload as Parameters<typeof updateContractor>[1]))
+        );
+        /* Collect outcomes then apply ONE setRows call for the whole batch */
+        const statusMap = new Map<string, { status: RowStatus; error?: string }>();
+        results.forEach((r, idx) => {
+          const rowId = batch[idx].rowId;
+          if (r.status === "fulfilled") {
+            updated++;
+            statusMap.set(rowId, { status: "updated" });
+          } else {
+            const msg = r.reason instanceof Error ? r.reason.message : "خطأ غير معروف";
+            if (!firstError) firstError = msg;
+            errors++;
+            statusMap.set(rowId, { status: "error", error: msg });
+          }
+        });
+        setRows((prev) => prev.map((r) => {
+          const s = statusMap.get(r.id);
+          return s ? { ...r, ...s } : r;
+        }));
+        /* Yield to let the browser paint before the next batch */
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
     }
 
     /* price/unit updates: keep all existing fields, override only price & unit */
-    await runParallel(toUpdate.map(({ row, existing }) => async () => {
-      const newPrice = Math.min(Math.round(parseFloat(row.data.price) || 0), 2_000_000_000);
-      const newUnit  = row.data.unit.trim() || null;
-      try {
-        await updateContractor(existing.id, {
-          ...contractorToPayload(existing),
-          price: newPrice,
-          unit:  newUnit,
-        });
-        updated++;
-        setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: "updated" } : r));
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : "خطأ غير معروف";
-        if (!firstError) firstError = msg;
-        errors++;
-        setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: "error", error: msg } : r));
-      }
-    }));
+    await runBatchedUpdates(toUpdate.map(({ row, existing }) => ({
+      rowId:   row.id,
+      id:      existing.id,
+      payload: {
+        ...contractorToPayload(existing),
+        price: Math.min(Math.round(parseFloat(row.data.price) || 0), 2_000_000_000),
+        unit:  row.data.unit.trim() || null,
+      },
+    })));
 
     /* Partial-match completions: start from existing record then override with
        every non-empty value from the uploaded row (new data wins over old).  */
-    await runParallel(toComplete.map(({ row, existing }) => async () => {
+    await runBatchedUpdates(toComplete.map(({ row, existing }) => {
       const fromRow = buildFullPayload(row.data);
-      const merged  = { ...contractorToPayload(existing) };
+      const merged  = { ...contractorToPayload(existing) } as Record<string, unknown>;
       for (const key of Object.keys(fromRow) as (keyof typeof fromRow)[]) {
         const v = fromRow[key];
-        if (v !== null && v !== "" && v !== 0) {
-          (merged as Record<string, unknown>)[key] = v;
-        }
+        if (v !== null && v !== "" && v !== 0) merged[key] = v;
       }
-      try {
-        await updateContractor(existing.id, merged);
-        updated++;
-        setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: "updated" } : r));
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : "خطأ غير معروف";
-        if (!firstError) firstError = msg;
-        errors++;
-        setRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: "error", error: msg } : r));
-      }
+      return { rowId: row.id, id: existing.id, payload: merged };
     }));
 
     /* ── Phase 3: chunked incremental save for new records ──
