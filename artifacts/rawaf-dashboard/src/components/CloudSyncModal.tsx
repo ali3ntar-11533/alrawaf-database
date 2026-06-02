@@ -378,9 +378,14 @@ function parseExcelFile(
            column order changes (e.g. old templates with itemCode column)
            never cause data to land in the wrong field.                   */
         const extractRow = hasHeader ? buildRowExtractor(firstRow) : positionalRow;
+        /* Normalise cell values: convert to string, collapse embedded
+           newlines (ALT+ENTER) and surrounding whitespace into a single
+           space so the grid never shows stray line-breaks.              */
+        const toStr = (c: unknown) =>
+          String(c ?? "").replace(/[\r\n]+/g, " ").trim();
         const parsed: RowData[] = dataRows
-          .filter((row) => row.some((c) => String(c).trim()))
-          .map((cells) => extractRow(cells.map((c) => String(c ?? ""))));
+          .filter((row) => row.some((c) => toStr(c)))
+          .map((cells) => extractRow(cells.map(toStr)));
         /* Pass the final row count so the UI can show an animated counter. */
         onProgress?.(100, "done", parsed.length);
         resolve(parsed);
@@ -393,15 +398,6 @@ function parseExcelFile(
   });
 }
 
-function parsePasted(text: string): RowData[] {
-  const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n").filter((l) => l.trim());
-  if (lines.length === 0) return [];
-  const firstCells = lines[0].split("\t").map((c) => c.trim());
-  const hasHeader  = firstCells.some((c) => ALL_KNOWN_HEADERS.has(c) || HEADER_TO_KEY_NORM[normHeader(c)] !== undefined);
-  const dataLines  = hasHeader ? lines.slice(1) : lines;
-  const extractRow = hasHeader ? buildRowExtractor(firstCells) : positionalRow;
-  return dataLines.map((line) => extractRow(line.split("\t").map((c) => c.trim())));
-}
 
 /* ─── Normalizer ─────────────────────────────────────────── */
 function norm(s: string): string {
