@@ -69,7 +69,6 @@ const FILTER_DEFS: {
   label:  string;
   getter: (c: Contractor) => string;
 }[] = [
-  { key: "contractor",      label: "المقاول / المورد",  getter: (c) => c.contractor },
   { key: "portfolio",       label: "المحفظة",            getter: (c) => c.portfolio },
   { key: "mainActivity",    label: "النشاط الرئيسي",     getter: (c) => c.mainActivity     ?? "" },
   { key: "businessProgram", label: "برنامج الأعمال",     getter: (c) => c.businessProgram  ?? "" },
