@@ -78,13 +78,31 @@ const PASTE_COLUMNS: (keyof RowData)[] = [
   "localContent", "phone", "email", "rating",
 ];
 
-/* ─── Parse clipboard TSV into RowData array ─────────────── */
+/* ─── Parse clipboard TSV into RowData array ─────────────────
+   Strategy:
+   1. If the first row looks like a header (≥3 cells match known
+      column names) → use buildRowExtractor for name-based mapping,
+      same as the Excel-file upload path.  Column order in the source
+      sheet does NOT matter in this case.
+   2. Otherwise fall back to the fixed positional PASTE_COLUMNS order.
+   ────────────────────────────────────────────────────────────── */
 function parseTsvToRows(tsv: string): RowData[] {
-  return tsv
-    .split(/\r?\n/)
-    .filter((l) => l.trim())
+  const lines = tsv.split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length === 0) return [];
+
+  const firstCells = lines[0].split("\t");
+  const headerHits = firstCells.filter(
+    (c) => HEADER_TO_KEY[c.trim()] ?? HEADER_TO_KEY_NORM[normHeader(c)]
+  ).length;
+
+  const hasHeader = headerHits >= 3;
+  const extractor = hasHeader ? buildRowExtractor(firstCells) : null;
+  const dataLines  = hasHeader ? lines.slice(1) : lines;
+
+  return dataLines
     .map((line) => {
       const cells = line.split("\t");
+      if (extractor) return extractor(cells);
       const data: RowData = {
         contractNo: "", contractYear: "", contractor: "", project: "", portfolio: "",
         mainActivity: "", businessProgram: "", workFamily: "",
