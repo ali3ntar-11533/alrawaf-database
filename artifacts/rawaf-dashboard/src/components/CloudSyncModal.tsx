@@ -509,9 +509,6 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
   const [saveResult, setSaveResult] = useState<{ saved: number; total: number; errors: number; firstError: string | null; duplicates?: number } | null>(null);
   const [summary, setSummary] = useState<{ saved: number; duplicates: number; errors: number } | null>(null);
   const [templateMode, setTemplateMode] = useState(false);
-  const [pasteMode,    setPasteMode]    = useState(false);
-  const [pasteText,    setPasteText]    = useState("");
-  const [pasteCount,   setPasteCount]   = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadName, setUploadName] = useState<string | null>(null);
   const [isReading, setIsReading] = useState(false);
@@ -897,7 +894,7 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
             قالب / رفع Excel
           </button>
           <button
-            onClick={() => { setPasteMode(true); setPasteText(""); setPasteCount(0); }}
+            onClick={handlePasteFromClipboard}
             style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(197,160,89,0.12)", border: "1.5px solid rgba(197,160,89,0.4)", color: "#e0bb7a", borderRadius: "9px", padding: "7px 14px", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}
           >
             <span style={{ fontSize: "0.85rem" }}>📋</span>
@@ -1143,91 +1140,6 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
 
             <div style={{ textAlign: "center" }}>
               <button onClick={() => { setTemplateMode(false); setUploadError(null); setUploadName(null); }} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#aaa", borderRadius: "8px", padding: "8px 24px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}>إغلاق</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Paste Overlay ── */}
-      {pasteMode && (
-        <div style={{ position: "absolute", inset: 0, background: "rgba(5,12,28,0.88)", backdropFilter: "blur(8px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px" }}>
-          <div style={{ background: "#0d1f3c", border: "2px solid rgba(197,160,89,0.4)", borderRadius: "16px", padding: "28px", maxWidth: "620px", width: "100%", direction: "rtl" }}>
-
-            {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
-              <div>
-                <div style={{ fontSize: "1rem", fontWeight: 800, color: "#fff", marginBottom: "5px" }}>📋 لصق بيانات من Excel</div>
-                <div style={{ fontSize: "0.7rem", color: "rgba(224,187,122,0.7)", lineHeight: 1.6 }}>انسخ صفوف من أي شيت Excel (Ctrl+C) ثم الصق هنا (Ctrl+V)</div>
-              </div>
-              <button onClick={() => { setPasteMode(false); setPasteText(""); setPasteCount(0); }} style={{ background: "none", border: "none", color: "#aaa", cursor: "pointer", flexShrink: 0 }}><X size={18} /></button>
-            </div>
-
-            {/* Column order hint */}
-            <div style={{ background: "rgba(197,160,89,0.07)", border: "1px solid rgba(197,160,89,0.2)", borderRadius: "10px", padding: "10px 14px", marginBottom: "16px", fontSize: "0.62rem", color: "rgba(224,187,122,0.75)", lineHeight: 1.8, direction: "rtl" }}>
-              <span style={{ fontWeight: 700, color: "#e0bb7a" }}>ترتيب الأعمدة المتوقع (20 عموداً):</span><br />
-              رقم العقد · سنة · المقاول · المشروع · المحفظة · النشاط · برنامج · عائلة · نوع الأعمال · شمولية · مواصفات · قياسات · وصف فني · تعاقد · وحدة · سعر · محتوى محلي · تواصل · بريد · تقييم
-            </div>
-
-            {/* Textarea */}
-            <textarea
-              autoFocus
-              value={pasteText}
-              onChange={(e) => {
-                const txt = e.target.value;
-                setPasteText(txt);
-                setPasteCount(parseTsvToRows(txt).length);
-              }}
-              placeholder="الصق الصفوف هنا (Ctrl+V) …"
-              spellCheck={false}
-              style={{
-                width: "100%", height: "200px", background: "rgba(255,255,255,0.04)",
-                border: "1.5px solid rgba(197,160,89,0.3)", borderRadius: "10px",
-                padding: "12px 14px", fontSize: "0.7rem", color: "#c8dff0",
-                fontFamily: "monospace", direction: "ltr", resize: "vertical",
-                outline: "none", boxSizing: "border-box",
-              }}
-            />
-
-            {/* Row count */}
-            {pasteCount > 0 && (
-              <div style={{ fontSize: "0.72rem", color: "#5dd6a8", fontWeight: 700, marginTop: "8px" }}>
-                ✅ تم رصد <strong>{pasteCount.toLocaleString("ar-EG")}</strong> صف جاهز للإدراج
-              </div>
-            )}
-
-            {/* Actions */}
-            <div style={{ display: "flex", gap: "10px", marginTop: "18px", justifyContent: "flex-end" }}>
-              <button
-                onClick={() => { setPasteMode(false); setPasteText(""); setPasteCount(0); }}
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#aaa", borderRadius: "8px", padding: "9px 22px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}
-              >إلغاء</button>
-              <button
-                disabled={pasteCount === 0}
-                onClick={() => {
-                  const parsed = parseTsvToRows(pasteText);
-                  if (parsed.length === 0) return;
-                  const newRows: Row[] = parsed.map((data) => ({ id: Math.random().toString(36).slice(2), data, status: "idle" }));
-                  setRows((prev) => {
-                    const nonEmpty = prev.filter((r) => !isRowEmpty(r.data));
-                    return [...nonEmpty, ...newRows, ...makeRows(Math.max(0, 3))];
-                  });
-                  setPasteMode(false);
-                  setPasteText("");
-                  setPasteCount(0);
-                }}
-                style={{
-                  display: "flex", alignItems: "center", gap: "7px",
-                  background: pasteCount === 0 ? "rgba(197,160,89,0.2)" : "linear-gradient(135deg, #a88540, #c5a059)",
-                  border: "none", color: "#fff", borderRadius: "9px", padding: "9px 24px",
-                  fontSize: "0.82rem", fontWeight: 700,
-                  cursor: pasteCount === 0 ? "not-allowed" : "pointer",
-                  fontFamily: "Tajawal, sans-serif",
-                  boxShadow: pasteCount === 0 ? "none" : "0 4px 14px rgba(197,160,89,0.35)",
-                  opacity: pasteCount === 0 ? 0.55 : 1,
-                }}
-              >
-                📋 إدراج {pasteCount > 0 ? `(${pasteCount.toLocaleString("ar-EG")} صف)` : ""}
-              </button>
             </div>
           </div>
         </div>
