@@ -69,6 +69,61 @@ const COLUMNS: { key: keyof RowData; label: string; width: number; type?: "numbe
   { key: "rating",          label: "تقييم",            width: 34, type: "number" },
 ];
 
+/* ─── Proper TSV parser ───────────────────────────────────
+   Excel wraps cells that contain embedded newlines (ALT+ENTER)
+   in double-quotes.  A naïve split(/\r?\n/) breaks those into
+   ghost rows with shifted columns.  This parser handles:
+     • quoted fields  → "value"
+     • embedded newlines inside quotes → "line1\nline2"
+     • escaped quotes → "" inside a quoted field = one "
+   Returns an array-of-rows, each row is an array-of-cell-strings.
+   ─────────────────────────────────────────────────────────── */
+function parseTsvRaw(tsv: string): string[][] {
+  const rows: string[][] = [];
+  let row:  string[] = [];
+  let i = 0;
+  const n = tsv.length;
+
+  while (i < n) {
+    if (tsv[i] === '"') {
+      /* ── quoted field ── */
+      i++;
+      let field = "";
+      while (i < n) {
+        if (tsv[i] === '"') {
+          if (i + 1 < n && tsv[i + 1] === '"') { field += '"'; i += 2; }
+          else { i++; break; }
+        } else {
+          field += tsv[i++];
+        }
+      }
+      row.push(field.trim());
+      /* consume delimiter after closing quote */
+      if (i < n && tsv[i] === '\t') { i++; }
+      else if (i < n && (tsv[i] === '\r' || tsv[i] === '\n')) {
+        if (tsv[i] === '\r' && tsv[i + 1] === '\n') i++;
+        i++;
+        rows.push(row); row = [];
+      }
+    } else {
+      /* ── unquoted field ── */
+      let field = "";
+      while (i < n && tsv[i] !== '\t' && tsv[i] !== '\r' && tsv[i] !== '\n') {
+        field += tsv[i++];
+      }
+      row.push(field.trim());
+      if (i < n && tsv[i] === '\t') { i++; }
+      else if (i < n && (tsv[i] === '\r' || tsv[i] === '\n')) {
+        if (tsv[i] === '\r' && tsv[i + 1] === '\n') i++;
+        i++;
+        rows.push(row); row = [];
+      }
+    }
+  }
+  if (row.length > 0) rows.push(row);
+  return rows;
+}
+
 /* ─── Positional column order for TSV paste (no itemCode) ─ */
 const PASTE_COLUMNS: (keyof RowData)[] = [
   "contractNo", "contractYear", "contractor", "project", "portfolio",
@@ -87,21 +142,20 @@ const PASTE_COLUMNS: (keyof RowData)[] = [
    2. Otherwise fall back to the fixed positional PASTE_COLUMNS order.
    ────────────────────────────────────────────────────────────── */
 function parseTsvToRows(tsv: string): RowData[] {
-  const lines = tsv.split(/\r?\n/).filter((l) => l.trim());
-  if (lines.length === 0) return [];
+  const allRows = parseTsvRaw(tsv).filter((cells) => cells.some((c) => c));
+  if (allRows.length === 0) return [];
 
-  const firstCells = lines[0].split("\t");
+  const firstCells = allRows[0];
   const headerHits = firstCells.filter(
     (c) => HEADER_TO_KEY[c.trim()] ?? HEADER_TO_KEY_NORM[normHeader(c)]
   ).length;
 
   const hasHeader = headerHits >= 3;
-  const extractor = hasHeader ? buildRowExtractor(firstCells) : null;
-  const dataLines  = hasHeader ? lines.slice(1) : lines;
+  const extractor  = hasHeader ? buildRowExtractor(firstCells) : null;
+  const dataRows   = hasHeader ? allRows.slice(1) : allRows;
 
-  return dataLines
-    .map((line) => {
-      const cells = line.split("\t");
+  return dataRows
+    .map((cells) => {
       if (extractor) return extractor(cells);
       const data: RowData = {
         contractNo: "", contractYear: "", contractor: "", project: "", portfolio: "",
@@ -111,7 +165,7 @@ function parseTsvToRows(tsv: string): RowData[] {
         localContent: "", phone: "", email: "", rating: "",
       };
       PASTE_COLUMNS.forEach((key, i) => {
-        data[key] = (cells[i] ?? "").trim();
+        data[key] = cells[i] ?? "";
       });
       return data;
     })
