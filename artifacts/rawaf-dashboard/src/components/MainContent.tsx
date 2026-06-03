@@ -384,34 +384,23 @@ export default function MainContent({ contractor, allContractors, filteredContra
     );
   };
 
-  // All contractors sharing the exact min / max price (for cycling)
-  const contractorsAtMin = validPricePool.filter((c) => c.price === minPrice);
-  const contractorsAtMax = validPricePool.filter((c) => c.price === maxPrice);
+  // ── Rank-based cycling — ALL contractors are reachable from each stat cell ──
+  // Min cell cycles cheapest→most-expensive; Max cell cycles most-expensive→cheapest;
+  // Avg cell cycles closest-to-average first.
+  const contractorsSortedAsc = [...validPricePool].sort((a, b) => a.price - b.price);
+  const contractorsSortedDesc = [...validPricePool].sort((a, b) => b.price - a.price);
+  const contractorsSortedByAvg = [...validPricePool].sort(
+    (a, b) => Math.abs(a.price - avgPrice) - Math.abs(b.price - avgPrice)
+  );
 
   // A meaningful average only exists when at least one contractor has a price
   // strictly BETWEEN min and max (not equal to either extreme).
   const hasMidContractor = validPricePool.some((c) => c.price > minPrice && c.price < maxPrice);
 
-  // Current cycle position for min/max — wraps around
-  const contractorWithMin = contractorsAtMin[minCycleIdx % Math.max(1, contractorsAtMin.length)] ?? contractorsAtMin[0];
-  const contractorWithMax = contractorsAtMax[maxCycleIdx % Math.max(1, contractorsAtMax.length)] ?? contractorsAtMax[0];
-
-  // Find contractor closest to the average price (for the fallback single-navigation case)
-  const _sortedByAvgDiff = [...validPricePool].sort(
-    (a, b) => Math.abs(a.price - avgPrice) - Math.abs(b.price - avgPrice)
-  );
-  const avgContractor =
-    _sortedByAvgDiff.find(
-      (c) => c.id !== contractorWithMin?.id && c.id !== contractorWithMax?.id
-    ) ?? _sortedByAvgDiff[0];
-
-  // Contractors sharing the EXACT rounded average price (for cycling — same as min/max approach)
-  const avgPriceRounded     = Math.round(avgPrice);
-  const contractorsAtAvgPrice = validPricePool.filter((c) => c.price === avgPriceRounded);
-  // Resolved avg contractor for the current cycle position (or closest-to-avg if no exact match)
-  const contractorAtAvgCycle = contractorsAtAvgPrice.length > 0
-    ? contractorsAtAvgPrice[avgCycleIdx % contractorsAtAvgPrice.length]
-    : avgContractor;
+  // Current cycle positions — wrap around the full sorted lists
+  const contractorWithMin    = contractorsSortedAsc[minCycleIdx % Math.max(1, contractorsSortedAsc.length)]    ?? contractorsSortedAsc[0];
+  const contractorWithMax    = contractorsSortedDesc[maxCycleIdx % Math.max(1, contractorsSortedDesc.length)]   ?? contractorsSortedDesc[0];
+  const contractorAtAvgCycle = contractorsSortedByAvg[avgCycleIdx % Math.max(1, contractorsSortedByAvg.length)] ?? contractorsSortedByAvg[0];
 
   // ── Best 5: Best Value scoring = 60% price competitiveness + 40% rating ──
   // A contractor with a high rating and a competitive price ranks above one that
@@ -498,28 +487,26 @@ export default function MainContent({ contractor, allContractors, filteredContra
       : { label: "سعر المقاول الحالي", sub2: contractor.contractor ?? "—", value: formatExact(contractor.price), color: "var(--gold)", id: contractor.id as number | null, isCustom: false, rawPrice: contractor.price },
     {
       label: "أدنى سعر لهذا البند",
-      sub2: contractorsAtMin.length > 1
-        ? `${contractorWithMin?.contractor ?? "—"} (${minCycleIdx % contractorsAtMin.length + 1}/${contractorsAtMin.length})`
+      sub2: contractorsSortedAsc.length > 1
+        ? `${contractorWithMin?.contractor ?? "—"} (${minCycleIdx % contractorsSortedAsc.length + 1}/${contractorsSortedAsc.length})`
         : contractorWithMin?.contractor ?? "—",
-      value: formatExact(minPrice), color: "#2baa74",
-      id: contractorWithMin?.id ?? null, isBest: contractor.price === minPrice, rawPrice: minPrice,
-      cycleCount: contractorsAtMin.length, cyclePos: minCycleIdx,
+      value: formatExact(contractorWithMin?.price ?? minPrice), color: "#2baa74",
+      id: contractorWithMin?.id ?? null, isBest: contractor.price === minPrice, rawPrice: contractorWithMin?.price ?? minPrice,
+      cycleCount: contractorsSortedAsc.length, cyclePos: minCycleIdx,
     },
     // Show avg only when at least one contractor has a price strictly between min and max.
     // Without a true middle value the avg collapses to the same price as min or max.
     hasMidContractor
       ? {
           label: "متوسط الأسعار لهذا البند",
-          sub2: (() => {
-            const n = contractorsAtAvgPrice.length;
-            if (n > 1) return `${contractorAtAvgCycle?.contractor ?? "—"} (${avgCycleIdx % n + 1}/${n})`;
-            return contractorAtAvgCycle?.contractor ?? "—";
-          })(),
-          value: formatExact(contractorAtAvgCycle?.price ?? avgPriceRounded),
+          sub2: contractorsSortedByAvg.length > 1
+            ? `${contractorAtAvgCycle?.contractor ?? "—"} (${avgCycleIdx % contractorsSortedByAvg.length + 1}/${contractorsSortedByAvg.length})`
+            : contractorAtAvgCycle?.contractor ?? "—",
+          value: formatExact(contractorAtAvgCycle?.price ?? avgPrice),
           color: "#3b8fcc",
           id: contractorAtAvgCycle?.id ?? null,
-          rawPrice: contractorAtAvgCycle?.price ?? avgPriceRounded,
-          cycleCount: contractorsAtAvgPrice.length, cyclePos: avgCycleIdx,
+          rawPrice: contractorAtAvgCycle?.price ?? avgPrice,
+          cycleCount: contractorsSortedByAvg.length, cyclePos: avgCycleIdx,
         }
       : {
           label: "متوسط الأسعار لهذا البند",
@@ -531,12 +518,12 @@ export default function MainContent({ contractor, allContractors, filteredContra
         },
     {
       label: "أعلى سعر لهذا البند",
-      sub2: contractorsAtMax.length > 1
-        ? `${contractorWithMax?.contractor ?? "—"} (${maxCycleIdx % contractorsAtMax.length + 1}/${contractorsAtMax.length})`
+      sub2: contractorsSortedDesc.length > 1
+        ? `${contractorWithMax?.contractor ?? "—"} (${maxCycleIdx % contractorsSortedDesc.length + 1}/${contractorsSortedDesc.length})`
         : contractorWithMax?.contractor ?? "—",
-      value: formatExact(maxPrice), color: "#e74c3c",
-      id: contractorWithMax?.id ?? null, rawPrice: maxPrice,
-      cycleCount: contractorsAtMax.length, cyclePos: maxCycleIdx,
+      value: formatExact(contractorWithMax?.price ?? maxPrice), color: "#e74c3c",
+      id: contractorWithMax?.id ?? null, rawPrice: contractorWithMax?.price ?? maxPrice,
+      cycleCount: contractorsSortedDesc.length, cyclePos: maxCycleIdx,
     },
   ];
   // النشاط الرئيسي: يُعطى الأولوية لقيمة السجل الحالي، وإذا كانت فارغة
@@ -878,39 +865,39 @@ export default function MainContent({ contractor, allContractors, filteredContra
                       else window.scrollTo({ top: 0, behavior: "smooth" });
                     });
 
-                    // ── Cycling logic for min (i=1), avg (i=2), max (i=3) ──
-                    // First click on the cell → navigate to what is currently displayed.
-                    // Repeated clicks on the SAME active cell → advance to the next contractor.
-                    if (i === 1 && contractorsAtMin.length > 1) {
-                      const curIdx  = minCycleIdx % contractorsAtMin.length;
+                    // ── Rank-based cycling: min (i=1), avg (i=2), max (i=3) ──
+                    // Each cell cycles through ALL contractors in its sorted order.
+                    // First click → show current position; repeated clicks → advance.
+                    if (i === 1 && contractorsSortedAsc.length > 0) {
+                      const curIdx  = minCycleIdx % contractorsSortedAsc.length;
                       const nextIdx = activeStat === 1
-                        ? (curIdx + 1) % contractorsAtMin.length  // already active → advance
-                        : curIdx;                                   // first click → show current
+                        ? (curIdx + 1) % contractorsSortedAsc.length
+                        : curIdx;
                       setMinCycleIdx(nextIdx);
                       skipStatReset.current = true;
-                      onSelectId(contractorsAtMin[nextIdx].id);
+                      onSelectId(contractorsSortedAsc[nextIdx].id);
                       scrollToTop();
                       return;
                     }
-                    if (i === 2 && contractorsAtAvgPrice.length > 1) {
-                      const curIdx  = avgCycleIdx % contractorsAtAvgPrice.length;
+                    if (i === 2 && contractorsSortedByAvg.length > 0) {
+                      const curIdx  = avgCycleIdx % contractorsSortedByAvg.length;
                       const nextIdx = activeStat === 2
-                        ? (curIdx + 1) % contractorsAtAvgPrice.length
+                        ? (curIdx + 1) % contractorsSortedByAvg.length
                         : curIdx;
                       setAvgCycleIdx(nextIdx);
                       skipStatReset.current = true;
-                      onSelectId(contractorsAtAvgPrice[nextIdx].id);
+                      onSelectId(contractorsSortedByAvg[nextIdx].id);
                       scrollToTop();
                       return;
                     }
-                    if (i === 3 && contractorsAtMax.length > 1) {
-                      const curIdx  = maxCycleIdx % contractorsAtMax.length;
+                    if (i === 3 && contractorsSortedDesc.length > 0) {
+                      const curIdx  = maxCycleIdx % contractorsSortedDesc.length;
                       const nextIdx = activeStat === 3
-                        ? (curIdx + 1) % contractorsAtMax.length
+                        ? (curIdx + 1) % contractorsSortedDesc.length
                         : curIdx;
                       setMaxCycleIdx(nextIdx);
                       skipStatReset.current = true;
-                      onSelectId(contractorsAtMax[nextIdx].id);
+                      onSelectId(contractorsSortedDesc[nextIdx].id);
                       scrollToTop();
                       return;
                     }
