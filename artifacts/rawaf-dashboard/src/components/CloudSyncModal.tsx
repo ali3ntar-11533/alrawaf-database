@@ -97,7 +97,8 @@ function parseTsvRaw(tsv: string): string[][] {
           field += tsv[i++];
         }
       }
-      row.push(field.trim());
+      /* ALT+ENTER inside a cell → single space, then trim edges */
+      row.push(field.replace(/[\r\n]+/g, " ").trim());
       /* consume delimiter after closing quote */
       if (i < n && tsv[i] === '\t') { i++; }
       else if (i < n && (tsv[i] === '\r' || tsv[i] === '\n')) {
