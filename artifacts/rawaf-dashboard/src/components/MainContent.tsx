@@ -83,19 +83,35 @@ function TruncatedBadge({
   );
 }
 
-/* ── 3-Tier comparison based on the unique item-code prefix ─────────────
+/* ── 3-Tier comparison based on the numeric digit portion of the item code ──
    Code format: `<L>-<14 digits>` where the 14 digits are 7 slots×2.
-   Tier 1 (دقيق):    full 16-char code matches            → identical item
-   Tier 2 (متماثل):  letter + first 5 slots (12 chars)     → same scope
-   Tier 3 (موسّع):   letter + first 3 slots (8 chars)      → same family
+   Portfolio letter is intentionally EXCLUDED from all tier comparisons so
+   contractors across all portfolios compete in the same price pool.
+   Tier 1 (دقيق):    all 14 digits match               → identical item
+   Tier 2 (متماثل):  first 5 slots (10 digits) match   → same scope/type
+   Tier 3 (موسّع):   first 3 slots (6 digits) match    → same work family
 */
 type Tier = "exact" | "similar" | "broad";
 
 const TIER_META: Record<Tier, { label: string; icon: string; color: string; slots: number; tip: string }> = {
-  exact:   { label: "دقيق",   icon: "🎯", color: "#2baa74", slots: 7, tip: "تطابق كامل للكود الفريد للبند — أعدل مقارنة" },
-  similar: { label: "متماثل", icon: "⚖️", color: "#c5a059", slots: 5, tip: "تطابق المحفظة + النشاط + البرنامج + العائلة + نوع الأعمال + الشمولية" },
-  broad:   { label: "موسّع",  icon: "🌐", color: "#3b8fcc", slots: 3, tip: "تطابق المحفظة + النشاط + البرنامج + العائلة" },
+  exact:   { label: "دقيق",   icon: "🎯", color: "#2baa74", slots: 7, tip: "تطابق كامل لجميع حقول الكود — أعدل مقارنة" },
+  similar: { label: "متماثل", icon: "⚖️", color: "#c5a059", slots: 5, tip: "تطابق النشاط + البرنامج + العائلة + نوع الأعمال + الشمولية" },
+  broad:   { label: "موسّع",  icon: "🌐", color: "#3b8fcc", slots: 3, tip: "تطابق النشاط + البرنامج + العائلة" },
 };
+
+/** Extract only the digit portion of an item code (strips the portfolio letter prefix). */
+function codeDigits(code: string | null | undefined): string {
+  if (!code) return "";
+  const dash = code.indexOf("-");
+  return dash !== -1 ? code.slice(dash + 1) : code;
+}
+
+/** Return the first `slots*2` digits of the digit portion for prefix matching. */
+function codeDigitsPrefix(code: string | null | undefined, slots: number): string {
+  const digits = codeDigits(code);
+  const want   = slots * 2;
+  return digits.length >= want ? digits.slice(0, want) : "";
+}
 
 function codePrefix(code: string | null | undefined, slots: number): string {
   if (!code) return "";
@@ -151,34 +167,40 @@ export default function MainContent({ contractor, allContractors, filteredContra
   }
 
   // ── Price pools: 3-tier hierarchical match driven by the unique item code ──
-  // Tier 1 (exact):   identical 14-digit code      → identical item
-  // Tier 2 (similar): same letter + first 5 slots  → same scope/type
-  // Tier 3 (broad):   same letter + first 3 slots  → same work family
+  // Portfolio letter is IGNORED in all tiers — only the 14 digit portion is
+  // compared, so contractors across different portfolios compete together.
+  // Tier 1 (exact):   all 14 digits match           → identical item
+  // Tier 2 (similar): first 5 slots (10 digits)     → same scope/type
+  // Tier 3 (broad):   first 3 slots (6 digits)      → same work family
   // Legacy fallback: when the current record has no itemCode, fall back to
   // text-based workType matching (so old data stays comparable).
-  const currentCode = (contractor as any)?.itemCode as string | null | undefined;
-  const hasCode     = !!currentCode;
-  const prefix5     = codePrefix(currentCode, 5);
-  const prefix3     = codePrefix(currentCode, 3);
+  const currentCode    = (contractor as any)?.itemCode as string | null | undefined;
+  const hasCode        = !!currentCode;
+  const currentDigits  = codeDigits(currentCode);
+  const digitsPrefix5  = codeDigitsPrefix(currentCode, 5);
+  const digitsPrefix3  = codeDigitsPrefix(currentCode, 3);
 
   const workTypeKey   = contractor ? normalize(contractor.workType) : "";
   const legacyPool: Contractor[] = (!hasCode && workTypeKey)
     ? filteredContractors.filter((c) => normalize(c.workType) === workTypeKey)
     : [];
 
-  const poolExact: Contractor[] = hasCode
-    ? filteredContractors.filter((c) => (c as any).itemCode === currentCode)
-    : legacyPool;
-  const poolSimilar: Contractor[] = hasCode && prefix5
+  const poolExact: Contractor[] = hasCode && currentDigits
     ? filteredContractors.filter((c) => {
-        const code = (c as any).itemCode as string | null | undefined;
-        return !!code && code.startsWith(prefix5);
+        const d = codeDigits((c as any).itemCode);
+        return !!d && d === currentDigits;
       })
     : legacyPool;
-  const poolBroad: Contractor[] = hasCode && prefix3
+  const poolSimilar: Contractor[] = hasCode && digitsPrefix5
     ? filteredContractors.filter((c) => {
-        const code = (c as any).itemCode as string | null | undefined;
-        return !!code && code.startsWith(prefix3);
+        const d = codeDigits((c as any).itemCode);
+        return !!d && d.startsWith(digitsPrefix5);
+      })
+    : legacyPool;
+  const poolBroad: Contractor[] = hasCode && digitsPrefix3
+    ? filteredContractors.filter((c) => {
+        const d = codeDigits((c as any).itemCode);
+        return !!d && d.startsWith(digitsPrefix3);
       })
     : legacyPool;
 
@@ -421,21 +443,21 @@ export default function MainContent({ contractor, allContractors, filteredContra
           c.id !== contractor.id && normalize(c.contractor) === contractorNameKey;
 
         if (hasCode) {
-          // Similar tier — same first 5 code slots
-          if (prefix5) {
+          // Similar tier — same first 5 code slots (portfolio-independent)
+          if (digitsPrefix5) {
             const similar = allContractors.filter((c) => {
               if (!sameContractor(c)) return false;
-              const code = (c as any).itemCode as string | null | undefined;
-              return !!code && code.startsWith(prefix5);
+              const d = codeDigits((c as any).itemCode);
+              return !!d && d.startsWith(digitsPrefix5);
             });
             if (similar.length > 0) return similar.slice(0, 50);
           }
-          // Broad tier — same first 3 code slots
-          if (prefix3) {
+          // Broad tier — same first 3 code slots (portfolio-independent)
+          if (digitsPrefix3) {
             const broad = allContractors.filter((c) => {
               if (!sameContractor(c)) return false;
-              const code = (c as any).itemCode as string | null | undefined;
-              return !!code && code.startsWith(prefix3);
+              const d = codeDigits((c as any).itemCode);
+              return !!d && d.startsWith(digitsPrefix3);
             });
             if (broad.length > 0) return broad.slice(0, 50);
           }
