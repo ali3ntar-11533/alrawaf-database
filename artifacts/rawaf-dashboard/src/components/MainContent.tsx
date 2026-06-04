@@ -210,13 +210,15 @@ export default function MainContent({ contractor, allContractors, filteredContra
     broad:   poolBroad,
   };
 
-  // Auto-pick the most precise tier that has ≥2 records (so the comparison
-  // is actually meaningful); else fall through to the next tier.
+  // Auto-pick starting from "متماثل" (similar) — wide enough to show a
+  // meaningful market sample, yet still scoped to the same work type.
+  // Falls back to broad if similar has fewer than 2 records, or to exact
+  // as a last resort when only identical items exist.
   const autoTier: Tier =
-    poolExact.length   >= 2 ? "exact"
-    : poolSimilar.length >= 2 ? "similar"
+    poolSimilar.length >= 2 ? "similar"
     : poolBroad.length   >= 2 ? "broad"
-    : "exact";
+    : poolExact.length   >= 2 ? "exact"
+    : "similar";
   const tier: Tier = userTier ?? autoTier;
 
   let pricePool: Contractor[] = tierPools[tier];
