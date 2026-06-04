@@ -3,30 +3,31 @@ import type { Contractor } from "./types";
 
 const BASE = "/api";
 
-/* ── Cache helpers (localStorage, 1-hour TTL) ─────────────────────────────
-   Stores the fully-loaded contractors array so subsequent page visits
-   display data instantly from cache while a silent background refresh runs.
+/* ── Cache helpers (sessionStorage, 1-hour TTL) ────────────────────────────
+   Stores the fully-loaded contractors array so the page loads instantly on
+   revisit within the same browser session.  sessionStorage is cleared
+   automatically when the tab is closed — no stale data across sessions.
    Uses try/catch so quota errors (large datasets) are silently ignored.  */
 const CACHE_KEY = "rawaf_c_v2";
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
 function readCache(): Contractor[] | null {
   try {
-    const raw = localStorage.getItem(CACHE_KEY);
+    const raw = sessionStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     const { ts, data } = JSON.parse(raw) as { ts: number; data: Contractor[] };
-    if (Date.now() - ts > CACHE_TTL) { localStorage.removeItem(CACHE_KEY); return null; }
+    if (Date.now() - ts > CACHE_TTL) { sessionStorage.removeItem(CACHE_KEY); return null; }
     return data;
   } catch { return null; }
 }
 
 function writeCache(data: Contractor[]): void {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); }
+  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); }
   catch { /* quota exceeded for very large datasets — skip silently */ }
 }
 
 export function clearContractorsCache(): void {
-  try { localStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
+  try { sessionStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
 }
 
 /* ── Core fetch helper ───────────────────────────────────────────────────*/
