@@ -5,47 +5,7 @@
       "loginName": "ali3ntar",
       "jobTitle": "Contracts Coordinator • Supply Chain",
       "role": "superadmin",
-      "rawPassword": "ali3ntar22",
-      "isActive": 1
-    },
-    {
-      "name": "Ammar Elsharaeye",
-      "loginName": "Ammar Elsharaeye",
-      "jobTitle": "Manager I • Supply Chain",
-      "role": "admin",
-      "rawPassword": "22625",
-      "isActive": 1
-    },
-    {
-      "name": "Abdulkareem Alhubaytir",
-      "loginName": "Abdulkareem Alhubaytir",
-      "jobTitle": "Contracts Coordinator • Supply Chain",
-      "role": "admin",
-      "rawPassword": "22625",
-      "isActive": 1
-    },
-    {
-      "name": "Shjun Almutairi",
-      "loginName": "Shjun Almutairi",
-      "jobTitle": "Contracts Officer • Supply Chain",
-      "role": "admin",
-      "rawPassword": "22625",
-      "isActive": 1
-    },
-    {
-      "name": "Mohamed Farag",
-      "loginName": "Mohamed Farag",
-      "jobTitle": "Procurement Senior Manager I • Supply Chain",
-      "role": "admin",
-      "rawPassword": "22625",
-      "isActive": 1
-    },
-    {
-      "name": "Maged Samy",
-      "loginName": "Maged Samy",
-      "jobTitle": "Contracts Officer • Supply Chain",
-      "role": "admin",
-      "rawPassword": "22625",
+      "rawPassword": "22062025",
       "isActive": 1
     }
   ]
