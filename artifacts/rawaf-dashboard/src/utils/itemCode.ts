@@ -1,5 +1,6 @@
 /* Smart Item Coding System — frontend copy (kept in sync with lib/db/src/itemCode.ts)
-   Format: [PortfolioLetter]-[2digit×7]  e.g. "B-01020501031204" */
+   Format: [PortfolioLetter]-[2digit×8]  e.g. "B-010205010312040X"
+   Slot 8 = workCategory (نوع التعاقد) — added to widen comparison scope. */
 
 export const PORTFOLIO_LETTERS: Record<string, string> = {
   "إدارة التكنولوجيا والمعلومات": "T",
@@ -45,6 +46,7 @@ export interface ItemCodeInput {
   itemScope:       string | null | undefined;
   techSpecs:       string | null | undefined;
   measurements:    string | null | undefined;
+  workCategory:    string | null | undefined;
 }
 
 export function generateItemCode(input: ItemCodeInput): string {
@@ -57,6 +59,7 @@ export function generateItemCode(input: ItemCodeInput): string {
     slot(input.workType)        +
     slot(input.itemScope)       +
     slot(input.techSpecs)       +
-    slot(input.measurements);
+    slot(input.measurements)    +
+    slot(input.workCategory);
   return `${letter}-${digits}`;
 }

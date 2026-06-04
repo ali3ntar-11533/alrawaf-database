@@ -143,6 +143,7 @@ async function resolveItemCode(
     itemScope:       data.itemScope,
     techSpecs:       data.techSpecs,
     measurements:    data.measurements,
+    workCategory:    data.workCategory,
   });
 }
 
@@ -228,6 +229,7 @@ router.post("/contractors/bulk", async (req, res): Promise<void> => {
           itemScope:       it.itemScope        ?? null,
           techSpecs:       it.techSpecs        ?? null,
           measurements:    it.measurements     ?? null,
+          workCategory:    it.workCategory     ?? null,
         })),
       );
       for (let i = 0; i < items.length; i += CHUNK_SIZE) {

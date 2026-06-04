@@ -84,18 +84,18 @@ function TruncatedBadge({
 }
 
 /* ── 3-Tier comparison based on the numeric digit portion of the item code ──
-   Code format: `<L>-<14 digits>` where the 14 digits are 7 slots×2.
+   Code format: `<L>-<16 digits>` where the 16 digits are 8 slots×2.
    Portfolio letter is intentionally EXCLUDED from all tier comparisons so
    contractors across all portfolios compete in the same price pool.
-   Tier 1 (دقيق):    all 14 digits match               → identical item
-   Tier 2 (متماثل):  first 5 slots (10 digits) match   → same scope/type
+   Tier 1 (دقيق):    all 16 digits match               → identical item (incl. نوع التعاقد)
+   Tier 2 (متماثل):  first 6 slots (12 digits) match   → same scope/type (excl. نوع التعاقد)
    Tier 3 (موسّع):   first 3 slots (6 digits) match    → same work family
 */
 type Tier = "exact" | "similar" | "broad";
 
 const TIER_META: Record<Tier, { label: string; icon: string; color: string; slots: number; tip: string }> = {
-  exact:   { label: "دقيق",   icon: "🎯", color: "#2baa74", slots: 7, tip: "تطابق كامل لجميع حقول الكود — أعدل مقارنة" },
-  similar: { label: "متماثل", icon: "⚖️", color: "#c5a059", slots: 5, tip: "تطابق النشاط + البرنامج + العائلة + نوع الأعمال + الشمولية" },
+  exact:   { label: "دقيق",   icon: "🎯", color: "#2baa74", slots: 8, tip: "تطابق كامل لجميع حقول الكود بما فيها نوع التعاقد — أعدل مقارنة" },
+  similar: { label: "متماثل", icon: "⚖️", color: "#c5a059", slots: 6, tip: "تطابق النشاط + البرنامج + العائلة + نوع الأعمال + الشمولية + المواصفات" },
   broad:   { label: "موسّع",  icon: "🌐", color: "#3b8fcc", slots: 3, tip: "تطابق النشاط + البرنامج + العائلة" },
 };
 
@@ -122,7 +122,7 @@ function codePrefix(code: string | null | undefined, slots: number): string {
 function buildMask(code: string | null | undefined, slots: number): string {
   if (!code) return "—";
   const prefix    = codePrefix(code, slots);
-  const remaining = Math.max(0, 14 - slots * 2);
+  const remaining = Math.max(0, 16 - slots * 2);
   return prefix + "_".repeat(remaining);
 }
 

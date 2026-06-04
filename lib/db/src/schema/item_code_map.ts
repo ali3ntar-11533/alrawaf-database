@@ -21,7 +21,7 @@ export const itemCodeMapTable = pgTable(
     uniqColNum:  uniqueIndex("item_code_map_col_num_uniq").on(t.columnName, t.numericCode),
     colCheck:    check(
       "item_code_map_column_name_check",
-      sql`${t.columnName} IN ('mainActivity','businessProgram','workFamily','workType','itemScope','techSpecs','measurements')`,
+      sql`${t.columnName} IN ('mainActivity','businessProgram','workFamily','workType','itemScope','techSpecs','measurements','workCategory')`,
     ),
   }),
 );

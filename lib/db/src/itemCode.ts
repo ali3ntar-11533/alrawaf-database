@@ -52,10 +52,12 @@ export interface ItemCodeInput {
   itemScope:       string | null | undefined;
   techSpecs:       string | null | undefined;
   measurements:    string | null | undefined;
+  workCategory:    string | null | undefined;
 }
 
-/* The 7 slot columns in canonical order — DO NOT REORDER, the position
-   in the final code is significant. */
+/* The 8 slot columns in canonical order — DO NOT REORDER, the position
+   in the final code is significant. workCategory (slot 8) was added after
+   the portfolio letter was removed from the comparison key. */
 export const SLOT_COLUMNS = [
   "mainActivity",
   "businessProgram",
@@ -64,6 +66,7 @@ export const SLOT_COLUMNS = [
   "itemScope",
   "techSpecs",
   "measurements",
+  "workCategory",
 ] as const;
 
 export type SlotColumn = (typeof SLOT_COLUMNS)[number];
@@ -313,6 +316,7 @@ export function generateItemCode(input: ItemCodeInput): string {
     slot(input.workType)        +
     slot(input.itemScope)       +
     slot(input.techSpecs)       +
-    slot(input.measurements);
+    slot(input.measurements)    +
+    slot(input.workCategory);
   return `${letter}-${digits}`;
 }
