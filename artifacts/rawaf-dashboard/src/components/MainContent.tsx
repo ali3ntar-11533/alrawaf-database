@@ -386,34 +386,37 @@ export default function MainContent({ contractor, allContractors, filteredContra
     );
   };
 
-  // ── Bounded rank-based cycling — each stat cell stays within its own territory ──
-  // Min cell : price ≤ avg  →  sorted cheapest first   (never crosses into max zone)
-  // Max cell : price ≥ avg  →  sorted most-expensive first (never crosses into min zone)
-  // Avg cell : all records  →  sorted by proximity to avg (full market view)
-  // When avg pool is empty (single record), fall back to full pool so every cell
-  // always has at least one contractor to show.
-  const contractorsSortedAsc = [...validPricePool]
-    .filter((c) => c.price <= avgPrice || validPricePool.length === 1)
-    .sort((a, b) => a.price - b.price);
-  const contractorsSortedDesc = [...validPricePool]
-    .filter((c) => c.price >= avgPrice || validPricePool.length === 1)
-    .sort((a, b) => b.price - a.price);
-  const contractorsSortedByAvg = [...validPricePool].sort(
-    (a, b) => Math.abs(a.price - avgPrice) - Math.abs(b.price - avgPrice)
-  );
+  // ── Strict tertile pools — NO contractor appears in more than one pool ──
+  // Sort all by price then slice into three equal (±1) groups:
+  //   minPool : bottom third  → cheapest first
+  //   avgPool : middle third  → sorted by proximity to mathematical avg
+  //   maxPool : top third     → most-expensive first
+  // Remainder records go to avgPool (middle), keeping min/max pools the same size.
+  // Edge cases: n=1 → all pools same single record; n=2 → min=[0], avg=[], max=[1].
+  const _allSorted = [...validPricePool].sort((a, b) => a.price - b.price);
+  const _n = _allSorted.length;
+  const _third = Math.floor(_n / 3);
 
-  // Safety: if a boundary pool ends up empty, fall back to the full sorted list
-  const minPool = contractorsSortedAsc.length  > 0 ? contractorsSortedAsc  : [...validPricePool].sort((a, b) => a.price - b.price);
-  const maxPool = contractorsSortedDesc.length > 0 ? contractorsSortedDesc : [...validPricePool].sort((a, b) => b.price - a.price);
+  const minPool: typeof _allSorted =
+    _n <= 1 ? _allSorted : _allSorted.slice(0, _third || 1);
+  const maxPool: typeof _allSorted =
+    _n <= 1 ? _allSorted : [..._allSorted.slice(_n - (_third || 1))].reverse();
+  const avgPool: typeof _allSorted =
+    _n <= 2
+      ? []
+      : [..._allSorted.slice(_third || 1, _n - (_third || 1))].sort(
+          (a, b) => Math.abs(a.price - avgPrice) - Math.abs(b.price - avgPrice)
+        );
 
-  // A meaningful average only exists when at least one contractor has a price
-  // strictly BETWEEN min and max (not equal to either extreme).
-  const hasMidContractor = validPricePool.some((c) => c.price > minPrice && c.price < maxPrice);
+  // Show avg cell only when its pool is non-empty
+  const hasMidContractor = avgPool.length > 0;
 
-  // Current cycle positions — wrap around each pool independently
-  const contractorWithMin    = minPool[minCycleIdx % Math.max(1, minPool.length)]                                    ?? minPool[0];
-  const contractorWithMax    = maxPool[maxCycleIdx % Math.max(1, maxPool.length)]                                    ?? maxPool[0];
-  const contractorAtAvgCycle = contractorsSortedByAvg[avgCycleIdx % Math.max(1, contractorsSortedByAvg.length)]     ?? contractorsSortedByAvg[0];
+  // Current cycle positions — each pool wraps independently
+  const contractorWithMin    = minPool[minCycleIdx % Math.max(1, minPool.length)]  ?? minPool[0];
+  const contractorWithMax    = maxPool[maxCycleIdx % Math.max(1, maxPool.length)]  ?? maxPool[0];
+  const contractorAtAvgCycle = avgPool.length > 0
+    ? avgPool[avgCycleIdx % avgPool.length]
+    : undefined;
 
   // ── Best 5: Best Value scoring = 60% price competitiveness + 40% rating ──
   // A contractor with a high rating and a competitive price ranks above one that
@@ -507,19 +510,18 @@ export default function MainContent({ contractor, allContractors, filteredContra
       id: contractorWithMin?.id ?? null, isBest: contractor.price === minPrice, rawPrice: contractorWithMin?.price ?? minPrice,
       cycleCount: minPool.length, cyclePos: minCycleIdx,
     },
-    // Show avg only when at least one contractor has a price strictly between min and max.
-    // Without a true middle value the avg collapses to the same price as min or max.
+    // Show avg only when the middle tertile pool is non-empty (≥3 records).
     hasMidContractor
       ? {
           label: "متوسط الأسعار لهذا البند",
-          sub2: contractorsSortedByAvg.length > 1
-            ? `${contractorAtAvgCycle?.contractor ?? "—"} (${avgCycleIdx % contractorsSortedByAvg.length + 1}/${contractorsSortedByAvg.length})`
+          sub2: avgPool.length > 1
+            ? `${contractorAtAvgCycle?.contractor ?? "—"} (${avgCycleIdx % avgPool.length + 1}/${avgPool.length})`
             : contractorAtAvgCycle?.contractor ?? "—",
           value: formatExact(contractorAtAvgCycle?.price ?? avgPrice),
           color: "#3b8fcc",
           id: contractorAtAvgCycle?.id ?? null,
           rawPrice: contractorAtAvgCycle?.price ?? avgPrice,
-          cycleCount: contractorsSortedByAvg.length, cyclePos: avgCycleIdx,
+          cycleCount: avgPool.length, cyclePos: avgCycleIdx,
         }
       : {
           label: "متوسط الأسعار لهذا البند",
@@ -878,10 +880,8 @@ export default function MainContent({ contractor, allContractors, filteredContra
                       else window.scrollTo({ top: 0, behavior: "smooth" });
                     });
 
-                    // ── Bounded rank-based cycling: min (i=1), avg (i=2), max (i=3) ──
-                    // Min  → cycles within minPool  (price ≤ avg) — never enters max territory
-                    // Max  → cycles within maxPool  (price ≥ avg) — never enters min territory
-                    // Avg  → cycles all records sorted by proximity to avg
+                    // ── Strict tertile cycling: min (i=1), avg (i=2), max (i=3) ──
+                    // Each cell cycles ONLY within its own tertile pool — zero overlap.
                     if (i === 1 && minPool.length > 0) {
                       const curIdx  = minCycleIdx % minPool.length;
                       const nextIdx = activeStat === 1
@@ -893,14 +893,14 @@ export default function MainContent({ contractor, allContractors, filteredContra
                       scrollToTop();
                       return;
                     }
-                    if (i === 2 && contractorsSortedByAvg.length > 0) {
-                      const curIdx  = avgCycleIdx % contractorsSortedByAvg.length;
+                    if (i === 2 && avgPool.length > 0) {
+                      const curIdx  = avgCycleIdx % avgPool.length;
                       const nextIdx = activeStat === 2
-                        ? (curIdx + 1) % contractorsSortedByAvg.length
+                        ? (curIdx + 1) % avgPool.length
                         : curIdx;
                       setAvgCycleIdx(nextIdx);
                       skipStatReset.current = true;
-                      onSelectId(contractorsSortedByAvg[nextIdx].id);
+                      onSelectId(avgPool[nextIdx].id);
                       scrollToTop();
                       return;
                     }
