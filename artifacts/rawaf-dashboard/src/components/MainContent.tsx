@@ -386,27 +386,47 @@ export default function MainContent({ contractor, allContractors, filteredContra
     );
   };
 
-  // ── Strict tertile pools — NO contractor appears in more than one pool ──
-  // Sort all by price then slice into three equal (±1) groups:
-  //   minPool : bottom third  → cheapest first
-  //   avgPool : middle third  → sorted by proximity to mathematical avg
-  //   maxPool : top third     → most-expensive first
-  // Remainder records go to avgPool (middle), keeping min/max pools the same size.
-  // Edge cases: n=1 → all pools same single record; n=2 → min=[0], avg=[], max=[1].
+  // ── Strict tertile pools — NO price value appears in more than one pool ──
+  // Sort all by price then slice into three equal (±1) groups.
+  // Boundary adjustment: when duplicate prices straddle the cut point, the
+  // entire group is moved to keep pools price-disjoint:
+  //   • maxStart walks backward until _allSorted[maxStart-1].price differs
+  //   • minEnd walks forward until _allSorted[minEnd].price differs
+  // Edge cases: n≤1 → all pools same record; n=2 → min=[0], avg=[], max=[1].
   const _allSorted = [...validPricePool].sort((a, b) => a.price - b.price);
   const _n = _allSorted.length;
   const _third = Math.floor(_n / 3);
 
-  const minPool: typeof _allSorted =
-    _n <= 1 ? _allSorted : _allSorted.slice(0, _third || 1);
-  const maxPool: typeof _allSorted =
-    _n <= 1 ? _allSorted : [..._allSorted.slice(_n - (_third || 1))].reverse();
-  const avgPool: typeof _allSorted =
-    _n <= 2
-      ? []
-      : [..._allSorted.slice(_third || 1, _n - (_third || 1))].sort(
-          (a, b) => Math.abs(a.price - avgPrice) - Math.abs(b.price - avgPrice)
-        );
+  let minPool: typeof _allSorted;
+  let avgPool: typeof _allSorted;
+  let maxPool: typeof _allSorted;
+
+  if (_n <= 1) {
+    minPool = _allSorted; maxPool = _allSorted; avgPool = [];
+  } else if (_n === 2) {
+    minPool = [_allSorted[0]]; maxPool = [_allSorted[1]]; avgPool = [];
+  } else {
+    let minEnd   = _third || 1;
+    let maxStart = _n - (_third || 1);
+
+    // Pull maxStart backward to absorb all records sharing the boundary price
+    const maxBoundaryPrice = _allSorted[maxStart].price;
+    while (maxStart > minEnd && _allSorted[maxStart - 1].price === maxBoundaryPrice) {
+      maxStart--;
+    }
+
+    // Push minEnd forward to absorb all records sharing the boundary price
+    const minBoundaryPrice = _allSorted[minEnd - 1].price;
+    while (minEnd < maxStart && _allSorted[minEnd].price === minBoundaryPrice) {
+      minEnd++;
+    }
+
+    minPool = _allSorted.slice(0, minEnd);
+    maxPool = [..._allSorted.slice(maxStart)].reverse();
+    avgPool = [..._allSorted.slice(minEnd, maxStart)].sort(
+      (a, b) => Math.abs(a.price - avgPrice) - Math.abs(b.price - avgPrice)
+    );
+  }
 
   // Show avg cell only when its pool is non-empty
   const hasMidContractor = avgPool.length > 0;
