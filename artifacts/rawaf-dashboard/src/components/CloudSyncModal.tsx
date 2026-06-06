@@ -1010,8 +1010,8 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
       </div>
 
       {/* ── Grid ── */}
-      <div className="dark-scroll" style={{ flex: 1, overflowY: "auto", overflowX: "clip", background: "#0d1a2e" }}>
-        <table style={{ borderCollapse: "collapse", tableLayout: "fixed", direction: "rtl", width: "100%" }}>
+      <div className="dark-scroll" style={{ flex: 1, overflowY: "auto", overflowX: "auto", background: "#0d1a2e" }}>
+        <table style={{ borderCollapse: "collapse", tableLayout: "fixed", direction: "rtl", width: "100%", minWidth: 1290 }}>
           <colgroup>
             <col style={{ width: 36 }} />
             {COLUMNS.map((c) => <col key={c.key} style={{ width: c.width }} />)}
