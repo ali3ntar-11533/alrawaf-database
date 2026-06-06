@@ -567,6 +567,7 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
   const [readPhase, setReadPhase] = useState<"read" | "parse" | "done" | null>(null);
   const [readTotalRows, setReadTotalRows] = useState(0);
   const [readDisplayRows, setReadDisplayRows] = useState(0);
+  const [pasteHint, setPasteHint] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   /* Animate row counter from 0 → readTotalRows when parsing finishes */
@@ -603,17 +604,45 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
     setRows((prev) => prev.filter((r) => r.id !== rowId));
   }
 
+  /* ── Shared paste processor — called from button OR global Ctrl+V ── */
+  const applyPastedText = useCallback((text: string) => {
+    const parsed = parseTsvToRows(text);
+    if (parsed.length === 0) return;
+    const newRows: Row[] = parsed.map((data) => ({ id: Math.random().toString(36).slice(2), data, status: "idle" }));
+    setRows((prev) => {
+      const nonEmpty = prev.filter((r) => !isRowEmpty(r.data));
+      return [...nonEmpty, ...newRows, ...makeRows(Math.max(0, 3))];
+    });
+  }, []);
+
+  /* ── Global Ctrl+V listener — works inside iframes without permission ── */
+  useEffect(() => {
+    function onGlobalPaste(e: ClipboardEvent) {
+      const active = document.activeElement;
+      const isEditing =
+        active &&
+        (active.tagName === "INPUT" ||
+          active.tagName === "TEXTAREA" ||
+          (active as HTMLElement).isContentEditable);
+      if (isEditing) return;
+      const text = e.clipboardData?.getData("text/plain") ?? "";
+      if (!text.trim()) return;
+      e.preventDefault();
+      applyPastedText(text);
+    }
+    document.addEventListener("paste", onGlobalPaste);
+    return () => document.removeEventListener("paste", onGlobalPaste);
+  }, [applyPastedText]);
+
   async function handlePasteFromClipboard() {
     try {
       const text = await navigator.clipboard.readText();
-      const parsed = parseTsvToRows(text);
-      if (parsed.length === 0) return;
-      const newRows: Row[] = parsed.map((data) => ({ id: Math.random().toString(36).slice(2), data, status: "idle" }));
-      setRows((prev) => {
-        const nonEmpty = prev.filter((r) => !isRowEmpty(r.data));
-        return [...nonEmpty, ...newRows, ...makeRows(Math.max(0, 3))];
-      });
-    } catch { /* clipboard permission denied — ignore */ }
+      applyPastedText(text);
+    } catch {
+      /* clipboard API blocked (iframe) — tell user to press Ctrl+V */
+      setPasteHint(true);
+      setTimeout(() => setPasteHint(false), 3500);
+    }
   }
 
   async function handleFileUpload(file: File) {
@@ -946,10 +975,11 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
           </button>
           <button
             onClick={handlePasteFromClipboard}
-            style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(197,160,89,0.12)", border: "1.5px solid rgba(197,160,89,0.4)", color: "#e0bb7a", borderRadius: "9px", padding: "7px 14px", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif" }}
+            title="لصق من الحافظة (أو اضغط Ctrl+V)"
+            style={{ display: "flex", alignItems: "center", gap: "6px", background: pasteHint ? "rgba(197,160,89,0.25)" : "rgba(197,160,89,0.12)", border: `1.5px solid ${pasteHint ? "rgba(197,160,89,0.8)" : "rgba(197,160,89,0.4)"}`, color: "#e0bb7a", borderRadius: "9px", padding: "7px 14px", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", fontFamily: "Tajawal, sans-serif", transition: "all 0.2s" }}
           >
             <span style={{ fontSize: "0.85rem" }}>📋</span>
-            لصق
+            {pasteHint ? "اضغط Ctrl+V ←" : "لصق"}
           </button>
           <button onClick={handleSave} disabled={isSaving || nonEmptyCount === 0} style={{ display: "flex", alignItems: "center", gap: "6px", background: isSaving || nonEmptyCount === 0 ? "rgba(59,143,204,0.25)" : "linear-gradient(135deg, #1e6fa8, #3b8fcc)", border: "none", color: "#fff", borderRadius: "9px", padding: "8px 18px", fontSize: "0.82rem", fontWeight: 700, cursor: isSaving || nonEmptyCount === 0 ? "not-allowed" : "pointer", fontFamily: "Tajawal, sans-serif", boxShadow: isSaving || nonEmptyCount === 0 ? "none" : "0 4px 14px rgba(59,143,204,0.4)", opacity: isSaving || nonEmptyCount === 0 ? 0.6 : 1 }}>
             {isSaving ? <Loader size={13} style={{ animation: "spin-loader 0.9s linear infinite" }} /> : <Save size={13} />}
