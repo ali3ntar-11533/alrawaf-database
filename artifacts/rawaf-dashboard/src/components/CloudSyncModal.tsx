@@ -615,23 +615,24 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
     });
   }, []);
 
-  /* ── Global Ctrl+V listener — works inside iframes without permission ── */
+  /* ── Global Ctrl+V listener — intercepts paste at document level.
+     Works for any amount of data regardless of which cell is focused,
+     because we read from e.clipboardData directly (no permission needed).
+     We deliberately do NOT skip when isEditing — if the user pastes while
+     a cell is focused the TSV is multi-column, so we take over entirely. ── */
   useEffect(() => {
     function onGlobalPaste(e: ClipboardEvent) {
-      const active = document.activeElement;
-      const isEditing =
-        active &&
-        (active.tagName === "INPUT" ||
-          active.tagName === "TEXTAREA" ||
-          (active as HTMLElement).isContentEditable);
-      if (isEditing) return;
       const text = e.clipboardData?.getData("text/plain") ?? "";
       if (!text.trim()) return;
+      /* Only intercept if the pasted text looks like TSV/spreadsheet data
+         (contains a tab character), so normal single-cell typing is unaffected. */
+      if (!text.includes("\t") && !text.includes("\n")) return;
       e.preventDefault();
+      e.stopPropagation();
       applyPastedText(text);
     }
-    document.addEventListener("paste", onGlobalPaste);
-    return () => document.removeEventListener("paste", onGlobalPaste);
+    document.addEventListener("paste", onGlobalPaste, true); /* capture phase */
+    return () => document.removeEventListener("paste", onGlobalPaste, true);
   }, [applyPastedText]);
 
   async function handlePasteFromClipboard() {
@@ -639,9 +640,9 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
       const text = await navigator.clipboard.readText();
       applyPastedText(text);
     } catch {
-      /* clipboard API blocked (iframe) — tell user to press Ctrl+V */
+      /* clipboard API blocked inside iframe — show Ctrl+V hint */
       setPasteHint(true);
-      setTimeout(() => setPasteHint(false), 3500);
+      setTimeout(() => setPasteHint(false), 4000);
     }
   }
 
