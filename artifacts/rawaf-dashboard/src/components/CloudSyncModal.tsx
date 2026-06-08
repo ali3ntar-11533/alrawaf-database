@@ -361,9 +361,8 @@ function parseExcelFile(
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     /* Phase 1 (0-70%): browser reading bytes from disk to memory. */
-    /* Kick off an immediate 5% so the UI doesn't stay frozen at 0%
-       even for tiny files where onprogress never fires.             */
-    onProgress?.(5, "read");
+    /* Kick-start so the simulation useEffect sees readPhase="read" */
+    onProgress?.(0, "read");
 
     reader.onprogress = (ev) => {
       if (onProgress && ev.lengthComputable && ev.total > 0) {
