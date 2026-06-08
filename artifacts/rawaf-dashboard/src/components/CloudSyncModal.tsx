@@ -365,29 +365,68 @@ function parseExcelFile(
         const data = e.target?.result;
         const wb = XLSX.read(data, { type: "array" });
         onProgress?.(90, "parse");
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        /* raw: true → numeric cells come back as JS numbers (not formatted
-           strings like "1,000"), which String() then converts cleanly.   */
-        const rows: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: true }) as unknown[][];
-        /* Detect header row: try exact match first, then normalised match */
-        const firstRow = rows[0]?.map((c) => String(c).trim()) ?? [];
-        const hasHeader = firstRow.some(
-          (c) => ALL_KNOWN_HEADERS.has(c) || HEADER_TO_KEY_NORM[normHeader(c)] !== undefined
-        );
-        const dataRows = hasHeader ? rows.slice(1) : rows;
-        /* Use name-based extraction when a header row is present so that
-           column order changes (e.g. old templates with itemCode column)
-           never cause data to land in the wrong field.                   */
-        const extractRow = hasHeader ? buildRowExtractor(firstRow) : positionalRow;
-        /* Normalise cell values: convert to string, collapse embedded
-           newlines (ALT+ENTER) and surrounding whitespace into a single
-           space so the grid never shows stray line-breaks.              */
+
         const toStr = (c: unknown) =>
           String(c ?? "").replace(/[\r\n]+/g, " ").trim();
-        const parsed: RowData[] = dataRows
-          .filter((row) => row.some((c) => toStr(c)))
-          .map((cells) => extractRow(cells.map(toStr)));
-        /* Pass the final row count so the UI can show an animated counter. */
+
+        /* ── Try every sheet until we find one with usable data ──────── */
+        let parsed: RowData[] = [];
+
+        for (const sheetName of wb.SheetNames) {
+          const ws = wb.Sheets[sheetName];
+          if (!ws) continue;
+
+          /* raw: true → numbers come back as JS numbers not formatted strings. */
+          const rows: unknown[][] = XLSX.utils.sheet_to_json(
+            ws, { header: 1, defval: "", raw: true }
+          ) as unknown[][];
+
+          /* Drop completely empty rows at the start (title rows, blank lines). */
+          let startIdx = 0;
+          while (startIdx < rows.length && !rows[startIdx].some((c) => toStr(c))) {
+            startIdx++;
+          }
+          const trimmedRows = rows.slice(startIdx);
+          if (trimmedRows.length === 0) continue;
+
+          /* ── Detect header row: search first 5 non-empty rows ─────── */
+          let headerRowIdx = -1;
+          let headerCells: string[] = [];
+          for (let i = 0; i < Math.min(5, trimmedRows.length); i++) {
+            const cells = trimmedRows[i].map((c) => toStr(c));
+            const matches = cells.filter(
+              (c) => ALL_KNOWN_HEADERS.has(c) || HEADER_TO_KEY_NORM[normHeader(c)] !== undefined
+            ).length;
+            /* Consider it a header row if ≥3 columns are recognised */
+            if (matches >= 3) {
+              headerRowIdx = i;
+              headerCells = cells;
+              break;
+            }
+          }
+
+          let dataRows: unknown[][];
+          let extractRow: (cells: string[]) => RowData;
+
+          if (headerRowIdx >= 0) {
+            dataRows = trimmedRows.slice(headerRowIdx + 1);
+            extractRow = buildRowExtractor(headerCells);
+          } else {
+            /* No header found — fall back to fixed positional mapping */
+            dataRows = trimmedRows;
+            extractRow = positionalRow;
+          }
+
+          const sheetParsed: RowData[] = dataRows
+            .filter((row) => row.some((c) => toStr(c)))
+            .map((cells) => extractRow(cells.map(toStr)));
+
+          if (sheetParsed.length > 0) {
+            parsed = sheetParsed;
+            break; /* Found data — stop trying other sheets */
+          }
+        }
+
         onProgress?.(100, "done", parsed.length);
         resolve(parsed);
       } catch (err) {
@@ -660,7 +699,7 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
         setReadPhase(phase);
         if (phase === "done" && rowCount != null) setReadTotalRows(rowCount);
       });
-      if (parsed.length === 0) { setUploadError("لم يتم العثور على بيانات في الملف"); setIsReading(false); setReadProgress(0); return; }
+      if (parsed.length === 0) { setUploadError("لم يتم العثور على بيانات في الملف — تأكد أن الملف يحتوي بيانات وأن أعمدته تطابق القالب المطلوب"); setIsReading(false); setReadProgress(0); return; }
       const newRows: Row[] = parsed.map((data) => ({ id: Math.random().toString(36).slice(2), data, status: "idle" }));
       setRows((prev) => {
         const nonEmpty = prev.filter((r) => !isRowEmpty(r.data));
