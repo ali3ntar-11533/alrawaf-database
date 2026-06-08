@@ -237,7 +237,14 @@ const HEADER_TO_KEY: Record<string, keyof RowData> = {
   "الوحدة":                "unit",
   "السعر":                 "price",
   "سعر":                   "price",
+  "سعر الوحدة":            "price",
+  "سعر البند":             "price",
+  "سعر العقد":             "price",
+  "القيمة":               "price",
+  "المبلغ":               "price",
   "Price":                 "price",
+  "Unit Price":            "price",
+  "Amount":                "price",
   /* ── contact / rating ── */
   "المحتوى المحلي":        "localContent",
   "رقم التواصل":           "phone",
@@ -374,14 +381,28 @@ function parseExcelFile(
         const toStr = (c: unknown) =>
           String(c ?? "").replace(/[\r\n]+/g, " ").trim();
 
-        /* Strip thousands separators and currency symbols from numeric fields
-           so "1,500" / "1.500" / "ر.س 1,500" all resolve to "1500".         */
+        /* Robust numeric cleaner — handles:
+           • Arabic-Indic digits (٠١٢٣٤٥٦٧٨٩)
+           • Arabic thousands separator (٬ U+066C) and decimal sep (٫ U+066B)
+           • ASCII comma/space thousands separators  "1,500" / "1 500"
+           • Currency prefixes/suffixes like "ر.س", "$", "ريال"
+           Returns "" when no valid number can be extracted.              */
         const cleanNumeric = (v: string): string => {
-          const stripped = v
-            .replace(/[ر.س$€£¥\u00A0\u202F]/g, "")  // currency symbols + nbsp
-            .replace(/,/g, "")                         // thousands comma
+          let s = v
+            /* Arabic-Indic → ASCII digits */
+            .replace(/[\u0660-\u0669]/g, (c) => String(c.charCodeAt(0) - 0x0660))
+            .replace(/[\u06F0-\u06F9]/g, (c) => String(c.charCodeAt(0) - 0x06F0))
+            /* Arabic decimal separator → dot */
+            .replace(/\u066B/g, ".")
+            /* Remove: Arabic thousands sep, ASCII comma, all whitespace,
+               and any non-digit non-dot non-minus character            */
+            .replace(/[\u066C,\s\u00A0\u202F]/g, "")
+            .replace(/[^\d.-]/g, "")
             .trim();
-          return /^-?\d+(\.\d+)?$/.test(stripped) ? stripped : v;
+          if (s === "" || s === "-" || s === ".") return "";
+          const n = Number(s);
+          if (isNaN(n)) return "";
+          return String(n);
         };
 
         /* ── Try every sheet until we find one with usable data ──────── */
@@ -635,14 +656,26 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
   useEffect(() => {
     if (readTotalRows === 0) { setReadDisplayRows(0); return; }
     let current = 0;
-    const step  = Math.max(1, Math.ceil(readTotalRows / 60)); // ~60 frames
+    const step  = Math.max(1, Math.ceil(readTotalRows / 60));
     const id = setInterval(() => {
       current += step;
       if (current >= readTotalRows) { setReadDisplayRows(readTotalRows); clearInterval(id); }
       else { setReadDisplayRows(current); }
-    }, 16); // ~60 fps
+    }, 16);
     return () => clearInterval(id);
   }, [readTotalRows]);
+
+  /* ── Smooth progress simulation during file-read phase ──────────────
+     FileReader.onprogress doesn't fire for small files, so we manually
+     tick the percentage from its current value up to 68% at ~1%/30ms.
+     When the real onload fires it jumps to 75→90→100 via the callback. */
+  useEffect(() => {
+    if (!isReading || readPhase !== "read") return;
+    const id = setInterval(() => {
+      setReadProgress((prev) => (prev < 68 ? prev + 1 : prev));
+    }, 30);
+    return () => clearInterval(id);
+  }, [isReading, readPhase]);
 
   /* Full-duplicate set (same identity + same price/unit → skip entirely) */
   const existingSignatures = new Set(existingContractors.map(dbSignature));
@@ -1266,7 +1299,7 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
                         height: "100%",
                         background: "linear-gradient(90deg, #2baa74, #4dd49a)",
                         boxShadow: "0 0 10px rgba(43,170,116,0.6)",
-                        transition: "width 0.06s linear",
+                        transition: "width 0.3s ease-out",
                         borderRadius: 999,
                       }} />
                     </div>
