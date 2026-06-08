@@ -353,10 +353,14 @@ function parseExcelFile(
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     /* Phase 1 (0-70%): browser reading bytes from disk to memory. */
+    /* Kick off an immediate 5% so the UI doesn't stay frozen at 0%
+       even for tiny files where onprogress never fires.             */
+    onProgress?.(5, "read");
+
     reader.onprogress = (ev) => {
       if (onProgress && ev.lengthComputable && ev.total > 0) {
         const pct = Math.min(70, Math.round((ev.loaded / ev.total) * 70));
-        onProgress(pct, "read");
+        onProgress(Math.max(pct, 5), "read");
       }
     };
     reader.onload = (e) => {
@@ -368,6 +372,16 @@ function parseExcelFile(
 
         const toStr = (c: unknown) =>
           String(c ?? "").replace(/[\r\n]+/g, " ").trim();
+
+        /* Strip thousands separators and currency symbols from numeric fields
+           so "1,500" / "1.500" / "ر.س 1,500" all resolve to "1500".         */
+        const cleanNumeric = (v: string): string => {
+          const stripped = v
+            .replace(/[ر.س$€£¥\u00A0\u202F]/g, "")  // currency symbols + nbsp
+            .replace(/,/g, "")                         // thousands comma
+            .trim();
+          return /^-?\d+(\.\d+)?$/.test(stripped) ? stripped : v;
+        };
 
         /* ── Try every sheet until we find one with usable data ──────── */
         let parsed: RowData[] = [];
@@ -419,7 +433,13 @@ function parseExcelFile(
 
           const sheetParsed: RowData[] = dataRows
             .filter((row) => row.some((c) => toStr(c)))
-            .map((cells) => extractRow(cells.map(toStr)));
+            .map((cells) => {
+              const row = extractRow(cells.map(toStr));
+              /* Clean numeric fields so "1,500" / "ر.س 900" → "1500" / "900" */
+              row.price  = cleanNumeric(row.price);
+              row.rating = cleanNumeric(row.rating);
+              return row;
+            });
 
           if (sheetParsed.length > 0) {
             parsed = sheetParsed;
