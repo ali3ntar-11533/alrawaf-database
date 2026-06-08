@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import * as XLSX from "xlsx";
 import { X, Cloud, Download, Upload, Save, AlertCircle, CheckCircle, Loader, Plus, Trash2, FileSpreadsheet } from "lucide-react";
 import { bulkCreateContractors, updateContractor } from "../contractors/api";
@@ -627,7 +628,8 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
   const [readTotalRows, setReadTotalRows] = useState(0);
   const [readDisplayRows, setReadDisplayRows] = useState(0);
   const [pasteHint, setPasteHint] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef    = useRef<HTMLInputElement>(null);
+  const gridScrollRef   = useRef<HTMLDivElement>(null);
 
   /* Animate row counter from 0 → readTotalRows when parsing finishes */
   useEffect(() => {
@@ -1011,6 +1013,18 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
 
   const nonEmptyCount = rows.filter((r) => !isRowEmpty(r.data)).length;
 
+  /* ── Virtual scrolling: only render rows visible in the viewport ── */
+  const rowVirtualizer = useVirtualizer({
+    count:            rows.length,
+    getScrollElement: () => gridScrollRef.current,
+    estimateSize:     () => 34,   /* ~34px per row */
+    overscan:         12,          /* render 12 extra rows above/below */
+  });
+  const virtualRows   = rowVirtualizer.getVirtualItems();
+  const totalHeight   = rowVirtualizer.getTotalSize();
+  const paddingTop    = virtualRows.length > 0 ? virtualRows[0].start                                 : 0;
+  const paddingBottom = virtualRows.length > 0 ? totalHeight - virtualRows[virtualRows.length - 1].end : 0;
+
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(10,8,5,0.72)", backdropFilter: "blur(6px)", display: "flex", flexDirection: "column" }}>
       {/* ── Header ── */}
@@ -1069,7 +1083,7 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
       </div>
 
       {/* ── Grid ── */}
-      <div className="dark-scroll" style={{ flex: 1, overflowY: "auto", overflowX: "auto", background: "#0d1a2e" }}>
+      <div ref={gridScrollRef} className="dark-scroll" style={{ flex: 1, overflowY: "auto", overflowX: "auto", background: "#0d1a2e" }}>
         <table style={{ borderCollapse: "collapse", tableLayout: "fixed", direction: "rtl", width: "100%", minWidth: 1290 }}>
           <colgroup>
             <col style={{ width: 36 }} />
@@ -1090,14 +1104,21 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
           </thead>
 
           <tbody>
-            {rows.map((row, idx) => {
+            {/* Top spacer — accounts for rows above the visible window */}
+            {paddingTop > 0 && (
+              <tr><td colSpan={22} style={{ height: paddingTop, padding: 0, border: "none" }} /></tr>
+            )}
+
+            {virtualRows.map((virtualRow) => {
+              const row     = rows[virtualRow.index];
+              const idx     = virtualRow.index;
               const isEmpty = isRowEmpty(row.data);
               const isDup   = row.status === "duplicate";
               const isSaved = row.status === "saved";
               const isErr   = row.status === "error";
               const rowBg   = isSaved ? "rgba(43,170,116,0.07)" : isDup ? "rgba(230,126,34,0.07)" : isErr ? "rgba(231,76,60,0.07)" : idx % 2 === 0 ? "#0f1f38" : "#0d1b33";
               return (
-                <tr key={row.id} style={{ background: rowBg, borderBottom: "1px solid rgba(59,143,204,0.08)" }}>
+                <tr key={row.id} data-index={virtualRow.index} style={{ background: rowBg, borderBottom: "1px solid rgba(59,143,204,0.08)", height: 34 }}>
                   <td style={{ padding: "3px 6px", fontSize: "0.6rem", color: "rgba(59,143,204,0.4)", textAlign: "center", borderLeft: "1px solid rgba(59,143,204,0.08)", verticalAlign: "middle" }}>
                     {isEmpty ? <span style={{ color: "rgba(59,143,204,0.2)" }}>·</span> : idx + 1}
                   </td>
@@ -1130,6 +1151,11 @@ export default function CloudSyncModal({ existingContractors, onClose, onSaved }
                 </tr>
               );
             })}
+
+            {/* Bottom spacer — accounts for rows below the visible window */}
+            {paddingBottom > 0 && (
+              <tr><td colSpan={22} style={{ height: paddingBottom, padding: 0, border: "none" }} /></tr>
+            )}
           </tbody>
         </table>
       </div>
