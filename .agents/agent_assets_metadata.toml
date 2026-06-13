@@ -12,3 +12,9 @@ id = "E55wjCLCuKHLBnXH2Uh4d"
 uri = "file://rawaf-code-full.txt"
 type = "text"
 title = "كود مشروع الرواف الكامل - rawaf-code-full.txt"
+
+[[outputs]]
+id = "n_M3STB_mHGG_xKLUulRw"
+uri = "file://rawaf-setup.txt"
+type = "text"
+title = "rawaf-setup.js — سكريبت الإعداد التلقائي"
