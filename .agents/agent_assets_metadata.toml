@@ -18,3 +18,9 @@ id = "n_M3STB_mHGG_xKLUulRw"
 uri = "file://rawaf-setup.txt"
 type = "text"
 title = "rawaf-setup.js — سكريبت الإعداد التلقائي"
+
+[[outputs]]
+id = "3_Es22WtN0V617NeltQaT"
+uri = "file://rawaf-full.tar.gz"
+type = "unspecified"
+title = "مشروع الرواف الكامل — rawaf-full.tar.gz"
