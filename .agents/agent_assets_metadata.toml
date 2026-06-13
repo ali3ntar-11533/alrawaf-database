@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "Be29E4_ln8Rq1nE4sNH49"
+uri = "file://rawaf-project.tar.gz"
+type = "unspecified"
+title = "مشروع الرواف الكامل - rawaf-project.tar.gz"
